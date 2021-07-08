@@ -18,8 +18,13 @@ macro(run_conan)
     ${CONAN_EXTRA_REQUIRES}
     catch2/2.13.3
     docopt.cpp/0.6.2
-    fmt/6.2.0
+    fmt/6.2.1
     spdlog/1.5.0
+    luajit/2.0.5
+    sol2/3.2.3
+    tsl-sparse-map/0.6.2
+    simdjson/0.9.6
+    roaring/0.2.66
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

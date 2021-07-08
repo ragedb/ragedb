@@ -2,7 +2,7 @@
 
 In Memory Property Graph Server using the Shared Nothing design from Seastar.
 
-## Installing
+## Building
 
 RageDB uses Seastar which only runs on *nix servers (no windows or mac) so use your local linux desktop or use EC2.
 
@@ -37,6 +37,21 @@ Install Seastar (this will take a while, that's why we are using screen):
     ./configure.py --mode=release --prefix=/usr/local
     sudo ninja -C build/release install
 
+Install Additional Dependencies
+
+    sudo apt-get install -y ccache python3-pip
+
+Install conan
+
+    pip install --user conan
+    sudo ln -s ~/.local/bin/conan /usr/bin/conan
+
 Install LuaJIT
 
     sudo apt-get install -y luajit luajit-5.1-dev
+
+### Troubleshooting
+
+If you get errors regarding conan locks, run:
+
+    conan remove --locks

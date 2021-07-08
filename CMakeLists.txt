@@ -83,10 +83,22 @@ if(ENABLE_UNITY)
   set_target_properties(ragedb PROPERTIES UNITY_BUILD ON)
 endif()
 
+add_subdirectory(src/graph)
+
 add_executable(ragedb src/main/main.cpp)
+target_link_libraries(
+        graph
+        Seastar::seastar
+        CONAN_PKG::tsl-sparse-map
+        CONAN_PKG::simdjson
+        CONAN_PKG::roaring
+        CONAN_PKG::sol2
+        CONAN_PKG::luajit
+)
+
 target_link_libraries(
         ragedb
         PRIVATE project_options
-        PRIVATE Seastar::seastar
         project_warnings
-        CONAN_PKG::spdlog)
+        graph
+)
