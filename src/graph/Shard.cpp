@@ -14,4 +14,27 @@
  * limitations under the License.
  */
 
-#include "graph.h"
+#include <iostream>
+#include "Shard.h"
+
+namespace ragedb {
+
+    /**
+     * Stop the Shard - Required method by Seastar for peering_sharded_service
+     *
+     * @return future
+     */
+    seastar::future<> Shard::stop() {
+        std::stringstream ss;
+        ss << "Stopping Shard " << shard_id << '\n';
+        std::cout << ss.str();
+        return seastar::make_ready_future<>();
+    }
+
+    /**
+     * Empty the Shard of all data
+     */
+    void Shard::Clear() {
+
+    }
+}

@@ -14,13 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_GRAPH_H
-#define RAGEDB_GRAPH_H
+#ifndef RAGEDB_SHARD_H
+#define RAGEDB_SHARD_H
+
+#include <seastar/core/sharded.hh>
+
+namespace ragedb {
+
+    class Shard : public seastar::peering_sharded_service<Shard> {
+
+    private:
+        uint cpus;
+        uint shard_id;
+
+    public:
+        explicit Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
+            std::stringstream ss;
+            ss << "Starting Shard " << shard_id << '\n';
+            std::cout << ss.str();
+        }
+
+        static seastar::future<> stop();
+        void Clear();
+
+    };
+}
 
 
-class graph {
-
-};
-
-
-#endif //RAGEDB_GRAPH_H
+#endif //RAGEDB_SHARD_H

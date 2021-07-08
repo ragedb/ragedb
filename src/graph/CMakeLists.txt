@@ -1,9 +1,11 @@
 set(HEADER_FILES
-        graph.h
+        Graph.h
+        Shard.h
         )
 
 set(SOURCE_FILES
-        graph.cpp
+        Graph.cpp
+        Shard.cpp
         )
 
-add_library(graph ${SOURCE_FILES} ${HEADER_FILES})
+add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

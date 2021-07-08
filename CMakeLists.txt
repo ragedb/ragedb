@@ -84,10 +84,11 @@ if(ENABLE_UNITY)
 endif()
 
 add_subdirectory(src/graph)
+include_directories(src/graph)
 
 add_executable(ragedb src/main/main.cpp)
 target_link_libraries(
-        graph
+        Graph
         Seastar::seastar
         CONAN_PKG::tsl-sparse-map
         CONAN_PKG::simdjson
@@ -100,5 +101,5 @@ target_link_libraries(
         ragedb
         PRIVATE project_options
         project_warnings
-        graph
+        Graph
 )

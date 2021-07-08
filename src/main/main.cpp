@@ -16,7 +16,9 @@
 
 #include <seastar/core/app-template.hh>
 #include <seastar/core/reactor.hh>
+#include <seastar/core/thread.hh>
 #include <iostream>
+#include <Graph.h>
 
 int main(int argc, char** argv) {
     seastar::app_template app;
@@ -24,7 +26,13 @@ int main(int argc, char** argv) {
         app.run(argc, argv, [] {
             std::cout << "Hello world!\n";
             std::cout << "This server has " << seastar::smp::count << " cores.\n";
-            return seastar::make_ready_future<>();
+
+            return seastar::async([&] {
+                ragedb::Graph graph("rage");
+                graph.Start().get();
+                std::cout << "Started " << graph.GetName() << " graph \n";
+                graph.Stop().get();
+            });
         });
     } catch (...) {
         std::cerr << "Failed to start RageDB: "
