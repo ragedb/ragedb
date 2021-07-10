@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "Types.h"
+#include "RelationshipTypes.h"
+
 
 namespace ragedb {
 
-    Types::Types() : type_to_id(), id_to_type() {
+    RelationshipTypes::RelationshipTypes() : type_to_id(), id_to_type() {
         // start with empty blank type
         type_to_id.emplace("", 0);
         id_to_type.emplace(0, "");
@@ -26,19 +27,19 @@ namespace ragedb {
         deleted_ids.emplace(0, Roaring64Map());
     }
 
-    uint16_t Types::getTypeId(const std::string &token) {
+    uint16_t RelationshipTypes::getTypeId(const std::string &token) {
         auto token_search = type_to_id.find(token);
         if (token_search != type_to_id.end()) {
-          return token_search->second;
+            return token_search->second;
         }
         return 0;
     }
 
-    uint16_t Types::insertOrGetTypeId(const std::string &token) {
+    uint16_t RelationshipTypes::insertOrGetTypeId(const std::string &token) {
         // Get
         auto token_search = type_to_id.find(token);
         if (token_search != type_to_id.end()) {
-          return token_search->second;
+            return token_search->second;
         }
         // Insert
         uint16_t token_id = type_to_id.size();
@@ -49,7 +50,7 @@ namespace ragedb {
         return token_id;
     }
 
-    std::string Types::getType(uint16_t type_id) {
+    std::string RelationshipTypes::getType(uint16_t type_id) {
         auto token_search = id_to_type.find(type_id);
         if (token_search != id_to_type.end()) {
             return token_search->second;
@@ -58,7 +59,7 @@ namespace ragedb {
         return id_to_type.at(0);
     }
 
-    bool Types::addId(uint16_t type_id, uint64_t id) {
+    bool RelationshipTypes::addId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
             ids.at(type_id).add(id);
             deleted_ids.at(type_id).remove(id);
@@ -68,7 +69,7 @@ namespace ragedb {
         return false;
     }
 
-    bool Types::removeId(uint16_t type_id, uint64_t id) {
+    bool RelationshipTypes::removeId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
             ids.at(type_id).remove(id);
             deleted_ids.at(type_id).add(id);
@@ -78,7 +79,7 @@ namespace ragedb {
         return false;
     }
 
-    bool Types::containsId(uint16_t type_id, uint64_t id) {
+    bool RelationshipTypes::containsId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
             return ids.at(type_id).contains(id);
         }
@@ -86,42 +87,42 @@ namespace ragedb {
         return false;
     }
 
-    Roaring64Map Types::getIds() const {
+    Roaring64Map RelationshipTypes::getIds() const {
         Roaring64Map allIds;
-        for(const auto& entry : ids) {
+        for (const auto &entry : ids) {
             allIds.operator|=(entry.second);
         }
         return allIds;
     }
 
-    Roaring64Map Types::getIds(uint16_t type_id) {
+    Roaring64Map RelationshipTypes::getIds(uint16_t type_id) {
         if (ValidTypeId(type_id)) {
             return ids.at(type_id);
         }
         return ids.at(0);
     }
 
-    Roaring64Map Types::getDeletedIds() const {
+    Roaring64Map RelationshipTypes::getDeletedIds() const {
         Roaring64Map allIds;
-        for(const auto& entry : deleted_ids) {
+        for (const auto &entry : deleted_ids) {
             allIds.operator|=(entry.second);
         }
         return allIds;
     }
 
-    Roaring64Map Types::getDeletedIds(uint16_t type_id) {
+    Roaring64Map RelationshipTypes::getDeletedIds(uint16_t type_id) {
         if (ValidTypeId(type_id)) {
             return deleted_ids.at(type_id);
         }
         return deleted_ids.at(0);
     }
 
-    bool Types::ValidTypeId(uint16_t type_id) const {
+    bool RelationshipTypes::ValidTypeId(uint16_t type_id) const {
         // TypeId must be greater than zero
         return (type_id > 0 && type_id < id_to_type.size());
     }
 
-    uint64_t Types::getCount(uint16_t type_id) {
+    uint64_t RelationshipTypes::getCount(uint16_t type_id) {
         if (ValidTypeId(type_id)) {
             return ids.at(type_id).cardinality();
         }
@@ -129,11 +130,11 @@ namespace ragedb {
         return 0;
     }
 
-    uint16_t Types::getSize() const {
+    uint16_t RelationshipTypes::getSize() const {
         return id_to_type.size() - 1;
     }
 
-    std::set<std::string> Types::getTypes() {
+    std::set<std::string> RelationshipTypes::getTypes() {
         std::set<std::string> types;
         for (auto &it : id_to_type) {
             if (it.first > 0) {
@@ -144,7 +145,7 @@ namespace ragedb {
         return types;
     }
 
-    std::set<uint16_t> Types::getTypeIds() {
+    std::set<uint16_t> RelationshipTypes::getTypeIds() {
         std::set<uint16_t> type_ids;
         for (auto &it : id_to_type) {
             if (it.first > 0) {
@@ -155,8 +156,8 @@ namespace ragedb {
         return type_ids;
     }
 
-    std::map<uint16_t,uint64_t> Types::getCounts() {
-        std::map<uint16_t,uint64_t> counts;
+    std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() {
+        std::map<uint16_t, uint64_t> counts;
         for (auto &it : id_to_type) {
             if (it.first > 0) {
                 counts.insert({it.first, ids.at(it.first).cardinality()});
@@ -166,7 +167,7 @@ namespace ragedb {
         return counts;
     }
 
-    bool Types::addTypeId(const std::string& token, uint16_t token_id) {
+    bool RelationshipTypes::addTypeId(const std::string &token, uint16_t token_id) {
         auto token_search = type_to_id.find(token);
         if (token_search != type_to_id.end()) {
             // Type already exists
@@ -184,5 +185,4 @@ namespace ragedb {
             return false;
         }
     }
-
 }

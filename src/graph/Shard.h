@@ -18,8 +18,12 @@
 #define RAGEDB_SHARD_H
 
 #include <seastar/core/sharded.hh>
+#include <seastar/core/rwlock.hh>
 #include <tsl/sparse_map.h>
-#include "Types.h"
+#include "Node.h"
+#include "Relationship.h"
+#include "NodeTypes.h"
+#include "RelationshipTypes.h"
 
 namespace ragedb {
 
@@ -29,9 +33,12 @@ namespace ragedb {
         uint cpus;
         uint shard_id;
 
+        seastar::rwlock rel_type_lock;
+        seastar::rwlock node_type_lock;
+
         std::map<std::string, tsl::sparse_map<std::string, uint64_t>> node_keys;    // "Index" to get node id by type:key
-        Types node_types;                                                           // Store string and id of node types
-        Types relationship_types;                                                   // Store string and id of relationship types
+        NodeTypes node_types;                                                       // Store string and id of node types
+        RelationshipTypes relationship_types;                                       // Store string and id of relationship types
 
     public:
         explicit Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
@@ -56,13 +63,27 @@ namespace ragedb {
 
         static seastar::future<std::string> HealthCheck();
 
+        // Node Type
+        std::string NodeTypeGetType(uint16_t type_id);
+        uint16_t NodeTypeGetTypeId(const std::string& type);
+        bool NodeTypeInsert(const std::string& type, uint16_t type_id);
+
+        // Nodes
+        uint64_t NodeAddEmpty(const std::string& type, uint16_t type_id, const std::string& key);
+
         // *****************************************************************************************************************************
         //                                               Peered
         // *****************************************************************************************************************************
 
         seastar::future<std::vector<std::string>> HealthCheckPeered();
 
+        // Node Type
+        std::string NodeTypeGetTypePeered(uint16_t type_id);
+        uint16_t NodeTypeGetTypeIdPeered(const std::string& type);
+        seastar::future<uint16_t> NodeTypeInsertPeered(const std::string& type);
 
+        // Nodes
+        seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
     };
 }
 

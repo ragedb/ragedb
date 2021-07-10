@@ -1,11 +1,21 @@
 set(HEADER_FILES
         Graph.h
         Shard.h
-        Types.h)
+        Group.h
+        Link.h
+        Node.h
+        Relationship.h
+        NodeTypes.h
+        RelationshipTypes.h)
 
 set(SOURCE_FILES
         Graph.cpp
         Shard.cpp
-        Types.cpp)
+        Group.cpp
+        Link.cpp
+        Node.cpp
+        Relationship.cpp
+        NodeTypes.cpp
+        RelationshipTypes.cpp )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

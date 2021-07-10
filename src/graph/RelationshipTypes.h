@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_TYPES_H
-#define RAGEDB_TYPES_H
-
+#ifndef RAGEDB_RELATIONSHIPTYPES_H
+#define RAGEDB_RELATIONSHIPTYPES_H
 
 #include <cstdint>
 #include <roaring/roaring64map.hh>
 #include <set>
+#include "Relationship.h"
 
 namespace ragedb {
 
-    class Types {
-
+    class RelationshipTypes {
     private:
         std::unordered_map<std::string, uint16_t> type_to_id;
         std::unordered_map<uint16_t, std::string> id_to_type;
+        std::unordered_map<uint16_t, std::vector<Relationship>> relationships;                                    // Store of the properties of Relationships
         std::unordered_map<uint16_t, Roaring64Map> ids;
         std::unordered_map<uint16_t, Roaring64Map> deleted_ids;
         //TODO: Figure out Type Properties and Schema
 
     public:
-        Types();
+        RelationshipTypes();
 
         uint16_t getTypeId(const std::string &);
 
@@ -69,8 +69,8 @@ namespace ragedb {
         std::map<uint16_t, uint64_t> getCounts();
 
         bool addTypeId(const std::string &, uint16_t);
-
     };
 }
 
-#endif //RAGEDB_TYPES_H
+
+#endif //RAGEDB_RELATIONSHIPTYPES_H
