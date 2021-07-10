@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
+#include <tsl/sparse_map.h>
 #include "NodeTypes.h"
 
 
 namespace ragedb {
 
     NodeTypes::NodeTypes() : type_to_id(), id_to_type() {
-        // start with empty blank type
+        // start with empty blank type 0
         type_to_id.emplace("", 0);
         id_to_type.emplace(0, "");
+        node_keys.emplace(0, tsl::sparse_map<std::string, uint64_t>());
         nodes.emplace(0, std::vector<Node>());
         outgoing_relationships.emplace(0, std::vector<std::vector<Group>>());
         incoming_relationships.emplace(0, std::vector<std::vector<Group>>());
@@ -48,6 +50,7 @@ namespace ragedb {
         uint16_t token_id = type_to_id.size();
         type_to_id.emplace(token, token_id);
         id_to_type.emplace(token_id, token);
+        node_keys.emplace(token_id, tsl::sparse_map<std::string, uint64_t>());
         nodes.emplace(token_id, std::vector<Node>());
         outgoing_relationships.emplace(token_id, std::vector<std::vector<Group>>());
         incoming_relationships.emplace(token_id, std::vector<std::vector<Group>>());
@@ -186,6 +189,7 @@ namespace ragedb {
             }
             type_to_id.emplace(token, token_id);
             id_to_type.emplace(token_id, token);
+            node_keys.emplace(token_id, tsl::sparse_map<std::string, uint64_t>());
             nodes.emplace(token_id, std::vector<Node>());
             outgoing_relationships.emplace(token_id, std::vector<std::vector<Group>>());
             incoming_relationships.emplace(token_id, std::vector<std::vector<Group>>());
@@ -193,6 +197,10 @@ namespace ragedb {
             deleted_ids.emplace(token_id, Roaring64Map());
             return false;
         }
+    }
+
+    tsl::sparse_map<std::string, uint64_t> NodeTypes::getNodeKeys(uint16_t type_id) {
+        return node_keys[type_id];
     }
 
     std::vector<Node> NodeTypes::getNodes(uint16_t type_id) {
@@ -204,7 +212,7 @@ namespace ragedb {
     }
 
     std::vector<std::vector<Group>> NodeTypes::getIncomingRelationships(uint16_t type_id) {
-        incoming_relationships[type_id];
+        return incoming_relationships[type_id];
     }
 
 }

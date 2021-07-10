@@ -36,7 +36,7 @@ namespace ragedb {
         seastar::rwlock rel_type_lock;
         seastar::rwlock node_type_lock;
 
-        std::map<std::string, tsl::sparse_map<std::string, uint64_t>> node_keys;    // "Index" to get node id by type:key
+        //std::map<std::string, tsl::sparse_map<std::string, uint64_t>> node_keys;    // "Index" to get node id by type:key
         NodeTypes node_types;                                                       // Store string and id of node types
         RelationshipTypes relationship_types;                                       // Store string and id of relationship types
 
@@ -69,7 +69,7 @@ namespace ragedb {
         bool NodeTypeInsert(const std::string& type, uint16_t type_id);
 
         // Nodes
-        uint64_t NodeAddEmpty(const std::string& type, uint16_t type_id, const std::string& key);
+        uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
 
         // *****************************************************************************************************************************
         //                                               Peered

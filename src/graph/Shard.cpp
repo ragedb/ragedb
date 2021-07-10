@@ -68,7 +68,7 @@ namespace ragedb {
     }
 
     uint16_t Shard::externalToTypeId(uint64_t id) {
-        return (id >> SHARD_BITS) & TYPE_MASK;
+        return (id & TYPE_MASK ) >> SHARD_BITS;
     }
 
     uint16_t Shard::CalculateShardId(uint64_t id) {
@@ -100,43 +100,37 @@ namespace ragedb {
     }
 
     bool Shard::NodeTypeInsert(const std::string& type, uint16_t type_id) {
-        tsl::sparse_map<std::string, uint64_t> empty;
-        node_keys.emplace(type, empty);
         return node_types.addTypeId(type, type_id);
     }
 
     // Nodes ================================================================================================================================
-    uint64_t Shard::NodeAddEmpty(const std::string& type, uint16_t node_type, const std::string &key) {
-        uint64_t internal_id = node_types.getCount(node_type);
+    uint64_t Shard::NodeAddEmpty(uint16_t type_id, const std::string &key) {
+        uint64_t internal_id = node_types.getCount(type_id);
         uint64_t external_id = 0;
 
-        auto type_search = node_keys.find(type);
-        // The Label will always exist
-        if (type_search != std::end(node_keys)) {
-            // Check if the key exists
-            auto key_search = type_search->second.find(key);
-            if (key_search == std::end(type_search->second)) {
-                // If we have deleted nodes, fill in the space by adding the new node here
-                if (node_types.getDeletedIds(node_type).isEmpty()) {
-                    external_id = internalToExternal(node_type, internal_id);
-                    // Set Metadata properties
-                    // Add the node to the end and prepare a place for its relationships
-                    node_types.getNodes(node_type).emplace_back(external_id, key);
-                    node_types.getOutgoingRelationships(node_type).emplace_back();
-                    node_types.getIncomingRelationships(node_type).emplace_back();
-                    node_types.addId(node_type, internal_id);
-                    //TODO: Making node_type ids all internal ids
-                } else {
-                    internal_id = node_types.getDeletedIds(node_type).minimum();
-                    external_id = internalToExternal(node_type, internal_id);
-                    // Set Metadata properties
-                    Node node(external_id, key);
-                    // Replace the deleted node and remove it from the list
-                    node_types.getNodes(node_type).at(internal_id) = node;
-                    node_types.addId(node_type, internal_id);
-                }
-                type_search->second.insert({ key, external_id });
+        // Check if the key exists
+        auto key_search = node_types.getNodeKeys(type_id).find(key);
+        if (key_search == std::end(node_types.getNodeKeys(type_id))) {
+            // If we have deleted nodes, fill in the space by adding the new node here
+            if (node_types.getDeletedIds(type_id).isEmpty()) {
+                external_id = internalToExternal(type_id, internal_id);
+                // Set Metadata properties
+                // Add the node to the end and prepare a place for its relationships
+                node_types.getNodes(type_id).emplace_back(external_id, key);
+                node_types.getOutgoingRelationships(type_id).emplace_back();
+                node_types.getIncomingRelationships(type_id).emplace_back();
+                node_types.addId(type_id, internal_id);
+                //TODO: Making type_id ids all internal ids
+            } else {
+                internal_id = node_types.getDeletedIds(type_id).minimum();
+                external_id = internalToExternal(type_id, internal_id);
+                // Set Metadata properties
+                Node node(external_id, key);
+                // Replace the deleted node and remove it from the list
+                node_types.getNodes(type_id).at(internal_id) = node;
+                node_types.addId(type_id, internal_id);
             }
+            node_types.getNodeKeys(type_id).insert({key, external_id });
         }
 
         return external_id;
@@ -177,25 +171,24 @@ namespace ragedb {
     // Nodes ===============================================================================================================================
 
     seastar::future<uint64_t> Shard::NodeAddEmptyPeered(const std::string &type, const std::string &key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-        uint16_t node_type_id = node_types.getTypeId(type);
+        uint16_t shard_id = CalculateShardId(type, key);
+        uint16_t type_id = node_types.getTypeId(type);
 
         // The node type exists, so continue on
-        if (node_type_id > 0) {
-            return container().invoke_on(node_shard_id, [type, node_type_id, key](Shard &local_shard) {
-                return local_shard.NodeAddEmpty(type, node_type_id, key);
+        if (type_id > 0) {
+            return container().invoke_on(shard_id, [type_id, key](Shard &local_shard) {
+                return local_shard.NodeAddEmpty(type_id, key);
             });
         }
 
         // The node type needs to be set by Shard 0 and propagated
-        return container().invoke_on(0, [node_shard_id, type, key, this] (Shard &local_shard) {
-            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, type, key, this] (uint16_t node_type_id) {
-                return container().invoke_on(node_shard_id, [type, node_type_id, key](Shard &local_shard) {
-                    return local_shard.NodeAddEmpty(type, node_type_id, key);
+        return container().invoke_on(0, [shard_id, type, key, this] (Shard &local_shard) {
+            return local_shard.NodeTypeInsertPeered(type).then([shard_id, type, key, this] (uint16_t node_type_id) {
+                return container().invoke_on(shard_id, [node_type_id, key](Shard &local_shard) {
+                    return local_shard.NodeAddEmpty(node_type_id, key);
                 });
             });
         });
-
     }
 
 }
