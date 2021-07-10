@@ -27,8 +27,11 @@ namespace ragedb {
     class Types {
 
     private:
+        std::unordered_map<std::string, uint16_t> type_to_id;
+        std::unordered_map<uint16_t, std::string> id_to_type;
         std::unordered_map<uint16_t, Roaring64Map> ids;
         std::unordered_map<uint16_t, Roaring64Map> deleted_ids;
+        //TODO: Figure out Type Properties and Schema
 
     public:
         Types();
@@ -48,6 +51,10 @@ namespace ragedb {
         Roaring64Map getIds() const;
 
         Roaring64Map getIds(uint16_t);
+
+        Roaring64Map getDeletedIds() const;
+
+        Roaring64Map getDeletedIds(uint16_t);
 
         bool ValidTypeId(uint16_t) const;
 
