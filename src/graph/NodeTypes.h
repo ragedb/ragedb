@@ -28,13 +28,13 @@ namespace ragedb {
     class NodeTypes {
     private:
         std::unordered_map<std::string, uint16_t> type_to_id;
-        std::unordered_map<uint16_t, std::string> id_to_type;
-        std::unordered_map<uint16_t, tsl::sparse_map<std::string, uint64_t>> node_keys;       // "Index" to get node id by type:key
-        std::unordered_map<uint16_t, std::vector<Node>> nodes;                                // Store of the properties of Nodes
-        std::unordered_map<uint16_t, std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
-        std::unordered_map<uint16_t, std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
-        std::unordered_map<uint16_t, Roaring64Map> ids;
-        std::unordered_map<uint16_t, Roaring64Map> deleted_ids;
+        std::vector<std::string> id_to_type;
+        std::vector<tsl::sparse_map<std::string, uint64_t>> node_keys;       // "Index" to get node id by type:key
+        std::vector<std::vector<Node>> nodes;                                // Store of the properties of Nodes
+        std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
+        std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
+        std::vector<Roaring64Map> ids;
+        std::vector<Roaring64Map> deleted_ids;
         //TODO: Figure out Type Properties and Schema
 
     public:

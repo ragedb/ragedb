@@ -22,41 +22,40 @@ namespace ragedb {
     RelationshipTypes::RelationshipTypes() : type_to_id(), id_to_type() {
         // start with empty blank type
         type_to_id.emplace("", 0);
-        id_to_type.emplace(0, "");
-        ids.emplace(0, Roaring64Map());
-        deleted_ids.emplace(0, Roaring64Map());
+        id_to_type.emplace_back("");
+        ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(Roaring64Map());
     }
 
-    uint16_t RelationshipTypes::getTypeId(const std::string &token) {
-        auto token_search = type_to_id.find(token);
-        if (token_search != type_to_id.end()) {
-            return token_search->second;
+    uint16_t RelationshipTypes::getTypeId(const std::string &type) {
+        auto type_search = type_to_id.find(type);
+        if (type_search != type_to_id.end()) {
+            return type_search->second;
         }
         return 0;
     }
 
-    uint16_t RelationshipTypes::insertOrGetTypeId(const std::string &token) {
+    uint16_t RelationshipTypes::insertOrGetTypeId(const std::string &type) {
         // Get
-        auto token_search = type_to_id.find(token);
-        if (token_search != type_to_id.end()) {
-            return token_search->second;
+        auto type_search = type_to_id.find(type);
+        if (type_search != type_to_id.end()) {
+            return type_search->second;
         }
         // Insert
-        uint16_t token_id = type_to_id.size();
-        type_to_id.emplace(token, token_id);
-        id_to_type.emplace(token_id, token);
-        ids.emplace(token_id, Roaring64Map());
-        deleted_ids.emplace(token_id, Roaring64Map());
-        return token_id;
+        uint16_t type_id = type_to_id.size();
+        type_to_id.emplace(type, type_id);
+        id_to_type.emplace_back(type);
+        ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(Roaring64Map());
+        return type_id;
     }
 
     std::string RelationshipTypes::getType(uint16_t type_id) {
-        auto token_search = id_to_type.find(type_id);
-        if (token_search != id_to_type.end()) {
-            return token_search->second;
+        if (ValidTypeId(type_id)) {
+            return id_to_type[type_id];
         }
         // If not found return empty
-        return id_to_type.at(0);
+        return id_to_type[0];
     }
 
     bool RelationshipTypes::addId(uint16_t type_id, uint64_t id) {
@@ -89,8 +88,8 @@ namespace ragedb {
 
     Roaring64Map RelationshipTypes::getIds() const {
         Roaring64Map allIds;
-        for (const auto &entry : ids) {
-            allIds.operator|=(entry.second);
+        for (int i=1; i < type_to_id.size(); i++) {
+            allIds.operator|=(ids[i]);
         }
         return allIds;
     }
@@ -104,8 +103,8 @@ namespace ragedb {
 
     Roaring64Map RelationshipTypes::getDeletedIds() const {
         Roaring64Map allIds;
-        for (const auto &entry : deleted_ids) {
-            allIds.operator|=(entry.second);
+        for (int i=1; i < type_to_id.size(); i++) {
+            allIds.operator|=(deleted_ids[i]);
         }
         return allIds;
     }
@@ -135,53 +134,42 @@ namespace ragedb {
     }
 
     std::set<std::string> RelationshipTypes::getTypes() {
-        std::set<std::string> types;
-        for (auto &it : id_to_type) {
-            if (it.first > 0) {
-                types.insert(it.second);
-            }
-        }
-
-        return types;
+        // Skip the empty type
+        return {id_to_type.begin() + 1, id_to_type.end()};
     }
 
     std::set<uint16_t> RelationshipTypes::getTypeIds() {
         std::set<uint16_t> type_ids;
-        for (auto &it : id_to_type) {
-            if (it.first > 0) {
-                type_ids.insert(it.first);
-            }
+        for (int i=1; i < type_to_id.size(); i++) {
+            type_ids.insert(i);
         }
 
         return type_ids;
     }
 
     std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() {
-        std::map<uint16_t, uint64_t> counts;
-        for (auto &it : id_to_type) {
-            if (it.first > 0) {
-                counts.insert({it.first, ids.at(it.first).cardinality()});
-            }
+        std::map<uint16_t,uint64_t> counts;
+        for (int i=1; i < type_to_id.size(); i++) {
+            counts.insert({i, ids[i].cardinality()});
         }
 
         return counts;
     }
 
-    bool RelationshipTypes::addTypeId(const std::string &token, uint16_t token_id) {
-        auto token_search = type_to_id.find(token);
-        if (token_search != type_to_id.end()) {
+    bool RelationshipTypes::addTypeId(const std::string &type, uint16_t type_id) {
+        auto type_search = type_to_id.find(type);
+        if (type_search != type_to_id.end()) {
             // Type already exists
             return false;
         } else {
-            auto id_search = id_to_type.find(token_id);
-            if (id_search != id_to_type.end()) {
+            if (ValidTypeId(type_id)) {
                 // Id already exists
                 return false;
             }
-            type_to_id.emplace(token, token_id);
-            id_to_type.emplace(token_id, token);
-            ids.emplace(token_id, Roaring64Map());
-            deleted_ids.emplace(token_id, Roaring64Map());
+            type_to_id.emplace(type, type_id);
+            id_to_type.emplace_back(type);
+            ids.emplace_back(Roaring64Map());
+            deleted_ids.emplace_back(Roaring64Map());
             return false;
         }
     }
