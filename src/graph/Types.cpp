@@ -14,31 +14,4 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_GRAPH_H
-#define RAGEDB_GRAPH_H
-
-
-#include <string>
-#include <seastar/core/future.hh>
-#include <seastar/core/sharded.hh>
-
-#include "Shard.h"
-
-namespace ragedb {
-
-    class Graph {
-    private:
-        std::string name;
-
-    public:
-        seastar::sharded <Shard> shard;
-        explicit Graph(std::string _name) : name (std::move(_name)) {}
-
-        std::string GetName();
-        seastar::future<> Start();
-        seastar::future<> Stop();
-        void Clear();
-    };
-}
-
-#endif //RAGEDB_GRAPH_H
+#include "Types.h"
