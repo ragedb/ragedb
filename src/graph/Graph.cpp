@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <seastar/core/when_all.hh>
 #include "Graph.h"
 
 namespace ragedb {

@@ -86,7 +86,7 @@ endif()
 add_subdirectory(src/graph)
 include_directories(src/graph)
 
-add_executable(ragedb src/main/main.cpp)
+add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh src/main/handlers/HealthCheck.cpp src/main/handlers/HealthCheck.h)
 target_link_libraries(
         Graph
         Seastar::seastar

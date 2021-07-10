@@ -26,7 +26,7 @@ namespace ragedb {
      */
     seastar::future<> Shard::stop() {
         std::stringstream ss;
-        ss << "Stopping Shard " << shard_id << '\n';
+        ss << "Stopping Shard " << seastar::this_shard_id() << '\n';
         std::cout << ss.str();
         return seastar::make_ready_future<>();
     }
@@ -36,5 +36,17 @@ namespace ragedb {
      */
     void Shard::Clear() {
 
+    }
+
+    seastar::future<std::string> Shard::HealthCheck() {
+        std::stringstream message;
+        message << "Shard " << seastar::this_shard_id() << " is OK";
+        return seastar::make_ready_future<std::string>(message.str());
+    }
+
+    seastar::future<std::vector<std::string>> Shard::HealthCheckPeered() {
+        return container().map([](Shard &local_shard) {
+            return local_shard.HealthCheck();
+        });
     }
 }

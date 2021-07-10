@@ -14,30 +14,26 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_GRAPH_H
-#define RAGEDB_GRAPH_H
+#ifndef RAGEDB_GRAPHS_H
+#define RAGEDB_GRAPHS_H
 
 
-#include <string>
-#include <seastar/core/future.hh>
-#include <seastar/core/sharded.hh>
+#include <Graph.h>
+#include <seastar/http/httpd.hh>
+#include <seastar/http/function_handlers.hh>
 
-#include "Shard.h"
+class Graphs {
+private:
+    std::unordered_map<std::string, ragedb::Graph> graphs;
+    std::unordered_map<std::string, Routes> routes;
 
-namespace ragedb {
-    class Graph {
-    private:
-        std::string name;
+public:
+    bool GraphAdd(const std::string& name);
+    bool GraphRemove(const std::string& name);
+    bool GraphClear(const std::string& name);
+    bool AddToServer(seastar::http_server_control& server);
 
-    public:
-        seastar::sharded <Shard> shard;
-        explicit Graph(std::string _name) : name (std::move(_name)) {}
+};
 
-        std::string GetName();
-        seastar::future<> Start();
-        seastar::future<> Stop();
-        void Clear();
-    };
-}
 
-#endif //RAGEDB_GRAPH_H
+#endif //RAGEDB_GRAPHS_H

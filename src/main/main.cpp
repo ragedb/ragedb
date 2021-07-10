@@ -17,21 +17,59 @@
 #include <seastar/core/app-template.hh>
 #include <seastar/core/reactor.hh>
 #include <seastar/core/thread.hh>
+#include "util/stop_signal.hh"
+#include "handlers/HealthCheck.h"
+#include <seastar/http/httpd.hh>
+#include <seastar/http/function_handlers.hh>
+#include <seastar/net/inet_address.hh>
 #include <iostream>
 #include <Graph.h>
 
+namespace bpo = boost::program_options;
+
 int main(int argc, char** argv) {
     seastar::app_template app;
+
+    //Options
+    app.add_options()("address", bpo::value<seastar::sstring>()->default_value("0.0.0.0"), "HTTP Server address");
+    app.add_options()("port", bpo::value<uint16_t>()->default_value(7243), "HTTP Server port");
+
     try {
-        app.run(argc, argv, [] {
+        app.run(argc, argv, [&] {
             std::cout << "Hello world!\n";
             std::cout << "This server has " << seastar::smp::count << " cores.\n";
 
             return seastar::async([&] {
+                seastar_apps_lib::stop_signal stop_signal;
+                auto&& config = app.configuration();
+
+                // Start Server
+                seastar::net::inet_address addr(config["address"].as<seastar::sstring>());
+                uint16_t port = config["port"].as<uint16_t>();
+                auto server = new seastar::http_server_control();
+                server->start().get();
+
                 ragedb::Graph graph("rage");
                 graph.Start().get();
-                std::cout << "Started " << graph.GetName() << " graph \n";
-                graph.Stop().get();
+                HealthCheck healthCheck(graph);
+                server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();
+
+                server->set_routes([](seastar::routes& r) {
+                    r.add(seastar::operation_type::GET,
+                          seastar::url("/hello"),
+                          new seastar::function_handler([]([[maybe_unused]] seastar::const_req req) {
+                            return  "hello";
+                          }));
+                }).get();
+
+                server->listen(seastar::socket_address{addr, port}).get();
+
+                std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
+                seastar::engine().at_exit([&server, &graph] {
+                    std::cout << "Stopping RageDB HTTP server" << std::endl;
+                    return graph.Stop().then([&] () { return server->stop(); });
+                });
+                stop_signal.wait().get();  // this will wait till we receive SIGINT or SIGTERM signal
             });
         });
     } catch (...) {
