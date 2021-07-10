@@ -33,8 +33,8 @@ namespace ragedb {
         std::vector<std::vector<Node>> nodes;                                // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
-        std::vector<Roaring64Map> ids;
-        std::vector<Roaring64Map> deleted_ids;
+        std::vector<Roaring64Map> ids;          // all ids are internal ids, TODO: Can this be eliminated?
+        std::vector<Roaring64Map> deleted_ids; // all ids are internal ids
         //TODO: Figure out Type Properties and Schema
 
     public:
@@ -74,13 +74,17 @@ namespace ragedb {
 
         bool addTypeId(const std::string &, uint16_t);
 
-        tsl::sparse_map<std::string, uint64_t> getNodeKeys(uint16_t);
+        uint64_t getNodeId(uint16_t, const std::string &);
 
-        std::vector<Node> getNodes(uint16_t);
+        uint64_t getNodeId(const std::string &, const std::string &);
 
-        std::vector<std::vector<Group>> getOutgoingRelationships(uint16_t);
+        tsl::sparse_map<std::string, uint64_t> &getNodeKeys(uint16_t);
 
-        std::vector<std::vector<Group>> getIncomingRelationships(uint16_t);
+        std::vector<Node> &getNodes(uint16_t);
+
+        std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t);
+
+        std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t);
 
     };
 }

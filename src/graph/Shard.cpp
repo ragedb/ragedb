@@ -90,6 +90,24 @@ namespace ragedb {
     //                                               Single Shard
     // *****************************************************************************************************************************
 
+    // Node Types ===========================================================================================================================
+    uint16_t Shard::NodeTypesGetCount() {
+        return node_types.getSize();
+    }
+
+    uint64_t Shard::NodeTypesGetCount(uint16_t type_id) {
+        return node_types.getCount(type_id);
+    }
+
+    uint64_t Shard::NodeTypesGetCount(const std::string &type) {
+        uint16_t type_id = node_types.getTypeId(type);
+        return NodeTypesGetCount(type_id);
+    }
+
+    std::set<std::string> Shard::NodeTypesGet() {
+        return node_types.getTypes();
+    }
+
     // Node Type ============================================================================================================================
     std::string Shard::NodeTypeGetType(uint16_t type_id) {
         return node_types.getType(type_id);
@@ -120,7 +138,6 @@ namespace ragedb {
                 node_types.getOutgoingRelationships(type_id).emplace_back();
                 node_types.getIncomingRelationships(type_id).emplace_back();
                 node_types.addId(type_id, internal_id);
-                //TODO: Making type_id ids all internal ids
             } else {
                 internal_id = node_types.getDeletedIds(type_id).minimum();
                 external_id = internalToExternal(type_id, internal_id);
@@ -134,6 +151,16 @@ namespace ragedb {
         }
 
         return external_id;
+    }
+
+    uint64_t Shard::NodeGetID(const std::string &type, const std::string &key) {
+        // Check if the Type exists
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id > 0) {
+            return node_types.getNodeId(type_id, key);
+        }
+        // Invalid Type or Key
+        return 0;
     }
 
     // *****************************************************************************************************************************

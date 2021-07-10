@@ -36,16 +36,11 @@ namespace ragedb {
         seastar::rwlock rel_type_lock;
         seastar::rwlock node_type_lock;
 
-        //std::map<std::string, tsl::sparse_map<std::string, uint64_t>> node_keys;    // "Index" to get node id by type:key
         NodeTypes node_types;                                                       // Store string and id of node types
         RelationshipTypes relationship_types;                                       // Store string and id of relationship types
 
     public:
-        explicit Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
-            std::stringstream ss;
-            ss << "Starting Shard " << shard_id << '\n';
-            std::cout << ss.str();
-        }
+        explicit Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {}
 
         static seastar::future<> stop();
         void Clear();
@@ -63,6 +58,12 @@ namespace ragedb {
 
         static seastar::future<std::string> HealthCheck();
 
+        // Node Types
+        uint16_t NodeTypesGetCount();
+        uint64_t NodeTypesGetCount(uint16_t type_id);
+        uint64_t NodeTypesGetCount(const std::string& type);
+        std::set<std::string> NodeTypesGet();
+
         // Node Type
         std::string NodeTypeGetType(uint16_t type_id);
         uint16_t NodeTypeGetTypeId(const std::string& type);
@@ -70,6 +71,7 @@ namespace ragedb {
 
         // Nodes
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
+        uint64_t NodeGetID(const std::string& type, const std::string& key);
 
         // *****************************************************************************************************************************
         //                                               Peered

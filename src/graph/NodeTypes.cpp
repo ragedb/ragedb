@@ -15,6 +15,7 @@
  */
 
 #include <tsl/sparse_map.h>
+#include <iostream>
 #include "NodeTypes.h"
 
 
@@ -187,19 +188,40 @@ namespace ragedb {
         }
     }
 
-    tsl::sparse_map<std::string, uint64_t> NodeTypes::getNodeKeys(uint16_t type_id) {
+    tsl::sparse_map<std::string, uint64_t> &NodeTypes::getNodeKeys(uint16_t type_id) {
         return node_keys[type_id];
     }
 
-    std::vector<Node> NodeTypes::getNodes(uint16_t type_id) {
+    uint64_t NodeTypes::getNodeId(uint16_t type_id, const std::string& key) {
+        if(ValidTypeId(type_id)) {
+            auto key_search = node_keys[type_id].find(key);
+            if (key_search != std::end(node_keys[type_id])) {
+                return key_search->second;
+            }
+        }
+        return 0;
+    }
+
+    uint64_t NodeTypes::getNodeId(const std::string& type, const std::string& key) {
+        uint16_t type_id = getTypeId(type);
+        if(ValidTypeId(type_id)) {
+            auto key_search = node_keys[type_id].find(key);
+            if (key_search != std::end(node_keys[type_id])) {
+                return key_search->second;
+            }
+        }
+        return 0;
+    }
+
+    std::vector<Node>& NodeTypes::getNodes(uint16_t type_id) {
         return nodes[type_id];
     }
 
-    std::vector<std::vector<Group>> NodeTypes::getOutgoingRelationships(uint16_t type_id) {
+    std::vector<std::vector<Group>>& NodeTypes::getOutgoingRelationships(uint16_t type_id) {
         return outgoing_relationships[type_id];
     }
 
-    std::vector<std::vector<Group>> NodeTypes::getIncomingRelationships(uint16_t type_id) {
+    std::vector<std::vector<Group>>& NodeTypes::getIncomingRelationships(uint16_t type_id) {
         return incoming_relationships[type_id];
     }
 

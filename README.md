@@ -55,3 +55,7 @@ Install LuaJIT
 If you get errors regarding conan locks, run:
 
     conan remove --locks
+
+### Technical Debt
+
+    - NodeTypes and RelationshipTypes should allow type deletion and type id reuse
