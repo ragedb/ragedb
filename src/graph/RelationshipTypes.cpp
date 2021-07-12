@@ -25,6 +25,28 @@ namespace ragedb {
         // start with empty blank type
         type_to_id.emplace("", 0);
         id_to_type.emplace_back("");
+        relationships.emplace_back();
+        relationship_properties.emplace_back();
+        ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(Roaring64Map());
+    }
+
+    void RelationshipTypes::Clear() {
+        type_to_id.clear();
+        id_to_type.clear();
+        id_to_type.shrink_to_fit();
+        relationships.clear();
+        relationships.shrink_to_fit();
+        relationship_properties.clear();
+        relationship_properties.shrink_to_fit();
+        ids.clear();
+        deleted_ids.clear();
+
+        // start with empty blank type
+        type_to_id.emplace("", 0);
+        id_to_type.emplace_back("");
+        relationships.emplace_back();
+        relationship_properties.emplace_back();
         ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
     }

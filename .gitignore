@@ -3,6 +3,7 @@
 
 # Build directories
 cmake-build-debug/
+cmake-build-debug-coverage/
 cmake-build-minsizerel/
 cmake-build-release/
 cmake-build-relwithdebinfo/

@@ -29,10 +29,39 @@ namespace ragedb {
         id_to_type.emplace_back();
         node_keys.emplace_back(tsl::sparse_map<std::string, uint64_t>());
         nodes.emplace_back(std::vector<Node>());
+        node_properties.emplace_back();
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
         ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
+    }
+
+    void NodeTypes::Clear() {
+        type_to_id.clear();
+        id_to_type.clear();
+        id_to_type.shrink_to_fit();
+        node_keys.clear();
+        node_keys.shrink_to_fit();
+        nodes.clear();
+        nodes.shrink_to_fit();
+        node_properties.clear();
+        node_properties.shrink_to_fit();
+        outgoing_relationships.clear();
+        outgoing_relationships.shrink_to_fit();
+        incoming_relationships.clear();
+        incoming_relationships.shrink_to_fit();
+        ids.clear();
+        ids.shrink_to_fit();
+        deleted_ids.clear();
+        deleted_ids.shrink_to_fit();
+
+        // start with empty blank type 0
+        type_to_id.emplace("", 0);
+        id_to_type.emplace_back();
+        node_keys.emplace_back(tsl::sparse_map<std::string, uint64_t>());
+        nodes.emplace_back(std::vector<Node>());
+        outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
+        incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
     }
 
     uint16_t NodeTypes::getTypeId(const std::string &type) {

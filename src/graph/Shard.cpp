@@ -41,7 +41,8 @@ namespace ragedb {
      * Empty the Shard of all data
      */
     void Shard::Clear() {
-
+        node_types.Clear();
+        relationship_types.Clear();
     }
 
     seastar::future<std::string> Shard::HealthCheck() {
@@ -106,6 +107,28 @@ namespace ragedb {
 
     std::set<std::string> Shard::NodeTypesGet() {
         return node_types.getTypes();
+    }
+
+    // Relationship Types ===================================================================================================================
+    uint16_t Shard::RelationshipTypesGetCount() {
+        return relationship_types.getSize();
+    }
+
+    uint64_t Shard::RelationshipTypesGetCount(uint16_t type_id) {
+        if (relationship_types.ValidTypeId(type_id)) {
+            return relationship_types.getCount(type_id);
+        }
+        // Not a valid Relationship Type
+        return 0;
+    }
+
+    uint64_t Shard::RelationshipTypesGetCount(const std::string &type) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        return RelationshipTypesGetCount(type_id);
+    }
+
+    std::set<std::string> Shard::RelationshipTypesGet() {
+        return relationship_types.getTypes();
     }
 
     // Node Type ============================================================================================================================

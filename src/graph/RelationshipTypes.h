@@ -40,6 +40,8 @@ namespace ragedb {
     public:
         RelationshipTypes();
 
+        void Clear();
+
         uint16_t getTypeId(const std::string &);
 
         uint16_t insertOrGetTypeId(const std::string &);
