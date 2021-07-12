@@ -70,14 +70,19 @@ namespace ragedb {
         uint16_t NodeTypeGetTypeId(const std::string& type);
         bool NodeTypeInsert(const std::string& type, uint16_t type_id);
 
+        // Relationship Type
+        std::string RelationshipTypeGetType(uint16_t type_id);
+        uint16_t RelationshipTypeGetTypeId(const std::string& type);
+        bool RelationshipTypeInsert(const std::string& type, uint16_t type_id);
+
         // Nodes
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
 
         // Property Types
-        seastar::future<uint8_t> NodePropertyTypeAdd(uint16_t type_id, const std::string& key, const std::string& type);
-        seastar::future<uint8_t> RelationshipPropertyTypeAdd(uint16_t type_id, const std::string key, const std::string type);
+        uint8_t NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
+        uint8_t RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
 
 
         // *****************************************************************************************************************************
@@ -91,13 +96,20 @@ namespace ragedb {
         uint16_t NodeTypeGetTypeIdPeered(const std::string& type);
         seastar::future<uint16_t> NodeTypeInsertPeered(const std::string& type);
 
+        // Relationship Type
+        std::string RelationshipTypeGetTypePeered(uint16_t type_id);
+        uint16_t RelationshipTypeGetTypeIdPeered(const std::string& type);
+        seastar::future<uint16_t> RelationshipTypeInsertPeered(const std::string& type);
+
         // Nodes
         seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
         seastar::future<uint64_t> NodeAddPeered(const std::string& type, const std::string& key, const std::string& properties);
 
         // Property Types
+        seastar::future<uint8_t> NodePropertyTypeInsertPeered(uint16_t type_id, const std::string& key, const std::string& type);
+        seastar::future<uint8_t> RelationshipPropertyTypeInsertPeered(uint16_t type_id, const std::string& key, const std::string& type);
         seastar::future<uint8_t> NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type);
-        seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& node_type, const std::string key, const std::string type);
+        seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& relationship_type, const std::string& key, const std::string& type);
 
     };
 }

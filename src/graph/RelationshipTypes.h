@@ -21,6 +21,7 @@
 #include <roaring/roaring64map.hh>
 #include <set>
 #include "Relationship.h"
+#include "Properties.h"
 
 namespace ragedb {
 
@@ -28,9 +29,12 @@ namespace ragedb {
     private:
         std::unordered_map<std::string, uint16_t> type_to_id;
         std::vector<std::string> id_to_type;
-        std::vector<std::vector<Relationship>> relationships;                                    // Store of the properties of Relationships
+        std::vector<std::vector<Relationship>> relationships;                         // Store of the meta-properties of Relationships
+        std::vector<Properties> relationship_properties;                             // Store of the properties of Relationships
         std::vector<Roaring64Map> ids;
         std::vector<Roaring64Map> deleted_ids;
+
+        simdjson::dom::parser parser;
         //TODO: Figure out Type Properties and Schema
 
     public:
@@ -69,6 +73,10 @@ namespace ragedb {
         std::map<uint16_t, uint64_t> getCounts();
 
         bool addTypeId(const std::string &, uint16_t);
+
+        Properties &getRelationshipTypeProperties(uint16_t);
+
+        bool setProperties(uint16_t, uint64_t, const std::string &);
     };
 }
 

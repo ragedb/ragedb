@@ -47,10 +47,13 @@ namespace ragedb {
         const std::vector<double> tombstone_list_of_doubles = std::vector<double>();
         const std::vector<std::string> tombstone_list_of_strings = std::vector<std::string>();
 
+        void addPropertyTypeVectors(const std::string &key, uint8_t type_id);
+
     public:
         Properties();
         seastar::rwlock property_type_lock;
 
+        uint8_t setPropertyTypeId(const std::string& key, uint8_t property_type_id);
         uint8_t setPropertyType(const std::string& key, const std::string& type);
 
         tsl::sparse_map<std::string, std::vector<bool>> & getAllBooleanProperties();
@@ -73,6 +76,7 @@ namespace ragedb {
         bool setListOfIntegerProperty(const std::string&, uint64_t, const std::vector<int64_t>&);
         bool setListOfDoubleProperty(const std::string&, uint64_t, const std::vector<double>&);
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
+
 
     };
 }

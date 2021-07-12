@@ -40,31 +40,23 @@ namespace ragedb {
         {"string[]", list_of_strings_type}
     };
 
-
-    uint8_t Properties::setPropertyType(const std::string& key, const std::string& type) {
-        // What type do we want?
-        uint8_t type_id = 0;
-        auto type_search = type_map.find(type);
-        if (type_search != type_map.end()) {
-            type_id = type_map[type];
-        }
-
-        if (type_id == 0) {
-            // We have a bad type
-            return 0;
-        }
-
-        // See if we already have it set
+    uint8_t Properties::setPropertyTypeId(const std::string& key, uint8_t property_type_id) {
         if(types.find(key) != types.end()) {
-            if (types[key] == type_id) {
-                return type_id;
+            if (types[key] == property_type_id) {
+                return property_type_id;
             }
             // Type already exists and it is not what we asked for
             return 0;
         }
 
-        types.emplace(key, type_id);
+        types.emplace(key, property_type_id);
 
+        addPropertyTypeVectors(key, property_type_id);
+
+        return property_type_id;
+    }
+
+    void Properties::addPropertyTypeVectors(const std::string& key, uint8_t type_id) {
         switch(type_id) {
             case boolean_type: {
                 booleans.emplace(key, std::vector<bool>());
@@ -99,9 +91,36 @@ namespace ragedb {
                 break;
             }
             default: {
-                return 0;
+                return;
             }
         }
+    }
+
+    uint8_t Properties::setPropertyType(const std::string& key, const std::string& type) {
+        // What type do we want?
+        uint8_t type_id = 0;
+        auto type_search = type_map.find(type);
+        if (type_search != type_map.end()) {
+            type_id = type_map[type];
+        }
+
+        if (type_id == 0) {
+            // We have a bad type
+            return 0;
+        }
+
+        // See if we already have it set
+        if(types.find(key) != types.end()) {
+            if (types[key] == type_id) {
+                return type_id;
+            }
+            // Type already exists and it is not what we asked for
+            return 0;
+        }
+
+        types.emplace(key, type_id);
+
+        addPropertyTypeVectors(key, type_id);
 
         return type_id;
     }
