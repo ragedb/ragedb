@@ -152,6 +152,39 @@ namespace ragedb {
 
         return external_id;
     }
+    uint64_t Shard::NodeAdd(uint16_t type_id, const std::string &key, const std::string &properties) {
+        uint64_t internal_id = node_types.getCount(type_id);
+        uint64_t external_id = 0;
+
+        // Check if the key exists
+        auto key_search = node_types.getNodeKeys(type_id).find(key);
+        if (key_search == std::end(node_types.getNodeKeys(type_id))) {
+            // If we have deleted nodes, fill in the space by adding the new node here
+            if (node_types.getDeletedIds(type_id).isEmpty()) {
+                external_id = internalToExternal(type_id, internal_id);
+                // Set Metadata properties
+                // Add the node to the end and prepare a place for its relationships
+                node_types.getNodes(type_id).emplace_back(external_id, key);
+                node_types.getOutgoingRelationships(type_id).emplace_back();
+                node_types.getIncomingRelationships(type_id).emplace_back();
+                node_types.addId(type_id, internal_id);
+                node_types.setProperties(type_id, internal_id, properties);
+            } else {
+                internal_id = node_types.getDeletedIds(type_id).minimum();
+                external_id = internalToExternal(type_id, internal_id);
+                // Set Metadata properties
+                Node node(external_id, key);
+                // Replace the deleted node and remove it from the list
+                node_types.getNodes(type_id).at(internal_id) = node;
+                node_types.addId(type_id, internal_id);
+                node_types.setProperties(type_id, internal_id, properties);
+            }
+            node_types.getNodeKeys(type_id).insert({key, external_id });
+        }
+
+        return external_id;
+
+    }
 
     uint64_t Shard::NodeGetID(const std::string &type, const std::string &key) {
         // Check if the Type exists
@@ -198,24 +231,78 @@ namespace ragedb {
     // Nodes ===============================================================================================================================
 
     seastar::future<uint64_t> Shard::NodeAddEmptyPeered(const std::string &type, const std::string &key) {
-        uint16_t shard_id = CalculateShardId(type, key);
+        uint16_t node_shard_id = CalculateShardId(type, key);
         uint16_t type_id = node_types.getTypeId(type);
 
         // The node type exists, so continue on
         if (type_id > 0) {
-            return container().invoke_on(shard_id, [type_id, key](Shard &local_shard) {
+            return container().invoke_on(node_shard_id, [type_id, key](Shard &local_shard) {
                 return local_shard.NodeAddEmpty(type_id, key);
             });
         }
 
         // The node type needs to be set by Shard 0 and propagated
-        return container().invoke_on(0, [shard_id, type, key, this] (Shard &local_shard) {
-            return local_shard.NodeTypeInsertPeered(type).then([shard_id, type, key, this] (uint16_t node_type_id) {
-                return container().invoke_on(shard_id, [node_type_id, key](Shard &local_shard) {
+        return container().invoke_on(0, [node_shard_id, type, key, this] (Shard &local_shard) {
+            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, type, key, this] (uint16_t node_type_id) {
+                return container().invoke_on(node_shard_id, [node_type_id, key](Shard &local_shard) {
                     return local_shard.NodeAddEmpty(node_type_id, key);
                 });
             });
         });
+    }
+
+    seastar::future<uint64_t> Shard::NodeAddPeered(const std::string &type, const std::string &key, const std::string &properties) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+        uint16_t node_type_id = node_types.getTypeId(type);
+
+        // The node type exists, so continue on
+        if (node_type_id > 0) {
+            return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
+                return local_shard.NodeAdd(node_type_id, key, properties);
+            });
+        }
+
+        // The node type needs to be set by Shard 0 and propagated
+        return container().invoke_on(0, [node_shard_id, type, key, properties, this](Shard &local_shard) {
+            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, properties, this](uint16_t node_type_id) {
+                return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
+                    return local_shard.NodeAdd(node_type_id, key, properties);
+                });
+            });
+        });
+    }
+
+    seastar::future<uint8_t> Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, const std::string& type) {
+        return node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().lock().then([type_id, key, type, this] {
+            uint8_t property_type_id = node_types.getNodeTypeProperties(type_id).setPropertyType(key, type);
+            return container().invoke_on_all([type_id, key, type](Shard &all_shards) {
+                all_shards.node_types.getNodeTypeProperties(type_id).setPropertyType(key, type);
+            }).then([type_id, property_type_id, this] {
+                this->node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().unlock();
+                return seastar::make_ready_future<uint8_t>(property_type_id);
+            });
+        });
+    }
+
+    seastar::future<uint8_t> Shard::NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type) {
+        uint16_t node_type_id = node_types.getTypeId(type);
+        if (node_type_id == 0) {
+            return container().invoke_on(0, [node_type, key, type, this] (Shard &local_shard) {
+                return local_shard.NodeTypeInsertPeered(node_type).then([node_type, key, type, this](uint16_t node_type_id) {
+                    return container().invoke_on(0, [node_type_id, key, type] (Shard &local_shard) {
+                        return local_shard.NodePropertyTypeAdd(node_type_id, key, type);
+                    });
+                });
+            });
+        }
+
+        return container().invoke_on(0, [node_type_id, key, type] (Shard &local_shard) {
+            return local_shard.NodePropertyTypeAdd(node_type_id, key, type);
+        });
+    }
+
+    seastar::future<uint8_t> Shard::RelationshipPropertyTypeAddPeered(const std::string& node_type, const std::string key, const std::string type) {
+
     }
 
 }

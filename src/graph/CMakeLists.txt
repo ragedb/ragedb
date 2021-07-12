@@ -6,7 +6,8 @@ set(HEADER_FILES
         Node.h
         Relationship.h
         NodeTypes.h
-        RelationshipTypes.h)
+        RelationshipTypes.h
+        Properties.h)
 
 set(SOURCE_FILES
         Graph.cpp
@@ -16,6 +17,7 @@ set(SOURCE_FILES
         Node.cpp
         Relationship.cpp
         NodeTypes.cpp
-        RelationshipTypes.cpp )
+        RelationshipTypes.cpp
+        Properties.cpp )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

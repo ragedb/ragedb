@@ -16,7 +16,9 @@
 
 #include <tsl/sparse_map.h>
 #include <iostream>
+#include <simdjson.h>
 #include "NodeTypes.h"
+#include "Shard.h"
 
 
 namespace ragedb {
@@ -211,6 +213,101 @@ namespace ragedb {
             }
         }
         return 0;
+    }
+
+    Properties &NodeTypes::getNodeTypeProperties(uint16_t type_id) {
+        return node_properties[type_id];
+    }
+
+    bool NodeTypes::setProperties(uint16_t type_id, uint64_t internal_id, const std::string& properties) {
+        if (!properties.empty()) {
+            // Get the properties
+            simdjson::dom::object object;
+            simdjson::error_code error = parser.parse(properties).get(object);
+
+            if (!error) {
+                // Add the node properties
+                for (auto[key, value] : object) {
+                    auto property = static_cast<std::string>(key);
+                    switch (value.type()) {
+                        case simdjson::dom::element_type::INT64:
+                            node_properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
+                            break;
+                        case simdjson::dom::element_type::UINT64:
+                            // Unsigned Integer Values are not allowed, convert to signed
+                            node_properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
+                            break;
+                        case simdjson::dom::element_type::DOUBLE:
+                            node_properties[type_id].setDoubleProperty(property, internal_id, double(value));
+                            break;
+                        case simdjson::dom::element_type::STRING:
+                            node_properties[type_id].setStringProperty(property, internal_id, std::string(value));
+                            break;
+                        case simdjson::dom::element_type::BOOL:
+                            node_properties[type_id].setBooleanProperty(property, internal_id, bool(value));
+                            break;
+                        case simdjson::dom::element_type::NULL_VALUE:
+                            // Null Values are not allowed, just ignore them
+                            break;
+                        case simdjson::dom::element_type::OBJECT: {
+                            // TODO: Add support for nested properties
+                            break;
+                        }
+                        case simdjson::dom::element_type::ARRAY: {
+                            auto array = simdjson::dom::array(value);
+                            if (array.size() > 0) {
+                                simdjson::dom::element first = array.at(0);
+                                std::vector<int64_t> int_vector;
+                                std::vector<double> double_vector;
+                                std::vector<std::string> string_vector;
+                                std::vector<bool> bool_vector;
+                                switch (first.type()) {
+                                    case simdjson::dom::element_type::ARRAY:
+                                        break;
+                                    case simdjson::dom::element_type::OBJECT:
+                                        break;
+                                    case simdjson::dom::element_type::INT64:
+                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                            int_vector.emplace_back(int64_t(child));
+                                        }
+                                        node_properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        break;
+                                    case simdjson::dom::element_type::UINT64:
+                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                            int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
+                                        }
+                                        node_properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        break;
+                                    case simdjson::dom::element_type::DOUBLE:
+                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                            double_vector.emplace_back(double(child));
+                                        }
+                                        node_properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                                        break;
+                                    case simdjson::dom::element_type::STRING:
+                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                            string_vector.emplace_back(child);
+                                        }
+                                        node_properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+                                        break;
+                                    case simdjson::dom::element_type::BOOL:
+                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                            bool_vector.emplace_back(bool(child));
+                                        }
+                                        node_properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
+                                        break;
+                                    case simdjson::dom::element_type::NULL_VALUE:
+                                        // Null Values are not allowed, just ignore them
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     std::vector<Node>& NodeTypes::getNodes(uint16_t type_id) {

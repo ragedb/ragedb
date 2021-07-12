@@ -22,6 +22,7 @@
 #include <set>
 #include "Group.h"
 #include "Node.h"
+#include "Properties.h"
 
 namespace ragedb {
 
@@ -30,11 +31,14 @@ namespace ragedb {
         std::unordered_map<std::string, uint16_t> type_to_id;
         std::vector<std::string> id_to_type;
         std::vector<tsl::sparse_map<std::string, uint64_t>> node_keys;       // "Index" to get node id by type:key
-        std::vector<std::vector<Node>> nodes;                                // Store of the properties of Nodes
+        std::vector<std::vector<Node>> nodes;                                // Store of the meta-properties of Nodes
+        std::vector<Properties> node_properties;                             // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
         std::vector<Roaring64Map> ids;          // all ids are internal ids, TODO: Can this be eliminated?
         std::vector<Roaring64Map> deleted_ids; // all ids are internal ids
+
+        simdjson::dom::parser parser;
         //TODO: Figure out Type Properties and Schema
 
     public:
@@ -77,6 +81,10 @@ namespace ragedb {
         uint64_t getNodeId(uint16_t, const std::string &);
 
         uint64_t getNodeId(const std::string &, const std::string &);
+
+        Properties &getNodeTypeProperties(uint16_t);
+
+        bool setProperties(uint16_t, uint64_t, const std::string &);
 
         tsl::sparse_map<std::string, uint64_t> &getNodeKeys(uint16_t);
 

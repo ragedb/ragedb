@@ -19,6 +19,7 @@
 
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
+#include <simdjson.h>
 #include <tsl/sparse_map.h>
 #include "Node.h"
 #include "Relationship.h"
@@ -71,7 +72,13 @@ namespace ragedb {
 
         // Nodes
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
+        uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
+
+        // Property Types
+        seastar::future<uint8_t> NodePropertyTypeAdd(uint16_t type_id, const std::string& key, const std::string& type);
+        seastar::future<uint8_t> RelationshipPropertyTypeAdd(uint16_t type_id, const std::string key, const std::string type);
+
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -86,6 +93,12 @@ namespace ragedb {
 
         // Nodes
         seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
+        seastar::future<uint64_t> NodeAddPeered(const std::string& type, const std::string& key, const std::string& properties);
+
+        // Property Types
+        seastar::future<uint8_t> NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type);
+        seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& node_type, const std::string key, const std::string type);
+
     };
 }
 
