@@ -17,7 +17,9 @@
 #ifndef RAGEDB_PROPERTIES_H
 #define RAGEDB_PROPERTIES_H
 
+#include <any>
 #include <cstdint>
+#include <map>
 #include <tsl/sparse_map.h>
 #include <seastar/core/rwlock.hh>
 
@@ -77,6 +79,7 @@ namespace ragedb {
         bool setListOfDoubleProperty(const std::string&, uint64_t, const std::vector<double>&);
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
 
+        std::map<std::string, std::any> getProperties(uint64_t);
 
     };
 }

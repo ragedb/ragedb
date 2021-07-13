@@ -87,6 +87,15 @@ namespace ragedb {
         return (uint16_t)(((__uint128_t)x64 * (__uint128_t)cpus) >> SIXTY_FOUR);
     }
 
+    bool Shard::ValidNodeId(uint64_t id) {
+        // Node must be greater than zero,
+        // less than maximum node id,
+        // belong to this shard
+        // and not deleted
+        return CalculateShardId(id) == seastar::this_shard_id()
+               && node_types.ValidNodeId(externalToTypeId(id), externalToInternal(id));
+    }
+
     // *****************************************************************************************************************************
     //                                               Single Shard
     // *****************************************************************************************************************************
@@ -168,44 +177,42 @@ namespace ragedb {
         uint64_t external_id = 0;
 
         // Check if the key exists
-        auto key_search = node_types.getNodeKeys(type_id).find(key);
-        if (key_search == std::end(node_types.getNodeKeys(type_id))) {
+        auto key_search = node_types.getKeysToNodeId(type_id).find(key);
+        if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
             // If we have deleted nodes, fill in the space by adding the new node here
             if (node_types.getDeletedIds(type_id).isEmpty()) {
                 external_id = internalToExternal(type_id, internal_id);
                 // Set Metadata properties
                 // Add the node to the end and prepare a place for its relationships
-                node_types.getNodes(type_id).emplace_back(external_id, key);
+                node_types.getKeys(type_id).emplace_back(key);
                 node_types.getOutgoingRelationships(type_id).emplace_back();
                 node_types.getIncomingRelationships(type_id).emplace_back();
                 node_types.addId(type_id, internal_id);
             } else {
                 internal_id = node_types.getDeletedIds(type_id).minimum();
                 external_id = internalToExternal(type_id, internal_id);
-                // Set Metadata properties
-                Node node(external_id, key);
                 // Replace the deleted node and remove it from the list
-                node_types.getNodes(type_id).at(internal_id) = node;
+                node_types.getKeys(type_id).at(internal_id) = key;
                 node_types.addId(type_id, internal_id);
             }
-            node_types.getNodeKeys(type_id).insert({key, external_id });
+            node_types.getKeysToNodeId(type_id).insert({key, external_id });
         }
 
         return external_id;
     }
+
     uint64_t Shard::NodeAdd(uint16_t type_id, const std::string &key, const std::string &properties) {
         uint64_t internal_id = node_types.getCount(type_id);
         uint64_t external_id = 0;
 
         // Check if the key exists
-        auto key_search = node_types.getNodeKeys(type_id).find(key);
-        if (key_search == std::end(node_types.getNodeKeys(type_id))) {
+        auto key_search = node_types.getKeysToNodeId(type_id).find(key);
+        if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
             // If we have deleted nodes, fill in the space by adding the new node here
             if (node_types.getDeletedIds(type_id).isEmpty()) {
                 external_id = internalToExternal(type_id, internal_id);
-                // Set Metadata properties
                 // Add the node to the end and prepare a place for its relationships
-                node_types.getNodes(type_id).emplace_back(external_id, key);
+                node_types.getKeys(type_id).emplace_back(key);
                 node_types.getOutgoingRelationships(type_id).emplace_back();
                 node_types.getIncomingRelationships(type_id).emplace_back();
                 node_types.addId(type_id, internal_id);
@@ -213,18 +220,16 @@ namespace ragedb {
             } else {
                 internal_id = node_types.getDeletedIds(type_id).minimum();
                 external_id = internalToExternal(type_id, internal_id);
-                // Set Metadata properties
-                Node node(external_id, key);
+
                 // Replace the deleted node and remove it from the list
-                node_types.getNodes(type_id).at(internal_id) = node;
+                node_types.getKeys(type_id).at(internal_id) = key;
                 node_types.addId(type_id, internal_id);
                 node_types.setProperties(type_id, internal_id, properties);
             }
-            node_types.getNodeKeys(type_id).insert({key, external_id });
+            node_types.getKeysToNodeId(type_id).insert({key, external_id });
         }
 
         return external_id;
-
     }
 
     uint64_t Shard::NodeGetID(const std::string &type, const std::string &key) {
@@ -237,7 +242,36 @@ namespace ragedb {
         return 0;
     }
 
+    Node Shard::NodeGet(uint64_t id) {
+        if (ValidNodeId(id)) {
+            return node_types.getNode(externalToTypeId(id), externalToInternal(id), id);
+        }
+        return Node();
+    }
 
+    Node Shard::NodeGet(const std::string& type, const std::string& key) {
+        return NodeGet(NodeGetID(type, key));
+    }
+
+    uint16_t Shard::NodeGetTypeId(uint64_t id) {
+        return externalToTypeId(id);
+    }
+
+    std::string Shard::NodeGetType(uint64_t id) {
+        if (ValidNodeId(id)) {
+            return node_types.getType(externalToTypeId(id));
+        }
+        return node_types.getType(0);
+    }
+
+    std::string Shard::NodeGetKey(uint64_t id) {
+        if (ValidNodeId(id)) {
+            return node_types.getKeys(externalToTypeId(id))[externalToInternal(id)];
+        }
+        return node_types.getType(0);
+    }
+
+    // Property Types =======================================================================================================================
     uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
         return node_types.getNodeTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
     }
@@ -350,6 +384,30 @@ namespace ragedb {
                     return local_shard.NodeAdd(node_type_id, key, properties);
                 });
             });
+        });
+    }
+
+    seastar::future<uint64_t> Shard::NodeGetIDPeered(const std::string &type, const std::string &key) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key] (Shard &local_shard) {
+           return local_shard.NodeGetID(type, key);
+        });
+    }
+
+    seastar::future<Node> Shard::NodeGetPeered(const std::string &type, const std::string &key) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
+            return local_shard.NodeGet(type, key);
+        });
+    }
+
+    seastar::future<Node> Shard::NodeGetPeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodeGet(id);
         });
     }
 

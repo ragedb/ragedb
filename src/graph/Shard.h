@@ -52,6 +52,7 @@ namespace ragedb {
         static uint16_t externalToTypeId(uint64_t id);
         static uint16_t CalculateShardId(uint64_t id);
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
+        bool ValidNodeId(uint64_t id);
 
         // *****************************************************************************************************************************
         //                                               Single Shard
@@ -85,6 +86,11 @@ namespace ragedb {
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
+        Node NodeGet(uint64_t id);
+        Node NodeGet(const std::string& type, const std::string& key);
+        static uint16_t NodeGetTypeId(uint64_t id);
+        std::string NodeGetType(uint64_t id);
+        std::string NodeGetKey(uint64_t id);
 
         // Property Types
         uint8_t NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
@@ -110,6 +116,15 @@ namespace ragedb {
         // Nodes
         seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
         seastar::future<uint64_t> NodeAddPeered(const std::string& type, const std::string& key, const std::string& properties);
+        seastar::future<uint64_t> NodeGetIDPeered(const std::string& type, const std::string& key);
+
+        seastar::future<Node> NodeGetPeered(const std::string& type, const std::string& key);
+        seastar::future<Node> NodeGetPeered(uint64_t id);
+        seastar::future<bool> NodeRemovePeered(const std::string& type, const std::string& key);
+        seastar::future<bool> NodeRemovePeered(uint64_t id);
+        seastar::future<uint16_t> NodeGetTypeIdPeered(uint64_t id);
+        seastar::future<std::string> NodeGetTypePeered(uint64_t id);
+        seastar::future<std::string> NodeGetKeyPeered(uint64_t id);
 
         // Property Types
         seastar::future<uint8_t> NodePropertyTypeInsertPeered(uint16_t type_id, const std::string& key, const std::string& type);

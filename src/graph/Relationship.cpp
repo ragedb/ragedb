@@ -19,11 +19,21 @@
 
 namespace ragedb {
 
+    Relationship::Relationship() = default;
+
     Relationship::Relationship(uint64_t id,
                                uint64_t startingNodeId,
                                uint64_t endingNodeId) : id(id),
                                starting_node_id(startingNodeId),
                                ending_node_id(endingNodeId) {}
+
+    Relationship::Relationship(uint64_t id,
+                               uint64_t startingNodeId,
+                               uint64_t endingNodeId,
+                               std::map<std::string, std::any>  properties) : id(id),
+                                                        starting_node_id(startingNodeId),
+                                                        ending_node_id(endingNodeId),
+                                                        properties(std::move(properties)){}
 
     uint64_t Relationship::getId() const {
         return id;
@@ -39,6 +49,10 @@ namespace ragedb {
 
     uint64_t Relationship::getEndingNodeId() const {
         return ending_node_id;
+    }
+
+    std::map<std::string, std::any> Node::getProperties() const {
+        return properties;
     }
 
 }

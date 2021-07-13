@@ -30,18 +30,18 @@ namespace ragedb {
     const static uint8_t list_of_strings_type = 8;
 
     tsl::sparse_map<std::string, uint8_t> type_map = {
-        {"boolean", boolean_type},
-        {"integer", integer_type},
-        {"double", double_type},
-        {"string", string_type},
-        {"boolean[]", list_of_booleans_type},
-        {"integer[]", list_of_integers_type},
-        {"double[]", list_of_doubles_type},
-        {"string[]", list_of_strings_type}
+            {"boolean",   boolean_type},
+            {"integer",   integer_type},
+            {"double",    double_type},
+            {"string",    string_type},
+            {"boolean[]", list_of_booleans_type},
+            {"integer[]", list_of_integers_type},
+            {"double[]",  list_of_doubles_type},
+            {"string[]",  list_of_strings_type}
     };
 
-    uint8_t Properties::setPropertyTypeId(const std::string& key, uint8_t property_type_id) {
-        if(types.find(key) != types.end()) {
+    uint8_t Properties::setPropertyTypeId(const std::string &key, uint8_t property_type_id) {
+        if (types.find(key) != types.end()) {
             if (types[key] == property_type_id) {
                 return property_type_id;
             }
@@ -56,8 +56,8 @@ namespace ragedb {
         return property_type_id;
     }
 
-    void Properties::addPropertyTypeVectors(const std::string& key, uint8_t type_id) {
-        switch(type_id) {
+    void Properties::addPropertyTypeVectors(const std::string &key, uint8_t type_id) {
+        switch (type_id) {
             case boolean_type: {
                 booleans.emplace(key, std::vector<bool>());
                 break;
@@ -96,7 +96,7 @@ namespace ragedb {
         }
     }
 
-    uint8_t Properties::setPropertyType(const std::string& key, const std::string& type) {
+    uint8_t Properties::setPropertyType(const std::string &key, const std::string &type) {
         // What type do we want?
         uint8_t type_id = 0;
         auto type_search = type_map.find(type);
@@ -110,7 +110,7 @@ namespace ragedb {
         }
 
         // See if we already have it set
-        if(types.find(key) != types.end()) {
+        if (types.find(key) != types.end()) {
             if (types[key] == type_id) {
                 return type_id;
             }
@@ -125,99 +125,99 @@ namespace ragedb {
         return type_id;
     }
 
-    tsl::sparse_map<std::string, std::vector<bool>> & Properties::getAllBooleanProperties() {
+    tsl::sparse_map<std::string, std::vector<bool>> &Properties::getAllBooleanProperties() {
         return booleans;
     }
 
-    bool Properties::getBooleanProperty(const std::string& key, uint64_t index) {
+    bool Properties::getBooleanProperty(const std::string &key, uint64_t index) {
         auto search = booleans.find(key);
 
         if (search != booleans.end()) {
-            if (index < booleans[key].size() ) {
+            if (index < booleans[key].size()) {
                 return booleans[key][index];
             }
         }
         return tombstone_boolean;
     }
 
-    int64_t Properties::getIntegerProperty(const std::string& key, uint64_t index) {
+    int64_t Properties::getIntegerProperty(const std::string &key, uint64_t index) {
         auto search = integers.find(key);
 
         if (search != integers.end()) {
-            if (index < integers[key].size() ) {
+            if (index < integers[key].size()) {
                 return integers[key][index];
             }
         }
         return tombstone_int;
     }
 
-    double Properties::getDoubleProperty(const std::string& key, uint64_t index) {
+    double Properties::getDoubleProperty(const std::string &key, uint64_t index) {
         auto search = doubles.find(key);
 
         if (search != doubles.end()) {
-            if (index < doubles[key].size() ) {
+            if (index < doubles[key].size()) {
                 return doubles[key][index];
             }
         }
         return tombstone_double;
     }
 
-    std::string Properties::getStringProperty(const std::string& key, uint64_t index) {
+    std::string Properties::getStringProperty(const std::string &key, uint64_t index) {
         auto search = strings.find(key);
 
         if (search != strings.end()) {
-            if (index < strings[key].size() ) {
+            if (index < strings[key].size()) {
                 return strings[key][index];
             }
         }
         return tombstone_string;
     }
 
-    std::vector<bool> Properties::getListOfBooleanProperty(const std::string& key, uint64_t index) {
+    std::vector<bool> Properties::getListOfBooleanProperty(const std::string &key, uint64_t index) {
         auto search = list_of_booleans.find(key);
 
         if (search != list_of_booleans.end()) {
-            if (index < list_of_booleans[key].size() ) {
+            if (index < list_of_booleans[key].size()) {
                 return list_of_booleans[key][index];
             }
         }
         return tombstone_list_of_booleans;
     }
 
-    std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string& key, uint64_t index) {
+    std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string &key, uint64_t index) {
         auto search = list_of_integers.find(key);
 
         if (search != list_of_integers.end()) {
-            if (index < list_of_integers[key].size() ) {
+            if (index < list_of_integers[key].size()) {
                 return list_of_integers[key][index];
             }
         }
         return tombstone_list_of_ints;
     }
 
-    std::vector<double> Properties::getListOfDoubleProperty(const std::string& key, uint64_t index) {
+    std::vector<double> Properties::getListOfDoubleProperty(const std::string &key, uint64_t index) {
         auto search = list_of_doubles.find(key);
 
         if (search != list_of_doubles.end()) {
-            if (index < list_of_doubles[key].size() ) {
+            if (index < list_of_doubles[key].size()) {
                 return list_of_doubles[key][index];
             }
         }
         return tombstone_list_of_doubles;
     }
 
-    std::vector<std::string> Properties::getListOfStringProperty(const std::string& key, uint64_t index) {
+    std::vector<std::string> Properties::getListOfStringProperty(const std::string &key, uint64_t index) {
         auto search = list_of_strings.find(key);
 
         if (search != list_of_strings.end()) {
-            if (index < list_of_strings[key].size() ) {
+            if (index < list_of_strings[key].size()) {
                 return list_of_strings[key][index];
             }
         }
         return tombstone_list_of_strings;
     }
 
-    bool Properties::setBooleanProperty(const std::string& key, uint64_t index, bool value) {
+    bool Properties::setBooleanProperty(const std::string &key, uint64_t index, bool value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -227,14 +227,14 @@ namespace ragedb {
         }
 
         if (booleans[key].size() < index) {
-             booleans[key].resize(1 + index);
+            booleans[key].resize(1 + index);
         }
         booleans[key][index] = value;
 
         return true;
     }
 
-    bool Properties::setIntegerProperty(const std::string& key, uint64_t index, int64_t value) {
+    bool Properties::setIntegerProperty(const std::string &key, uint64_t index, int64_t value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -251,7 +251,7 @@ namespace ragedb {
         return true;
     }
 
-    bool Properties::setDoubleProperty(const std::string& key, uint64_t index, double value) {
+    bool Properties::setDoubleProperty(const std::string &key, uint64_t index, double value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -267,7 +267,8 @@ namespace ragedb {
 
         return true;
     }
-    bool Properties::setStringProperty(const std::string& key, uint64_t index, const std::string& value) {
+
+    bool Properties::setStringProperty(const std::string &key, uint64_t index, const std::string &value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -284,7 +285,7 @@ namespace ragedb {
         return true;
     }
 
-    bool Properties::setListOfBooleanProperty(const std::string& key, uint64_t index, const std::vector<bool>& value) {
+    bool Properties::setListOfBooleanProperty(const std::string &key, uint64_t index, const std::vector<bool> &value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -301,7 +302,8 @@ namespace ragedb {
         return true;
     }
 
-    bool Properties::setListOfIntegerProperty(const std::string& key, uint64_t index, const std::vector<int64_t>& value) {
+    bool
+    Properties::setListOfIntegerProperty(const std::string &key, uint64_t index, const std::vector<int64_t> &value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -318,7 +320,7 @@ namespace ragedb {
         return true;
     }
 
-    bool Properties::setListOfDoubleProperty(const std::string& key, uint64_t index, const std::vector<double>& value) {
+    bool Properties::setListOfDoubleProperty(const std::string &key, uint64_t index, const std::vector<double> &value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -335,7 +337,8 @@ namespace ragedb {
         return true;
     }
 
-    bool Properties::setListOfStringProperty(const std::string& key, uint64_t index, const std::vector<std::string>& value) {
+    bool
+    Properties::setListOfStringProperty(const std::string &key, uint64_t index, const std::vector<std::string> &value) {
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -352,4 +355,48 @@ namespace ragedb {
         return true;
     }
 
+    std::map<std::string, std::any> Properties::getProperties(uint64_t index) {
+        std::map<std::string, std::any> properties;
+        for (auto const&[key, type_id] : types) {
+            switch (type_id) {
+                case boolean_type: {
+                    properties.emplace(key, booleans[key][index]);
+                    break;
+                }
+                case integer_type: {
+                    properties.emplace(key, integers[key][index]);
+                    break;
+                }
+                case double_type: {
+                    properties.emplace(key, doubles[key][index]);
+                    break;
+                }
+                case string_type: {
+                    properties.emplace(key, strings[key][index]);
+                    break;
+                }
+                case list_of_booleans_type: {
+                    properties.emplace(key, list_of_booleans[key][index]);
+                    break;
+                }
+                case list_of_integers_type: {
+                    properties.emplace(key, list_of_integers[key][index]);
+                    break;
+                }
+                case list_of_doubles_type: {
+                    properties.emplace(key, list_of_doubles[key][index]);
+                    break;
+                }
+                case list_of_strings_type: {
+                    properties.emplace(key, list_of_strings[key][index]);
+                    break;
+                }
+                default: {
+
+                }
+            }
+
+        }
+        return properties;
+    }
 }

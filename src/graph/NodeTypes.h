@@ -30,8 +30,8 @@ namespace ragedb {
     private:
         std::unordered_map<std::string, uint16_t> type_to_id;
         std::vector<std::string> id_to_type;
-        std::vector<tsl::sparse_map<std::string, uint64_t>> node_keys;       // "Index" to get node id by type:key
-        std::vector<std::vector<Node>> nodes;                                // Store of the meta-properties of Nodes
+        std::vector<tsl::sparse_map<std::string, uint64_t>> key_to_node_id;  // "Index" to get node id by type:key
+        std::vector<std::vector<std::string>> keys;                          // Store of the keys of Nodes
         std::vector<Properties> node_properties;                             // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
@@ -39,62 +39,50 @@ namespace ragedb {
         std::vector<Roaring64Map> deleted_ids; // all ids are internal ids
 
         simdjson::dom::parser parser;
-        //TODO: Figure out Type Properties and Schema
+        uint shard_id;
+
+        uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id) const;
 
     public:
         NodeTypes();
-
         void Clear();
 
+        bool addTypeId(const std::string &, uint16_t node_type_id);
         uint16_t getTypeId(const std::string &);
-
         uint16_t insertOrGetTypeId(const std::string &);
+        std::string getType(uint16_t node_type_id);
 
-        std::string getType(uint16_t);
-
-        bool addId(uint16_t, uint64_t);
-
-        bool removeId(uint16_t, uint64_t);
-
+        bool addId(uint16_t node_type_id, uint64_t);
+        bool removeId(uint16_t node_type_id, uint64_t);
         bool containsId(uint16_t, uint64_t);
 
         Roaring64Map getIds() const;
-
         Roaring64Map getIds(uint16_t);
-
         Roaring64Map getDeletedIds() const;
+        Roaring64Map getDeletedIds(uint16_t node_type_id);
 
-        Roaring64Map getDeletedIds(uint16_t);
+        bool ValidTypeId(uint16_t node_type_id) const;
+        bool ValidNodeId(uint16_t type_id, uint64_t internal_id);
 
-        bool ValidTypeId(uint16_t) const;
-
-        uint64_t getCount(uint16_t);
-
+        std::map<uint16_t, uint64_t> getCounts();
+        uint64_t getCount(uint16_t node_type_id);
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();
-
         std::set<uint16_t> getTypeIds();
 
-        std::map<uint16_t, uint64_t> getCounts();
-
-        bool addTypeId(const std::string &, uint16_t);
-
-        uint64_t getNodeId(uint16_t, const std::string &);
-
+        uint64_t getNodeId(uint16_t node_type_id, const std::string &);
         uint64_t getNodeId(const std::string &, const std::string &);
+        std::string getNodeKey(uint16_t node_type_id, uint64_t internal_id);
+        std::map<std::string, std::any> getNodeProperties(uint16_t node_type_id, uint64_t internal_id);
+        Node getNode(uint16_t node_type_id, uint64_t internal_id, uint64_t external_id);
 
-        Properties &getNodeTypeProperties(uint16_t);
-
-        bool setProperties(uint16_t, uint64_t, const std::string &);
-
-        tsl::sparse_map<std::string, uint64_t> &getNodeKeys(uint16_t);
-
-        std::vector<Node> &getNodes(uint16_t);
-
-        std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t);
-
-        std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t);
+        Properties &getNodeTypeProperties(uint16_t node_type_id);
+        bool setProperties(uint16_t node_type_id, uint64_t, const std::string &);
+        tsl::sparse_map<std::string, uint64_t> &getKeysToNodeId(uint16_t node_type_id);
+        std::vector<std::string> &getKeys(uint16_t node_type_id);
+        std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t node_type_id);
+        std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t node_type_id);
 
     };
 }

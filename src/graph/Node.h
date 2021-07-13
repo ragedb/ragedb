@@ -17,26 +17,36 @@
 #ifndef RAGEDB_NODE_H
 #define RAGEDB_NODE_H
 
+#include <any>
 #include <cstdint>
 #include <string>
+#include <map>
 
 namespace ragedb {
 
     class Node {
     private:
         uint64_t id{};
-        std::string key;
+        std::string type{};
+        std::string key{};
+        std::map<std::string, std::any> properties{};
 
     public:
         Node();
 
-        Node(uint64_t id, std::string key);
+        Node(uint64_t id, std::string type, std::string key);
+
+        Node(uint64_t id, std::string type, std::string key, std::map<std::string, std::any> );
 
         [[nodiscard]] uint64_t getId() const;
 
         [[nodiscard]] uint16_t getTypeId() const;
 
+        [[nodiscard]] std::string getType() const;
+
         [[nodiscard]] std::string getKey() const;
+
+        [[nodiscard]] std::map<std::string, std::any> getProperties() const;
 
         friend std::ostream& operator<<(std::ostream& os, const Node& node);
     };

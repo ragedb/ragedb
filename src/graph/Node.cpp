@@ -15,13 +15,17 @@
  */
 
 #include "Node.h"
+
+#include <utility>
 #include "Shard.h"
 
 namespace ragedb {
 
     Node::Node() = default;
 
-    Node::Node(uint64_t id, std::string key) : id(id), key(std::move(key)) {}
+    Node::Node(uint64_t id, std::string type, std::string key) : id(id), type(std::move(type)), key(std::move(key)) {}
+
+    Node::Node(uint64_t id, std::string type, std::string key, std::map<std::string, std::any>  properties) : id(id), type(std::move(type)), key(std::move(key)), properties(std::move(properties)) {}
 
     uint64_t Node::getId() const {
         return id;
@@ -33,6 +37,14 @@ namespace ragedb {
 
     std::string Node::getKey() const {
         return key;
+    }
+
+    std::map<std::string, std::any> Node::getProperties() const {
+        return properties;
+    }
+
+    std::string Node::getType() const {
+        return type;
     }
 
 }

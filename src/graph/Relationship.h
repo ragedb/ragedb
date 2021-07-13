@@ -17,8 +17,10 @@
 #ifndef RAGEDB_RELATIONSHIP_H
 #define RAGEDB_RELATIONSHIP_H
 
+#include <any>
 #include <cstdint>
 #include <string>
+#include <map>
 
 namespace ragedb {
 
@@ -27,11 +29,13 @@ namespace ragedb {
         uint64_t id{};
         uint64_t starting_node_id{};
         uint64_t ending_node_id{};
+        std::map<std::string, std::any> properties{};
 
     public:
         Relationship();
 
         Relationship(uint64_t id, uint64_t startingNodeId, uint64_t endingNodeId);
+        Relationship(uint64_t id, uint64_t startingNodeId, uint64_t endingNodeId, std::map<std::string, std::any> properties);
 
         [[nodiscard]] uint64_t getId() const;
 
@@ -40,6 +44,8 @@ namespace ragedb {
         [[nodiscard]] uint64_t getStartingNodeId() const;
 
         [[nodiscard]] uint64_t getEndingNodeId() const;
+
+        [[nodiscard]] std::map<std::string, std::any> getProperties() const;
 
         friend std::ostream& operator<<(std::ostream& os, const Relationship& relationship);
 
