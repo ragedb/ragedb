@@ -254,7 +254,7 @@ namespace ragedb {
 
     Node Shard::NodeGet(uint64_t id) {
         if (ValidNodeId(id)) {
-            return node_types.getNode(externalToTypeId(id), externalToInternal(id), id);
+            return node_types.getNode(id);
         }
         return Node();
     }
@@ -338,7 +338,8 @@ namespace ragedb {
     }
 
     std::vector<Node> Shard::AllNodes(const std::string& type, uint64_t skip, uint64_t limit) {
-
+        uint16_t type_id = node_types.getTypeId(type);
+        return AllNodes(type_id, skip, limit);
     }
 
     std::vector<Node> Shard::AllNodes(uint16_t type_id, uint64_t skip, uint64_t limit) {

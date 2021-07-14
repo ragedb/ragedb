@@ -67,9 +67,6 @@ future<std::unique_ptr<reply>> Nodes::GetNodesHandler::handle([[maybe_unused]] c
                 std::vector<node_json> json_array;
                 json_array.reserve(nodes.size());
                 std::copy(nodes.begin(), nodes.end(), json_array.begin());
-                //std::transform(nodes.begin(), nodes.end(), std::back_inserter(json_array), &node_json);
-                //json_array.assign(nodes.begin(), nodes.end());
-                //std::copy(nodes.begin(), nodes.end(), std::back_inserter(json_array));
                 rep->write_body("json", json::stream_object(json_array));
                 return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
             });

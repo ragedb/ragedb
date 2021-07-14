@@ -39,7 +39,6 @@ namespace ragedb {
         node_properties.emplace_back();
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
     }
 
@@ -57,8 +56,6 @@ namespace ragedb {
         outgoing_relationships.shrink_to_fit();
         incoming_relationships.clear();
         incoming_relationships.shrink_to_fit();
-        ids.clear();
-        ids.shrink_to_fit();
         deleted_ids.clear();
         deleted_ids.shrink_to_fit();
 
@@ -106,7 +103,6 @@ namespace ragedb {
         node_properties.emplace_back(Properties());
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
         return type_id;
     }
@@ -121,7 +117,6 @@ namespace ragedb {
 
     bool NodeTypes::addId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
-            ids[type_id].add(id);
             deleted_ids[type_id].remove(id);
             return true;
         }
@@ -131,7 +126,6 @@ namespace ragedb {
 
     bool NodeTypes::removeId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
-            ids[type_id].remove(id);
             deleted_ids[type_id].add(id);
             return true;
         }
@@ -141,7 +135,9 @@ namespace ragedb {
 
     bool NodeTypes::containsId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
-            return ids[type_id].contains(id);
+            if (ValidNodeId(type_id, id)) {
+                return !deleted_ids[type_id].contains(id);
+            }
         }
         // If not valid return false
         return false;
@@ -152,14 +148,29 @@ namespace ragedb {
         int current = 1;
         // ids are internal ids, we need to switch to external ids
         for (int type_id=1; type_id < id_to_type.size(); type_id++) {
-            for (Roaring64MapSetBitForwardIterator iterator = ids[type_id].begin(); iterator != ids[type_id].end(); iterator++) {
-                if (current > (skip + limit)) {
-                    return allIds;
+            uint64_t max_id = key_to_node_id[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        internalToExternal(type_id, internal_id);
+                    }
+                    current++;
                 }
-                if (current > skip && current <= (skip + limit)) {
-                    allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            internalToExternal(type_id, internal_id);
+                        }
+                    }
+                    current++;
                 }
-                current++;
             }
         }
         return allIds;
@@ -169,14 +180,29 @@ namespace ragedb {
         std::vector<uint64_t>  allIds;
         int current = 1;
         if (ValidTypeId(type_id)) {
-            for (Roaring64MapSetBitForwardIterator iterator = ids[type_id].begin(); iterator != ids[type_id].end(); iterator++) {
-                if (current > (skip + limit)) {
-                    return allIds;
+            uint64_t max_id = key_to_node_id[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        internalToExternal(type_id, internal_id);
+                    }
+                    current++;
                 }
-                if (current > skip && current <= (skip + limit)) {
-                    allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            internalToExternal(type_id, internal_id);
+                        }
+                    }
+                    current++;
                 }
-                current++;
             }
         }
         return allIds;
@@ -226,7 +252,7 @@ namespace ragedb {
 
     uint64_t NodeTypes::getCount(uint16_t type_id) {
         if (ValidTypeId(type_id)) {
-            return ids[type_id].cardinality();
+            return key_to_node_id[type_id].size() - deleted_ids[type_id].cardinality();
         }
         // If not valid return 0
         return 0;
@@ -260,8 +286,8 @@ namespace ragedb {
 
     std::map<uint16_t,uint64_t> NodeTypes::getCounts() {
         std::map<uint16_t,uint64_t> counts;
-        for (int i=1; i < type_to_id.size(); i++) {
-            counts.insert({i, ids[i].cardinality()});
+        for (int type_id=1; type_id < type_to_id.size(); type_id++) {
+            counts.insert({type_id, key_to_node_id[type_id].size() - deleted_ids[type_id].cardinality()});
         }
 
         return counts;
@@ -284,7 +310,6 @@ namespace ragedb {
             node_properties.emplace_back(Properties());
             outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
             incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-            ids.emplace_back(Roaring64Map());
             deleted_ids.emplace_back(Roaring64Map());
             return true;
         }
@@ -327,6 +352,10 @@ namespace ragedb {
             return node_properties[node_type_id].getProperties(internal_id);
         }
         return std::map<std::string, std::any>();
+    }
+
+    Node NodeTypes::getNode(uint64_t external_id) {
+        return getNode(externalToTypeId(external_id), externalToInternal(external_id), external_id);
     }
 
     Node NodeTypes::getNode(uint16_t node_type_id, uint64_t internal_id, uint64_t external_id) {

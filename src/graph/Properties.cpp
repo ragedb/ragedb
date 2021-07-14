@@ -40,15 +40,6 @@ namespace ragedb {
         };
 
         types.insert({"", 0});
-        types.insert({"name", string_type});
-//        booleans.emplace();
-//        integers.emplace();
-//        doubles.emplace();
-//        strings.emplace();
-//        list_of_booleans.emplace();
-//        list_of_integers.emplace();
-//        list_of_doubles.emplace();
-//        list_of_strings.emplace();
     }
 
     uint8_t Properties::setPropertyTypeId(const std::string &key, uint8_t property_type_id) {
@@ -394,35 +385,51 @@ namespace ragedb {
         for (auto const&[key, type_id] : types) {
             switch (type_id) {
                 case boolean_type: {
-                    properties.emplace(key, booleans[key][index]);
+                    if(booleans[key].size() > index) {
+                        properties.emplace(key, booleans[key][index]);
+                    }
                     break;
                 }
                 case integer_type: {
-                    properties.emplace(key, integers[key][index]);
+                    if(integers[key].size() > index) {
+                        properties.emplace(key, integers[key][index]);
+                    }
                     break;
                 }
                 case double_type: {
-                    properties.emplace(key, doubles[key][index]);
+                    if(doubles[key].size() > index) {
+                        properties.emplace(key, doubles[key][index]);
+                    }
                     break;
                 }
                 case string_type: {
-                    properties.emplace(key, strings[key][index]);
+                    if(strings[key].size() > index) {
+                        properties.emplace(key, strings[key][index]);
+                    }
                     break;
                 }
                 case list_of_booleans_type: {
-                    properties.emplace(key, list_of_booleans[key][index]);
+                    if(list_of_booleans[key].size() > index) {
+                        properties.emplace(key, list_of_booleans[key][index]);
+                    }
                     break;
                 }
                 case list_of_integers_type: {
-                    properties.emplace(key, list_of_integers[key][index]);
+                    if(list_of_integers[key].size() > index) {
+                        properties.emplace(key, list_of_integers[key][index]);
+                    }
                     break;
                 }
                 case list_of_doubles_type: {
-                    properties.emplace(key, list_of_doubles[key][index]);
+                    if(list_of_doubles[key].size() > index) {
+                        properties.emplace(key, list_of_doubles[key][index]);
+                    }
                     break;
                 }
                 case list_of_strings_type: {
-                    properties.emplace(key, list_of_strings[key][index]);
+                    if(list_of_strings[key].size() > index) {
+                        properties.emplace(key, list_of_strings[key][index]);
+                    }
                     break;
                 }
                 default: {

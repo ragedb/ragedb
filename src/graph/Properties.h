@@ -26,7 +26,7 @@
 namespace ragedb {
     class Properties {
     private:
-        tsl::sparse_map<std::string, uint8_t> types = {{"", 0}};
+        tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
         tsl::sparse_map<std::string, std::vector<bool>> booleans;
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;

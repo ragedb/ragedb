@@ -35,7 +35,7 @@ namespace ragedb {
         std::vector<Properties> node_properties;                             // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
-        std::vector<Roaring64Map> ids;          // all ids are internal ids, TODO: Can this be eliminated?
+        //std::vector<Roaring64Map> ids;          // all ids are internal ids, TODO: Can this be eliminated?
         std::vector<Roaring64Map> deleted_ids; // all ids are internal ids
 
         simdjson::dom::parser parser;
@@ -79,6 +79,7 @@ namespace ragedb {
         uint64_t getNodeId(const std::string &type, const std::string &key);
         std::string getNodeKey(uint16_t node_type_id, uint64_t internal_id);
         std::map<std::string, std::any> getNodeProperties(uint16_t node_type_id, uint64_t internal_id);
+        Node getNode(uint64_t external_id);
         Node getNode(uint16_t node_type_id, uint64_t internal_id, uint64_t external_id);
         std::any getNodeProperty(uint16_t node_type_id, uint64_t internal_id, const std::string &property);
         std::any getNodeProperty(uint64_t external_id, const std::string &property);
