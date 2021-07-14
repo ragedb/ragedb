@@ -35,7 +35,11 @@ namespace ragedb {
         std::vector<Roaring64Map> deleted_ids;
 
         simdjson::dom::parser parser;
-        //TODO: Figure out Type Properties and Schema
+        uint shard_id;
+
+        uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id) const;
+        static uint64_t externalToInternal(uint64_t id);
+        static uint16_t externalToTypeId(uint64_t id);
 
     public:
         RelationshipTypes();

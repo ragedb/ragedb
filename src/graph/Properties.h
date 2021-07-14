@@ -26,7 +26,8 @@
 namespace ragedb {
     class Properties {
     private:
-        tsl::sparse_map<std::string, uint8_t> types;
+        tsl::sparse_map<std::string, uint8_t> types = {{"", 0}};
+        tsl::sparse_map<std::string, uint8_t> type_map;
         tsl::sparse_map<std::string, std::vector<bool>> booleans;
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;
         tsl::sparse_map<std::string, std::vector<double>> doubles;
@@ -38,7 +39,7 @@ namespace ragedb {
         // TODO: Supported Nested Objects
 
 
-
+        const std::any tombstone_any = std::any();
         const bool tombstone_boolean = false;
         const int64_t tombstone_int = std::numeric_limits<int64_t>::min();
         const double tombstone_double = std::numeric_limits<double>::min();
@@ -80,6 +81,11 @@ namespace ragedb {
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
 
         std::map<std::string, std::any> getProperties(uint64_t);
+        std::any getProperty(const std::string&, uint64_t);
+        bool setProperty(const std::string&, uint64_t, bool);
+        bool setProperty(const std::string&, uint64_t, int64_t);
+        bool setProperty(const std::string&, uint64_t, double);
+        bool setProperty(const std::string&, uint64_t, std::string);
 
     };
 }

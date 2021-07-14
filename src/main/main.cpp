@@ -19,6 +19,7 @@
 #include <seastar/core/thread.hh>
 #include "util/stop_signal.hh"
 #include "handlers/HealthCheck.h"
+#include "handlers/Nodes.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/net/inet_address.hh>
@@ -52,7 +53,9 @@ int main(int argc, char** argv) {
                 ragedb::Graph graph("rage");
                 graph.Start().get();
                 HealthCheck healthCheck(graph);
+                Nodes nodes(graph);
                 server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();
+                server->set_routes([&nodes](routes& r) { nodes.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes& r) {
                     r.add(seastar::operation_type::GET,

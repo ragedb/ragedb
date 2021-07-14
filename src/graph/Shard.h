@@ -40,6 +40,9 @@ namespace ragedb {
         NodeTypes node_types;                                                       // Store string and id of node types
         RelationshipTypes relationship_types;                                       // Store string and id of relationship types
 
+        inline static const uint64_t SKIP = 0;
+        inline static const uint64_t LIMIT = 100;
+
     public:
         explicit Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {}
 
@@ -82,6 +85,10 @@ namespace ragedb {
         uint16_t RelationshipTypeGetTypeId(const std::string& type);
         bool RelationshipTypeInsert(const std::string& type, uint16_t type_id);
 
+        // Property Types
+        uint8_t NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
+        uint8_t RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
+
         // Nodes
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
@@ -92,10 +99,29 @@ namespace ragedb {
         std::string NodeGetType(uint64_t id);
         std::string NodeGetKey(uint64_t id);
 
-        // Property Types
-        uint8_t NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
-        uint8_t RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
+        // Node Properties
+        std::any NodePropertyGet(uint64_t id, const std::string& property);
+        bool NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value);
+        std::any NodePropertyGet(const std::string& type, const std::string& key, const std::string& property);
+        bool NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
 
+
+        // All
+        std::map<uint16_t, uint64_t> AllNodeIdCounts();
+        uint64_t AllNodeIdCounts(const std::string& type);
+        uint64_t AllNodeIdCounts(uint16_t type_id);
+
+        std::vector<uint64_t> AllNodeIds(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> AllNodeIds(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> AllNodeIds(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        std::vector<Node> AllNodes(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Node> AllNodes(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Node> AllNodes(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        std::map<uint16_t, uint64_t> AllRelationshipIdCounts();
+        uint64_t AllRelationshipIdCounts(const std::string& type);
+        uint64_t AllRelationshipIdCounts(uint16_t type_id);
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -132,6 +158,12 @@ namespace ragedb {
         seastar::future<uint8_t> NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type);
         seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& relationship_type, const std::string& key, const std::string& type);
 
+
+        // All
+        seastar::future<std::vector<Node>> AllNodesPeered(uint64_t skip = 0, uint64_t limit = 100);
+        seastar::future<std::vector<Node>> AllNodesPeered(const std::string& type, uint64_t skip = 0, uint64_t limit = 100);
+        seastar::future<std::vector<Relationship>> AllRelationshipsPeered(uint64_t skip = 0, uint64_t limit = 100);
+        seastar::future<std::vector<Relationship>> AllRelationshipsPeered(const std::string& rel_type, uint64_t skip = 0, uint64_t limit = 100);
     };
 }
 

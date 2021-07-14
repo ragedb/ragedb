@@ -21,6 +21,11 @@
 
 namespace ragedb {
 
+    static const unsigned int SHARD_BITS = 10U;
+    static const unsigned int SHARD_MASK = 0x00000000000003FFU;
+    static const unsigned int TYPE_BITS = 16U;
+    static const unsigned int TYPE_MASK = 0x0000000003FFFFFFU;
+
     RelationshipTypes::RelationshipTypes() : type_to_id(), id_to_type() {
         // start with empty blank type
         type_to_id.emplace("", 0);
@@ -49,6 +54,18 @@ namespace ragedb {
         relationship_properties.emplace_back();
         ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
+    }
+
+    uint64_t RelationshipTypes::internalToExternal(uint16_t type_id, uint64_t internal_id) const {
+        return (((internal_id << TYPE_BITS) + type_id) << SHARD_BITS) + shard_id;
+    }
+
+    uint64_t RelationshipTypes::externalToInternal(uint64_t id) {
+        return (id >> (TYPE_BITS + SHARD_BITS));
+    }
+
+    uint16_t RelationshipTypes::externalToTypeId(uint64_t id) {
+        return (id & TYPE_MASK ) >> SHARD_BITS;
     }
 
     uint16_t RelationshipTypes::getTypeId(const std::string &type) {

@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <seastar/core/when_all.hh>
 #include "Shard.h"
 
 namespace ragedb {
@@ -171,6 +172,15 @@ namespace ragedb {
         return relationship_types.addTypeId(type, type_id);
     }
 
+    // Property Types =======================================================================================================================
+    uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
+        return node_types.getNodeTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
+    }
+
+    uint8_t Shard::RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
+        return relationship_types.getRelationshipTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
+    }
+
     // Nodes ================================================================================================================================
     uint64_t Shard::NodeAddEmpty(uint16_t type_id, const std::string &key) {
         uint64_t internal_id = node_types.getCount(type_id);
@@ -180,19 +190,19 @@ namespace ragedb {
         auto key_search = node_types.getKeysToNodeId(type_id).find(key);
         if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
             // If we have deleted nodes, fill in the space by adding the new node here
-            if (node_types.getDeletedIds(type_id).isEmpty()) {
+            if (node_types.hasDeleted(type_id)) {
+                internal_id = node_types.getDeletedIdsMinimum(type_id);
+                external_id = internalToExternal(type_id, internal_id);
+                // Replace the deleted node and remove it from the list
+                node_types.getKeys(type_id).at(internal_id) = key;
+                node_types.addId(type_id, internal_id);
+            } else {
                 external_id = internalToExternal(type_id, internal_id);
                 // Set Metadata properties
                 // Add the node to the end and prepare a place for its relationships
                 node_types.getKeys(type_id).emplace_back(key);
                 node_types.getOutgoingRelationships(type_id).emplace_back();
                 node_types.getIncomingRelationships(type_id).emplace_back();
-                node_types.addId(type_id, internal_id);
-            } else {
-                internal_id = node_types.getDeletedIds(type_id).minimum();
-                external_id = internalToExternal(type_id, internal_id);
-                // Replace the deleted node and remove it from the list
-                node_types.getKeys(type_id).at(internal_id) = key;
                 node_types.addId(type_id, internal_id);
             }
             node_types.getKeysToNodeId(type_id).insert({key, external_id });
@@ -209,20 +219,20 @@ namespace ragedb {
         auto key_search = node_types.getKeysToNodeId(type_id).find(key);
         if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
             // If we have deleted nodes, fill in the space by adding the new node here
-            if (node_types.getDeletedIds(type_id).isEmpty()) {
+            if (node_types.hasDeleted(type_id)) {
+                internal_id = node_types.getDeletedIdsMinimum(type_id);
+                external_id = internalToExternal(type_id, internal_id);
+
+                // Replace the deleted node and remove it from the list
+                node_types.getKeys(type_id).at(internal_id) = key;
+                node_types.addId(type_id, internal_id);
+                node_types.setProperties(type_id, internal_id, properties);
+            } else {
                 external_id = internalToExternal(type_id, internal_id);
                 // Add the node to the end and prepare a place for its relationships
                 node_types.getKeys(type_id).emplace_back(key);
                 node_types.getOutgoingRelationships(type_id).emplace_back();
                 node_types.getIncomingRelationships(type_id).emplace_back();
-                node_types.addId(type_id, internal_id);
-                node_types.setProperties(type_id, internal_id, properties);
-            } else {
-                internal_id = node_types.getDeletedIds(type_id).minimum();
-                external_id = internalToExternal(type_id, internal_id);
-
-                // Replace the deleted node and remove it from the list
-                node_types.getKeys(type_id).at(internal_id) = key;
                 node_types.addId(type_id, internal_id);
                 node_types.setProperties(type_id, internal_id, properties);
             }
@@ -271,14 +281,85 @@ namespace ragedb {
         return node_types.getType(0);
     }
 
-    // Property Types =======================================================================================================================
-    uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
-        return node_types.getNodeTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
+
+    // Node Properties ======================================================================================================================
+    std::any Shard::NodePropertyGet(uint64_t id, const std::string& property) {
+        if (ValidNodeId(id)) {
+            node_types.getNodeProperty(id, property);
+        }
+        return std::any();
     }
 
-    uint8_t Shard::RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
-        return relationship_types.getRelationshipTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
+    bool Shard::NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {
+        if (ValidNodeId(id)) {
+            return node_types.setNodeProperty(id, property, value);
+        }
+        return false;
     }
+
+    std::any Shard::NodePropertyGet(const std::string& type, const std::string& key, const std::string& property) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertyGet(id, property);
+    }
+
+    bool Shard::NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertySetFromJson(id, property, value);
+    }
+
+    // Counts
+    std::map<uint16_t, uint64_t> Shard::AllNodeIdCounts() {
+        return node_types.getCounts();
+    }
+
+    uint64_t Shard::AllNodeIdCounts(const std::string &type) {
+        uint16_t type_id = node_types.getTypeId(type);
+        return AllNodeIdCounts(type_id);
+    }
+
+    uint64_t Shard::AllNodeIdCounts(uint16_t type_id) {
+        return node_types.getCount(type_id);
+    }
+
+    std::vector<uint64_t> Shard::AllNodeIds(uint64_t skip, uint64_t limit ) {
+        return node_types.getIds(skip, limit);
+    }
+
+    std::vector<uint64_t> Shard::AllNodeIds(const std::string& type, uint64_t skip, uint64_t limit) {
+        return AllNodeIds(node_types.getTypeId(type), skip, limit);
+    }
+
+    std::vector<uint64_t> Shard::AllNodeIds(uint16_t type_id, uint64_t skip, uint64_t limit) {
+        return node_types.getIds(type_id, skip, limit);
+    }
+
+    std::vector<Node> Shard::AllNodes(uint64_t skip, uint64_t limit) {
+
+    }
+
+    std::vector<Node> Shard::AllNodes(const std::string& type, uint64_t skip, uint64_t limit) {
+
+    }
+
+    std::vector<Node> Shard::AllNodes(uint16_t type_id, uint64_t skip, uint64_t limit) {
+
+    }
+
+
+
+    std::map<uint16_t, uint64_t> Shard::AllRelationshipIdCounts() {
+        return relationship_types.getCounts();
+    }
+
+    uint64_t Shard::AllRelationshipIdCounts(const std::string &type) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        return AllRelationshipIdCounts(type_id);
+    }
+
+    uint64_t Shard::AllRelationshipIdCounts(uint16_t type_id) {
+        return relationship_types.getCount(type_id);
+    }
+
 
     // *****************************************************************************************************************************
     //                                               Peered
@@ -411,6 +492,46 @@ namespace ragedb {
         });
     }
 
+    seastar::future<bool> Shard::NodeRemovePeered(const std::string& type, const std::string& key) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key] (Shard &local_shard) {
+            return local_shard.NodeGetID(type, key);
+        }).then([this] (uint64_t external_id) {
+            return NodeRemovePeered(external_id);
+        });
+    }
+
+    seastar::future<bool> Shard::NodeRemovePeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+        //TODO
+        return seastar::make_ready_future<bool>(false);
+    }
+
+    seastar::future<uint16_t> Shard::NodeGetTypeIdPeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodeGetTypeId(id);
+        });
+    }
+
+    seastar::future<std::string> Shard::NodeGetTypePeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodeGetType(id);
+        });
+    }
+
+    seastar::future<std::string> Shard::NodeGetKeyPeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodeGetKey(id);
+        });
+    }
+
     // Property Types ======================================================================================================================
 
     seastar::future<uint8_t> Shard::NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type) {
@@ -472,5 +593,118 @@ namespace ragedb {
             return seastar::make_ready_future<uint8_t>(property_type_id);
         });
     }
+
+
+    //
+    seastar::future<std::vector<Node>> Shard::AllNodesPeered(uint64_t skip, uint64_t limit) {
+        uint64_t max = skip + limit;
+
+        // Get the {Node Type Id, Count} map for each core
+        std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.AllNodeIdCounts();
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+            uint64_t current = 0;
+            int current_shard_id = 0;
+            std::vector<uint64_t> ids;
+            std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
+            for (const auto& map : results) {
+                std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
+                for (auto entry : map) {
+                    uint64_t next = current + entry.second;
+                    if (next > skip) {
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                        threaded_requests.insert({ entry.first, pair });
+                        if (next <= max) {
+                            break; // We have everything we need
+                        }
+                    }
+                    current = next;
+                }
+                requests.insert({current_shard_id++, threaded_requests});
+            }
+
+            std::vector<seastar::future<std::vector<Node>>> futures;
+
+            for (const auto& request : requests) {
+                for (auto entry : request.second) {
+                    auto future = container().invoke_on(request.first, [entry] (Shard &local_shard) mutable {
+                        return local_shard.AllNodes(entry.first, entry.second.first, entry.second.second);
+                    });
+                    futures.push_back(std::move(future));
+                }
+            }
+
+            auto p2 = make_shared(std::move(futures));
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<Node>>& results) {
+                std::vector<Node> requested_nodes;
+                requested_nodes.reserve(limit);
+                for (auto result : results) {
+                    requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
+                }
+                return requested_nodes;
+            });
+        });
+    }
+
+    seastar::future<std::vector<Node>> Shard::AllNodesPeered(const std::string &type, uint64_t skip, uint64_t limit) {
+        uint16_t node_type_id = node_types.getTypeId(type);
+        uint64_t max = skip + limit;
+
+        // Get the {Node Type Id, Count} map for each core
+        std::vector<seastar::future<uint64_t>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [node_type_id] (Shard &local_shard) mutable {
+                return local_shard.AllNodeIdCounts(node_type_id);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([node_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
+            uint64_t current = 0;
+            int current_shard_id = 0;
+            std::vector<uint64_t> ids;
+            std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
+            for (const auto& count : results) {
+                uint64_t next = current + count;
+                if (next > skip) {
+                    std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                    requests.insert({ current_shard_id++, pair });
+                    if (next <= max) {
+                        break; // We have everything we need
+                    }
+                }
+                current = next;
+            }
+
+            std::vector<seastar::future<std::vector<Node>>> futures;
+
+            for (const auto& request : requests) {
+                auto future = container().invoke_on(request.first, [node_type_id, request] (Shard &local_shard) mutable {
+                    return local_shard.AllNodes(node_type_id, request.second.first, request.second.second);
+                });
+                futures.push_back(std::move(future));
+
+            }
+
+            auto p2 = make_shared(std::move(futures));
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<Node>>& results) {
+                std::vector<Node> requested_nodes;
+                requested_nodes.reserve(limit);
+                for (auto result : results) {
+                    requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
+                }
+                return requested_nodes;
+            });
+        });
+    }
+
 
 }

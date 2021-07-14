@@ -18,8 +18,6 @@
 
 namespace ragedb {
 
-    Properties::Properties() = default;
-
     const static uint8_t boolean_type = 1;
     const static uint8_t integer_type = 2;
     const static uint8_t double_type = 3;
@@ -29,16 +27,29 @@ namespace ragedb {
     const static uint8_t list_of_doubles_type = 7;
     const static uint8_t list_of_strings_type = 8;
 
-    tsl::sparse_map<std::string, uint8_t> type_map = {
-            {"boolean",   boolean_type},
-            {"integer",   integer_type},
-            {"double",    double_type},
-            {"string",    string_type},
-            {"boolean[]", list_of_booleans_type},
-            {"integer[]", list_of_integers_type},
-            {"double[]",  list_of_doubles_type},
-            {"string[]",  list_of_strings_type}
-    };
+    Properties::Properties()  {
+        type_map = {
+                {"boolean",   boolean_type},
+                {"integer",   integer_type},
+                {"double",    double_type},
+                {"string",    string_type},
+                {"boolean[]", list_of_booleans_type},
+                {"integer[]", list_of_integers_type},
+                {"double[]",  list_of_doubles_type},
+                {"string[]",  list_of_strings_type}
+        };
+
+        types.insert({"", 0});
+        types.insert({"name", string_type});
+//        booleans.emplace();
+//        integers.emplace();
+//        doubles.emplace();
+//        strings.emplace();
+//        list_of_booleans.emplace();
+//        list_of_integers.emplace();
+//        list_of_doubles.emplace();
+//        list_of_strings.emplace();
+    }
 
     uint8_t Properties::setPropertyTypeId(const std::string &key, uint8_t property_type_id) {
         if (types.find(key) != types.end()) {
@@ -218,6 +229,9 @@ namespace ragedb {
     }
 
     bool Properties::setBooleanProperty(const std::string &key, uint64_t index, bool value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -235,6 +249,9 @@ namespace ragedb {
     }
 
     bool Properties::setIntegerProperty(const std::string &key, uint64_t index, int64_t value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -252,6 +269,9 @@ namespace ragedb {
     }
 
     bool Properties::setDoubleProperty(const std::string &key, uint64_t index, double value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -269,15 +289,17 @@ namespace ragedb {
     }
 
     bool Properties::setStringProperty(const std::string &key, uint64_t index, const std::string &value) {
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
+        if(types.empty()) {
+            return false;
+        }
+        if (types.find(key) == types.end()) {
             return false;
         }
         if (types[key] != string_type) {
             return false;
         }
 
-        if (strings[key].size() < index) {
+        if (strings[key].size() <= index) {
             strings[key].resize(1 + index);
         }
         strings[key][index] = value;
@@ -286,6 +308,9 @@ namespace ragedb {
     }
 
     bool Properties::setListOfBooleanProperty(const std::string &key, uint64_t index, const std::vector<bool> &value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -304,6 +329,9 @@ namespace ragedb {
 
     bool
     Properties::setListOfIntegerProperty(const std::string &key, uint64_t index, const std::vector<int64_t> &value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -321,6 +349,9 @@ namespace ragedb {
     }
 
     bool Properties::setListOfDoubleProperty(const std::string &key, uint64_t index, const std::vector<double> &value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -339,6 +370,9 @@ namespace ragedb {
 
     bool
     Properties::setListOfStringProperty(const std::string &key, uint64_t index, const std::vector<std::string> &value) {
+        if(types.empty()) {
+            return false;
+        }
         auto type_check = types.find(key);
         if (type_check == types.end()) {
             return false;
@@ -399,4 +433,56 @@ namespace ragedb {
         }
         return properties;
     }
+
+    std::any Properties::getProperty(const std::string& key, uint64_t index) {
+        if (types.find(key) != types.end()) {
+            switch (types[key]) {
+                case boolean_type: {
+                    return booleans[key][index];
+                }
+                case integer_type: {
+                    return integers[key][index];
+                }
+                case double_type: {
+                    return doubles[key][index];
+                }
+                case string_type: {
+                    return strings[key][index];
+                }
+                case list_of_booleans_type: {
+                    return list_of_booleans[key][index];
+                }
+                case list_of_integers_type: {
+                    return list_of_integers[key][index];
+                }
+                case list_of_doubles_type: {
+                    return list_of_doubles[key][index];
+                }
+                case list_of_strings_type: {
+                    return list_of_strings[key][index];
+                }
+                default: {
+
+                }
+            }
+        }
+        return tombstone_any;
+    }
+
+    bool Properties::setProperty(const std::string &key, uint64_t index, bool value) {
+        return setBooleanProperty(key, index, value);
+    }
+
+    bool Properties::setProperty(const std::string &key, uint64_t index, int64_t value) {
+        return setIntegerProperty(key, index, value);
+    }
+
+    bool Properties::setProperty(const std::string &key, uint64_t index, double value) {
+        return setDoubleProperty(key, index, value);
+    }
+
+    bool Properties::setProperty(const std::string &key, uint64_t index, std::string value) {
+        return setStringProperty(key, index, value);
+    }
+
 }

@@ -408,10 +408,10 @@ struct node_json : public json::json_base {
 
     template<class T>
     node_json& operator=(const T& e){
-        id = e.id;
-        type = e.type;
-        key = e.key;
-        properties = e.properties;
+        id = e.getId();
+        type = e.getType();
+        key = e.getKey();
+        properties = e.getProperties();
         return *this;
     }
 
