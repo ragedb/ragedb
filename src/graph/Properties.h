@@ -32,10 +32,10 @@ namespace ragedb {
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;
         tsl::sparse_map<std::string, std::vector<double>> doubles;
         tsl::sparse_map<std::string, std::vector<std::string>> strings;
-        tsl::sparse_map<std::string, std::vector<std::vector<bool>>> list_of_booleans;
-        tsl::sparse_map<std::string, std::vector<std::vector<int64_t>>> list_of_integers;
-        tsl::sparse_map<std::string, std::vector<std::vector<double>>> list_of_doubles;
-        tsl::sparse_map<std::string, std::vector<std::vector<std::string>>> list_of_strings;
+        tsl::sparse_map<std::string, std::vector<std::vector<bool>>> booleans_list;
+        tsl::sparse_map<std::string, std::vector<std::vector<int64_t>>> integers_list;
+        tsl::sparse_map<std::string, std::vector<std::vector<double>>> doubles_list;
+        tsl::sparse_map<std::string, std::vector<std::vector<std::string>>> strings_list;
         // TODO: Supported Nested Objects
 
 
@@ -45,10 +45,10 @@ namespace ragedb {
         const double tombstone_double = std::numeric_limits<double>::min();
         const std::string tombstone_string = std::string("");
 
-        const std::vector<bool> tombstone_list_of_booleans = std::vector<bool>();
-        const std::vector<int64_t> tombstone_list_of_ints = std::vector<int64_t>();
-        const std::vector<double> tombstone_list_of_doubles = std::vector<double>();
-        const std::vector<std::string> tombstone_list_of_strings = std::vector<std::string>();
+        const std::vector<bool> tombstone_booleans_list = std::vector<bool>();
+        const std::vector<int64_t> tombstone_integers_list = std::vector<int64_t>();
+        const std::vector<double> tombstone_doubles_list = std::vector<double>();
+        const std::vector<std::string> tombstone_strings_list = std::vector<std::string>();
 
         void addPropertyTypeVectors(const std::string &key, uint8_t type_id);
 

@@ -22,21 +22,21 @@ namespace ragedb {
     const static uint8_t integer_type = 2;
     const static uint8_t double_type = 3;
     const static uint8_t string_type = 4;
-    const static uint8_t list_of_booleans_type = 5;
-    const static uint8_t list_of_integers_type = 6;
-    const static uint8_t list_of_doubles_type = 7;
-    const static uint8_t list_of_strings_type = 8;
+    const static uint8_t boolean_list_type = 5;
+    const static uint8_t integer_list_type = 6;
+    const static uint8_t double_list_type = 7;
+    const static uint8_t string_list_type = 8;
 
     Properties::Properties()  {
         type_map = {
-                {"boolean",   boolean_type},
-                {"integer",   integer_type},
-                {"double",    double_type},
-                {"string",    string_type},
-                {"boolean[]", list_of_booleans_type},
-                {"integer[]", list_of_integers_type},
-                {"double[]",  list_of_doubles_type},
-                {"string[]",  list_of_strings_type}
+                {"boolean",      boolean_type},
+                {"integer",      integer_type},
+                {"double",       double_type},
+                {"string",       string_type},
+                {"boolean_list", boolean_list_type},
+                {"integer_list", integer_list_type},
+                {"double_list",  double_list_type},
+                {"string_list", string_list_type}
         };
 
         types.insert({"", 0});
@@ -76,20 +76,20 @@ namespace ragedb {
                 strings.emplace(key, std::vector<std::string>());
                 break;
             }
-            case list_of_booleans_type: {
-                list_of_booleans.emplace(key, std::vector<std::vector<bool>>());
+            case boolean_list_type: {
+                booleans_list.emplace(key, std::vector<std::vector<bool>>());
                 break;
             }
-            case list_of_integers_type: {
-                list_of_integers.emplace(key, std::vector<std::vector<int64_t>>());
+            case integer_list_type: {
+                integers_list.emplace(key, std::vector<std::vector<int64_t>>());
                 break;
             }
-            case list_of_doubles_type: {
-                list_of_doubles.emplace(key, std::vector<std::vector<double>>());
+            case double_list_type: {
+                doubles_list.emplace(key, std::vector<std::vector<double>>());
                 break;
             }
-            case list_of_strings_type: {
-                list_of_strings.emplace(key, std::vector<std::vector<std::string>>());
+            case string_list_type: {
+                strings_list.emplace(key, std::vector<std::vector<std::string>>());
                 break;
             }
             default: {
@@ -176,47 +176,47 @@ namespace ragedb {
     }
 
     std::vector<bool> Properties::getListOfBooleanProperty(const std::string &key, uint64_t index) {
-        auto search = list_of_booleans.find(key);
+        auto search = booleans_list.find(key);
 
-        if (search != list_of_booleans.end()) {
-            if (index < list_of_booleans[key].size()) {
-                return list_of_booleans[key][index];
+        if (search != booleans_list.end()) {
+            if (index < booleans_list[key].size()) {
+                return booleans_list[key][index];
             }
         }
-        return tombstone_list_of_booleans;
+        return tombstone_booleans_list;
     }
 
     std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string &key, uint64_t index) {
-        auto search = list_of_integers.find(key);
+        auto search = integers_list.find(key);
 
-        if (search != list_of_integers.end()) {
-            if (index < list_of_integers[key].size()) {
-                return list_of_integers[key][index];
+        if (search != integers_list.end()) {
+            if (index < integers_list[key].size()) {
+                return integers_list[key][index];
             }
         }
-        return tombstone_list_of_ints;
+        return tombstone_integers_list;
     }
 
     std::vector<double> Properties::getListOfDoubleProperty(const std::string &key, uint64_t index) {
-        auto search = list_of_doubles.find(key);
+        auto search = doubles_list.find(key);
 
-        if (search != list_of_doubles.end()) {
-            if (index < list_of_doubles[key].size()) {
-                return list_of_doubles[key][index];
+        if (search != doubles_list.end()) {
+            if (index < doubles_list[key].size()) {
+                return doubles_list[key][index];
             }
         }
-        return tombstone_list_of_doubles;
+        return tombstone_doubles_list;
     }
 
     std::vector<std::string> Properties::getListOfStringProperty(const std::string &key, uint64_t index) {
-        auto search = list_of_strings.find(key);
+        auto search = strings_list.find(key);
 
-        if (search != list_of_strings.end()) {
-            if (index < list_of_strings[key].size()) {
-                return list_of_strings[key][index];
+        if (search != strings_list.end()) {
+            if (index < strings_list[key].size()) {
+                return strings_list[key][index];
             }
         }
-        return tombstone_list_of_strings;
+        return tombstone_strings_list;
     }
 
     bool Properties::setBooleanProperty(const std::string &key, uint64_t index, bool value) {
@@ -306,14 +306,14 @@ namespace ragedb {
         if (type_check == types.end()) {
             return false;
         }
-        if (types[key] != list_of_booleans_type) {
+        if (types[key] != boolean_list_type) {
             return false;
         }
 
-        if (list_of_booleans[key].size() < index) {
-            list_of_booleans[key].resize(1 + index);
+        if (booleans_list[key].size() < index) {
+            booleans_list[key].resize(1 + index);
         }
-        list_of_booleans[key][index] = value;
+        booleans_list[key][index] = value;
 
         return true;
     }
@@ -327,14 +327,14 @@ namespace ragedb {
         if (type_check == types.end()) {
             return false;
         }
-        if (types[key] != list_of_integers_type) {
+        if (types[key] != integer_list_type) {
             return false;
         }
 
-        if (list_of_integers[key].size() < index) {
-            list_of_integers[key].resize(1 + index);
+        if (integers_list[key].size() < index) {
+            integers_list[key].resize(1 + index);
         }
-        list_of_integers[key][index] = value;
+        integers_list[key][index] = value;
 
         return true;
     }
@@ -347,14 +347,14 @@ namespace ragedb {
         if (type_check == types.end()) {
             return false;
         }
-        if (types[key] != list_of_doubles_type) {
+        if (types[key] != double_list_type) {
             return false;
         }
 
-        if (list_of_doubles[key].size() < index) {
-            list_of_doubles[key].resize(1 + index);
+        if (doubles_list[key].size() < index) {
+            doubles_list[key].resize(1 + index);
         }
-        list_of_doubles[key][index] = value;
+        doubles_list[key][index] = value;
 
         return true;
     }
@@ -368,14 +368,14 @@ namespace ragedb {
         if (type_check == types.end()) {
             return false;
         }
-        if (types[key] != list_of_strings_type) {
+        if (types[key] != string_list_type) {
             return false;
         }
 
-        if (list_of_strings[key].size() < index) {
-            list_of_strings[key].resize(1 + index);
+        if (strings_list[key].size() < index) {
+            strings_list[key].resize(1 + index);
         }
-        list_of_strings[key][index] = value;
+        strings_list[key][index] = value;
 
         return true;
     }
@@ -408,27 +408,27 @@ namespace ragedb {
                     }
                     break;
                 }
-                case list_of_booleans_type: {
-                    if(list_of_booleans[key].size() > index) {
-                        properties.emplace(key, list_of_booleans[key][index]);
+                case boolean_list_type: {
+                    if(booleans_list[key].size() > index) {
+                        properties.emplace(key, booleans_list[key][index]);
                     }
                     break;
                 }
-                case list_of_integers_type: {
-                    if(list_of_integers[key].size() > index) {
-                        properties.emplace(key, list_of_integers[key][index]);
+                case integer_list_type: {
+                    if(integers_list[key].size() > index) {
+                        properties.emplace(key, integers_list[key][index]);
                     }
                     break;
                 }
-                case list_of_doubles_type: {
-                    if(list_of_doubles[key].size() > index) {
-                        properties.emplace(key, list_of_doubles[key][index]);
+                case double_list_type: {
+                    if(doubles_list[key].size() > index) {
+                        properties.emplace(key, doubles_list[key][index]);
                     }
                     break;
                 }
-                case list_of_strings_type: {
-                    if(list_of_strings[key].size() > index) {
-                        properties.emplace(key, list_of_strings[key][index]);
+                case string_list_type: {
+                    if(strings_list[key].size() > index) {
+                        properties.emplace(key, strings_list[key][index]);
                     }
                     break;
                 }
@@ -456,17 +456,17 @@ namespace ragedb {
                 case string_type: {
                     return strings[key][index];
                 }
-                case list_of_booleans_type: {
-                    return list_of_booleans[key][index];
+                case boolean_list_type: {
+                    return booleans_list[key][index];
                 }
-                case list_of_integers_type: {
-                    return list_of_integers[key][index];
+                case integer_list_type: {
+                    return integers_list[key][index];
                 }
-                case list_of_doubles_type: {
-                    return list_of_doubles[key][index];
+                case double_list_type: {
+                    return doubles_list[key][index];
                 }
-                case list_of_strings_type: {
-                    return list_of_strings[key][index];
+                case string_list_type: {
+                    return strings_list[key][index];
                 }
                 default: {
 
