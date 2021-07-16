@@ -20,27 +20,65 @@ By not having a "query language" we avoid parsing, query planning, query executi
 
 ### Schema
 
+#### Get Node Types
+
+    :GET /db/{graph}/schema/nodes
+
+#### Get a Node Type
+
+    :GET /db/{graph}/schema/nodes/{type}
+
 #### Create a Node Type
 
     :POST /db/{graph}/schema/nodes/{type}
+
+#### Delete a Node Type
+
+    :POST /db/{graph}/schema/nodes/{type}
+
+#### Get Relationship Types
+
+    :GET /db/{graph}/schema/relationships
+
+#### Get a Relationship Type
+
+    :GET /db/{graph}/schema/relationships/{type}
 
 #### Create a Relationship Type
 
     :POST /db/{graph}/schema/relationships/{type}
 
+#### Delete a Relationship Type
+
+    :DELETE /db/{graph}/schema/relationships/{type}
 
 RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and lists of the preceding data types:
 
     boolean, integer, double, string, boolean_list, integer_list, double_list, string_list
 
+### Get a Node Property Type
+
+    :GET /db/{graph}/schema/nodes/{type}/properties/{property}
+
 ### Create a Node Property Type
 
-    :POST /db/{graph}/schema/nodes/{type}/{property}/{data_type}
+    :POST /db/{graph}/schema/nodes/{type}/properties/{property}/{data_type}
+
+### Delete a Node Property Type
+
+    :DELETE /db/{graph}/schema/nodes/{type}/properties/{property}
+
+### Get a Relationship Property Type
+
+    :GET /db/{graph}/schema/relationships/properties/{type}/{property}
 
 ### Create a Relationship Property Type
 
-    :POST /db/{graph}/schema/relationships/{type}/{property}/{data_type}
+    :POST /db/{graph}/schema/relationships/properties/{type}/{property}/{data_type}
 
+### Delete a Relationship Property Type
+
+    :DELETE /db/{graph}/schema/relationships/properties/{type}/{property}
 
 ### Nodes
 

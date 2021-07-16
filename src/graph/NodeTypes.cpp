@@ -80,6 +80,27 @@ namespace ragedb {
         return (id & TYPE_MASK ) >> SHARD_BITS;
     }
 
+    bool NodeTypes::addTypeId(const std::string& type, uint16_t type_id) {
+        auto type_search = type_to_id.find(type);
+        if (type_search != type_to_id.end()) {
+            // Type already exists
+            return false;
+        }
+        if (ValidTypeId(type_id)) {
+            // Id already exists
+            return false;
+        }
+        type_to_id.emplace(type, type_id);
+        id_to_type.emplace_back(type);
+        key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
+        keys.emplace_back(std::vector<std::string>());
+        node_properties.emplace_back(Properties());
+        outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
+        incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
+        deleted_ids.emplace_back(Roaring64Map());
+        return true;
+    }
+
     uint16_t NodeTypes::getTypeId(const std::string &type) {
         auto type_search = type_to_id.find(type);
         if (type_search != type_to_id.end()) {
@@ -105,6 +126,11 @@ namespace ragedb {
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
         deleted_ids.emplace_back(Roaring64Map());
         return type_id;
+    }
+
+    std::string NodeTypes::getType(const std::string &type) {
+        uint16_t type_id = getTypeId(type);
+        return getType(type_id);
     }
 
     std::string NodeTypes::getType(uint16_t type_id) {
@@ -209,7 +235,6 @@ namespace ragedb {
     }
 
     std::vector<uint64_t>  NodeTypes::getDeletedIds() const {
-
         std::vector<uint64_t>  allIds;
         // ids are internal ids, we need to switch to external ids
         for (int type_id=1; type_id < id_to_type.size(); type_id++) {
@@ -291,28 +316,6 @@ namespace ragedb {
         }
 
         return counts;
-    }
-
-    bool NodeTypes::addTypeId(const std::string& type, uint16_t type_id) {
-        auto type_search = type_to_id.find(type);
-        if (type_search != type_to_id.end()) {
-            // Type already exists
-            return false;
-        } else {
-            if (ValidTypeId(type_id)) {
-                // Id already exists
-                return false;
-            }
-            type_to_id.emplace(type, type_id);
-            id_to_type.emplace_back(type);
-            key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
-            keys.emplace_back(std::vector<std::string>());
-            node_properties.emplace_back(Properties());
-            outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
-            incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-            deleted_ids.emplace_back(Roaring64Map());
-            return true;
-        }
     }
 
     tsl::sparse_map<std::string, uint64_t> &NodeTypes::getKeysToNodeId(uint16_t node_type_id) {

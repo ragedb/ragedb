@@ -68,12 +68,14 @@ namespace ragedb {
         uint64_t NodeTypesGetCount(uint16_t type_id);
         uint64_t NodeTypesGetCount(const std::string& type);
         std::set<std::string> NodeTypesGet();
+        std::map<std::string, std::string> NodeTypeGet(const std::string& type);
 
         // Relationship Types
         uint16_t RelationshipTypesGetCount();
         uint64_t RelationshipTypesGetCount(uint16_t type_id);
         uint64_t RelationshipTypesGetCount(const std::string& type);
         std::set<std::string> RelationshipTypesGet();
+        std::map<std::string, std::string> RelationshipTypeGet(const std::string& type);
 
         // Node Type
         std::string NodeTypeGetType(uint16_t type_id);

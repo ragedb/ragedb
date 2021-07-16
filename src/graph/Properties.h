@@ -28,6 +28,7 @@ namespace ragedb {
     private:
         tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
+        std::vector<std::string> allowed_types;
         tsl::sparse_map<std::string, std::vector<bool>> booleans;
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;
         tsl::sparse_map<std::string, std::vector<double>> doubles;
@@ -55,6 +56,8 @@ namespace ragedb {
     public:
         Properties();
         seastar::rwlock property_type_lock;
+
+        std::map<std::string, std::string> getPropertyTypes();
 
         uint8_t setPropertyTypeId(const std::string& key, uint8_t property_type_id);
         uint8_t setPropertyType(const std::string& key, const std::string& type);

@@ -29,6 +29,7 @@ class Utilities {
 
 public:
     static inline const sstring PROPERTY = sstring ("property");
+    static inline const sstring DATA_TYPE = sstring ("data_type");
     static inline const sstring TYPE = sstring ("type");
     static inline const sstring KEY = sstring ("key");
     static inline const sstring ID = sstring ("id");

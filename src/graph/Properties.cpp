@@ -39,7 +39,18 @@ namespace ragedb {
                 {"string_list", string_list_type}
         };
 
+        allowed_types = {"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list"};
+
         types.insert({"", 0});
+    }
+
+    std::map<std::string, std::string> Properties::getPropertyTypes() {
+        std::map<std::string, std::string> map;
+        for (auto [type, type_id]: types) {
+            map.insert({type, allowed_types[type_id]});
+        }
+
+        return map;
     }
 
     uint8_t Properties::setPropertyTypeId(const std::string &key, uint8_t property_type_id) {

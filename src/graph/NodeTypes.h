@@ -52,6 +52,7 @@ namespace ragedb {
         bool addTypeId(const std::string &type, uint16_t node_type_id);
         uint16_t getTypeId(const std::string &type);
         uint16_t insertOrGetTypeId(const std::string &type);
+        std::string getType(const std::string &type);
         std::string getType(uint16_t node_type_id);
 
         bool addId(uint16_t node_type_id, uint64_t);

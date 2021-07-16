@@ -29,9 +29,10 @@ namespace ragedb {
     private:
         std::unordered_map<std::string, uint16_t> type_to_id;
         std::vector<std::string> id_to_type;
+        std::vector<std::vector<uint64_t>> from;
+        std::vector<std::vector<uint64_t>> to;
         std::vector<std::vector<Relationship>> relationships;                         // Store of the meta-properties of Relationships
         std::vector<Properties> relationship_properties;                             // Store of the properties of Relationships
-        std::vector<Roaring64Map> ids;
         std::vector<Roaring64Map> deleted_ids;
 
         simdjson::dom::parser parser;
@@ -43,42 +44,36 @@ namespace ragedb {
 
     public:
         RelationshipTypes();
-
         void Clear();
 
-        uint16_t getTypeId(const std::string &);
-
-        uint16_t insertOrGetTypeId(const std::string &);
-
-        std::string getType(uint16_t);
+        bool addTypeId(const std::string &type, uint16_t relationship_type_id);
+        uint16_t getTypeId(const std::string &type);
+        uint16_t insertOrGetTypeId(const std::string &type);
+        std::string getType(const std::string &type);
+        std::string getType(uint16_t relationship_type_id);
 
         bool addId(uint16_t, uint64_t);
-
         bool removeId(uint16_t, uint64_t);
-
         bool containsId(uint16_t, uint64_t);
 
-        Roaring64Map getIds() const;
-
-        Roaring64Map getIds(uint16_t);
-
-        Roaring64Map getDeletedIds() const;
-
-        Roaring64Map getDeletedIds(uint16_t);
+        std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;
+        std::vector<uint64_t> getIds(uint16_t, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> getDeletedIds() const;
+        bool hasDeleted(uint16_t relationship_type_id);
+        uint64_t getDeletedIdsMinimum(uint16_t relationship_type_id);
 
         bool ValidTypeId(uint16_t) const;
+        bool ValidRelationshipId(uint16_t type_id, uint64_t internal_id);
 
+        std::map<uint16_t, uint64_t> getCounts();
         uint64_t getCount(uint16_t);
-
+        uint64_t getDeletedCount(uint16_t node_type_id);
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();
-
         std::set<uint16_t> getTypeIds();
 
-        std::map<uint16_t, uint64_t> getCounts();
 
-        bool addTypeId(const std::string &, uint16_t);
 
         Properties &getRelationshipTypeProperties(uint16_t);
 

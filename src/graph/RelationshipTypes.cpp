@@ -17,7 +17,7 @@
 #include <simdjson.h>
 #include "RelationshipTypes.h"
 #include "Properties.h"
-
+#include "Shard.h"
 
 namespace ragedb {
 
@@ -26,13 +26,14 @@ namespace ragedb {
     static const unsigned int TYPE_BITS = 16U;
     static const unsigned int TYPE_MASK = 0x0000000003FFFFFFU;
 
-    RelationshipTypes::RelationshipTypes() : type_to_id(), id_to_type() {
+    static const std::any tombstone_any = std::any();
+
+    RelationshipTypes::RelationshipTypes() : type_to_id(), id_to_type(), shard_id(seastar::this_shard_id()) {
         // start with empty blank type
         type_to_id.emplace("", 0);
         id_to_type.emplace_back("");
         relationships.emplace_back();
         relationship_properties.emplace_back();
-        ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
     }
 
@@ -44,7 +45,6 @@ namespace ragedb {
         relationships.shrink_to_fit();
         relationship_properties.clear();
         relationship_properties.shrink_to_fit();
-        ids.clear();
         deleted_ids.clear();
 
         // start with empty blank type
@@ -52,7 +52,6 @@ namespace ragedb {
         id_to_type.emplace_back("");
         relationships.emplace_back();
         relationship_properties.emplace_back();
-        ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
     }
 
@@ -66,6 +65,22 @@ namespace ragedb {
 
     uint16_t RelationshipTypes::externalToTypeId(uint64_t id) {
         return (id & TYPE_MASK ) >> SHARD_BITS;
+    }
+
+    bool RelationshipTypes::addTypeId(const std::string &type, uint16_t type_id) {
+        auto type_search = type_to_id.find(type);
+        if (type_search != type_to_id.end()) {
+            // Type already exists
+            return false;
+        }
+        if (ValidTypeId(type_id)) {
+            // Id already exists
+            return false;
+        }
+        type_to_id.emplace(type, type_id);
+        id_to_type.emplace_back(type);
+        deleted_ids.emplace_back(Roaring64Map());
+        return false;
     }
 
     uint16_t RelationshipTypes::getTypeId(const std::string &type) {
@@ -86,9 +101,13 @@ namespace ragedb {
         uint16_t type_id = type_to_id.size();
         type_to_id.emplace(type, type_id);
         id_to_type.emplace_back(type);
-        ids.emplace_back(Roaring64Map());
         deleted_ids.emplace_back(Roaring64Map());
         return type_id;
+    }
+
+    std::string RelationshipTypes::getType(const std::string &type) {
+        uint16_t type_id = getTypeId(type);
+        return getType(type_id);
     }
 
     std::string RelationshipTypes::getType(uint16_t type_id) {
@@ -101,8 +120,7 @@ namespace ragedb {
 
     bool RelationshipTypes::addId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
-            ids.at(type_id).add(id);
-            deleted_ids.at(type_id).remove(id);
+            deleted_ids[type_id].remove(id);
             return true;
         }
         // If not valid return false
@@ -111,8 +129,7 @@ namespace ragedb {
 
     bool RelationshipTypes::removeId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
-            ids.at(type_id).remove(id);
-            deleted_ids.at(type_id).add(id);
+            deleted_ids[type_id].add(id);
             return true;
         }
         // If not valid return false
@@ -121,40 +138,105 @@ namespace ragedb {
 
     bool RelationshipTypes::containsId(uint16_t type_id, uint64_t id) {
         if (ValidTypeId(type_id)) {
-            return ids.at(type_id).contains(id);
+            if (ValidRelationshipId(type_id, id)) {
+                return !deleted_ids[type_id].contains(id);
+            }
         }
         // If not valid return false
         return false;
     }
 
-    Roaring64Map RelationshipTypes::getIds() const {
-        Roaring64Map allIds;
-        for (int i=1; i < type_to_id.size(); i++) {
-            allIds.operator|=(ids[i]);
+    std::vector<uint64_t> RelationshipTypes::getIds(uint64_t skip, uint64_t limit) const {
+        std::vector<uint64_t> allIds;
+        int current = 1;
+        // ids are internal ids, we need to switch to external ids
+        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
+            uint64_t max_id = from[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        internalToExternal(type_id, internal_id);
+                    }
+                    current++;
+                }
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            internalToExternal(type_id, internal_id);
+                        }
+                    }
+                    current++;
+                }
+            }
         }
         return allIds;
     }
 
-    Roaring64Map RelationshipTypes::getIds(uint16_t type_id) {
+    std::vector<uint64_t>  RelationshipTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) {
+        std::vector<uint64_t>  allIds;
+        int current = 1;
         if (ValidTypeId(type_id)) {
-            return ids.at(type_id);
-        }
-        return ids.at(0);
-    }
-
-    Roaring64Map RelationshipTypes::getDeletedIds() const {
-        Roaring64Map allIds;
-        for (int i=1; i < type_to_id.size(); i++) {
-            allIds.operator|=(deleted_ids[i]);
+            uint64_t max_id = from[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        internalToExternal(type_id, internal_id);
+                    }
+                    current++;
+                }
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allIds;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            internalToExternal(type_id, internal_id);
+                        }
+                    }
+                    current++;
+                }
+            }
         }
         return allIds;
     }
 
-    Roaring64Map RelationshipTypes::getDeletedIds(uint16_t type_id) {
-        if (ValidTypeId(type_id)) {
-            return deleted_ids.at(type_id);
+    std::vector<uint64_t>  RelationshipTypes::getDeletedIds() const {
+        std::vector<uint64_t>  allIds;
+        // ids are internal ids, we need to switch to external ids
+        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
+            for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); iterator++) {
+                allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
+            }
         }
-        return deleted_ids.at(0);
+
+        return allIds;
+    }
+
+    bool  RelationshipTypes::hasDeleted(uint16_t type_id) {
+        if (ValidTypeId(type_id)) {
+            return !deleted_ids[type_id].isEmpty();
+        }
+        return false;
+    }
+
+    uint64_t RelationshipTypes::getDeletedIdsMinimum(uint16_t type_id) {
+        if (ValidTypeId(type_id)) {
+            for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); iterator++) {
+                return iterator.operator*();
+            }
+        }
+        return 0;
     }
 
     bool RelationshipTypes::ValidTypeId(uint16_t type_id) const {
@@ -162,9 +244,25 @@ namespace ragedb {
         return (type_id > 0 && type_id < id_to_type.size());
     }
 
+    bool RelationshipTypes::ValidRelationshipId(uint16_t type_id, uint64_t internal_id) {
+        // If the type is valid, is the internal id within the vector size and is it not deleted?
+        if (ValidTypeId(type_id)) {
+            return from[type_id].size() > internal_id && !deleted_ids[type_id].contains(internal_id);
+        }
+        return false;
+    }
+
     uint64_t RelationshipTypes::getCount(uint16_t type_id) {
         if (ValidTypeId(type_id)) {
-            return ids.at(type_id).cardinality();
+            return from[type_id].size() - deleted_ids[type_id].cardinality();
+        }
+        // If not valid return 0
+        return 0;
+    }
+
+    uint64_t RelationshipTypes::getDeletedCount(uint16_t type_id) {
+        if (ValidTypeId(type_id)) {
+            return deleted_ids[type_id].cardinality();
         }
         // If not valid return 0
         return 0;
@@ -190,29 +288,11 @@ namespace ragedb {
 
     std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() {
         std::map<uint16_t,uint64_t> counts;
-        for (int i=1; i < type_to_id.size(); i++) {
-            counts.insert({i, ids[i].cardinality()});
+        for (int type_id=1; type_id < type_to_id.size(); type_id++) {
+            counts.insert({type_id, from[type_id].size() - deleted_ids[type_id].cardinality()});
         }
 
         return counts;
-    }
-
-    bool RelationshipTypes::addTypeId(const std::string &type, uint16_t type_id) {
-        auto type_search = type_to_id.find(type);
-        if (type_search != type_to_id.end()) {
-            // Type already exists
-            return false;
-        } else {
-            if (ValidTypeId(type_id)) {
-                // Id already exists
-                return false;
-            }
-            type_to_id.emplace(type, type_id);
-            id_to_type.emplace_back(type);
-            ids.emplace_back(Roaring64Map());
-            deleted_ids.emplace_back(Roaring64Map());
-            return false;
-        }
     }
 
     Properties &RelationshipTypes::getRelationshipTypeProperties(uint16_t type_id) {

@@ -119,6 +119,11 @@ namespace ragedb {
         return node_types.getTypes();
     }
 
+    std::map<std::string, std::string> Shard::NodeTypeGet(const std::string& type) {
+        uint16_t type_id = node_types.getTypeId(type);
+        return node_types.getNodeTypeProperties(type_id).getPropertyTypes();
+    }
+
     // Relationship Types ===================================================================================================================
     uint16_t Shard::RelationshipTypesGetCount() {
         return relationship_types.getSize();
