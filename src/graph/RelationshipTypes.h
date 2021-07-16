@@ -29,10 +29,10 @@ namespace ragedb {
     private:
         std::unordered_map<std::string, uint16_t> type_to_id;
         std::vector<std::string> id_to_type;
-        std::vector<std::vector<uint64_t>> from;
-        std::vector<std::vector<uint64_t>> to;
+        std::vector<std::vector<uint64_t>> starting_node_ids;
+        std::vector<std::vector<uint64_t>> ending_node_ids;
         std::vector<std::vector<Relationship>> relationships;                         // Store of the meta-properties of Relationships
-        std::vector<Properties> relationship_properties;                             // Store of the properties of Relationships
+        std::vector<Properties> properties;                             // Store of the properties of Relationships
         std::vector<Roaring64Map> deleted_ids;
 
         simdjson::dom::parser parser;
@@ -57,27 +57,35 @@ namespace ragedb {
         bool containsId(uint16_t, uint64_t);
 
         std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;
-        std::vector<uint64_t> getIds(uint16_t, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
         std::vector<uint64_t> getDeletedIds() const;
-        bool hasDeleted(uint16_t relationship_type_id);
-        uint64_t getDeletedIdsMinimum(uint16_t relationship_type_id);
+        bool hasDeleted(uint16_t type_id);
+        uint64_t getDeletedIdsMinimum(uint16_t type_id);
 
-        bool ValidTypeId(uint16_t) const;
+        bool ValidTypeId(uint16_t type_id) const;
         bool ValidRelationshipId(uint16_t type_id, uint64_t internal_id);
 
         std::map<uint16_t, uint64_t> getCounts();
-        uint64_t getCount(uint16_t);
+        uint64_t getCount(uint16_t type_id);
         uint64_t getDeletedCount(uint16_t node_type_id);
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();
         std::set<uint16_t> getTypeIds();
+        uint64_t getStartingNodeId(uint16_t type_id, uint64_t internal_id);
+        uint64_t getEndingNodeId(uint16_t type_id, uint64_t internal_id);
 
+        std::map<std::string, std::any> getRelationshipProperties(uint16_t type_id, uint64_t internal_id);
+        Relationship getRelationship(uint64_t external_id);
+        Relationship getRelationship(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
+        std::any getRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
+        std::any getRelationshipProperty(uint64_t external_id, const std::string &property);
+        bool setRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value);
+        bool setRelationshipProperty(uint64_t external_id, const std::string &property, const std::string &value);
 
+        Properties &getRelationshipTypeProperties(uint16_t type_id);
+        bool setProperties(uint16_t type_id, uint64_t, const std::string &);
 
-        Properties &getRelationshipTypeProperties(uint16_t);
-
-        bool setProperties(uint16_t, uint64_t, const std::string &);
     };
 }
 

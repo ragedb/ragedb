@@ -39,12 +39,12 @@ namespace ragedb {
         return key;
     }
 
-    std::map<std::string, std::any> Node::getProperties() const {
-        return properties;
-    }
-
     std::string Node::getType() const {
         return type;
+    }
+
+    std::map<std::string, std::any> Node::getProperties() const {
+        return properties;
     }
 
 }

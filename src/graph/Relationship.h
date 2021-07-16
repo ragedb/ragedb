@@ -27,6 +27,7 @@ namespace ragedb {
     class Relationship {
     private:
         uint64_t id{};
+        std::string type{};
         uint64_t starting_node_id{};
         uint64_t ending_node_id{};
         std::map<std::string, std::any> properties{};
@@ -34,12 +35,14 @@ namespace ragedb {
     public:
         Relationship();
 
-        Relationship(uint64_t id, uint64_t startingNodeId, uint64_t endingNodeId);
-        Relationship(uint64_t id, uint64_t startingNodeId, uint64_t endingNodeId, std::map<std::string, std::any> properties);
+        Relationship(uint64_t id, std::string type, uint64_t startingNodeId, uint64_t endingNodeId);
+        Relationship(uint64_t id, std::string type, uint64_t startingNodeId, uint64_t endingNodeId, std::map<std::string, std::any> properties);
 
         [[nodiscard]] uint64_t getId() const;
 
         [[nodiscard]] uint16_t getTypeId() const;
+
+        [[nodiscard]] std::string getType() const;
 
         [[nodiscard]] uint64_t getStartingNodeId() const;
 

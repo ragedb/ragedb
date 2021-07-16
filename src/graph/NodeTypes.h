@@ -32,10 +32,9 @@ namespace ragedb {
         std::vector<std::string> id_to_type;
         std::vector<tsl::sparse_map<std::string, uint64_t>> key_to_node_id;  // "Index" to get node id by type:key
         std::vector<std::vector<std::string>> keys;                          // Store of the keys of Nodes
-        std::vector<Properties> node_properties;                             // Store of the properties of Nodes
+        std::vector<Properties> properties;                             // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
-        //std::vector<Roaring64Map> ids;          // all ids are internal ids, TODO: Can this be eliminated?
         std::vector<Roaring64Map> deleted_ids; // all ids are internal ids
 
         simdjson::dom::parser parser;
@@ -49,50 +48,50 @@ namespace ragedb {
         NodeTypes();
         void Clear();
 
-        bool addTypeId(const std::string &type, uint16_t node_type_id);
+        bool addTypeId(const std::string &type, uint16_t type_id);
         uint16_t getTypeId(const std::string &type);
         uint16_t insertOrGetTypeId(const std::string &type);
         std::string getType(const std::string &type);
-        std::string getType(uint16_t node_type_id);
+        std::string getType(uint16_t type_id);
 
-        bool addId(uint16_t node_type_id, uint64_t);
-        bool removeId(uint16_t node_type_id, uint64_t);
-        bool containsId(uint16_t, uint64_t);
+        bool addId(uint16_t type_id, uint64_t internal_id);
+        bool removeId(uint16_t type_id, uint64_t internal_id);
+        bool containsId(uint16_t type_id, uint64_t internal_id);
 
         std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;
-        std::vector<uint64_t> getIds(uint16_t, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
         std::vector<uint64_t> getDeletedIds() const;
-        bool hasDeleted(uint16_t node_type_id);
-        uint64_t getDeletedIdsMinimum(uint16_t node_type_id);
+        bool hasDeleted(uint16_t type_id);
+        uint64_t getDeletedIdsMinimum(uint16_t type_id);
 
-        bool ValidTypeId(uint16_t node_type_id) const;
+        bool ValidTypeId(uint16_t type_id) const;
         bool ValidNodeId(uint16_t type_id, uint64_t internal_id);
 
         std::map<uint16_t, uint64_t> getCounts();
-        uint64_t getCount(uint16_t node_type_id);
-        uint64_t getDeletedCount(uint16_t node_type_id);
+        uint64_t getCount(uint16_t type_id);
+        uint64_t getDeletedCount(uint16_t type_id);
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();
         std::set<uint16_t> getTypeIds();
 
-        uint64_t getNodeId(uint16_t node_type_id, const std::string &key);
+        uint64_t getNodeId(uint16_t type_id, const std::string &key);
         uint64_t getNodeId(const std::string &type, const std::string &key);
-        std::string getNodeKey(uint16_t node_type_id, uint64_t internal_id);
-        std::map<std::string, std::any> getNodeProperties(uint16_t node_type_id, uint64_t internal_id);
+        std::string getNodeKey(uint16_t type_id, uint64_t internal_id);
+        std::map<std::string, std::any> getNodeProperties(uint16_t type_id, uint64_t internal_id);
         Node getNode(uint64_t external_id);
-        Node getNode(uint16_t node_type_id, uint64_t internal_id, uint64_t external_id);
-        std::any getNodeProperty(uint16_t node_type_id, uint64_t internal_id, const std::string &property);
+        Node getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
+        std::any getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         std::any getNodeProperty(uint64_t external_id, const std::string &property);
-        bool setNodeProperty(uint16_t node_type_id, uint64_t internal_id, const std::string &property, const std::string &value);
+        bool setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value);
         bool setNodeProperty(uint64_t external_id, const std::string &property, const std::string &value);
 
-        Properties &getNodeTypeProperties(uint16_t node_type_id);
-        bool setProperties(uint16_t node_type_id, uint64_t, const std::string &);
-        tsl::sparse_map<std::string, uint64_t> &getKeysToNodeId(uint16_t node_type_id);
-        std::vector<std::string> &getKeys(uint16_t node_type_id);
-        std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t node_type_id);
-        std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t node_type_id);
+        Properties &getNodeTypeProperties(uint16_t type_id);
+        bool setProperties(uint16_t type_id, uint64_t, const std::string &);
+        tsl::sparse_map<std::string, uint64_t> &getKeysToNodeId(uint16_t type_id);
+        std::vector<std::string> &getKeys(uint16_t type_id);
+        std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t type_id);
+        std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t type_id);
 
     };
 }

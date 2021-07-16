@@ -15,6 +15,8 @@
  */
 
 #include "Relationship.h"
+
+#include <utility>
 #include "Shard.h"
 
 namespace ragedb {
@@ -22,15 +24,19 @@ namespace ragedb {
     Relationship::Relationship() = default;
 
     Relationship::Relationship(uint64_t id,
+                               std::string type,
                                uint64_t startingNodeId,
                                uint64_t endingNodeId) : id(id),
+                               type(std::move(type)),
                                starting_node_id(startingNodeId),
                                ending_node_id(endingNodeId) {}
 
     Relationship::Relationship(uint64_t id,
+                               std::string type,
                                uint64_t startingNodeId,
                                uint64_t endingNodeId,
                                std::map<std::string, std::any>  properties) : id(id),
+                                                        type(std::move(type)),
                                                         starting_node_id(startingNodeId),
                                                         ending_node_id(endingNodeId),
                                                         properties(std::move(properties)){}
@@ -43,6 +49,10 @@ namespace ragedb {
         return Shard::externalToTypeId(id);
     }
 
+    std::string Relationship::getType() const {
+        return type;
+    }
+
     uint64_t Relationship::getStartingNodeId() const {
         return starting_node_id;
     }
@@ -51,7 +61,7 @@ namespace ragedb {
         return ending_node_id;
     }
 
-    std::map<std::string, std::any> Node::getProperties() const {
+    std::map<std::string, std::any> Relationship::getProperties() const {
         return properties;
     }
 

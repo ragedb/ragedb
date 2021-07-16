@@ -36,7 +36,7 @@ namespace ragedb {
         id_to_type.emplace_back();
         key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
         keys.emplace_back(std::vector<std::string>());
-        node_properties.emplace_back();
+        properties.emplace_back();
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
         deleted_ids.emplace_back(Roaring64Map());
@@ -50,8 +50,8 @@ namespace ragedb {
         key_to_node_id.shrink_to_fit();
         keys.clear();
         keys.shrink_to_fit();
-        node_properties.clear();
-        node_properties.shrink_to_fit();
+        properties.clear();
+        properties.shrink_to_fit();
         outgoing_relationships.clear();
         outgoing_relationships.shrink_to_fit();
         incoming_relationships.clear();
@@ -94,7 +94,7 @@ namespace ragedb {
         id_to_type.emplace_back(type);
         key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
         keys.emplace_back(std::vector<std::string>());
-        node_properties.emplace_back(Properties());
+        properties.emplace_back(Properties());
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
         deleted_ids.emplace_back(Roaring64Map());
@@ -121,7 +121,7 @@ namespace ragedb {
         id_to_type.emplace_back(type);
         key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
         keys.emplace_back(std::vector<std::string>());
-        node_properties.emplace_back(Properties());
+        properties.emplace_back(Properties());
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
         deleted_ids.emplace_back(Roaring64Map());
@@ -141,28 +141,28 @@ namespace ragedb {
         return id_to_type[0];
     }
 
-    bool NodeTypes::addId(uint16_t type_id, uint64_t id) {
+    bool NodeTypes::addId(uint16_t type_id, uint64_t internal_id) {
         if (ValidTypeId(type_id)) {
-            deleted_ids[type_id].remove(id);
+            deleted_ids[type_id].remove(internal_id);
             return true;
         }
         // If not valid return false
         return false;
     }
 
-    bool NodeTypes::removeId(uint16_t type_id, uint64_t id) {
+    bool NodeTypes::removeId(uint16_t type_id, uint64_t internal_id) {
         if (ValidTypeId(type_id)) {
-            deleted_ids[type_id].add(id);
+            deleted_ids[type_id].add(internal_id);
             return true;
         }
         // If not valid return false
         return false;
     }
 
-    bool NodeTypes::containsId(uint16_t type_id, uint64_t id) {
+    bool NodeTypes::containsId(uint16_t type_id, uint64_t internal_id) {
         if (ValidTypeId(type_id)) {
-            if (ValidNodeId(type_id, id)) {
-                return !deleted_ids[type_id].contains(id);
+            if (ValidNodeId(type_id, internal_id)) {
+                return !deleted_ids[type_id].contains(internal_id);
             }
         }
         // If not valid return false
@@ -318,8 +318,8 @@ namespace ragedb {
         return counts;
     }
 
-    tsl::sparse_map<std::string, uint64_t> &NodeTypes::getKeysToNodeId(uint16_t node_type_id) {
-        return key_to_node_id[node_type_id];
+    tsl::sparse_map<std::string, uint64_t> &NodeTypes::getKeysToNodeId(uint16_t type_id) {
+        return key_to_node_id[type_id];
     }
 
     uint64_t NodeTypes::getNodeId(uint16_t type_id, const std::string& key) {
@@ -343,16 +343,16 @@ namespace ragedb {
         return 0;
     }
 
-    std::string NodeTypes::getNodeKey(uint16_t node_type_id, uint64_t internal_id) {
-        if(ValidTypeId(node_type_id)) {
-            return keys[node_type_id][internal_id];
+    std::string NodeTypes::getNodeKey(uint16_t type_id, uint64_t internal_id) {
+        if(ValidTypeId(type_id)) {
+            return keys[type_id][internal_id];
         }
         return id_to_type[0];
     };
 
-    std::map<std::string, std::any> NodeTypes::getNodeProperties(uint16_t node_type_id, uint64_t internal_id) {
-        if(ValidTypeId(node_type_id)) {
-            return node_properties[node_type_id].getProperties(internal_id);
+    std::map<std::string, std::any> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
+        if(ValidTypeId(type_id)) {
+            return properties[type_id].getProperties(internal_id);
         }
         return std::map<std::string, std::any>();
     }
@@ -361,14 +361,14 @@ namespace ragedb {
         return getNode(externalToTypeId(external_id), externalToInternal(external_id), external_id);
     }
 
-    Node NodeTypes::getNode(uint16_t node_type_id, uint64_t internal_id, uint64_t external_id) {
-        return Node(external_id, getType(node_type_id), getKeys(node_type_id)[internal_id], getNodeProperties(node_type_id, internal_id));
+    Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
+        return Node(external_id, getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
     }
 
-    std::any NodeTypes::getNodeProperty(uint16_t node_type_id, uint64_t internal_id, const std::string &property) {
-        if(ValidTypeId(node_type_id)) {
-            if (ValidNodeId(node_type_id, internal_id)) {
-                return node_properties[node_type_id].getProperty(property, internal_id);
+    std::any NodeTypes::getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
+        if(ValidTypeId(type_id)) {
+            if (ValidNodeId(type_id, internal_id)) {
+                return properties[type_id].getProperty(property, internal_id);
             }
         }
         return tombstone_any;
@@ -379,7 +379,7 @@ namespace ragedb {
     }
 
     Properties &NodeTypes::getNodeTypeProperties(uint16_t type_id) {
-        return node_properties[type_id];
+        return properties[type_id];
     }
 
     bool NodeTypes::setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value) {
@@ -391,20 +391,20 @@ namespace ragedb {
                 for (auto[key, value] : object) {
                     switch (value.type()) {
                         case simdjson::dom::element_type::INT64:
-                            node_properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
+                            properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
                             break;
                         case simdjson::dom::element_type::UINT64:
                             // Unsigned Integer Values are not allowed, convert to signed
-                            node_properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
+                            properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
                             break;
                         case simdjson::dom::element_type::DOUBLE:
-                            node_properties[type_id].setDoubleProperty(property, internal_id, double(value));
+                            properties[type_id].setDoubleProperty(property, internal_id, double(value));
                             break;
                         case simdjson::dom::element_type::STRING:
-                            node_properties[type_id].setStringProperty(property, internal_id, std::string(value));
+                            properties[type_id].setStringProperty(property, internal_id, std::string(value));
                             break;
                         case simdjson::dom::element_type::BOOL:
-                            node_properties[type_id].setBooleanProperty(property, internal_id, bool(value));
+                            properties[type_id].setBooleanProperty(property, internal_id, bool(value));
                             break;
                         case simdjson::dom::element_type::NULL_VALUE:
                             // Null Values are not allowed, just ignore them
@@ -430,31 +430,31 @@ namespace ragedb {
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             int_vector.emplace_back(int64_t(child));
                                         }
-                                        node_properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
                                         break;
                                     case simdjson::dom::element_type::UINT64:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
                                         }
-                                        node_properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
                                         break;
                                     case simdjson::dom::element_type::DOUBLE:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             double_vector.emplace_back(double(child));
                                         }
-                                        node_properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                                        properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
                                         break;
                                     case simdjson::dom::element_type::STRING:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             string_vector.emplace_back(child);
                                         }
-                                        node_properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+                                        properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
                                         break;
                                     case simdjson::dom::element_type::BOOL:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             bool_vector.emplace_back(bool(child));
                                         }
-                                        node_properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
+                                        properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
                                         break;
                                     case simdjson::dom::element_type::NULL_VALUE:
                                         // Null Values are not allowed, just ignore them
@@ -474,11 +474,11 @@ namespace ragedb {
         return setNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
     }
 
-    bool NodeTypes::setProperties(uint16_t type_id, uint64_t internal_id, const std::string& properties) {
-        if (!properties.empty()) {
+    bool NodeTypes::setProperties(uint16_t type_id, uint64_t internal_id, const std::string& json) {
+        if (!json.empty()) {
             // Get the properties
             simdjson::dom::object object;
-            simdjson::error_code error = parser.parse(properties).get(object);
+            simdjson::error_code error = parser.parse(json).get(object);
 
             if (!error) {
                 // Add the node properties
@@ -486,20 +486,20 @@ namespace ragedb {
                     auto property = static_cast<std::string>(key);
                     switch (value.type()) {
                         case simdjson::dom::element_type::INT64:
-                            node_properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
+                            properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
                             break;
                         case simdjson::dom::element_type::UINT64:
                             // Unsigned Integer Values are not allowed, convert to signed
-                            node_properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
+                            properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
                             break;
                         case simdjson::dom::element_type::DOUBLE:
-                            node_properties[type_id].setDoubleProperty(property, internal_id, double(value));
+                            properties[type_id].setDoubleProperty(property, internal_id, double(value));
                             break;
                         case simdjson::dom::element_type::STRING:
-                            node_properties[type_id].setStringProperty(property, internal_id, std::string(value));
+                            properties[type_id].setStringProperty(property, internal_id, std::string(value));
                             break;
                         case simdjson::dom::element_type::BOOL:
-                            node_properties[type_id].setBooleanProperty(property, internal_id, bool(value));
+                            properties[type_id].setBooleanProperty(property, internal_id, bool(value));
                             break;
                         case simdjson::dom::element_type::NULL_VALUE:
                             // Null Values are not allowed, just ignore them
@@ -525,31 +525,31 @@ namespace ragedb {
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             int_vector.emplace_back(int64_t(child));
                                         }
-                                        node_properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
                                         break;
                                     case simdjson::dom::element_type::UINT64:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
                                         }
-                                        node_properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
                                         break;
                                     case simdjson::dom::element_type::DOUBLE:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             double_vector.emplace_back(double(child));
                                         }
-                                        node_properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                                        properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
                                         break;
                                     case simdjson::dom::element_type::STRING:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             string_vector.emplace_back(child);
                                         }
-                                        node_properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+                                        properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
                                         break;
                                     case simdjson::dom::element_type::BOOL:
                                         for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                             bool_vector.emplace_back(bool(child));
                                         }
-                                        node_properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
+                                        properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
                                         break;
                                     case simdjson::dom::element_type::NULL_VALUE:
                                         // Null Values are not allowed, just ignore them
@@ -565,16 +565,16 @@ namespace ragedb {
         return false;
     }
 
-    std::vector<std::string>& NodeTypes::getKeys(uint16_t node_type_id) {
-        return keys[node_type_id];
+    std::vector<std::string>& NodeTypes::getKeys(uint16_t type_id) {
+        return keys[type_id];
     }
 
-    std::vector<std::vector<Group>>& NodeTypes::getOutgoingRelationships(uint16_t node_type_id) {
-        return outgoing_relationships[node_type_id];
+    std::vector<std::vector<Group>>& NodeTypes::getOutgoingRelationships(uint16_t type_id) {
+        return outgoing_relationships[type_id];
     }
 
-    std::vector<std::vector<Group>>& NodeTypes::getIncomingRelationships(uint16_t node_type_id) {
-        return incoming_relationships[node_type_id];
+    std::vector<std::vector<Group>>& NodeTypes::getIncomingRelationships(uint16_t type_id) {
+        return incoming_relationships[type_id];
     }
 
 }

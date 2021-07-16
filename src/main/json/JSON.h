@@ -277,6 +277,27 @@ private:
 
 };
 
+struct schema_json : public json::jsonable {
+private:
+    std::map<std::string, std::string> schema;
+
+public:
+    schema_json(const std::map<std::string, std::string> &_schema) : schema(_schema) {}
+    schema_json() = default;
+    ~schema_json() {
+        schema.clear();
+    }
+
+    std::string to_json() const {
+        json_properties_builder jsonPropertiesBuilder;
+        for (auto [key, val] : schema) {
+            jsonPropertiesBuilder.add(key, val);
+        }
+
+        return jsonPropertiesBuilder.as_json();
+    }
+};
+
 struct properties_json : public json::jsonable {
 private:
     std::map<std::string, std::any> properties;
@@ -328,8 +349,8 @@ struct relationship_json : public json::json_base {
     relationship_json& operator=(const T& e) {
         id = e.id;
         type = e.type;
-        from = e.from;
-        to = e.to;
+        from = e.starting_node_ids;
+        to = e.ending_node_ids;
         properties = e.properties;
         return *this;
     }

@@ -15,8 +15,11 @@
  */
 
 #include "Schema.h"
+
+#include <utility>
 #include "Utilities.h"
 #include "../json/JSON.h"
+#include <seastar/json/formatter.hh>
 
 void Schema::set_routes(routes &routes) {
 
@@ -98,8 +101,9 @@ Schema::GetNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std::un
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-
-    }
+        std::map<std::string, std::string> type = parent.graph.shard.local().NodeTypeGet(req->param[Utilities::TYPE]);
+        rep->write_body("json", json::stream_object(schema_json(type)));
+        }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -130,7 +134,8 @@ Schema::GetRelationshipTypeHandler::handle([[maybe_unused]] const sstring &path,
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-
+        std::map<std::string, std::string> type = parent.graph.shard.local().RelationshipTypeGet(req->param[Utilities::TYPE]);
+        rep->write_body("json", json::stream_object(schema_json(type)));
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
