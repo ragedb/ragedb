@@ -113,7 +113,15 @@ Schema::PostNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std::u
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-
+        return parent.graph.shard.local().NodeTypeInsertPeered(req->param[Utilities::TYPE]).then(
+                [rep = std::move(rep)](bool success) mutable {
+                    if (success) {
+                        rep->set_status(reply::status_type::no_content);
+                    } else {
+                        rep->set_status(reply::status_type::not_modified);
+                    }
+                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -153,7 +161,15 @@ Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const sstring &path
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-
+        return parent.graph.shard.local().RelationshipTypeInsertPeered(req->param[Utilities::TYPE]).then(
+                [rep = std::move(rep)](bool success) mutable {
+                    if (success) {
+                        rep->set_status(reply::status_type::no_content);
+                    } else {
+                        rep->set_status(reply::status_type::not_modified);
+                    }
+                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -197,7 +213,14 @@ Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const sstring &path
     bool valid_data_type = Utilities::validate_parameter(Utilities::DATA_TYPE, req, rep, "Invalid data type");
 
     if(valid_type && valid_property && valid_data_type) {
-
+        return parent.graph.shard.local().NodePropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -243,7 +266,14 @@ Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const sstri
     bool valid_data_type = Utilities::validate_parameter(Utilities::DATA_TYPE, req, rep, "Invalid data type");
 
     if(valid_type && valid_property && valid_data_type) {
-
+        return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
