@@ -52,15 +52,18 @@ namespace ragedb {
         const std::vector<std::string> tombstone_strings_list = std::vector<std::string>();
 
         void addPropertyTypeVectors(const std::string &key, uint8_t type_id);
+        void removePropertyTypeVectors(const std::string &key, uint8_t type_id);
 
     public:
         Properties();
+        void clear();
         seastar::rwlock property_type_lock;
 
         std::map<std::string, std::string> getPropertyTypes();
 
         uint8_t setPropertyTypeId(const std::string& key, uint8_t property_type_id);
         uint8_t setPropertyType(const std::string& key, const std::string& type);
+        bool removePropertyType(const std::string& key);
 
         tsl::sparse_map<std::string, std::vector<bool>> & getAllBooleanProperties();
         bool getBooleanProperty(const std::string&, uint64_t);

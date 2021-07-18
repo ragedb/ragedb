@@ -134,6 +134,20 @@ namespace ragedb {
         return 0;
     }
 
+    // TODO: this is NOT correct. We need to delete all the relationship chains first
+    bool RelationshipTypes::deleteTypeId(const std::string &type) {
+        // TODO: Recycle type ids
+        uint16_t type_id = getTypeId(type);
+        if (ValidTypeId(type_id)) {
+            type_to_id[type] = 0;
+            id_to_type[type_id] = "";
+            starting_node_ids[type_id].clear();
+            ending_node_ids[type_id].clear();
+            properties[type_id].clear();
+            deleted_ids[type_id].clear();
+        }
+    }
+
     bool RelationshipTypes::addId(uint16_t type_id, uint64_t internal_id) {
         if (ValidTypeId(type_id)) {
             deleted_ids[type_id].remove(internal_id);
@@ -300,6 +314,14 @@ namespace ragedb {
         }
 
         return type_ids;
+    }
+
+    bool RelationshipTypes::deleteTypeProperty(uint16_t type_id, const std::string &property) {
+        if (ValidTypeId(type_id) ) {
+            properties[type_id].removePropertyType(property);
+        }
+
+        return false;
     }
 
     std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() {

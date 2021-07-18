@@ -164,6 +164,10 @@ namespace ragedb {
         return node_types.addTypeId(type, type_id);
     }
 
+    bool Shard::DeleteNodeType(const std::string& type) {
+        return node_types.deleteTypeId(type);
+    }
+
     // Relationship Type ====================================================================================================================
     std::string Shard::RelationshipTypeGetType(uint16_t type_id) {
         return relationship_types.getType(type_id);
@@ -182,6 +186,10 @@ namespace ragedb {
         return relationship_types.addTypeId(type, type_id);
     }
 
+    bool Shard::DeleteRelationshipType(const std::string& type) {
+        return relationship_types.deleteTypeId(type);
+    }
+
     // Property Types =======================================================================================================================
     uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
         return node_types.getNodeTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
@@ -189,6 +197,24 @@ namespace ragedb {
 
     uint8_t Shard::RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
         return relationship_types.getRelationshipTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
+    }
+
+    std::string Shard::NodePropertyTypeGet(const std::string& type, const std::string& key) {
+       uint16_t type_id = node_types.getTypeId(type);
+       return node_types.getNodeTypeProperties(type_id).getPropertyTypes()[key];
+    }
+
+    std::string Shard::RelationshipPropertyTypeGet(const std::string& type,  const std::string& key) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        return relationship_types.getRelationshipTypeProperties(type_id).getPropertyTypes()[key];
+    }
+
+    bool Shard::NodePropertyTypeDelete(uint16_t type_id, const std::string& key) {
+        return node_types.deleteTypeProperty(type_id, key);
+    }
+
+    bool Shard::RelationshipPropertyTypeDelete(uint16_t type_id, const std::string& key) {
+        return relationship_types.deleteTypeProperty(type_id, key);
     }
 
     // Nodes ================================================================================================================================
@@ -386,24 +412,40 @@ namespace ragedb {
     }
 
     seastar::future<uint16_t> Shard::NodeTypeInsertPeered(const std::string &type) {
-        uint16_t node_type_id = node_types.getTypeId(type);
-        if (node_type_id == 0) {
-            // node_type_id is global so unfortunately we need to lock here
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id == 0) {
+            // type_id is global so unfortunately we need to lock here
             this->node_type_lock.for_write().lock().get();
             // The node type was not found and must therefore be new, add it to all shards.
-            node_type_id = node_types.insertOrGetTypeId(type);
-            return container().invoke_on_all([type, node_type_id](Shard &local_shard) {
-                        local_shard.NodeTypeInsert(type, node_type_id);
+            type_id = node_types.insertOrGetTypeId(type);
+            return container().invoke_on_all([type, type_id](Shard &local_shard) {
+                        local_shard.NodeTypeInsert(type, type_id);
                     })
-                    .then([node_type_id, this] {
+                    .then([type_id, this] {
                         this->node_type_lock.for_write().unlock();
-                        return seastar::make_ready_future<uint16_t>(node_type_id);
+                        return seastar::make_ready_future<uint16_t>(type_id);
                     });
         }
 
-        return seastar::make_ready_future<uint16_t>(node_type_id);
+        return seastar::make_ready_future<uint16_t>(type_id);
     }
+    seastar::future<bool> Shard::DeleteNodeTypePeered(const std::string& type) {
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id == 0) {
+            // type_id is global so unfortunately we need to lock here
+            this->node_type_lock.for_write().lock().get();
+            // The type was found and must therefore be deleted on all shards.
+            return container().invoke_on_all([type](Shard &local_shard) {
+                        local_shard.DeleteNodeType(type);
+                    })
+                    .then([type_id, this] {
+                        this->node_type_lock.for_write().unlock();
+                        return seastar::make_ready_future<bool>(true);
+                    });
+        }
 
+        return seastar::make_ready_future<bool>(false);
+    }
 
     // Relationship Type ====================================================================================================================
     std::string Shard::RelationshipTypeGetTypePeered(uint16_t type_id) {
@@ -433,6 +475,24 @@ namespace ragedb {
         }
 
         return seastar::make_ready_future<uint16_t>(rel_type_id);
+    }
+
+    seastar::future<bool> Shard::DeleteRelationshipTypePeered(const std::string& type) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        if (type_id == 0) {
+            // type_id is global so unfortunately we need to lock here
+            this->rel_type_lock.for_write().lock().get();
+            // The type was found and must therefore be deleted on all shards.
+            return container().invoke_on_all([type](Shard &local_shard) {
+                        local_shard.DeleteRelationshipType(type);
+                    })
+                    .then([type_id, this] {
+                        this->rel_type_lock.for_write().unlock();
+                        return seastar::make_ready_future<bool>(true);
+                    });
+        }
+
+        return seastar::make_ready_future<bool>(false);
     }
 
     // Nodes ===============================================================================================================================
@@ -545,6 +605,32 @@ namespace ragedb {
 
     // Property Types ======================================================================================================================
 
+    seastar::future<uint8_t> Shard::NodePropertyTypeInsertPeered(uint16_t type_id, const std::string &key, const std::string &type) {
+        node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().lock().get();
+
+        uint8_t property_type_id = node_types.getNodeTypeProperties(type_id).setPropertyType(key, type);
+
+        return container().invoke_on_all([type_id, key, property_type_id](Shard &all_shards) {
+            all_shards.NodePropertyTypeAdd(type_id, key, property_type_id);
+        }).then([type_id, property_type_id, this] {
+            this->node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().unlock();
+            return seastar::make_ready_future<uint8_t>(property_type_id);
+        });
+    }
+
+    seastar::future<uint8_t> Shard::RelationshipPropertyTypeInsertPeered(uint16_t type_id, const std::string &key, const std::string &type) {
+        relationship_types.getRelationshipTypeProperties(type_id).property_type_lock.for_write().lock().get();
+
+        uint8_t property_type_id = relationship_types.getRelationshipTypeProperties(type_id).setPropertyType(key, type);
+
+        return container().invoke_on_all([type_id, key, property_type_id](Shard &all_shards) {
+            all_shards.RelationshipPropertyTypeAdd(type_id, key, property_type_id);
+        }).then([type_id, property_type_id, this] {
+            this->relationship_types.getRelationshipTypeProperties(type_id).property_type_lock.for_write().unlock();
+            return seastar::make_ready_future<uint8_t>(property_type_id);
+        });
+    }
+
     seastar::future<uint8_t> Shard::NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type) {
         uint16_t node_type_id = node_types.getTypeId(type);
         if (node_type_id == 0) {
@@ -559,19 +645,6 @@ namespace ragedb {
 
         return container().invoke_on(0, [node_type_id, key, type] (Shard &local_shard) {
             return local_shard.NodePropertyTypeInsertPeered(node_type_id, key, type);
-        });
-    }
-
-    seastar::future<uint8_t> Shard::NodePropertyTypeInsertPeered(uint16_t type_id, const std::string &key, const std::string &type) {
-        node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().lock().get();
-
-        uint8_t property_type_id = node_types.getNodeTypeProperties(type_id).setPropertyType(key, type);
-
-        return container().invoke_on_all([type_id, key, property_type_id](Shard &all_shards) {
-            all_shards.NodePropertyTypeAdd(type_id, key, property_type_id);
-        }).then([type_id, property_type_id, this] {
-            this->node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().unlock();
-            return seastar::make_ready_future<uint8_t>(property_type_id);
         });
     }
 
@@ -592,18 +665,41 @@ namespace ragedb {
         });
     }
 
-    seastar::future<uint8_t> Shard::RelationshipPropertyTypeInsertPeered(uint16_t type_id, const std::string &key, const std::string &type) {
-        relationship_types.getRelationshipTypeProperties(type_id).property_type_lock.for_write().lock().get();
+    seastar::future<bool> Shard::NodePropertyTypeDeletePeered(const std::string& type, const std::string& key) {
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id == 0) {
+            return seastar::make_ready_future<bool>(false);
+        }
 
-        uint8_t property_type_id = relationship_types.getRelationshipTypeProperties(type_id).setPropertyType(key, type);
-
-        return container().invoke_on_all([type_id, key, property_type_id](Shard &all_shards) {
-            all_shards.RelationshipPropertyTypeAdd(type_id, key, property_type_id);
-        }).then([type_id, property_type_id, this] {
-            this->relationship_types.getRelationshipTypeProperties(type_id).property_type_lock.for_write().unlock();
-            return seastar::make_ready_future<uint8_t>(property_type_id);
+        return container().map([type_id, key] (Shard &local_shard) {
+            return local_shard.NodePropertyTypeDelete(type_id, key);
+        }).then([](const std::vector<bool>& deletes) {
+            bool successful = true;
+            for (auto && i : deletes) {
+                successful = successful && i;
+            }
+            return seastar::make_ready_future<bool>(successful);
         });
     }
+
+    seastar::future<bool> Shard::RelationshipPropertyTypeDeletePeered(const std::string& type, const std::string& key) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        if (type_id == 0) {
+            return seastar::make_ready_future<bool>(false);
+        }
+
+        return container().map([type_id, key] (Shard &local_shard) {
+            return local_shard.RelationshipPropertyTypeDelete(type_id, key);
+        }).then([](const std::vector<bool>& deletes) {
+            bool successful = true;
+            for (auto && i : deletes) {
+                successful = successful && i;
+            }
+            return seastar::make_ready_future<bool>(successful);
+        });
+    }
+
+
 
 
     //

@@ -81,15 +81,22 @@ namespace ragedb {
         std::string NodeTypeGetType(uint16_t type_id);
         uint16_t NodeTypeGetTypeId(const std::string& type);
         bool NodeTypeInsert(const std::string& type, uint16_t type_id);
+        bool DeleteNodeType(const std::string& type);
 
         // Relationship Type
         std::string RelationshipTypeGetType(uint16_t type_id);
         uint16_t RelationshipTypeGetTypeId(const std::string& type);
         bool RelationshipTypeInsert(const std::string& type, uint16_t type_id);
+        bool DeleteRelationshipType(const std::string& type);
 
         // Property Types
         uint8_t NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
         uint8_t RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id);
+        std::string NodePropertyTypeGet(const std::string& type, const std::string& key);
+        std::string RelationshipPropertyTypeGet(const std::string& type,  const std::string& key);
+        bool NodePropertyTypeDelete(uint16_t type_id, const std::string& key);
+        bool RelationshipPropertyTypeDelete(uint16_t type_id, const std::string& key);
+
 
         // Nodes
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
@@ -135,11 +142,13 @@ namespace ragedb {
         std::string NodeTypeGetTypePeered(uint16_t type_id);
         uint16_t NodeTypeGetTypeIdPeered(const std::string& type);
         seastar::future<uint16_t> NodeTypeInsertPeered(const std::string& type);
+        seastar::future<bool> DeleteNodeTypePeered(const std::string& type);
 
         // Relationship Type
         std::string RelationshipTypeGetTypePeered(uint16_t type_id);
         uint16_t RelationshipTypeGetTypeIdPeered(const std::string& type);
         seastar::future<uint16_t> RelationshipTypeInsertPeered(const std::string& type);
+        seastar::future<bool> DeleteRelationshipTypePeered(const std::string& type);
 
         // Nodes
         seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
@@ -159,7 +168,8 @@ namespace ragedb {
         seastar::future<uint8_t> RelationshipPropertyTypeInsertPeered(uint16_t type_id, const std::string& key, const std::string& type);
         seastar::future<uint8_t> NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type);
         seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& relationship_type, const std::string& key, const std::string& type);
-
+        seastar::future<bool> NodePropertyTypeDeletePeered(const std::string& type, const std::string& key);
+        seastar::future<bool> RelationshipPropertyTypeDeletePeered(const std::string& type, const std::string& key);
 
         // All
         seastar::future<std::vector<Node>> AllNodesPeered(uint64_t skip = 0, uint64_t limit = 100);

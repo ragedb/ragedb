@@ -53,6 +53,7 @@ namespace ragedb {
         uint16_t insertOrGetTypeId(const std::string &type);
         std::string getType(const std::string &type);
         std::string getType(uint16_t type_id);
+        bool deleteTypeId(const std::string &type);
 
         bool addId(uint16_t type_id, uint64_t internal_id);
         bool removeId(uint16_t type_id, uint64_t internal_id);
@@ -74,6 +75,7 @@ namespace ragedb {
 
         std::set<std::string> getTypes();
         std::set<uint16_t> getTypeIds();
+        bool deleteTypeProperty(uint16_t type_id, const std::string &property);
 
         uint64_t getNodeId(uint16_t type_id, const std::string &key);
         uint64_t getNodeId(const std::string &type, const std::string &key);
@@ -85,6 +87,7 @@ namespace ragedb {
         std::any getNodeProperty(uint64_t external_id, const std::string &property);
         bool setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value);
         bool setNodeProperty(uint64_t external_id, const std::string &property, const std::string &value);
+
 
         Properties &getNodeTypeProperties(uint16_t type_id);
         bool setProperties(uint16_t type_id, uint64_t, const std::string &);

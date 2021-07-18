@@ -103,7 +103,7 @@ Schema::GetNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std::un
     if(valid_type) {
         std::map<std::string, std::string> type = parent.graph.shard.local().NodeTypeGet(req->param[Utilities::TYPE]);
         rep->write_body("json", json::stream_object(schema_json(type)));
-        }
+    }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -123,7 +123,14 @@ Schema::DeleteNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std:
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-
+        return parent.graph.shard.local().DeleteNodeTypePeered(req->param[Utilities::TYPE]).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -157,7 +164,14 @@ Schema::DeleteRelationshipTypeHandler::handle([[maybe_unused]] const sstring &pa
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-
+        return parent.graph.shard.local().DeleteRelationshipTypePeered(req->param[Utilities::TYPE]).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -169,7 +183,8 @@ Schema::GetNodeTypePropertyHandler::handle([[maybe_unused]] const sstring &path,
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_property) {
-
+        std::string data_type = parent.graph.shard.local().NodePropertyTypeGet(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]);
+        rep->write_body("json", json::stream_object(data_type));
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -194,7 +209,15 @@ Schema::DeleteNodeTypePropertyHandler::handle([[maybe_unused]] const sstring &pa
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_property) {
-
+        return parent.graph.shard.local().NodePropertyTypeDeletePeered(req->param[Utilities::TYPE],
+                                                                       req->param[Utilities::PROPERTY]).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -206,7 +229,8 @@ Schema::GetRelationshipTypePropertyHandler::handle([[maybe_unused]] const sstrin
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_property) {
-
+        std::string data_type = parent.graph.shard.local().RelationshipPropertyTypeGet(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]);
+        rep->write_body("json", json::stream_object(data_type));
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -231,7 +255,14 @@ Schema::DeleteRelationshipTypePropertyHandler::handle([[maybe_unused]] const sst
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_property) {
-
+        return parent.graph.shard.local().RelationshipPropertyTypeDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }

@@ -51,6 +51,7 @@ namespace ragedb {
         uint16_t insertOrGetTypeId(const std::string &type);
         std::string getType(const std::string &type);
         std::string getType(uint16_t relationship_type_id);
+        bool deleteTypeId(const std::string &type);
 
         bool addId(uint16_t, uint64_t);
         bool removeId(uint16_t, uint64_t);
@@ -72,8 +73,10 @@ namespace ragedb {
 
         std::set<std::string> getTypes();
         std::set<uint16_t> getTypeIds();
+        bool deleteTypeProperty(uint16_t type_id, const std::string &property);
         uint64_t getStartingNodeId(uint16_t type_id, uint64_t internal_id);
         uint64_t getEndingNodeId(uint16_t type_id, uint64_t internal_id);
+
 
         std::map<std::string, std::any> getRelationshipProperties(uint16_t type_id, uint64_t internal_id);
         Relationship getRelationship(uint64_t external_id);

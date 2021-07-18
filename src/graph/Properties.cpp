@@ -44,6 +44,19 @@ namespace ragedb {
         types.insert({"", 0});
     }
 
+    void Properties::clear() {
+        types.clear();
+        types.insert({"", 0});
+        booleans.clear();
+        integers.clear();
+        doubles.clear();
+        strings.clear();
+        booleans_list.clear();
+        integers_list.clear();
+        doubles_list.clear();
+        strings_list.clear();
+    }
+
     std::map<std::string, std::string> Properties::getPropertyTypes() {
         std::map<std::string, std::string> map;
         for (auto [type, type_id]: types) {
@@ -109,6 +122,46 @@ namespace ragedb {
         }
     }
 
+    void Properties::removePropertyTypeVectors(const std::string &key, uint8_t type_id) {
+        switch (type_id) {
+            case boolean_type: {
+                booleans.erase(key);
+                break;
+            }
+            case integer_type: {
+                integers.erase(key);
+                break;
+            }
+            case double_type: {
+                doubles.erase(key);
+                break;
+            }
+            case string_type: {
+                strings.erase(key);
+                break;
+            }
+            case boolean_list_type: {
+                booleans_list.erase(key);
+                break;
+            }
+            case integer_list_type: {
+                integers_list.erase(key);
+                break;
+            }
+            case double_list_type: {
+                doubles_list.erase(key);
+                break;
+            }
+            case string_list_type: {
+                strings_list.erase(key);
+                break;
+            }
+            default: {
+                return;
+            }
+        }
+    }
+
     uint8_t Properties::setPropertyType(const std::string &key, const std::string &type) {
         // What type do we want?
         uint8_t type_id = 0;
@@ -136,6 +189,14 @@ namespace ragedb {
         addPropertyTypeVectors(key, type_id);
 
         return type_id;
+    }
+
+    bool Properties::removePropertyType(const std::string& key) {
+        if (types.find(key) != types.end()) {
+            removePropertyTypeVectors(key, types[key]);
+            types.erase(key);
+        }
+        return false;
     }
 
     tsl::sparse_map<std::string, std::vector<bool>> &Properties::getAllBooleanProperties() {
