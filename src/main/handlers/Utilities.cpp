@@ -89,3 +89,21 @@ uint64_t Utilities::validate_offset(std::unique_ptr<request> &req, std::unique_p
         return 0;
     }
 }
+
+void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property) {
+    if(property.type() == typeid(std::string)) {
+        rep->write_body("json", json::stream_object(std::any_cast<std::string>(property)));
+    }
+
+    if(property.type() == typeid(int64_t)) {
+        rep->write_body("json", json::stream_object(std::any_cast<int64_t>(property)));
+    }
+
+    if(property.type() == typeid(double)) {
+        rep->write_body("json", json::stream_object(std::any_cast<double>(property)));
+    }
+
+    if(property.type() == typeid(bool)) {
+        rep->write_body("json", json::stream_object(std::any_cast<bool>(property)));
+    }
+}

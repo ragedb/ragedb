@@ -32,51 +32,77 @@ void Schema::set_routes(routes &routes) {
     routes.add(getRelationshipTypes, operation_type::GET);
 
     auto getNodeType = new match_rule(&getNodeTypeHandler);
-    getNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes/{type}");
+    getNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    getNodeType->add_param("type");
     routes.add(getNodeType, operation_type::GET);
 
     auto postNodeType = new match_rule(&postNodeTypeHandler);
-    postNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes/{type}");
+    postNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    postNodeType->add_param("type");
     routes.add(postNodeType, operation_type::POST);
 
     auto deleteNodeType = new match_rule(&deleteNodeTypeHandler);
-    deleteNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes/{type}");
+    deleteNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    deleteNodeType->add_param("type");
     routes.add(deleteNodeType, operation_type::DELETE);
 
     auto getRelationshipType = new match_rule(&getRelationshipTypeHandler);
-    getRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships/{type}");
+    getRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    getRelationshipType->add_param("type");
     routes.add(getRelationshipType, operation_type::GET);
 
     auto postRelationshipType = new match_rule(&postRelationshipTypeHandler);
-    postRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships/{type}");
+    postRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    postRelationshipType->add_param("type");
     routes.add(postRelationshipType, operation_type::POST);
 
     auto deleteRelationshipType = new match_rule(&deleteRelationshipTypeHandler);
-    deleteRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships/{type}");
+    deleteRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    deleteRelationshipType->add_param("type");
     routes.add(deleteRelationshipType, operation_type::DELETE);
 
     auto getNodeTypeProperty = new match_rule(&getNodeTypePropertyHandler);
-    getNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes/{type}/properties/{property}");
+    getNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    getNodeTypeProperty->add_param("type");
+    getNodeTypeProperty->add_str("/properties");
+    getNodeTypeProperty->add_param("property");
     routes.add(getNodeTypeProperty, operation_type::GET);
 
     auto postNodeTypeProperty = new match_rule(&postNodeTypePropertyHandler);
-    postNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes/{type}/{property}/{data_type}");
+    postNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    postNodeTypeProperty->add_param("type");
+    postNodeTypeProperty->add_str("/properties");
+    postNodeTypeProperty->add_param("property");
+    postNodeTypeProperty->add_param("data_type");
     routes.add(postNodeTypeProperty, operation_type::POST);
 
     auto deleteNodeTypeProperty = new match_rule(&deleteNodeTypePropertyHandler);
-    deleteNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes/{type}/properties/{property}");
+    deleteNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    deleteNodeTypeProperty->add_param("type");
+    deleteNodeTypeProperty->add_str("/properties");
+    deleteNodeTypeProperty->add_param("property");
     routes.add(deleteNodeTypeProperty, operation_type::DELETE);
 
     auto getRelationshipTypeProperty = new match_rule(&getRelationshipTypePropertyHandler);
-    getRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships/{type}/properties/{property}");
+    getRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    getRelationshipTypeProperty->add_param("type");
+    getRelationshipTypeProperty->add_str("/properties");
+    getRelationshipTypeProperty->add_param("property");
     routes.add(getRelationshipTypeProperty, operation_type::GET);
 
     auto postRelationshipTypeProperty = new match_rule(&postRelationshipTypePropertyHandler);
-    postRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships/{type}/{property}/{data_type}");
+    postRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    postRelationshipTypeProperty->add_param("type");
+    postRelationshipTypeProperty->add_str("/properties");
+    postRelationshipTypeProperty->add_param("property");
+    postRelationshipTypeProperty->add_param("data_type");
     routes.add(postRelationshipTypeProperty, operation_type::POST);
 
     auto deleteRelationshipTypeProperty = new match_rule(&deleteRelationshipTypePropertyHandler);
-    deleteRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships/{type}/properties/{property}");
+    deleteRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    deleteRelationshipTypeProperty->add_param("type");
+    deleteRelationshipTypeProperty->add_str("/properties");
+    deleteRelationshipTypeProperty->add_param("property");
     routes.add(deleteRelationshipTypeProperty, operation_type::DELETE);
 
 }

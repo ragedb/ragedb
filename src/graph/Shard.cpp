@@ -262,7 +262,7 @@ namespace ragedb {
                 // Replace the deleted node and remove it from the list
                 node_types.getKeys(type_id).at(internal_id) = key;
                 node_types.addId(type_id, internal_id);
-                node_types.setProperties(type_id, internal_id, properties);
+                node_types.setNodePropertiesFromJSON(type_id, internal_id, properties);
             } else {
                 external_id = internalToExternal(type_id, internal_id);
                 // Add the node to the end and prepare a place for its relationships
@@ -270,7 +270,7 @@ namespace ragedb {
                 node_types.getOutgoingRelationships(type_id).emplace_back();
                 node_types.getIncomingRelationships(type_id).emplace_back();
                 node_types.addId(type_id, internal_id);
-                node_types.setProperties(type_id, internal_id, properties);
+                node_types.setNodePropertiesFromJSON(type_id, internal_id, properties);
             }
             node_types.getKeysToNodeId(type_id).insert({key, external_id });
         }
@@ -343,6 +343,71 @@ namespace ragedb {
         return NodePropertySetFromJson(id, property, value);
     }
 
+    bool Shard::NodePropertyDelete(const std::string& type, const std::string& key, const std::string& property) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertyDelete(id, property);
+    }
+
+    bool Shard::NodePropertyDelete(uint64_t id, const std::string& property) {
+        if (ValidNodeId(id)) {
+            return node_types.deleteNodeProperty(id, property);
+        }
+        return false;
+    }
+
+    std::map<std::string, std::any> Shard::NodePropertiesGet(const std::string &type, const std::string &key) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertiesGet(id);
+    }
+
+    std::map<std::string, std::any> Shard::NodePropertiesGet(uint64_t id) {
+        // If the node is valid
+        if (ValidNodeId(id)) {
+            return node_types.getNodeProperties(externalToTypeId(id), externalToInternal(id));
+        }
+        return std::map<std::string, std::any>();
+    }
+
+    bool Shard::NodePropertiesSetFromJson(const std::string& type, const std::string& key, const std::string& value) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertiesSetFromJson(id, value);
+    }
+
+    bool Shard::NodePropertiesSetFromJson(uint64_t id, const std::string& value) {
+        // If the node is valid
+        if (ValidNodeId(id)) {
+            return node_types.setNodePropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
+        }
+        return false;
+    }
+
+    bool Shard::NodePropertiesResetFromJson(const std::string& type, const std::string& key, const std::string& value) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertiesResetFromJson(id, value);
+    }
+
+    bool Shard::NodePropertiesResetFromJson(uint64_t id, const std::string& value) {
+        // If the node is valid
+        if (ValidNodeId(id)) {
+            node_types.deleteNodeProperties(externalToTypeId(id), externalToInternal(id));
+            return node_types.setNodePropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
+        }
+        return false;
+    }
+
+    bool Shard::NodePropertiesDelete(const std::string& type, const std::string& key) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertiesDelete(id);
+    }
+
+    bool Shard::NodePropertiesDelete(uint64_t id) {
+        // If the node is valid
+        if (ValidNodeId(id)) {
+            return node_types.deleteNodeProperties(externalToTypeId(id), externalToInternal(id));
+        }
+    }
+
+
     // Counts
     std::map<uint16_t, uint64_t> Shard::AllNodeIdCounts() {
         return node_types.getCounts();
@@ -370,7 +435,7 @@ namespace ragedb {
     }
 
     std::vector<Node> Shard::AllNodes(uint64_t skip, uint64_t limit) {
-
+    // TODO
     }
 
     std::vector<Node> Shard::AllNodes(const std::string& type, uint64_t skip, uint64_t limit) {
@@ -379,7 +444,7 @@ namespace ragedb {
     }
 
     std::vector<Node> Shard::AllNodes(uint16_t type_id, uint64_t skip, uint64_t limit) {
-
+    // TODO
     }
 
 
@@ -699,10 +764,127 @@ namespace ragedb {
         });
     }
 
+    // Node Properties ==========================================================================================================================
+    seastar::future<std::any> Shard::NodePropertyGetPeered(const std::string &type, const std::string &key, const std::string &property) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
 
+        return container().invoke_on(node_shard_id, [type, key, property](Shard &local_shard) {
+            return local_shard.NodePropertyGet(type, key, property);
+        });
+    }
 
+    seastar::future<std::any> Shard::NodePropertyGetPeered(uint64_t id, const std::string &property) {
+        uint16_t node_shard_id = CalculateShardId(id);
 
-    //
+        return container().invoke_on(node_shard_id, [id, property](Shard &local_shard) {
+            return local_shard.NodePropertyGet(id, property);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertySetFromJsonPeered(const std::string &type, const std::string &key, const std::string &property, const std::string &value) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, property, value](Shard &local_shard) {
+            return local_shard.NodePropertySetFromJson(type, key, property, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertySetFromJsonPeered(uint64_t id, const std::string &property, const std::string &value) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, property, value](Shard &local_shard) {
+            return local_shard.NodePropertySetFromJson(id, property, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertyDeletePeered(const std::string &type, const std::string &key, const std::string &property) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, property](Shard &local_shard) {
+            return local_shard.NodePropertyDelete(type, key, property);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertyDeletePeered(uint64_t id, const std::string &property) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, property](Shard &local_shard) {
+            return local_shard.NodePropertyDelete(id, property);
+        });
+    }
+    seastar::future<std::map<std::string, std::any>> Shard::NodePropertiesGetPeered(const std::string& type, const std::string& key) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
+            return local_shard.NodePropertiesGet(type, key);
+        });
+    }
+
+    seastar::future<std::map<std::string, std::any>> Shard::NodePropertiesGetPeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        if(node_shard_id == seastar::this_shard_id()) {
+            return seastar::make_ready_future<std::map<std::string, std::any>>(NodePropertiesGet(id));
+        }
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodePropertiesGet(id);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertiesSetFromJsonPeered(const std::string &type, const std::string &key, const std::string &value) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, value](Shard &local_shard) {
+            return local_shard.NodePropertiesSetFromJson(type, key, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertiesSetFromJsonPeered(uint64_t id, const std::string &value) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        if(node_shard_id == seastar::this_shard_id()) {
+            return seastar::make_ready_future<bool>(NodePropertiesSetFromJson(id, value));
+        }
+
+        return container().invoke_on(node_shard_id, [id, value](Shard &local_shard) {
+            return local_shard.NodePropertiesSetFromJson(id, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertiesResetFromJsonPeered(const std::string &type, const std::string &key, const std::string &value) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, value](Shard &local_shard) {
+            return local_shard.NodePropertiesResetFromJson(type, key, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertiesResetFromJsonPeered(uint64_t id, const std::string &value) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, value](Shard &local_shard) {
+            return local_shard.NodePropertiesResetFromJson(id, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertiesDeletePeered(const std::string &type, const std::string &key) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
+            return local_shard.NodePropertiesDelete(type, key);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertiesDeletePeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodePropertiesDelete(id);
+        });
+    }
+
+    // All
     seastar::future<std::vector<Node>> Shard::AllNodesPeered(uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 

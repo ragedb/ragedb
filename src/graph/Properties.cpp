@@ -62,7 +62,7 @@ namespace ragedb {
         for (auto [type, type_id]: types) {
             map.insert({type, allowed_types[type_id]});
         }
-
+        map.erase("");
         return map;
     }
 
@@ -303,7 +303,7 @@ namespace ragedb {
             return false;
         }
 
-        if (booleans[key].size() < index) {
+        if (booleans[key].size() <= index) {
             booleans[key].resize(1 + index);
         }
         booleans[key][index] = value;
@@ -323,7 +323,7 @@ namespace ragedb {
             return false;
         }
 
-        if (integers[key].size() < index) {
+        if (integers[key].size() <= index) {
             integers[key].resize(1 + index);
         }
         integers[key][index] = value;
@@ -343,7 +343,7 @@ namespace ragedb {
             return false;
         }
 
-        if (doubles[key].size() < index) {
+        if (doubles[key].size() <= index) {
             doubles[key].resize(1 + index);
         }
         doubles[key][index] = value;
@@ -382,7 +382,7 @@ namespace ragedb {
             return false;
         }
 
-        if (booleans_list[key].size() < index) {
+        if (booleans_list[key].size() <= index) {
             booleans_list[key].resize(1 + index);
         }
         booleans_list[key][index] = value;
@@ -403,7 +403,7 @@ namespace ragedb {
             return false;
         }
 
-        if (integers_list[key].size() < index) {
+        if (integers_list[key].size() <= index) {
             integers_list[key].resize(1 + index);
         }
         integers_list[key][index] = value;
@@ -423,7 +423,7 @@ namespace ragedb {
             return false;
         }
 
-        if (doubles_list[key].size() < index) {
+        if (doubles_list[key].size() <= index) {
             doubles_list[key].resize(1 + index);
         }
         doubles_list[key][index] = value;
@@ -444,7 +444,7 @@ namespace ragedb {
             return false;
         }
 
-        if (strings_list[key].size() < index) {
+        if (strings_list[key].size() <= index) {
             strings_list[key].resize(1 + index);
         }
         strings_list[key][index] = value;
@@ -562,6 +562,93 @@ namespace ragedb {
 
     bool Properties::setProperty(const std::string &key, uint64_t index, std::string value) {
         return setStringProperty(key, index, value);
+    }
+
+    bool Properties::deleteProperties(uint64_t index) {
+        for (auto[key, value] : types) {
+            switch (types[key]) {
+                case boolean_type: {
+                    booleans[key][index] = tombstone_boolean;
+                    break;
+                }
+                case integer_type: {
+                    integers[key][index] = tombstone_int;
+                    break;
+                }
+                case double_type: {
+                    doubles[key][index] = tombstone_double;
+                    break;
+                }
+                case string_type: {
+                    strings[key][index] = tombstone_string;
+                    break;
+                }
+                case boolean_list_type: {
+                    booleans_list[key][index] = tombstone_booleans_list;
+                    break;
+                }
+                case integer_list_type: {
+                    integers_list[key][index] =  tombstone_integers_list;
+                    break;
+                }
+                case double_list_type: {
+                    doubles_list[key][index] = tombstone_doubles_list;
+                    break;
+                }
+                case string_list_type: {
+                    strings_list[key][index] = tombstone_strings_list;
+                    break;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    bool Properties::deleteProperty(const std::string& key, uint64_t index) {
+        if (types.find(key) != types.end()) {
+            switch (types[key]) {
+                case boolean_type: {
+                    booleans[key][index] = tombstone_boolean;
+                    break;
+                }
+                case integer_type: {
+                    integers[key][index] = tombstone_int;
+                    break;
+                }
+                case double_type: {
+                    doubles[key][index] = tombstone_double;
+                    break;
+                }
+                case string_type: {
+                    strings[key][index] = tombstone_string;
+                    break;
+                }
+                case boolean_list_type: {
+                    booleans_list[key][index] = tombstone_booleans_list;
+                    break;
+                }
+                case integer_list_type: {
+                    integers_list[key][index] =  tombstone_integers_list;
+                    break;
+                }
+                case double_list_type: {
+                    doubles_list[key][index] = tombstone_doubles_list;
+                    break;
+                }
+                case string_list_type: {
+                    strings_list[key][index] = tombstone_strings_list;
+                    break;
+                }
+                default: {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
 }

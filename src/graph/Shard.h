@@ -108,12 +108,23 @@ namespace ragedb {
         std::string NodeGetType(uint64_t id);
         std::string NodeGetKey(uint64_t id);
 
-        // Node Properties
+        // Node Property
         std::any NodePropertyGet(uint64_t id, const std::string& property);
         bool NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value);
         std::any NodePropertyGet(const std::string& type, const std::string& key, const std::string& property);
         bool NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
+        bool NodePropertyDelete(const std::string& type, const std::string& key, const std::string& property);
+        bool NodePropertyDelete(uint64_t id, const std::string& property);
 
+        // Node Properties
+        std::map<std::string, std::any> NodePropertiesGet(const std::string& type, const std::string& key);
+        std::map<std::string, std::any> NodePropertiesGet(uint64_t id);
+        bool NodePropertiesSetFromJson(const std::string& type, const std::string& key, const std::string& value);
+        bool NodePropertiesSetFromJson(uint64_t id, const std::string& value);
+        bool NodePropertiesResetFromJson(const std::string& type, const std::string& key, const std::string& value);
+        bool NodePropertiesResetFromJson(uint64_t id, const std::string& value);
+        bool NodePropertiesDelete(const std::string& type, const std::string& key);
+        bool NodePropertiesDelete(uint64_t id);
 
         // All
         std::map<uint16_t, uint64_t> AllNodeIdCounts();
@@ -170,6 +181,23 @@ namespace ragedb {
         seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& relationship_type, const std::string& key, const std::string& type);
         seastar::future<bool> NodePropertyTypeDeletePeered(const std::string& type, const std::string& key);
         seastar::future<bool> RelationshipPropertyTypeDeletePeered(const std::string& type, const std::string& key);
+
+        // Node Properties
+        seastar::future<std::any> NodePropertyGetPeered(const std::string& type, const std::string& key, const std::string& property);
+        seastar::future<std::any> NodePropertyGetPeered(uint64_t id, const std::string& property);
+        seastar::future<bool> NodePropertySetFromJsonPeered(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
+        seastar::future<bool> NodePropertySetFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
+        seastar::future<bool> NodePropertyDeletePeered(const std::string& type, const std::string& key, const std::string& property);
+        seastar::future<bool> NodePropertyDeletePeered(uint64_t id, const std::string& property);
+
+        seastar::future<std::map<std::string, std::any>> NodePropertiesGetPeered(const std::string& type, const std::string& key);
+        seastar::future<std::map<std::string, std::any>> NodePropertiesGetPeered(uint64_t id);
+        seastar::future<bool> NodePropertiesSetFromJsonPeered(const std::string& type, const std::string& key, const std::string& value);
+        seastar::future<bool> NodePropertiesSetFromJsonPeered(uint64_t id, const std::string& value);
+        seastar::future<bool> NodePropertiesResetFromJsonPeered(const std::string& type, const std::string& key, const std::string& value);
+        seastar::future<bool> NodePropertiesResetFromJsonPeered(uint64_t id, const std::string& value);
+        seastar::future<bool> NodePropertiesDeletePeered(const std::string& type, const std::string& key);
+        seastar::future<bool> NodePropertiesDeletePeered(uint64_t id);
 
         // All
         seastar::future<std::vector<Node>> AllNodesPeered(uint64_t skip = 0, uint64_t limit = 100);

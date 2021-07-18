@@ -220,8 +220,8 @@ namespace ragedb {
 
     std::vector<uint64_t>  NodeTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) {
         std::vector<uint64_t>  allIds;
-        int current = 1;
         if (ValidTypeId(type_id)) {
+            int current = 1;
             uint64_t max_id = key_to_node_id[type_id].size();
             if (deleted_ids[type_id].isEmpty()) {
                 for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
@@ -372,7 +372,7 @@ namespace ragedb {
             return keys[type_id][internal_id];
         }
         return id_to_type[0];
-    };
+    }
 
     std::map<std::string, std::any> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
         if(ValidTypeId(type_id)) {
@@ -498,7 +498,7 @@ namespace ragedb {
         return setNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
     }
 
-    bool NodeTypes::setProperties(uint16_t type_id, uint64_t internal_id, const std::string& json) {
+    bool NodeTypes::setNodePropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
         if (!json.empty()) {
             // Get the properties
             simdjson::dom::object object;
@@ -587,6 +587,18 @@ namespace ragedb {
             }
         }
         return false;
+    }
+
+    bool NodeTypes::deleteNodeProperty(uint64_t external_id, const std::string &property) {
+        return deleteNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property);
+    }
+
+    bool NodeTypes::deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
+        return properties[type_id].deleteProperty(property, internal_id);
+    }
+
+    bool NodeTypes::deleteNodeProperties(uint16_t type_id, uint64_t internal_id) {
+        return properties[type_id].deleteProperties(internal_id);
     }
 
     std::vector<std::string>& NodeTypes::getKeys(uint16_t type_id) {

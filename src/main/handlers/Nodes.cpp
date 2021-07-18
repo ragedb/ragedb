@@ -98,16 +98,18 @@ future<std::unique_ptr<reply>> Nodes::GetNodeByIdHandler::handle([[maybe_unused]
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        // Find Node by Id
-        return parent.graph.shard.local().NodeGetPeered(id)
-                .then([rep = std::move(rep)] (Node node) mutable {
-                    if (node.getId() == 0) {
-                        rep->set_status(reply::status_type::not_found);
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                    }
-                    rep->write_body("json", json::stream_object((node_json(node))));
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                });
+        uint16_t node_shard_id = Shard::CalculateShardId(id);
+        return parent.graph.shard.invoke_on(node_shard_id, [id] (Shard &local_shard) {
+            // Find Node by Id
+            return local_shard.NodeGet(id);
+        }).then([rep = std::move(rep)] (Node node) mutable {
+            if (node.getId() == 0) {
+                rep->set_status(reply::status_type::not_found);
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            }
+            rep->write_body("json", json::stream_object((node_json(node))));
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -193,6 +195,7 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unus
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id >0) {
+        // TODO: Switch to NodeRemove without Peered
         return parent.graph.shard.local().NodeRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
