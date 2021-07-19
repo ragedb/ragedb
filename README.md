@@ -70,15 +70,15 @@ RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and
 
 ### Get a Relationship Property Type
 
-    :GET /db/{graph}/schema/relationships/properties/{type}/{property}
+    :GET /db/{graph}/schema/relationships/{type}/properties/{property}
 
 ### Create a Relationship Property Type
 
-    :POST /db/{graph}/schema/relationships/properties/{type}/{property}/{data_type}
+    :POST /db/{graph}/schema/relationships/{type}/properties/{property}/{data_type}
 
 ### Delete a Relationship Property Type
 
-    :DELETE /db/{graph}/schema/relationships/properties/{type}/{property}
+    :DELETE /db/{graph}/schema/relationships/{type}/properties/{property}
 
 ### Nodes
 
@@ -358,7 +358,7 @@ If you get errors regarding conan locks, run:
     conan remove --locks
 
 ### Missing Features that can be added "easily"
-
+    - Allow Node and Relationship Type handlers to take a json map defining the property keys and data types
     - Allow additional data types: 8, 16 and 32 bit integers, 32 bit floats, byte, list of bytes, nested types 
     - NodeTypes and RelationshipTypes should allow type deletion and type id reuse
     - Allow property type conversions (int to double, string to int, int to int array, etc).
