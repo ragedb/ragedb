@@ -672,7 +672,7 @@ namespace ragedb {
         return properties[type_id].deleteProperty(property, internal_id);
     }
 
-    bool NodeTypes::deleteNodeProperties(uint16_t type_id, uint64_t internal_id) {
+    bool NodeTypes::deleteProperties(uint16_t type_id, uint64_t internal_id) {
         return properties[type_id].deleteProperties(internal_id);
     }
 

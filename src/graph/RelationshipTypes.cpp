@@ -559,6 +559,13 @@ namespace ragedb {
         return setRelationshipProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
     }
 
+    bool RelationshipTypes::deleteRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
+        return properties[type_id].deleteProperty(property, internal_id);
+    }
+    bool RelationshipTypes::deleteRelationshipProperty(uint64_t external_id, const std::string &property) {
+        return deleteRelationshipProperty(externalToTypeId(external_id), externalToInternal(external_id), property);
+    }
+
     Properties &RelationshipTypes::getProperties(uint16_t type_id) {
         return properties[type_id];
     }
@@ -652,5 +659,9 @@ namespace ragedb {
             }
         }
         return false;
+    }
+
+    bool RelationshipTypes::deleteProperties(uint16_t type_id, uint64_t internal_id) {
+        return properties[type_id].deleteProperties(internal_id);
     }
 }

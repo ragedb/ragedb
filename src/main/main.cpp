@@ -21,6 +21,10 @@
 #include "handlers/HealthCheck.h"
 #include "handlers/Nodes.h"
 #include "handlers/Relationships.h"
+#include "handlers/NodeProperties.h"
+#include "handlers/RelationshipProperties.h"
+#include "handlers/Degrees.h"
+#include "handlers/Neighbors.h"
 #include "handlers/Schema.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
@@ -58,10 +62,19 @@ int main(int argc, char** argv) {
                 Schema schema(graph);
                 Nodes nodes(graph);
                 Relationships relationships(graph);
+                NodeProperties nodeProperties(graph);
+                RelationshipProperties relationshipProperties(graph);
+                Degrees degrees(graph);
+                Neighbors neighbors(graph);
+
                 server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();
                 server->set_routes([&schema](routes& r) { schema.set_routes(r); }).get();
                 server->set_routes([&nodes](routes& r) { nodes.set_routes(r); }).get();
                 server->set_routes([&relationships](routes& r) { relationships.set_routes(r); }).get();
+                server->set_routes([&nodeProperties](routes& r) { nodeProperties.set_routes(r); }).get();
+                server->set_routes([&relationshipProperties](routes& r) { relationshipProperties.set_routes(r); }).get();
+                server->set_routes([&degrees](routes& r) { degrees.set_routes(r); }).get();
+                server->set_routes([&neighbors](routes& r) { neighbors.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes& r) {
                     r.add(seastar::operation_type::GET,

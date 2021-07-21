@@ -197,7 +197,7 @@ namespace ragedb {
     bool Shard::NodePropertiesResetFromJson(uint64_t id, const std::string& value) {
         // If the node is valid
         if (ValidNodeId(id)) {
-            node_types.deleteNodeProperties(externalToTypeId(id), externalToInternal(id));
+            node_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
             return node_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
         }
         return false;
@@ -211,7 +211,7 @@ namespace ragedb {
     bool Shard::NodePropertiesDelete(uint64_t id) {
         // If the node is valid
         if (ValidNodeId(id)) {
-            return node_types.deleteNodeProperties(externalToTypeId(id), externalToInternal(id));
+            return node_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
         }
         return false;
     }

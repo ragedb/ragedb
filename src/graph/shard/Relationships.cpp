@@ -283,4 +283,54 @@ namespace ragedb {
         return 0;
     }
 
+    std::any Shard::RelationshipPropertyGet(uint64_t id, const std::string& property) {
+        if (ValidRelationshipId(id)) {
+            relationship_types.getRelationshipProperty(id, property);
+        }
+        return std::any();
+    }
+
+    bool Shard::RelationshipPropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {
+        if (ValidRelationshipId(id)) {
+            return relationship_types.setRelationshipProperty(id, property, value);
+        }
+        return false;
+    }
+
+    bool Shard::RelationshipPropertyDelete(uint64_t id, const std::string& property) {
+        if (ValidRelationshipId(id)) {
+            return relationship_types.deleteRelationshipProperty(id, property);
+        }
+        return false;
+    }
+
+    std::map<std::string, std::any> Shard::RelationshipPropertiesGet(uint64_t id) {
+        if (ValidRelationshipId(id)) {
+            return relationship_types.getRelationshipProperties(externalToTypeId(id), externalToInternal(id));
+        }
+        return std::map<std::string, std::any>();
+    }
+
+    bool Shard::RelationshipPropertiesSetFromJson(uint64_t id, const std::string& value) {
+        if (ValidRelationshipId(id)) {
+            return relationship_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
+        }
+        return false;
+    }
+
+    bool Shard::RelationshipPropertiesResetFromJson(uint64_t id, const std::string& value) {
+        if (ValidRelationshipId(id)) {
+            relationship_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
+            return relationship_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
+        }
+        return false;
+    }
+
+    bool Shard::RelationshipPropertiesDelete(uint64_t id) {
+        if (ValidRelationshipId(id)) {
+            return relationship_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
+        }
+        return false;
+    }
+
 }

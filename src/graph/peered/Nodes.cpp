@@ -101,11 +101,7 @@ namespace ragedb {
     }
 
     seastar::future<uint16_t> Shard::NodeGetTypeIdPeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
-            return local_shard.NodeGetTypeId(id);
-        });
+        return seastar::make_ready_future<uint16_t>(NodeGetTypeId(id));
     }
 
     seastar::future<std::string> Shard::NodeGetTypePeered(uint64_t id) {
@@ -183,10 +179,6 @@ namespace ragedb {
     seastar::future<std::map<std::string, std::any>> Shard::NodePropertiesGetPeered(uint64_t id) {
         uint16_t node_shard_id = CalculateShardId(id);
 
-        if(node_shard_id == seastar::this_shard_id()) {
-            return seastar::make_ready_future<std::map<std::string, std::any>>(NodePropertiesGet(id));
-        }
-
         return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
             return local_shard.NodePropertiesGet(id);
         });
@@ -202,10 +194,6 @@ namespace ragedb {
 
     seastar::future<bool> Shard::NodePropertiesSetFromJsonPeered(uint64_t id, const std::string &value) {
         uint16_t node_shard_id = CalculateShardId(id);
-
-        if(node_shard_id == seastar::this_shard_id()) {
-            return seastar::make_ready_future<bool>(NodePropertiesSetFromJson(id, value));
-        }
 
         return container().invoke_on(node_shard_id, [id, value](Shard &local_shard) {
             return local_shard.NodePropertiesSetFromJson(id, value);

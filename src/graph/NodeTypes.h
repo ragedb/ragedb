@@ -94,10 +94,9 @@ namespace ragedb {
         bool deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         bool deleteNodeProperty(uint64_t external_id, const std::string &property);
 
-
         Properties &getNodeTypeProperties(uint16_t type_id);
         bool setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
-        bool deleteNodeProperties(uint16_t type_id, uint64_t internal_id);
+        bool deleteProperties(uint16_t type_id, uint64_t internal_id);
 
         tsl::sparse_map<std::string, uint64_t> &getKeysToNodeId(uint16_t type_id);
         std::vector<std::string> &getKeys(uint16_t type_id);
