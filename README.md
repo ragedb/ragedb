@@ -4,10 +4,10 @@ In Memory Property Graph Server using the Shared Nothing design from Seastar.
 
 The RageDB server can host multiple Graphs. The graphs are accessible via a REST API (see below).
 Each Graph is split into multiple Shards. One Shard per Core of the server.
-Shards communicate by explicit message passing. Nodes and Relationships have internal and external links.
-The external links embed the type as well as which Shard they belong to.
-The internal links are pointers into vectors that hold the data of each Node and Relationship.
-The Relationship links are replicated to both incoming and outgoing Nodes.
+Shards communicate by explicit message passing. Nodes and Relationships have internal and external ids.
+The external ids embed the type as well as which Shard they belong to.
+The internal ids are pointers into vectors that hold the data of each Node and Relationship.
+The Relationship ids are replicated to both incoming and outgoing Nodes.
 The Relationship Object (and properties) belong to the Outgoing Node (and shard).
 Each Node must have a singular Type and unique Key on creation which the server stores in a map for retrieval.
 External and Internal Ids are assigned upon creation for both Nodes and Relationships.
@@ -294,9 +294,9 @@ A second example:
 
     -- get the names of nodes I have relationships with
     names = {}
-    links = NodeGetRelationshipsIds("Node", "Max")
-    for k=1,#links do
-        v = links[k]
+    ids = NodeGetRelationshipsIds("Node", "Max")
+    for k=1,#ids do
+        v = ids[k]
         table.insert(names, NodePropertyGetById(v.node_id, "name"))
     end
     names
