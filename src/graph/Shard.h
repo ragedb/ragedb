@@ -168,6 +168,17 @@ namespace ragedb {
         bool RelationshipPropertiesResetFromJson(uint64_t id, const std::string& value);
         bool RelationshipPropertiesDelete(uint64_t id);
 
+        // Node Degree
+        uint64_t NodeGetDegree(const std::string& type, const std::string& key);
+        uint64_t NodeGetDegree(const std::string& type, const std::string& key, Direction direction);
+        uint64_t NodeGetDegree(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        uint64_t NodeGetDegree(const std::string& type, const std::string& key, Direction direction,
+                               const std::vector<std::string>& rel_types);
+        uint64_t NodeGetDegree(uint64_t id);
+        uint64_t NodeGetDegree(uint64_t id, Direction direction);
+        uint64_t NodeGetDegree(uint64_t id, Direction direction, const std::string& rel_type);
+        uint64_t NodeGetDegree(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
         // Traversing
         std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key);
         std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key, Direction direction);
@@ -346,6 +357,22 @@ namespace ragedb {
         seastar::future<bool> RelationshipPropertiesSetFromJsonPeered(uint64_t id, const std::string& value);
         seastar::future<bool> RelationshipPropertiesResetFromJsonPeered(uint64_t id, const std::string& value);
         seastar::future<bool> RelationshipPropertiesDeletePeered(uint64_t id);
+
+        // Node Degree
+        seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key);
+        seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key, Direction direction);
+        seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key, const std::string& rel_type);
+        seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key, Direction direction,
+                                                      const std::vector<std::string>& rel_types);
+        seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key,
+                                                      const std::vector<std::string>& rel_types);
+        seastar::future<uint64_t> NodeGetDegreePeered(uint64_t id);
+        seastar::future<uint64_t> NodeGetDegreePeered(uint64_t id, Direction direction);
+        seastar::future<uint64_t> NodeGetDegreePeered(uint64_t id, Direction direction, const std::string& rel_type);
+        seastar::future<uint64_t> NodeGetDegreePeered(uint64_t id, const std::string& rel_type);
+        seastar::future<uint64_t> NodeGetDegreePeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<uint64_t> NodeGetDegreePeered(uint64_t id, const std::vector<std::string> &rel_types);
 
         // Traversing
         seastar::future<std::vector<Link>> NodeGetRelationshipsIDsPeered(const std::string& type, const std::string& key);
