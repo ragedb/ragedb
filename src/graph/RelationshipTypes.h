@@ -77,8 +77,8 @@ namespace ragedb {
         bool deleteTypeProperty(uint16_t type_id, const std::string &property);
         uint64_t getStartingNodeId(uint16_t type_id, uint64_t internal_id);
         uint64_t getEndingNodeId(uint16_t type_id, uint64_t internal_id);
-        uint64_t setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
-        uint64_t setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
+        bool setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
+        bool setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
 
         std::map<std::string, std::any> getRelationshipProperties(uint16_t type_id, uint64_t internal_id);
         Relationship getRelationship(uint64_t external_id);

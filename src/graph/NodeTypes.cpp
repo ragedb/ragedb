@@ -145,16 +145,22 @@ namespace ragedb {
         // TODO: Recycle type links
         uint16_t type_id = getTypeId(type);
         if (ValidTypeId(type_id)) {
-            type_to_id[type] = 0;
-            id_to_type[type_id] = "";
-            key_to_node_id[type_id].clear();
-            keys[type_id].clear();
-            properties[type_id].clear();
-            // TODO: this is NOT correct. We need to delete all the relationship first
-            outgoing_relationships[type_id].clear();
-            incoming_relationships[type_id].clear();
-            deleted_ids[type_id].clear();
+            // Before calling this method, all nodes of this type should already be deleted
+            // It needs to be handled at the Shard level because we don't own the
+            // incoming relationship chains on multiple cores
+            if (getCount(type_id) == 0) {
+                type_to_id[type] = 0;
+                id_to_type[type_id] = "";
+                key_to_node_id[type_id].clear();
+                keys[type_id].clear();
+                properties[type_id].clear();
+                outgoing_relationships[type_id].clear();
+                incoming_relationships[type_id].clear();
+                deleted_ids[type_id].clear();
+                return true;
+            }
         }
+        return false;
     }
 
     bool NodeTypes::addId(uint16_t type_id, uint64_t internal_id) {

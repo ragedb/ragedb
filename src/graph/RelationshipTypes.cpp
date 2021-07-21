@@ -138,36 +138,43 @@ namespace ragedb {
         return 0;
     }
 
-    uint64_t RelationshipTypes::setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
+    bool RelationshipTypes::setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
         if (ValidTypeId(type_id)) {
             if (starting_node_ids[type_id].size() <= internal_id) {
                 starting_node_ids[type_id].resize(internal_id + 1);
             }
             starting_node_ids[type_id][internal_id] = external_id;
-
+            return true;
         }
+        return false;
     }
-    uint64_t RelationshipTypes::setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
+
+    bool RelationshipTypes::setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
         if (ValidTypeId(type_id)) {
             if (ending_node_ids[type_id].size() <= internal_id) {
                 ending_node_ids[type_id].resize(internal_id + 1);
             }
             ending_node_ids[type_id][internal_id] = external_id;
+            return true;
         }
+        return false;
     }
 
-    // TODO: this is NOT correct. We need to delete all the relationship chains first
     bool RelationshipTypes::deleteTypeId(const std::string &type) {
         // TODO: Recycle type links
         uint16_t type_id = getTypeId(type);
         if (ValidTypeId(type_id)) {
-            type_to_id[type] = 0;
-            id_to_type[type_id] = "";
-            starting_node_ids[type_id].clear();
-            ending_node_ids[type_id].clear();
-            properties[type_id].clear();
-            deleted_ids[type_id].clear();
+            if (getCount(type_id) == 0) {
+                type_to_id[type] = 0;
+                id_to_type[type_id] = "";
+                starting_node_ids[type_id].clear();
+                ending_node_ids[type_id].clear();
+                properties[type_id].clear();
+                deleted_ids[type_id].clear();
+                return true;
+            }
         }
+        return false;
     }
 
     bool RelationshipTypes::addId(uint16_t type_id, uint64_t internal_id) {

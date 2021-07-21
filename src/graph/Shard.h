@@ -19,6 +19,7 @@
 
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
+#include <seastar/core/when_all.hh>
 #include <simdjson.h>
 #include <tsl/sparse_map.h>
 #include "Direction.h"
@@ -111,6 +112,7 @@ namespace ragedb {
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
+        std::vector<Node> NodesGet(const std::vector<uint64_t>&);
         Node NodeGet(uint64_t id);
         Node NodeGet(const std::string& type, const std::string& key);
         static uint16_t NodeGetTypeId(uint64_t id);
@@ -148,7 +150,7 @@ namespace ragedb {
         uint64_t RelationshipAddSameShard(uint16_t rel_type, const std::string& type1, const std::string& key1,
                                           const std::string& type2, const std::string& key2, const std::string& properties);
         uint64_t RelationshipAddToOutgoing(uint16_t rel_type, uint64_t id1, uint64_t id2, const std::string& properties);
-
+        std::vector<Relationship> RelationshipsGet(const std::vector<uint64_t>&);
         Relationship RelationshipGet(uint64_t rel_id);
         std::string RelationshipGetType(uint64_t id);
         uint16_t RelationshipGetTypeId(uint64_t id);
@@ -237,9 +239,6 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, const std::string& rel_type);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, const std::vector<std::string> &rel_types);
-
-        std::vector<Node> NodesGet(const std::vector<uint64_t>&);
-        std::vector<Relationship> RelationshipsGet(const std::vector<uint64_t>&);
 
         // All
         std::map<uint16_t, uint64_t> AllNodeIdCounts();
