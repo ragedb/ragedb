@@ -367,37 +367,13 @@ struct relationship_json : public json::json_base {
 public:
 
     // We have the relationship, but don't know the relationship type, so go get it
-    relationship_json(Relationship& r, Graph& g) {
+    relationship_json(Relationship& r) {
         register_params();
         this->id = r.getId();
-        this->type = g.shard.local().RelationshipTypeGetType(r.getTypeId());
+        this->type = r.getType();
         this->from = r.getStartingNodeId();
         this->to = r.getEndingNodeId();
         this->properties = r.getProperties();
-    }
-
-    // We have the relationship and know the type, so just pass it in
-    relationship_json(Relationship& r, const std::string& _type) {
-        register_params();
-        this->id = r.getId();
-        this->type = _type;
-        this->from = r.getStartingNodeId();
-        this->to = r.getEndingNodeId();
-        this->properties = r.getProperties();
-    }
-
-    // We have the relationship id, type, from, to and properties
-    relationship_json(uint64_t _id, const std::string& _type, uint64_t _from, uint64_t _to, const std::map<std::string, std::any>& _properties) {
-        register_params();
-        this->id = _id;
-        this->type = _type;
-        this->from = _from;
-        this->to = _to;
-        this->properties = _properties;
-    }
-
-    void add_type(Relationship& r, Graph &g) {
-        this->type = g.shard.local().RelationshipTypeGetType(r.getTypeId());
     }
 
 };
@@ -446,7 +422,6 @@ struct node_json : public json::json_base {
 
 public:
 
-    // We have the node, but don't know the node type, so go get it
     node_json(Node& n) {
         register_params();
         this->id = n.getId();

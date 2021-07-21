@@ -92,7 +92,8 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Utilities.cpp src/main/handlers/Utilities.h
         src/main/json/JSON.h
         src/main/handlers/Schema.cpp src/main/handlers/Schema.h
-        src/main/handlers/NodeProperties.cpp src/main/handlers/NodeProperties.h)
+        src/main/handlers/NodeProperties.cpp src/main/handlers/NodeProperties.h
+        src/main/handlers/Relationships.cpp src/main/handlers/Relationships.h)
 target_link_libraries(
         Graph
         Seastar::seastar

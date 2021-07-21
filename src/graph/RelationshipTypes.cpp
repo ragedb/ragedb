@@ -32,8 +32,9 @@ namespace ragedb {
         // start with empty blank type
         type_to_id.emplace("", 0);
         id_to_type.emplace_back("");
-        relationships.emplace_back();
         properties.emplace_back();
+        starting_node_ids.emplace_back();
+        ending_node_ids.emplace_back();
         deleted_ids.emplace_back(Roaring64Map());
     }
 
@@ -41,8 +42,6 @@ namespace ragedb {
         type_to_id.clear();
         id_to_type.clear();
         id_to_type.shrink_to_fit();
-        relationships.clear();
-        relationships.shrink_to_fit();
         properties.clear();
         properties.shrink_to_fit();
         deleted_ids.clear();
@@ -50,8 +49,9 @@ namespace ragedb {
         // start with empty blank type
         type_to_id.emplace("", 0);
         id_to_type.emplace_back("");
-        relationships.emplace_back();
         properties.emplace_back();
+        starting_node_ids.emplace_back();
+        ending_node_ids.emplace_back();
         deleted_ids.emplace_back(Roaring64Map());
     }
 
@@ -79,6 +79,8 @@ namespace ragedb {
         }
         type_to_id.emplace(type, type_id);
         id_to_type.emplace_back(type);
+        starting_node_ids.emplace_back();
+        ending_node_ids.emplace_back();
         deleted_ids.emplace_back(Roaring64Map());
         return false;
     }
@@ -101,6 +103,8 @@ namespace ragedb {
         uint16_t type_id = type_to_id.size();
         type_to_id.emplace(type, type_id);
         id_to_type.emplace_back(type);
+        starting_node_ids.emplace_back();
+        ending_node_ids.emplace_back();
         deleted_ids.emplace_back(Roaring64Map());
         return type_id;
     }
@@ -134,9 +138,27 @@ namespace ragedb {
         return 0;
     }
 
+    uint64_t RelationshipTypes::setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
+        if (ValidTypeId(type_id)) {
+            if (starting_node_ids[type_id].size() <= internal_id) {
+                starting_node_ids[type_id].resize(internal_id + 1);
+            }
+            starting_node_ids[type_id][internal_id] = external_id;
+
+        }
+    }
+    uint64_t RelationshipTypes::setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
+        if (ValidTypeId(type_id)) {
+            if (ending_node_ids[type_id].size() <= internal_id) {
+                ending_node_ids[type_id].resize(internal_id + 1);
+            }
+            ending_node_ids[type_id][internal_id] = external_id;
+        }
+    }
+
     // TODO: this is NOT correct. We need to delete all the relationship chains first
     bool RelationshipTypes::deleteTypeId(const std::string &type) {
-        // TODO: Recycle type ids
+        // TODO: Recycle type links
         uint16_t type_id = getTypeId(type);
         if (ValidTypeId(type_id)) {
             type_to_id[type] = 0;
@@ -179,7 +201,7 @@ namespace ragedb {
     std::vector<uint64_t> RelationshipTypes::getIds(uint64_t skip, uint64_t limit) const {
         std::vector<uint64_t> allIds;
         int current = 1;
-        // ids are internal ids, we need to switch to external ids
+        // links are internal links, we need to switch to external links
         for (int type_id=1; type_id < id_to_type.size(); type_id++) {
             uint64_t max_id = starting_node_ids[type_id].size();
             if (deleted_ids[type_id].isEmpty()) {
@@ -188,7 +210,7 @@ namespace ragedb {
                         return allIds;
                     }
                     if (current > skip && current <= (skip + limit)) {
-                        internalToExternal(type_id, internal_id);
+                        allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
                     current++;
                 }
@@ -199,7 +221,7 @@ namespace ragedb {
                     }
                     if (current > skip && current <= (skip + limit)) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
-                            internalToExternal(type_id, internal_id);
+                            allIds.emplace_back(internalToExternal(type_id, internal_id));
                         }
                     }
                     current++;
@@ -220,7 +242,7 @@ namespace ragedb {
                         return allIds;
                     }
                     if (current > skip && current <= (skip + limit)) {
-                        internalToExternal(type_id, internal_id);
+                        allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
                     current++;
                 }
@@ -231,7 +253,7 @@ namespace ragedb {
                     }
                     if (current > skip && current <= (skip + limit)) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
-                            internalToExternal(type_id, internal_id);
+                            allIds.emplace_back(internalToExternal(type_id, internal_id));
                         }
                     }
                     current++;
@@ -241,9 +263,74 @@ namespace ragedb {
         return allIds;
     }
 
+    std::vector<Relationship> RelationshipTypes::getRelationships(uint64_t skip, uint64_t limit) {
+        std::vector<Relationship> allRelationships;
+        int current = 1;
+        // links are internal links, we need to switch to external links
+        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
+            uint64_t max_id = starting_node_ids[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allRelationships;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        allRelationships.emplace_back(getRelationship(type_id, internal_id));
+                    }
+                    current++;
+                }
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allRelationships;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            allRelationships.emplace_back(getRelationship(type_id, internal_id));
+                        }
+                    }
+                    current++;
+                }
+            }
+        }
+        return allRelationships;
+    }
+
+    std::vector<Relationship> RelationshipTypes::getRelationships(uint16_t type_id, uint64_t skip, uint64_t limit) {
+        std::vector<Relationship>  allRelationships;
+        int current = 1;
+        if (ValidTypeId(type_id)) {
+            uint64_t max_id = starting_node_ids[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allRelationships;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        allRelationships.emplace_back(getRelationship(type_id, internal_id));
+                    }
+                    current++;
+                }
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allRelationships;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            allRelationships.emplace_back(getRelationship(type_id, internal_id));
+                        }
+                    }
+                    current++;
+                }
+            }
+        }
+        return allRelationships;
+    }
+
     std::vector<uint64_t>  RelationshipTypes::getDeletedIds() const {
         std::vector<uint64_t>  allIds;
-        // ids are internal ids, we need to switch to external ids
+        // links are internal links, we need to switch to external links
         for (int type_id=1; type_id < id_to_type.size(); type_id++) {
             for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); iterator++) {
                 allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
@@ -344,6 +431,10 @@ namespace ragedb {
         return getRelationship(externalToTypeId(external_id), externalToInternal(external_id), external_id);
     }
 
+    Relationship RelationshipTypes::getRelationship(uint16_t type_id, uint64_t internal_id) {
+        return Relationship(internalToExternal(type_id, internal_id), getType(type_id), getStartingNodeId(type_id,internal_id), getEndingNodeId(type_id,internal_id), getRelationshipProperties(type_id, internal_id));
+    }
+
     Relationship RelationshipTypes::getRelationship(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
         return Relationship(external_id, getType(type_id), getStartingNodeId(type_id,internal_id), getEndingNodeId(type_id,internal_id), getRelationshipProperties(type_id, internal_id));
     }
@@ -359,6 +450,14 @@ namespace ragedb {
 
     std::any RelationshipTypes::getRelationshipProperty(uint64_t external_id, const std::string &property) {
         return getRelationshipProperty(externalToTypeId(external_id), externalToInternal(external_id), property);
+    }
+
+    std::vector<uint64_t> &RelationshipTypes::getStartingNodeIds(uint16_t type_id) {
+        return starting_node_ids[type_id];
+    }
+
+    std::vector<uint64_t> &RelationshipTypes::getEndingNodeIds(uint16_t type_id) {
+        return ending_node_ids[type_id];
     }
 
     bool RelationshipTypes::setRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value) {
@@ -453,11 +552,11 @@ namespace ragedb {
         return setRelationshipProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
     }
 
-    Properties &RelationshipTypes::getRelationshipTypeProperties(uint16_t type_id) {
+    Properties &RelationshipTypes::getProperties(uint16_t type_id) {
         return properties[type_id];
     }
 
-    bool RelationshipTypes::setProperties(uint16_t type_id, uint64_t internal_id, const std::string& json) {
+    bool RelationshipTypes::setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
         if (!json.empty()) {
             // Get the properties
             simdjson::dom::object object;

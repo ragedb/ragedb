@@ -7,7 +7,8 @@ set(HEADER_FILES
         Relationship.h
         NodeTypes.h
         RelationshipTypes.h
-        Properties.h)
+        Properties.h
+        Direction.h)
 
 set(SOURCE_FILES
         Graph.cpp

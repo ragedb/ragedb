@@ -142,7 +142,7 @@ namespace ragedb {
     }
 
     bool NodeTypes::deleteTypeId(const std::string &type) {
-        // TODO: Recycle type ids
+        // TODO: Recycle type links
         uint16_t type_id = getTypeId(type);
         if (ValidTypeId(type_id)) {
             type_to_id[type] = 0;
@@ -188,7 +188,7 @@ namespace ragedb {
     std::vector<uint64_t> NodeTypes::getIds(uint64_t skip, uint64_t limit) const {
         std::vector<uint64_t> allIds;
         int current = 1;
-        // ids are internal ids, we need to switch to external ids
+        // links are internal links, we need to switch to external links
         for (int type_id=1; type_id < id_to_type.size(); type_id++) {
             uint64_t max_id = key_to_node_id[type_id].size();
             if (deleted_ids[type_id].isEmpty()) {
@@ -197,7 +197,7 @@ namespace ragedb {
                         return allIds;
                     }
                     if (current > skip && current <= (skip + limit)) {
-                        internalToExternal(type_id, internal_id);
+                        allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
                     current++;
                 }
@@ -208,7 +208,7 @@ namespace ragedb {
                     }
                     if (current > skip && current <= (skip + limit)) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
-                            internalToExternal(type_id, internal_id);
+                            allIds.emplace_back(internalToExternal(type_id, internal_id));
                         }
                     }
                     current++;
@@ -229,7 +229,7 @@ namespace ragedb {
                         return allIds;
                     }
                     if (current > skip && current <= (skip + limit)) {
-                        internalToExternal(type_id, internal_id);
+                        allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
                     current++;
                 }
@@ -240,7 +240,7 @@ namespace ragedb {
                     }
                     if (current > skip && current <= (skip + limit)) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
-                            internalToExternal(type_id, internal_id);
+                            allIds.emplace_back(internalToExternal(type_id, internal_id));
                         }
                     }
                     current++;
@@ -250,9 +250,74 @@ namespace ragedb {
         return allIds;
     }
 
+    std::vector<Node> NodeTypes::getNodes(uint64_t skip, uint64_t limit) {
+        std::vector<Node> allNodes;
+        int current = 1;
+        // links are internal links, we need to switch to external links
+        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
+            uint64_t max_id = key_to_node_id[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allNodes;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        allNodes.emplace_back(getNode(type_id, internal_id));
+                    }
+                    current++;
+                }
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allNodes;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            allNodes.emplace_back(getNode(type_id, internal_id));
+                        }
+                    }
+                    current++;
+                }
+            }
+        }
+        return allNodes;
+    }
+
+    std::vector<Node> NodeTypes::getNodes(uint16_t type_id, uint64_t skip, uint64_t limit) {
+        std::vector<Node>  allNodes;
+        if (ValidTypeId(type_id)) {
+            int current = 1;
+            uint64_t max_id = key_to_node_id[type_id].size();
+            if (deleted_ids[type_id].isEmpty()) {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allNodes;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        allNodes.emplace_back(getNode(type_id, internal_id));
+                    }
+                    current++;
+                }
+            } else {
+                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                    if (current > (skip + limit)) {
+                        return allNodes;
+                    }
+                    if (current > skip && current <= (skip + limit)) {
+                        if (!deleted_ids[type_id].contains(internal_id)) {
+                            allNodes.emplace_back(getNode(type_id, internal_id));
+                        }
+                    }
+                    current++;
+                }
+            }
+        }
+        return allNodes;
+    }
+
     std::vector<uint64_t>  NodeTypes::getDeletedIds() const {
         std::vector<uint64_t>  allIds;
-        // ids are internal ids, we need to switch to external ids
+        // links are internal links, we need to switch to external links
         for (int type_id=1; type_id < id_to_type.size(); type_id++) {
             for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); iterator++) {
                 allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
@@ -385,8 +450,12 @@ namespace ragedb {
         return getNode(externalToTypeId(external_id), externalToInternal(external_id), external_id);
     }
 
+    Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id) {
+        return Node( internalToExternal(type_id, internal_id), getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
+    }
+
     Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
-        return Node(external_id, getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
+        return Node( external_id, getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
     }
 
     std::any NodeTypes::getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
@@ -498,7 +567,7 @@ namespace ragedb {
         return setNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
     }
 
-    bool NodeTypes::setNodePropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
+    bool NodeTypes::setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
         if (!json.empty()) {
             // Get the properties
             simdjson::dom::object object;

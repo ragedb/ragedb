@@ -27,7 +27,7 @@ namespace ragedb {
     public:
         Group(uint16_t rel_type_id, std::vector<Link> links);
         uint16_t rel_type_id;
-        std::vector<Link> ids;
+        std::vector<Link> links;
     };
 }
 

@@ -31,7 +31,6 @@ namespace ragedb {
         std::vector<std::string> id_to_type;
         std::vector<std::vector<uint64_t>> starting_node_ids;
         std::vector<std::vector<uint64_t>> ending_node_ids;
-        std::vector<std::vector<Relationship>> relationships;                         // Store of the meta-properties of Relationships
         std::vector<Properties> properties;                             // Store of the properties of Relationships
         std::vector<Roaring64Map> deleted_ids;
 
@@ -59,6 +58,8 @@ namespace ragedb {
 
         std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;
         std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
+        std::vector<Relationship> getRelationships(uint64_t skip, uint64_t limit);
+        std::vector<Relationship> getRelationships(uint16_t type_id, uint64_t skip, uint64_t limit);
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);
         uint64_t getDeletedIdsMinimum(uint16_t type_id);
@@ -76,18 +77,25 @@ namespace ragedb {
         bool deleteTypeProperty(uint16_t type_id, const std::string &property);
         uint64_t getStartingNodeId(uint16_t type_id, uint64_t internal_id);
         uint64_t getEndingNodeId(uint16_t type_id, uint64_t internal_id);
-
+        uint64_t setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
+        uint64_t setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
 
         std::map<std::string, std::any> getRelationshipProperties(uint16_t type_id, uint64_t internal_id);
         Relationship getRelationship(uint64_t external_id);
+        Relationship getRelationship(uint16_t type_id, uint64_t internal_id);
         Relationship getRelationship(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
         std::any getRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         std::any getRelationshipProperty(uint64_t external_id, const std::string &property);
+        std::vector<uint64_t> &getStartingNodeIds(uint16_t type_id);
+        std::vector<uint64_t> &getEndingNodeIds(uint16_t type_id);
         bool setRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value);
         bool setRelationshipProperty(uint64_t external_id, const std::string &property, const std::string &value);
 
-        Properties &getRelationshipTypeProperties(uint16_t type_id);
-        bool setProperties(uint16_t type_id, uint64_t, const std::string &);
+        Properties &getProperties(uint16_t type_id);
+        bool setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
+        bool deleteProperties(uint16_t type_id, uint64_t internal_id);
+
+
 
     };
 }

@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-#include "Group.h"
+#ifndef RAGEDB_DIRECTION_H
+#define RAGEDB_DIRECTION_H
 
-namespace ragedb {
-    Group::Group(uint16_t rel_type_id, std::vector<Link> ids) : rel_type_id(rel_type_id), links(std::move(ids)) {}
-}
+enum Direction {
+    BOTH, IN, OUT
+};
+
+#endif //RAGEDB_DIRECTION_H

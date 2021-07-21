@@ -35,7 +35,7 @@ namespace ragedb {
         std::vector<Properties> properties;                             // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
-        std::vector<Roaring64Map> deleted_ids; // all ids are internal ids
+        std::vector<Roaring64Map> deleted_ids; // all links are internal links
 
         simdjson::dom::parser parser;
         uint shard_id;
@@ -61,6 +61,9 @@ namespace ragedb {
 
         std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;
         std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
+        std::vector<Node> getNodes(uint64_t skip, uint64_t limit);
+        std::vector<Node> getNodes(uint16_t type_id, uint64_t skip, uint64_t limit);
+
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);
         uint64_t getDeletedIdsMinimum(uint16_t type_id);
@@ -82,6 +85,7 @@ namespace ragedb {
         std::string getNodeKey(uint16_t type_id, uint64_t internal_id);
         std::map<std::string, std::any> getNodeProperties(uint16_t type_id, uint64_t internal_id);
         Node getNode(uint64_t external_id);
+        Node getNode(uint16_t type_id, uint64_t internal_id);
         Node getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
         std::any getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         std::any getNodeProperty(uint64_t external_id, const std::string &property);
@@ -92,7 +96,7 @@ namespace ragedb {
 
 
         Properties &getNodeTypeProperties(uint16_t type_id);
-        bool setNodePropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
+        bool setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
         bool deleteNodeProperties(uint16_t type_id, uint64_t internal_id);
 
         tsl::sparse_map<std::string, uint64_t> &getKeysToNodeId(uint16_t type_id);
