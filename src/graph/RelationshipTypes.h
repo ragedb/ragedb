@@ -53,7 +53,7 @@ namespace ragedb {
         bool deleteTypeId(const std::string &type);
 
         bool addId(uint16_t, uint64_t);
-        bool removeId(uint16_t, uint64_t);
+        bool removeId(uint16_t type_id, uint64_t internal_id);
         bool containsId(uint16_t, uint64_t);
 
         std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;

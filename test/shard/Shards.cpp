@@ -17,7 +17,7 @@
 #include <catch2/catch.hpp>
 #include "../../src/graph/Shard.h"
 
-SCENARIO( "Shard can reserve and clear", "[ids]" ) {
+SCENARIO( "Shard can reserve and clear", "[links]" ) {
     GIVEN("An empty shard") {
         ragedb::Shard shard(4);
         shard.NodeTypeInsert("Node", 1);

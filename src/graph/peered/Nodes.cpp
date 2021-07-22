@@ -94,10 +94,56 @@ namespace ragedb {
         });
     }
 
-    seastar::future<bool> Shard::NodeRemovePeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
-        //TODO
-        return seastar::make_ready_future<bool>(false);
+    seastar::future<bool> Shard::NodeRemovePeered(uint64_t external_id) {
+        uint16_t node_shard_id = CalculateShardId(external_id);
+
+        return container().invoke_on(node_shard_id, [external_id](Shard &local_shard) {
+            return local_shard.ValidNodeId(external_id);
+        }).then([node_shard_id, external_id, this] (bool valid) {
+            if(valid) {
+                uint64_t internal_id = externalToInternal(external_id);
+
+                seastar::future<std::vector<bool>> incoming = container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
+                    return local_shard.NodeRemoveGetIncoming(external_id);
+                }).then([external_id, this] (auto sharded_grouped_rels) {
+                    std::vector<seastar::future<bool>> futures;
+                    for (auto const& [their_shard, grouped_rels] : sharded_grouped_rels ) {
+                        auto future = container().invoke_on(their_shard, [external_id, grouped_rels = std::move(grouped_rels)] (Shard &local_shard) {
+                            return local_shard.NodeRemoveDeleteIncoming(external_id, grouped_rels);
+                        });
+                        futures.push_back(std::move(future));
+                    }
+
+                    auto p = make_shared(std::move(futures));
+                    return seastar::when_all_succeed(p->begin(), p->end());
+                });
+
+                seastar::future<std::vector<bool>> outgoing = container().invoke_on(shard_id, [external_id] (Shard &local_shard) {
+                    return local_shard.NodeRemoveGetOutgoing(external_id);
+                }).then([external_id, this] (auto sharded_grouped_rels) {
+                    std::vector<seastar::future<bool>> futures;
+                    for (auto const& [their_shard, grouped_rels] : sharded_grouped_rels ) {
+                        auto future = container().invoke_on(their_shard, [external_id, grouped_rels = grouped_rels] (Shard &local_shard) {
+                            return local_shard.NodeRemoveDeleteOutgoing(external_id, grouped_rels);
+                        });
+                        futures.push_back(std::move(future));
+                    }
+
+                    auto p = make_shared(std::move(futures));
+                    return seastar::when_all_succeed(p->begin(), p->end());
+                });
+
+                return seastar::when_all(std::move(incoming), std::move(outgoing)).then([node_shard_id, external_id, this] (auto tup) {
+                    if(std::get<0>(tup).failed() || std::get<1>(tup).failed()) {
+                        return seastar::make_ready_future<bool>(false);
+                    }
+                    return container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
+                        return local_shard.NodeRemove(external_id);
+                    });
+                });
+            }
+            return seastar::make_ready_future<bool>(false);
+        });
     }
 
     seastar::future<uint16_t> Shard::NodeGetTypeIdPeered(uint64_t id) {

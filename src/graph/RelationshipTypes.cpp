@@ -81,6 +81,7 @@ namespace ragedb {
         id_to_type.emplace_back(type);
         starting_node_ids.emplace_back();
         ending_node_ids.emplace_back();
+        properties.emplace_back(Properties());
         deleted_ids.emplace_back(Roaring64Map());
         return false;
     }
@@ -105,6 +106,7 @@ namespace ragedb {
         id_to_type.emplace_back(type);
         starting_node_ids.emplace_back();
         ending_node_ids.emplace_back();
+        properties.emplace_back(Properties());
         deleted_ids.emplace_back(Roaring64Map());
         return type_id;
     }

@@ -20,7 +20,7 @@ set(SOURCE_FILES
         NodeTypes.cpp
         RelationshipTypes.cpp
         Properties.cpp
-        shard/Ids.cpp shard/Types.cpp shard/Nodes.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp
-        peered/Types.cpp peered/Nodes.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp)
+        shard/Ids.cpp shard/Types.cpp shard/Nodes.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Helpers.cpp
+        peered/Types.cpp peered/Nodes.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

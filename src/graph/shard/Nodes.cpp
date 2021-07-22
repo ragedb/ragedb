@@ -127,9 +127,105 @@ namespace ragedb {
         return node_types.getType(0);
     }
 
+    bool Shard::NodeRemove(uint64_t id) {
+        if (ValidNodeId(id)) {
+            uint16_t node_type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            std::string key = node_types.getNodeKey(node_type_id, internal_id);
+
+            // remove the key
+            node_types.getKeysToNodeId(node_type_id).erase(key);
+            node_types.getKeys(node_type_id).at(internal_id) = "";
+
+            // remove the id and properties of the node
+            node_types.removeId(node_type_id, internal_id);
+            node_types.deleteProperties(node_type_id, internal_id);
+
+            // Go through all the outgoing relationships and delete them and their counterparts that I own
+            for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                // Get the Relationship Type of the list
+                uint16_t rel_type_id = types.rel_type_id;
+
+                for (Link link : types.links) {
+                    uint64_t internal_relationship_id = externalToInternal(link.rel_id);
+                    // Clear the relationship properties and meta properties
+                    relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
+                    relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
+                    relationship_types.setEndingNodeId(rel_type_id, internal_relationship_id, 0);
+                    // Add the relationship to be recycled
+                    relationship_types.removeId(rel_type_id, internal_relationship_id);
+
+                    // Remove relationship from other node that I own
+                    if (CalculateShardId(link.node_id) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.node_id);
+                        uint16_t other_node_type_id = externalToTypeId(link.node_id);
+
+                        for (auto &other_types : node_types.getIncomingRelationships(other_node_type_id).at(
+                                other_internal_id)) {
+                            if (other_types.rel_type_id == rel_type_id) {
+                                other_types.links.erase(
+                                        std::remove_if(std::begin(other_types.links), std::end(other_types.links),
+                                                       [link](Link entry) {
+                                                           return entry.rel_id == link.rel_id;
+                                                       }), std::end(other_types.links));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Empty outgoing relationships
+            node_types.getOutgoingRelationships(node_type_id).at(internal_id).clear();
+
+            // Go through all the incoming relationships and delete them and their counterpart
+            for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+                // Get the Relationship Type of the list
+                uint16_t rel_type_id = types.rel_type_id;
+
+                for (Link link : types.links) {
+                    uint64_t internal_relationship_id = externalToInternal(link.rel_id);
+                    // Clear the relationship properties and meta properties
+                    relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
+                    relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
+                    relationship_types.setEndingNodeId(rel_type_id, internal_relationship_id, 0);
+                    // Add the relationship to be recycled
+                    relationship_types.removeId(rel_type_id, internal_relationship_id);
+
+                    // Remove relationship from other node that I own
+                    if (CalculateShardId(link.node_id) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.node_id);
+                        uint16_t other_node_type_id = externalToTypeId(link.node_id);
+
+                        for (auto &other_types : node_types.getOutgoingRelationships(other_node_type_id).at(
+                                other_internal_id)) {
+                            if (other_types.rel_type_id == rel_type_id) {
+                                other_types.links.erase(
+                                        std::remove_if(std::begin(other_types.links), std::end(other_types.links),
+                                                       [link](Link entry) {
+                                                           return entry.rel_id == link.rel_id;
+                                                       }), std::end(other_types.links));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Empty outgoing relationships
+            node_types.getIncomingRelationships(node_type_id).at(internal_id).clear();
+            return true;
+        }
+        return false;
+    }
+
+    bool Shard::NodeRemove(const std::string& type, const std::string& key) {
+        uint64_t id = NodeGetID(type, key);
+        return NodeRemove(id);
+    }
+
+
     std::any Shard::NodePropertyGet(uint64_t id, const std::string& property) {
         if (ValidNodeId(id)) {
-            node_types.getNodeProperty(id, property);
+            return node_types.getNodeProperty(id, property);
         }
         return std::any();
     }

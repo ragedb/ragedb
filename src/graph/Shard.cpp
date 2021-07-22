@@ -61,12 +61,10 @@ namespace ragedb {
         uint64_t id2 = relationship_types.getEndingNodeId(rel_type_id, internal_id);
         uint16_t id1_type_id = externalToTypeId(id1);
 
-        // Update the relationship type counts
-        relationship_types.removeId(rel_type_id, external_id);
-        uint64_t internal_id1 = externalToInternal(id1);
-
         // Add to deleted relationships bitmap
         relationship_types.removeId(rel_type_id, internal_id);
+
+        uint64_t internal_id1 = externalToInternal(id1);
 
         // Remove relationship from Node 1
         auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
@@ -85,6 +83,7 @@ namespace ragedb {
         // Clear the relationship
         relationship_types.setStartingNodeId(rel_type_id, internal_id, 0);
         relationship_types.setEndingNodeId(rel_type_id, internal_id, 0);
+        relationship_types.deleteProperties(rel_type_id, internal_id);
 
         // Return the rel_type and other node Id
         return std::pair <uint16_t ,uint64_t> (rel_type_id, id2);

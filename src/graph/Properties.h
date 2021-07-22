@@ -91,7 +91,7 @@ namespace ragedb {
         bool setProperty(const std::string&, uint64_t, bool);
         bool setProperty(const std::string&, uint64_t, int64_t);
         bool setProperty(const std::string&, uint64_t, double);
-        bool setProperty(const std::string&, uint64_t, std::string);
+        bool setProperty(const std::string&, uint64_t, const std::string&);
 
         bool deleteProperty(const std::string&, uint64_t);
         bool deleteProperties(uint64_t);
