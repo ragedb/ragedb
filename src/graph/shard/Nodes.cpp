@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "../Shard.h"
 
 namespace ragedb {
@@ -230,9 +232,16 @@ namespace ragedb {
         return std::any();
     }
 
+    bool Shard::NodePropertySet(uint64_t id, const std::string& property, std::any value) {
+        if (ValidNodeId(id)) {
+            return node_types.setNodeProperty(id, property, std::move(value));
+        }
+        return false;
+    }
+
     bool Shard::NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {
         if (ValidNodeId(id)) {
-            return node_types.setNodeProperty(id, property, value);
+            return node_types.setNodePropertyFromJson(id, property, value);
         }
         return false;
     }
@@ -245,6 +254,11 @@ namespace ragedb {
     bool Shard::NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value) {
         uint64_t id = NodeGetID(type, key);
         return NodePropertySetFromJson(id, property, value);
+    }
+
+    bool Shard::NodePropertySet(const std::string& type, const std::string& key, const std::string& property, std::any value) {
+        uint64_t id = NodeGetID(type, key);
+        return NodePropertySet(id, property, std::move(value));
     }
 
     bool Shard::NodePropertyDelete(const std::string& type, const std::string& key, const std::string& property) {

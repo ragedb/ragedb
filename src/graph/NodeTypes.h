@@ -89,8 +89,10 @@ namespace ragedb {
         Node getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
         std::any getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         std::any getNodeProperty(uint64_t external_id, const std::string &property);
-        bool setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value);
-        bool setNodeProperty(uint64_t external_id, const std::string &property, const std::string &value);
+        bool setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, std::any value);
+        bool setNodeProperty(uint64_t external_id, const std::string &property, std::any value);
+        bool setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string& value);
+        bool setNodePropertyFromJson(uint64_t external_id, const std::string &property, const std::string& value);
         bool deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         bool deleteNodeProperty(uint64_t external_id, const std::string &property);
 
@@ -103,6 +105,7 @@ namespace ragedb {
         std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t type_id);
         std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t type_id);
 
+        bool parse_string(const char *j, std::string &s);
     };
 }
 

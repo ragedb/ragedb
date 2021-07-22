@@ -56,7 +56,7 @@ namespace ragedb {
         // less than maximum node id,
         // belong to this shard
         // and not deleted
-        return CalculateShardId(id) == seastar::this_shard_id()
+        return id > 0 && CalculateShardId(id) == seastar::this_shard_id()
                && node_types.ValidNodeId(externalToTypeId(id), externalToInternal(id));
     }
 
@@ -65,7 +65,7 @@ namespace ragedb {
         // less than maximum relationship id,
         // belong to this shard
         // and not deleted
-        return CalculateShardId(id) == seastar::this_shard_id()
+        return id > 0 && CalculateShardId(id) == seastar::this_shard_id()
         && relationship_types.ValidRelationshipId(externalToTypeId(id), externalToInternal(id));
     }
 

@@ -29,14 +29,14 @@ namespace ragedb {
 
     Properties::Properties()  {
         type_map = {
-                {"boolean",      boolean_type},
-                {"integer",      integer_type},
-                {"double",       double_type},
-                {"string",       string_type},
-                {"boolean_list", boolean_list_type},
-                {"integer_list", integer_list_type},
-                {"double_list",  double_list_type},
-                {"string_list", string_list_type}
+                {"boolean",      getBooleanPropertyType()},
+                {"integer",      getIntegerPropertyType()},
+                {"double",       getDoublePropertyType()},
+                {"string",       getStringPropertyType()},
+                {"boolean_list", getBooleanListPropertyType()},
+                {"integer_list", getIntegerListPropertyType()},
+                {"double_list",  getDoubleListPropertyType()},
+                {"string_list",  getStringListPropertyType()}
         };
 
         allowed_types = {"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list"};
@@ -64,6 +64,13 @@ namespace ragedb {
         }
         map.erase("");
         return map;
+    }
+
+    uint8_t Properties::getPropertyTypeId(const std::string& key) {
+        if (types.find(key) != types.end()) {
+            return types[key];
+        }
+        return 0;
     }
 
     uint8_t Properties::setPropertyTypeId(const std::string &key, uint8_t property_type_id) {
@@ -518,7 +525,9 @@ namespace ragedb {
             switch (types[key]) {
                 case boolean_type: {
                     if (booleans[key].size() > index) {
-                        return booleans[key][index];
+                        // std::any and vector<bool> don't play nice together due to how vector<bool> is optimized
+                        // so this cast makes sure we return the value typed correctly
+                        return static_cast<bool>(booleans[key][index]);
                     }
                     return tombstone_boolean;
                 }
@@ -590,7 +599,7 @@ namespace ragedb {
 
     bool Properties::deleteProperties(uint64_t index) {
         for (auto[key, value] : types) {
-            switch (types[key]) {
+            switch (value) {
                 case boolean_type: {
                     if (booleans[key].size() > index) {
                         booleans[key][index] = tombstone_boolean;
@@ -640,7 +649,7 @@ namespace ragedb {
                     break;
                 }
                 default: {
-                    return false;
+                    // The empty key will hit this, do nothing.
                 }
             }
         }

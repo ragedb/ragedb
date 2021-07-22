@@ -17,6 +17,7 @@
 #ifndef RAGEDB_SHARD_H
 #define RAGEDB_SHARD_H
 
+#include <any>
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
 #include <seastar/core/when_all.hh>
@@ -123,9 +124,11 @@ namespace ragedb {
 
         // Node Property
         std::any NodePropertyGet(uint64_t id, const std::string& property);
+        bool NodePropertySet(uint64_t id, const std::string& property, std::any value);
         bool NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value);
         std::any NodePropertyGet(const std::string& type, const std::string& key, const std::string& property);
-        bool NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
+        bool NodePropertySet(const std::string& type, const std::string& key, const std::string& property, std::any value);
+        bool NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property,const std::string& value);
         bool NodePropertyDelete(const std::string& type, const std::string& key, const std::string& property);
         bool NodePropertyDelete(uint64_t id, const std::string& property);
 

@@ -25,6 +25,7 @@
 
 namespace ragedb {
     class Properties {
+
     private:
         tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
@@ -60,7 +61,7 @@ namespace ragedb {
         seastar::rwlock property_type_lock;
 
         std::map<std::string, std::string> getPropertyTypes();
-
+        uint8_t getPropertyTypeId(const std::string& key);
         uint8_t setPropertyTypeId(const std::string& key, uint8_t property_type_id);
         uint8_t setPropertyType(const std::string& key, const std::string& type);
         bool removePropertyType(const std::string& key);
@@ -95,6 +96,31 @@ namespace ragedb {
 
         bool deleteProperty(const std::string&, uint64_t);
         bool deleteProperties(uint64_t);
+
+        constexpr static uint16_t getBooleanPropertyType() {
+            return 1;
+        }
+        constexpr static uint16_t getIntegerPropertyType() {
+            return 2;
+        }
+        constexpr static uint16_t getDoublePropertyType() {
+            return 3;
+        }
+        constexpr static uint16_t getStringPropertyType() {
+            return 4;
+        }
+        constexpr static uint16_t getBooleanListPropertyType() {
+            return 5;
+        }
+        constexpr static uint16_t getIntegerListPropertyType() {
+            return 6;
+        }
+        constexpr static uint16_t getDoubleListPropertyType() {
+            return 7;
+        }
+        constexpr static uint16_t getStringListPropertyType() {
+            return 8;
+        }
 
     };
 }
