@@ -38,7 +38,7 @@ namespace ragedb {
             }
 
             external_id = internalToExternal(rel_type_id, internal_id);
-            relationship_types.addId(rel_type_id, external_id);
+            relationship_types.addId(rel_type_id, internal_id);
 
             // Add the relationship to the outgoing node
             auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
@@ -92,7 +92,7 @@ namespace ragedb {
 
             relationship_types.setPropertiesFromJSON(rel_type_id, internal_id, properties);
             external_id = internalToExternal(rel_type_id, internal_id);
-            relationship_types.addId(rel_type_id, external_id);
+            relationship_types.addId(rel_type_id, internal_id);
 
             // Add the relationship to the outgoing node
             auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
@@ -285,7 +285,7 @@ namespace ragedb {
 
     std::any Shard::RelationshipPropertyGet(uint64_t id, const std::string& property) {
         if (ValidRelationshipId(id)) {
-            relationship_types.getRelationshipProperty(id, property);
+            return relationship_types.getRelationshipProperty(id, property);
         }
         return std::any();
     }
