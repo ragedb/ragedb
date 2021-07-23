@@ -542,6 +542,45 @@ namespace ragedb {
         return properties[type_id];
     }
 
+    bool RelationshipTypes::setRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::any& value) {
+        // find out what data_type property is supposed to be, cast value to that.
+
+        switch (properties[type_id].getPropertyTypeId(property)) {
+            case Properties::getBooleanPropertyType(): {
+                return properties[type_id].setBooleanProperty(property, internal_id, std::any_cast<bool>(value));
+            }
+            case Properties::getIntegerPropertyType(): {
+                return properties[type_id].setIntegerProperty(property, internal_id, std::any_cast<int64_t>(value));
+            }
+            case Properties::getDoublePropertyType(): {
+                return properties[type_id].setDoubleProperty(property, internal_id, std::any_cast<double>(value));
+            }
+            case Properties::getStringPropertyType(): {
+                if (value.type() != typeid(std::string)) {
+                    return properties[type_id].setStringProperty(property, internal_id, std::string(std::any_cast<const char*>(value)));
+                }
+                return properties[type_id].setStringProperty(property, internal_id, std::any_cast<std::string>(value));
+            }
+            case Properties::getBooleanListPropertyType(): {
+                return properties[type_id].setListOfBooleanProperty(property, internal_id, std::any_cast<std::vector<bool>>(value));
+            }
+            case Properties::getIntegerListPropertyType(): {
+                return properties[type_id].setListOfIntegerProperty(property, internal_id, std::any_cast<std::vector<int64_t>>(value));
+            }
+            case Properties::getDoubleListPropertyType(): {
+                return properties[type_id].setListOfDoubleProperty(property, internal_id, std::any_cast<std::vector<double>>(value));
+            }
+            case Properties::getStringListPropertyType(): {
+                return properties[type_id].setListOfStringProperty(property, internal_id, std::any_cast<std::vector<std::string>>(value));
+            }
+        }
+        return false;
+    }
+
+    bool RelationshipTypes::setRelationshipProperty(uint64_t external_id, const std::string &property, const std::any& value) {
+        return setRelationshipProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
+    }
+
     bool RelationshipTypes::setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
         if (!json.empty()) {
             // Get the properties
