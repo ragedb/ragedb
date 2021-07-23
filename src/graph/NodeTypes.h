@@ -104,8 +104,6 @@ namespace ragedb {
         std::vector<std::string> &getKeys(uint16_t type_id);
         std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t type_id);
         std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t type_id);
-
-        bool parse_string(const char *j, std::string &s);
     };
 }
 

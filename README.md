@@ -362,3 +362,9 @@ If you get errors regarding conan locks, run:
     - Allow additional data types: 8, 16 and 32 bit integers, 32 bit floats, byte, list of bytes, nested types 
     - NodeTypes and RelationshipTypes should allow type deletion and type id reuse
     - Allow property type conversions (int to double, string to int, int to int array, etc).
+
+### PVS Commands
+
+    pvs-studio-analyzer trace -- make
+    pvs-studio-analyzer analyze
+    plog-converter -a GA:1,2 -t tasklist  PVS-Studio.log

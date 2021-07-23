@@ -88,16 +88,16 @@ namespace ragedb {
         std::any getRelationshipProperty(uint64_t external_id, const std::string &property);
         std::vector<uint64_t> &getStartingNodeIds(uint16_t type_id);
         std::vector<uint64_t> &getEndingNodeIds(uint16_t type_id);
-        bool setRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &value);
-        bool setRelationshipProperty(uint64_t external_id, const std::string &property, const std::string &value);
+        bool setRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, std::any value);
+        bool setRelationshipProperty(uint64_t external_id, const std::string &property, std::any value);
+        bool setRelationshipPropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string& json);
+        bool setRelationshipPropertyFromJson(uint64_t external_id, const std::string &property, const std::string& value);
         bool deleteRelationshipProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         bool deleteRelationshipProperty(uint64_t external_id, const std::string &property);
 
         Properties &getProperties(uint16_t type_id);
         bool setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
         bool deleteProperties(uint16_t type_id, uint64_t internal_id);
-
-
 
     };
 }

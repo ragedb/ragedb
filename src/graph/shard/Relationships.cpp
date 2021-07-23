@@ -292,7 +292,7 @@ namespace ragedb {
 
     bool Shard::RelationshipPropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {
         if (ValidRelationshipId(id)) {
-            return relationship_types.setRelationshipProperty(id, property, value);
+            return relationship_types.setRelationshipPropertyFromJson(id, property, value);
         }
         return false;
     }

@@ -1,6 +1,10 @@
 #CLion
 .idea
 
+#PVS Studio
+.PVS-Studio/
+strace_out
+
 # Build directories
 cmake-build-debug/
 cmake-build-debug-coverage/

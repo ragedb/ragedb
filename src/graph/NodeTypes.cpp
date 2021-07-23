@@ -203,7 +203,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allIds;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
                     current++;
@@ -213,7 +213,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allIds;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
                             allIds.emplace_back(internalToExternal(type_id, internal_id));
                         }
@@ -235,7 +235,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allIds;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
                     current++;
@@ -245,7 +245,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allIds;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
                             allIds.emplace_back(internalToExternal(type_id, internal_id));
                         }
@@ -268,7 +268,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allNodes;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         allNodes.emplace_back(getNode(type_id, internal_id));
                     }
                     current++;
@@ -278,7 +278,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allNodes;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
                             allNodes.emplace_back(getNode(type_id, internal_id));
                         }
@@ -300,7 +300,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allNodes;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         allNodes.emplace_back(getNode(type_id, internal_id));
                     }
                     current++;
@@ -310,7 +310,7 @@ namespace ragedb {
                     if (current > (skip + limit)) {
                         return allNodes;
                     }
-                    if (current > skip && current <= (skip + limit)) {
+                    if (current > skip) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
                             allNodes.emplace_back(getNode(type_id, internal_id));
                         }
@@ -343,9 +343,7 @@ namespace ragedb {
 
     uint64_t NodeTypes::getDeletedIdsMinimum(uint16_t type_id) {
         if (ValidTypeId(type_id)) {
-            for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); iterator++) {
-                return iterator.operator*();
-            }
+            return deleted_ids[type_id].minimum();
         }
         return 0;
     }
@@ -521,71 +519,57 @@ namespace ragedb {
         return setNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property, std::move(value));
     }
 
-//    bool NodeTypes::parse_double(const char *j, double &d) {
-//        auto error = parser.parse(j, std::strlen(j))
-//                .at(0)
-//                .get(d, error);
-//        if (error) { return false; }
-//        return true;
-//    }
-//
-//    bool NodeTypes::parse_string(const char *j, std::string &s) {
-//        std::string_view answer;
-//        simdjson::dom::element value;
-//        auto error = parser.parse(j,strlen(j))
-//                .at(0)
-//                .get(answer, value);
-//        if (error) { return false; }
-//        s.assign(answer.data(), answer.size());
-//        return true;
-//    }
-
     bool NodeTypes::setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &json) {
         if (!json.empty()) {
-            simdjson::dom::element value = parser.parse(json);
-
-            uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
-            switch (data_type_id) {
-                case Properties::getBooleanPropertyType(): {
-                    return properties[type_id].setBooleanProperty(property, internal_id, bool(value));
-                }
-                case Properties::getIntegerPropertyType(): {
-                    return properties[type_id].setIntegerProperty(property, internal_id,
-                                                                  static_cast<std::make_signed_t<uint64_t>>(value));
-                }
-                case Properties::getDoublePropertyType(): {
-                    return properties[type_id].setDoubleProperty(property, internal_id, double(value));
-                }
-                case Properties::getStringPropertyType(): {
-                    return properties[type_id].setStringProperty(property, internal_id, std::string(value));
-                }
-                case Properties::getBooleanListPropertyType(): {
-                    std::vector<bool> bool_vector;
-                    for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                        bool_vector.emplace_back(bool(child));
+            simdjson::dom::element value;
+            simdjson::error_code error = parser.parse(json).get(value);
+            if (error == 0U) {
+                uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
+                switch (data_type_id) {
+                    case Properties::getBooleanPropertyType(): {
+                        return properties[type_id].setBooleanProperty(property, internal_id, bool(value));
                     }
-                    return properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
-                }
-                case Properties::getIntegerListPropertyType(): {
-                    std::vector<int64_t> int_vector;
-                    for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                        int_vector.emplace_back(int64_t(child));
+                    case Properties::getIntegerPropertyType(): {
+                        return properties[type_id].setIntegerProperty(property, internal_id,
+                                                                      static_cast<std::make_signed_t<uint64_t>>(value));
                     }
-                    return properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
-                }
-                case Properties::getDoubleListPropertyType(): {
-                    std::vector<double> double_vector;
-                    for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                        double_vector.emplace_back(double(child));
+                    case Properties::getDoublePropertyType(): {
+                        return properties[type_id].setDoubleProperty(property, internal_id, double(value));
                     }
-                    return properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
-                }
-                case Properties::getStringListPropertyType(): {
-                    std::vector<std::string> string_vector;
-                    for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                        string_vector.emplace_back(child);
+                    case Properties::getStringPropertyType(): {
+                        return properties[type_id].setStringProperty(property, internal_id, std::string(value));
                     }
-                    return properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+                    case Properties::getBooleanListPropertyType(): {
+                        std::vector<bool> bool_vector;
+                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                            bool_vector.emplace_back(bool(child));
+                        }
+                        return properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
+                    }
+                    case Properties::getIntegerListPropertyType(): {
+                        std::vector<int64_t> int_vector;
+                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                            int_vector.emplace_back(int64_t(child));
+                        }
+                        return properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                    }
+                    case Properties::getDoubleListPropertyType(): {
+                        std::vector<double> double_vector;
+                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                            double_vector.emplace_back(double(child));
+                        }
+                        return properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                    }
+                    case Properties::getStringListPropertyType(): {
+                        std::vector<std::string> string_vector;
+                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                            string_vector.emplace_back(child);
+                        }
+                        return properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+                    }
+                    default: {
+                        return false;
+                    }
                 }
             }
         }
