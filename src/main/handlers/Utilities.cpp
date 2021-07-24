@@ -107,3 +107,15 @@ void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const std:
         rep->write_body("json", json::stream_object(std::any_cast<bool>(property)));
     }
 }
+
+static simdjson::dom::parser parser;
+
+bool Utilities::validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+    simdjson::dom::object object;
+    simdjson::error_code error = parser.parse(req->content).get(object);
+    if (error) {
+        rep->write_body("json", json::stream_object("Invalid JSON"));
+        rep->set_status(reply::status_type::bad_request);
+    }
+    return !error;
+}

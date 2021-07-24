@@ -46,8 +46,10 @@ public:
     static uint64_t validate_id2(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static uint64_t validate_limit(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static uint64_t validate_offset(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
+    static bool validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
 
     static void convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property);
+
 };
 
 

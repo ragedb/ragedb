@@ -153,22 +153,26 @@ future<std::unique_ptr<reply>> Nodes::PostNodeHandler::handle([[maybe_unused]] c
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     });
         }
+        if (Utilities::validate_json(req, rep)) {
+            return parent.graph.shard.local().NodeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY],
+                                                            req->content.c_str())
+                    .then([rep = std::move(
+                            rep), type = req->param[Utilities::TYPE], key = req->param[Utilities::KEY], this](
+                            uint64_t id) mutable {
+                        if (id > 0) {
+                            return parent.graph.shard.local().NodeGetPeered(id).then(
+                                    [rep = std::move(rep)](Node node) mutable {
+                                        rep->write_body("json", json::stream_object((node_json(node))));
+                                        rep->set_status(reply::status_type::created);
+                                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                    });
+                        }
 
-        return parent.graph.shard.local().NodeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->content.c_str())
-                .then([rep = std::move(rep), type = req->param[Utilities::TYPE], key = req->param[Utilities::KEY], this](uint64_t id) mutable {
-                    if (id > 0) {
-                        return parent.graph.shard.local().NodeGetPeered(id).then([rep = std::move(rep)](Node node) mutable {
-                            rep->write_body("json", json::stream_object((node_json(node))));
-                            rep->set_status(reply::status_type::created);
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                        });
-                    }
-
-                    rep->write_body("json", json::stream_object("Invalid Request"));
-                    rep->set_status(reply::status_type::bad_request);
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                });
-
+                        rep->write_body("json", json::stream_object("Invalid Request"));
+                        rep->set_status(reply::status_type::bad_request);
+                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -195,7 +199,6 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unus
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id >0) {
-        // TODO: Switch to NodeRemove without Peered
         return parent.graph.shard.local().NodeRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
@@ -207,4 +210,16 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unus
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+}
+
+static simdjson::dom::parser parser;
+
+bool Nodes::validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+    simdjson::dom::object object;
+    simdjson::error_code error = parser.parse(req->content).get(object);
+    if (error) {
+        rep->write_body("json", json::stream_object("Invalid JSON"));
+        rep->set_status(reply::status_type::bad_request);
+    }
+    return !error;
 }

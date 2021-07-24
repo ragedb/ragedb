@@ -103,5 +103,4 @@ public:
     void set_routes(routes& routes);
 };
 
-
 #endif //RAGEDB_RELATIONSHIPPROPERTIES_H

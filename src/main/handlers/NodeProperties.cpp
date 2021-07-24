@@ -136,8 +136,9 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertyHandler::handle([[
 
 future<std::unique_ptr<reply>> NodeProperties::GetNodePropertyByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
-    if (id > 0) {
+    if (id > 0 && valid_property) {
         uint16_t node_shard_id = Shard::CalculateShardId(id);
 
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
@@ -270,16 +271,19 @@ future<std::unique_ptr<reply>> NodeProperties::PostNodePropertiesHandler::handle
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
     if(valid_type && valid_key) {
-        return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertiesResetFromJsonPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->content.c_str());
-        }).then([rep = std::move(rep)] (bool success) mutable {
-            if(success) {
-                rep->set_status(reply::status_type::no_content);
-            } else {
-                rep->set_status(reply::status_type::not_modified);
-            }
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-        });
+        if (Utilities::validate_json(req, rep)) {
+            return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)](Shard &local_shard) {
+                return local_shard.NodePropertiesResetFromJsonPeered(req->param[Utilities::TYPE],
+                                                                     req->param[Utilities::KEY], req->content.c_str());
+            }).then([rep = std::move(rep)](bool success) mutable {
+                if (success) {
+                    rep->set_status(reply::status_type::no_content);
+                } else {
+                    rep->set_status(reply::status_type::not_modified);
+                }
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -289,17 +293,19 @@ future<std::unique_ptr<reply>> NodeProperties::PostNodePropertiesByIdHandler::ha
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        uint16_t node_shard_id = Shard::CalculateShardId(id);
-        return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertiesResetFromJson(id, req->content.c_str());
-        }).then([rep = std::move(rep)] (bool success) mutable {
-            if(success) {
-                rep->set_status(reply::status_type::no_content);
-            } else {
-                rep->set_status(reply::status_type::not_modified);
-            }
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-        });
+        if (Utilities::validate_json(req, rep)) {
+            uint16_t node_shard_id = Shard::CalculateShardId(id);
+            return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)](Shard &local_shard) {
+                return local_shard.NodePropertiesResetFromJson(id, req->content.c_str());
+            }).then([rep = std::move(rep)](bool success) mutable {
+                if (success) {
+                    rep->set_status(reply::status_type::no_content);
+                } else {
+                    rep->set_status(reply::status_type::not_modified);
+                }
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -310,16 +316,19 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertiesHandler::handle(
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
     if(valid_type && valid_key) {
-        return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertiesSetFromJsonPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->content.c_str());
-        }).then([rep = std::move(rep)] (bool success) mutable {
-            if(success) {
-                rep->set_status(reply::status_type::no_content);
-            } else {
-                rep->set_status(reply::status_type::not_modified);
-            }
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-        });
+        if (Utilities::validate_json(req, rep)) {
+            return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)](Shard &local_shard) {
+                return local_shard.NodePropertiesSetFromJsonPeered(req->param[Utilities::TYPE],
+                                                                   req->param[Utilities::KEY], req->content.c_str());
+            }).then([rep = std::move(rep)](bool success) mutable {
+                if (success) {
+                    rep->set_status(reply::status_type::no_content);
+                } else {
+                    rep->set_status(reply::status_type::not_modified);
+                }
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -329,17 +338,19 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertiesByIdHandler::han
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        uint16_t node_shard_id = Shard::CalculateShardId(id);
-        return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertiesSetFromJson(id, req->content.c_str());
-        }).then([rep = std::move(rep)] (bool success) mutable {
-            if(success) {
-                rep->set_status(reply::status_type::no_content);
-            } else {
-                rep->set_status(reply::status_type::not_modified);
-            }
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-        });
+        if (Utilities::validate_json(req, rep)) {
+            uint16_t node_shard_id = Shard::CalculateShardId(id);
+            return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)](Shard &local_shard) {
+                return local_shard.NodePropertiesSetFromJson(id, req->content.c_str());
+            }).then([rep = std::move(rep)](bool success) mutable {
+                if (success) {
+                    rep->set_status(reply::status_type::no_content);
+                } else {
+                    rep->set_status(reply::status_type::not_modified);
+                }
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));

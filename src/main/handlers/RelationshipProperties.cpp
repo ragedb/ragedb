@@ -101,8 +101,9 @@ future<std::unique_ptr<reply>> RelationshipProperties::PutRelationshipPropertyBy
 
 future<std::unique_ptr<reply>> RelationshipProperties::DeleteRelationshipPropertyByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
-    if (id > 0) {
+    if (id > 0 && valid_property) {
         return parent.graph.shard.local().RelationshipPropertyDeletePeered(id, req->param.at(Utilities::PROPERTY))
                 .then([rep = std::move(rep)] (const std::any& property) mutable {
                     Utilities::convert_property_to_json(rep, property);
@@ -133,15 +134,17 @@ future<std::unique_ptr<reply>> RelationshipProperties::PostRelationshipPropertie
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        return parent.graph.shard.local().RelationshipPropertiesResetFromJsonPeered(id, req->content.c_str())
-                .then([rep = std::move(rep)] (bool success) mutable {
-                    if(success) {
-                        rep->set_status(reply::status_type::no_content);
-                    } else {
-                        rep->set_status(reply::status_type::not_modified);
-                    }
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                });
+        if (Utilities::validate_json(req, rep)) {
+            return parent.graph.shard.local().RelationshipPropertiesResetFromJsonPeered(id, req->content.c_str())
+                    .then([rep = std::move(rep)] (bool success) mutable {
+                        if(success) {
+                            rep->set_status(reply::status_type::no_content);
+                        } else {
+                            rep->set_status(reply::status_type::not_modified);
+                        }
+                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -151,15 +154,17 @@ future<std::unique_ptr<reply>> RelationshipProperties::PutRelationshipProperties
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        return parent.graph.shard.local().RelationshipPropertiesSetFromJsonPeered(id, req->content.c_str())
-                .then([rep = std::move(rep)] (bool success) mutable {
-                    if(success) {
-                        rep->set_status(reply::status_type::no_content);
-                    } else {
-                        rep->set_status(reply::status_type::not_modified);
-                    }
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                });
+        if (Utilities::validate_json(req, rep)) {
+            return parent.graph.shard.local().RelationshipPropertiesSetFromJsonPeered(id, req->content.c_str())
+                    .then([rep = std::move(rep)](bool success) mutable {
+                        if (success) {
+                            rep->set_status(reply::status_type::no_content);
+                        } else {
+                            rep->set_status(reply::status_type::not_modified);
+                        }
+                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    });
+        }
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));

@@ -25,22 +25,22 @@ SCENARIO( "Shard can reserve and clear", "[links]" ) {
         shard.NodeTypeInsert("Person", 3);
 
         WHEN("we add some nodes and relationships") {
-//            uint64_t node1id = shard.NodeAddEmpty(1, "one");
-//            uint64_t node3id = shard.NodeAddEmpty(2, "two");
-//            uint64_t node2id = shard.NodeAddEmpty(3, "three");
+            uint64_t node1id = shard.NodeAddEmpty(1, "one");
+            uint64_t node3id = shard.NodeAddEmpty(2, "two");
+            uint64_t node2id = shard.NodeAddEmpty(3, "three");
 
             shard.RelationshipTypeInsert("LOVES", 1);
             shard.RelationshipTypeInsert("HATES", 2);
-//            TODO: Not Implemented yet
-//            shard.RelationshipAddEmptySameShard(1, node1id, node2id);
-//            shard.RelationshipAddEmptySameShard(1, node2id, node3id);
-//            shard.RelationshipAddEmptySameShard(2, node3id, node1id);
+
+            shard.RelationshipAddEmptySameShard(1, node1id, node2id);
+            shard.RelationshipAddEmptySameShard(1, node2id, node3id);
+            shard.RelationshipAddEmptySameShard(2, node3id, node1id);
 
             THEN("clear the shard") {
                 uint64_t likes_count = shard.RelationshipTypesGetCount("LOVES");
                 uint64_t node_types_count = shard.NodeTypesGetCount();
-//                REQUIRE(likes_count == 2);
-//                REQUIRE(node_types_count == 3);
+                REQUIRE(likes_count == 2);
+                REQUIRE(node_types_count == 3);
                 shard.Clear();
                 likes_count = shard.RelationshipTypesGetCount("LOVES");
                 node_types_count = shard.NodeTypesGetCount();

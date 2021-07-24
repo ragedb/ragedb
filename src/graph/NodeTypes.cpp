@@ -117,7 +117,7 @@ namespace ragedb {
             return type_search->second;
         }
         // Insert
-        uint16_t type_id = type_to_id.size();
+        auto type_id = type_to_id.size();
         type_to_id.emplace(type, type_id);
         id_to_type.emplace_back(type);
         key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
