@@ -211,15 +211,3 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unus
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
-
-static simdjson::dom::parser parser;
-
-bool Nodes::validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
-    simdjson::dom::object object;
-    simdjson::error_code error = parser.parse(req->content).get(object);
-    if (error) {
-        rep->write_body("json", json::stream_object("Invalid JSON"));
-        rep->set_status(reply::status_type::bad_request);
-    }
-    return !error;
-}

@@ -159,20 +159,30 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipHandler::handle([[
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     });
         } else {
-            return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE], req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2], req->content.c_str())
-                    .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this](uint64_t id) mutable {
-                        if (id > 0) {
-                            return parent.graph.shard.local().RelationshipGetPeered(id).then([rep = std::move(rep)](Relationship relationship) mutable {
-                                rep->write_body("json", json::stream_object((relationship_json(relationship))));
-                                rep->set_status(reply::status_type::created);
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                            });
-                        } else {
-                            rep->write_body("json", json::stream_object("Invalid Request"));
-                            rep->set_status(reply::status_type::bad_request);
-                        }
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                    });
+            if (Utilities::validate_json(req, rep)) {
+                return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE],
+                                                                        req->param[Utilities::TYPE],
+                                                                        req->param[Utilities::KEY],
+                                                                        req->param[Utilities::TYPE2],
+                                                                        req->param[Utilities::KEY2],
+                                                                        req->content.c_str())
+                        .then([rep = std::move(rep), rel_type = req->param[Utilities::REL_TYPE], this](
+                                uint64_t id) mutable {
+                            if (id > 0) {
+                                return parent.graph.shard.local().RelationshipGetPeered(id).then(
+                                        [rep = std::move(rep)](Relationship relationship) mutable {
+                                            rep->write_body("json",
+                                                            json::stream_object((relationship_json(relationship))));
+                                            rep->set_status(reply::status_type::created);
+                                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                        });
+                            } else {
+                                rep->write_body("json", json::stream_object("Invalid Request"));
+                                rep->set_status(reply::status_type::bad_request);
+                            }
+                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        });
+            }
         }
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -201,21 +211,27 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handl
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     });
         } else {
-            return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE], id, id2, req->content.c_str())
-                    .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this](uint64_t relationship_id) mutable {
-                        if (relationship_id > 0) {
-                            return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then([rep = std::move(rep)](Relationship relationship) mutable {
-                                rep->write_body("json", json::stream_object((relationship_json(relationship))));
-                                rep->set_status(reply::status_type::created);
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                            });
+            if (Utilities::validate_json(req, rep)) {
+                return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE], id, id2,
+                                                                        req->content.c_str())
+                        .then([rep = std::move(rep), rel_type = req->param[Utilities::REL_TYPE], this](
+                                uint64_t relationship_id) mutable {
+                            if (relationship_id > 0) {
+                                return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then(
+                                        [rep = std::move(rep)](Relationship relationship) mutable {
+                                            rep->write_body("json",
+                                                            json::stream_object((relationship_json(relationship))));
+                                            rep->set_status(reply::status_type::created);
+                                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                        });
 
-                        } else {
-                            rep->write_body("json", json::stream_object("Invalid Request"));
-                            rep->set_status(reply::status_type::bad_request);
-                        }
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                    });
+                            } else {
+                                rep->write_body("json", json::stream_object("Invalid Request"));
+                                rep->set_status(reply::status_type::bad_request);
+                            }
+                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        });
+            }
         }
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));

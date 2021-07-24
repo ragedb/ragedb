@@ -98,7 +98,6 @@ private:
 public:
     explicit Nodes(Graph &_graph) : graph(_graph), getNodesHandler(*this), getNodesOfTypeHandler(*this), getNodeHandler(*this), getNodeByIdHandler(*this), postNodeHandler(*this), deleteNodeHandler(*this), deleteNodeByIdHandler(*this) {}
     void set_routes(routes& routes);
-    static bool validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
 };
 
 #endif //RAGEDB_NODES_H
