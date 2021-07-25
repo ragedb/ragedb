@@ -141,9 +141,7 @@ namespace ragedb {
 
     uint64_t Shard::RelationshipAddEmptyToOutgoing(uint16_t rel_type_id, uint64_t id1, uint64_t id2) {
         uint64_t internal_id1 = externalToInternal(id1);
-        uint64_t internal_id2 = externalToInternal(id2);
         uint16_t id1_type_id = externalToTypeId(id1);
-        uint16_t id2_type_id = externalToTypeId(id2);
         uint64_t external_id = 0;
 
         uint64_t internal_id = relationship_types.getCount(rel_type_id);
