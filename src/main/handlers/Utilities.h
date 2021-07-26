@@ -29,7 +29,12 @@ using namespace httpd;
 
 class Utilities {
 
+private:
+    static std::vector<simdjson::dom::parser> parsers;
+
 public:
+    Utilities();
+
     static inline const sstring PROPERTY = sstring ("property");
     static inline const sstring DATA_TYPE = sstring ("data_type");
     static inline const sstring TYPE = sstring ("type");

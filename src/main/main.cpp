@@ -26,6 +26,7 @@
 #include "handlers/Degrees.h"
 #include "handlers/Neighbors.h"
 #include "handlers/Schema.h"
+#include "handlers/Utilities.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/net/inet_address.hh>
@@ -55,6 +56,9 @@ int main(int argc, char** argv) {
                 uint16_t port = config["port"].as<uint16_t>();
                 auto server = new seastar::http_server_control();
                 server->start().get();
+
+                // Initialize utilities to create a json parser for each core
+                Utilities utilities;
 
                 ragedb::Graph graph("rage");
                 graph.Start().get();

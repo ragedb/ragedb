@@ -108,14 +108,22 @@ void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const std:
     }
 }
 
-static simdjson::dom::parser parser;
+std::vector<simdjson::dom::parser> Utilities::parsers;
 
 bool Utilities::validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
     simdjson::dom::object object;
-    simdjson::error_code error = parser.parse(req->content).get(object);
+    simdjson::error_code error = parsers[seastar::this_shard_id()].parse(req->content).get(object);
     if (error) {
         rep->write_body("json", json::stream_object("Invalid JSON"));
         rep->set_status(reply::status_type::bad_request);
     }
     return !error;
+}
+
+Utilities::Utilities() {
+    // We need to create one parser per core because otherwise we get parsing errors
+    int cores = static_cast<int>(seastar::smp::count);
+    for (int i = 0; i < cores; ++i) {
+        parsers.emplace_back();
+    }
 }
