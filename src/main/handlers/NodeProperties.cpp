@@ -376,7 +376,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesHandler::hand
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesByIdHandler::handle([[maybe_unused]] const sstring &path, const std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {

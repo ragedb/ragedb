@@ -27,6 +27,7 @@
 #include "handlers/Neighbors.h"
 #include "handlers/Schema.h"
 #include "handlers/Utilities.h"
+#include "handlers/Lua.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/net/inet_address.hh>
@@ -70,6 +71,7 @@ int main(int argc, char** argv) {
                 RelationshipProperties relationshipProperties(graph);
                 Degrees degrees(graph);
                 Neighbors neighbors(graph);
+                Lua lua(graph);
 
                 server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();
                 server->set_routes([&schema](routes& r) { schema.set_routes(r); }).get();
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
                 server->set_routes([&relationshipProperties](routes& r) { relationshipProperties.set_routes(r); }).get();
                 server->set_routes([&degrees](routes& r) { degrees.set_routes(r); }).get();
                 server->set_routes([&neighbors](routes& r) { neighbors.set_routes(r); }).get();
+                server->set_routes([&lua](routes& r) { lua.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes& r) {
                     r.add(seastar::operation_type::GET,

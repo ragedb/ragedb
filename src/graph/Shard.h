@@ -21,7 +21,9 @@
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
 #include <seastar/core/when_all.hh>
+#include <seastar/core/thread.hh>
 #include <simdjson.h>
+#include <sol/sol.hpp>
 #include <tsl/sparse_map.h>
 #include "Direction.h"
 #include "Node.h"
@@ -36,21 +38,28 @@ namespace ragedb {
     private:
         uint cpus;
         uint shard_id;
+        
 
-        seastar::rwlock rel_type_lock;
-        seastar::rwlock node_type_lock;
+        seastar::rwlock rel_type_lock;                  // Global lock to keep Relationship Type ids in sync
+        seastar::rwlock node_type_lock;                 // Global lock to keep Node Type ids in sync
+        seastar::rwlock lua_lock;                       // Per Shard lock to run a single Lua script each
 
-        NodeTypes node_types;                                                       // Store string and id of node types
-        RelationshipTypes relationship_types;                                       // Store string and id of relationship types
+        sol::state lua;                                 // Lua State
+
+        NodeTypes node_types;                           // Store string and id of node types
+        RelationshipTypes relationship_types;           // Store string and id of relationship types
 
         inline static const uint64_t SKIP = 0;
         inline static const uint64_t LIMIT = 100;
+        inline static const std::string EXCEPTION = "An exception has occurred: ";
 
     public:
-        explicit Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {}
+        explicit Shard(uint _cpus);
 
         static seastar::future<> stop();
         void Clear();
+
+        seastar::future<std::string> RunLua(const std::string &script);
 
         // Ids
         uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id) const;
@@ -162,6 +171,7 @@ namespace ragedb {
 
         // Relationship Property
         std::any RelationshipPropertyGet(uint64_t id, const std::string& property);
+        bool RelationshipPropertySet(uint64_t id, const std::string& property, const std::any& value);
         bool RelationshipPropertySetFromJson(uint64_t id, const std::string& property, const std::string& value);
         bool RelationshipPropertyDelete(uint64_t id, const std::string& property);
 
@@ -285,6 +295,18 @@ namespace ragedb {
 
         seastar::future<std::vector<std::string>> HealthCheckPeered();
 
+        // Node Types
+        uint16_t NodeTypesGetCountPeered();
+        seastar::future<uint64_t> NodeTypesGetCountPeered(uint16_t type_id);
+        seastar::future<uint64_t> NodeTypesGetCountPeered(const std::string& type);
+        std::set<std::string> NodeTypesGetPeered();
+
+        // Relationship Types
+        uint16_t RelationshipTypesGetCountPeered();
+        seastar::future<uint64_t> RelationshipTypesGetCountPeered(uint16_t type_id);
+        seastar::future<uint64_t> RelationshipTypesGetCountPeered(const std::string& type);
+        std::set<std::string> RelationshipTypesGetPeered();
+
         // Node Type
         std::string NodeTypeGetTypePeered(uint16_t type_id);
         uint16_t NodeTypeGetTypeIdPeered(const std::string& type);
@@ -304,6 +326,7 @@ namespace ragedb {
 
         seastar::future<Node> NodeGetPeered(const std::string& type, const std::string& key);
         seastar::future<Node> NodeGetPeered(uint64_t id);
+        seastar::future<std::vector<Node>> NodesGetPeered(const std::vector<uint64_t> &ids);
         seastar::future<bool> NodeRemovePeered(const std::string& type, const std::string& key);
         seastar::future<bool> NodeRemovePeered(uint64_t id);
         seastar::future<uint16_t> NodeGetTypeIdPeered(uint64_t id);
@@ -321,6 +344,8 @@ namespace ragedb {
         // Node Properties
         seastar::future<std::any> NodePropertyGetPeered(const std::string& type, const std::string& key, const std::string& property);
         seastar::future<std::any> NodePropertyGetPeered(uint64_t id, const std::string& property);
+        seastar::future<bool> NodePropertySetPeered(const std::string& type, const std::string& key, const std::string& property, const std::any& value);
+        seastar::future<bool> NodePropertySetPeered(uint64_t id, const std::string& property, const std::any& value);
         seastar::future<bool> NodePropertySetFromJsonPeered(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
         seastar::future<bool> NodePropertySetFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
         seastar::future<bool> NodePropertyDeletePeered(const std::string& type, const std::string& key, const std::string& property);
@@ -339,10 +364,13 @@ namespace ragedb {
         seastar::future<uint64_t> RelationshipAddEmptyPeered(const std::string& rel_type, const std::string& type1, const std::string& key1,
                                                              const std::string& type2, const std::string& key2);
         seastar::future<uint64_t> RelationshipAddEmptyPeered(const std::string& rel_type, uint64_t id1, uint64_t id2);
+        seastar::future<uint64_t> RelationshipAddEmptyPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2);
         seastar::future<uint64_t> RelationshipAddPeered(const std::string& rel_type, const std::string& type1, const std::string& key1,
                                                         const std::string& type2, const std::string& key2, const std::string& properties);
         seastar::future<uint64_t> RelationshipAddPeered(const std::string& rel_type, uint64_t id1, uint64_t id2, const std::string& properties);
+        seastar::future<uint64_t> RelationshipAddPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties);
         seastar::future<Relationship> RelationshipGetPeered(uint64_t id);
+        seastar::future<std::vector<Relationship>> RelationshipsGetPeered(const std::vector<uint64_t> &ids);
         seastar::future<bool> RelationshipRemovePeered(uint64_t id);
         seastar::future<std::string> RelationshipGetTypePeered(uint64_t id);
         seastar::future<uint16_t> RelationshipGetTypeIdPeered(uint64_t id);
@@ -351,6 +379,7 @@ namespace ragedb {
 
         // Relationship Properties
         seastar::future<std::any> RelationshipPropertyGetPeered(uint64_t id, const std::string& property);
+        seastar::future<bool> RelationshipPropertySetPeered(uint64_t id, const std::string& property, const std::any& value);
         seastar::future<bool> RelationshipPropertySetFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
         seastar::future<bool> RelationshipPropertyDeletePeered(uint64_t id, const std::string& property);
 
@@ -437,15 +466,182 @@ namespace ragedb {
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
-        seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(uint64_t skip = 0, uint64_t limit = 100);
-        seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(const std::string& type, uint64_t skip = 0, uint64_t limit = 100);
-        seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(uint64_t skip = 0, uint64_t limit = 100);
-        seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(const std::string& rel_type, uint64_t skip = 0, uint64_t limit = 100);
+        seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
-        seastar::future<std::vector<Node>> AllNodesPeered(uint64_t skip = 0, uint64_t limit = 100);
-        seastar::future<std::vector<Node>> AllNodesPeered(const std::string& type, uint64_t skip = 0, uint64_t limit = 100);
-        seastar::future<std::vector<Relationship>> AllRelationshipsPeered(uint64_t skip = 0, uint64_t limit = 100);
-        seastar::future<std::vector<Relationship>> AllRelationshipsPeered(const std::string& rel_type, uint64_t skip = 0, uint64_t limit = 100);
+        seastar::future<std::vector<Node>> AllNodesPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Node>> AllNodesPeered(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Relationship>> AllRelationshipsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Relationship>> AllRelationshipsPeered(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        // *****************************************************************************************************************************
+        //                                                              Via Lua
+        // *****************************************************************************************************************************
+
+        // Relationship Types
+        uint16_t RelationshipTypesGetCountViaLua();
+        uint64_t RelationshipTypesGetCountByTypeViaLua(const std::string& type);
+        uint64_t RelationshipTypesGetCountByIdViaLua(uint16_t type_id);
+        sol::as_table_t<std::set<std::string>> RelationshipTypesGetViaLua();
+
+        // Relationship Type
+        std::string RelationshipTypeGetTypeViaLua(uint16_t type_id);
+        uint16_t RelationshipTypeGetTypeIdViaLua(const std::string& type);
+        uint16_t RelationshipTypeInsertViaLua(const std::string& type);
+
+        // Node Types
+        uint16_t NodeTypesGetCountViaLua();
+        uint64_t NodeTypesGetCountByTypeViaLua(const std::string& type);
+        uint64_t NodeTypesGetCountByIdViaLua(uint16_t type_id);
+        sol::as_table_t<std::set<std::string>> NodeTypesGetViaLua();
+
+        // Node Type
+        std::string NodeTypeGetTypeViaLua(uint16_t type_id);
+        uint16_t NodeTypeGetTypeIdViaLua(const std::string& type);
+        uint16_t NodeTypeInsertViaLua(const std::string& type);
+
+        //Nodes
+        uint64_t NodeAddEmptyViaLua(const std::string& type, const std::string& key);
+        uint64_t NodeAddViaLua(const std::string& type, const std::string& key, const std::string& properties);
+        uint64_t NodeGetIdViaLua(const std::string& type, const std::string& key);
+        sol::as_table_t<std::vector<Node>> NodesGetViaLua(const std::vector<uint64_t>&);
+        Node NodeGetViaLua(const std::string& type, const std::string& key);
+        Node NodeGetByIdViaLua(uint64_t id);
+        bool NodeRemoveViaLua(const std::string& type, const std::string& key);
+        bool NodeRemoveByIdViaLua(uint64_t id);
+        uint16_t NodeGetTypeIdViaLua(uint64_t id);
+        std::string NodeGetTypeViaLua(uint64_t id);
+        std::string NodeGetKeyViaLua(uint64_t id);
+
+        // Node Properties
+        sol::object NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property);
+        sol::object NodePropertyGetByIdViaLua(uint64_t id, const std::string& property);
+        bool NodePropertySetViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value);
+        bool NodePropertySetByIdViaLua(uint64_t id, const std::string& property, const sol::object& value);
+        bool NodePropertiesSetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
+        bool NodePropertiesSetFromJsonByIdViaLua(uint64_t id, const std::string& value);
+        bool NodePropertiesResetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
+        bool NodePropertiesResetFromJsonByIdViaLua(uint64_t id, const std::string& value);
+        bool NodePropertyDeleteViaLua(const std::string& type, const std::string& key, const std::string& property);
+        bool NodePropertyDeleteByIdViaLua(uint64_t id, const std::string& property);
+        bool NodePropertiesDeleteViaLua(const std::string& type, const std::string& key);
+        bool NodePropertiesDeleteByIdViaLua(uint64_t id);
+
+        // Relationships
+        uint64_t RelationshipAddEmptyViaLua(const std::string& rel_type, const std::string& type1, const std::string& key1,
+                                            const std::string& type2, const std::string& key2);
+        uint64_t RelationshipAddEmptyByTypeIdByIdsViaLua(uint16_t rel_type_id, uint64_t id1, uint64_t id2);
+        uint64_t RelationshipAddEmptyByIdsViaLua(const std::string& rel_type, uint64_t id1, uint64_t id2);
+        uint64_t RelationshipAddViaLua(const std::string& rel_type, const std::string& type1, const std::string& key1,
+                                       const std::string& type2, const std::string& key2, const std::string& properties);
+        uint64_t RelationshipAddByTypeIdByIdsViaLua(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties);
+        uint64_t RelationshipAddByIdsViaLua(const std::string& rel_type, uint64_t id1, uint64_t id2, const std::string& properties);
+        sol::as_table_t<std::vector<Relationship>> RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
+        Relationship RelationshipGetViaLua(uint64_t id);
+        bool RelationshipRemoveViaLua(uint64_t id);
+        std::string RelationshipGetTypeViaLua(uint64_t id);
+        uint16_t RelationshipGetTypeIdViaLua(uint64_t id);
+        uint64_t RelationshipGetStartingNodeIdViaLua(uint64_t id);
+        uint64_t RelationshipGetEndingNodeIdViaLua(uint64_t id);
+
+        // Relationship Properties
+        sol::object RelationshipPropertyGetViaLua(uint64_t id, const std::string& property);
+        bool RelationshipPropertySetViaLua(uint64_t id, const std::string& property, const sol::object& value);
+        bool RelationshipPropertySetFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value);
+        bool RelationshipPropertyDeleteViaLua(uint64_t id, const std::string& property);
+        bool RelationshipPropertiesSetFromJsonViaLua(uint64_t id, const std::string &value);
+        bool RelationshipPropertiesResetFromJsonViaLua(uint64_t id, const std::string &value);
+        bool RelationshipPropertiesDeleteViaLua(uint64_t id);
+
+        // Node Degree
+        uint64_t NodeGetDegreeViaLua(const std::string& type, const std::string& key);
+        uint64_t NodeGetDegreeForDirectionViaLua(const std::string& type, const std::string& key, Direction direction);
+        uint64_t NodeGetDegreeForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        uint64_t NodeGetDegreeForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type);
+        uint64_t NodeGetDegreeForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction,
+                                                         const std::vector<std::string>& rel_types);
+        uint64_t NodeGetDegreeForTypesViaLua(const std::string& type, const std::string& key,
+                                             const std::vector<std::string>& rel_types);
+        uint64_t NodeGetDegreeByIdViaLua(uint64_t id);
+        uint64_t NodeGetDegreeByIdForDirectionViaLua(uint64_t id, Direction direction);
+        uint64_t NodeGetDegreeByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type);
+        uint64_t NodeGetDegreeByIdForTypeViaLua(uint64_t id, const std::string& rel_type);
+        uint64_t NodeGetDegreeByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+        uint64_t NodeGetDegreeByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types);
+
+        // Traversing
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsViaLua(const std::string& type, const std::string& key);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForDirectionViaLua(const std::string& type, const std::string& key, Direction direction);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForDirectionForTypeIdViaLua(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForTypeIdViaLua(const std::string& type, const std::string& key, uint16_t type_id);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsForTypesViaLua(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdViaLua(uint64_t id);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForDirectionViaLua(uint64_t id, Direction direction);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForDirectionForTypeIdViaLua(uint64_t id, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForTypeViaLua(uint64_t id, const std::string& rel_type);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForTypeIdViaLua(uint64_t id, uint16_t type_id);
+        sol::as_table_t<std::vector<Link>> NodeGetRelationshipsIdsByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsViaLua(const std::string& type, const std::string& key);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForTypeIdViaLua(const std::string& type, const std::string& key, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForTypesViaLua(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdViaLua(uint64_t id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForTypeViaLua(uint64_t id, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForTypeIdViaLua(uint64_t id, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForDirectionViaLua(const std::string& type, const std::string& key, Direction direction);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForDirectionForTypeIdViaLua(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForDirectionViaLua(uint64_t id, Direction direction);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForDirectionForTypeIdViaLua(uint64_t id, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetRelationshipsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsViaLua(const std::string& type, const std::string& key);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForTypeIdViaLua(const std::string& type, const std::string& key, uint16_t type_id);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForTypesViaLua(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdViaLua(uint64_t id);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForTypeViaLua(uint64_t id, const std::string& rel_type);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForTypeIdViaLua(uint64_t id, uint16_t type_id);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForDirectionViaLua(const std::string& type, const std::string& key, Direction direction);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForDirectionForTypeIdViaLua(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionViaLua(uint64_t id, Direction direction);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypeIdViaLua(uint64_t id, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
+        // All
+        sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<uint64_t>> AllNodeIdsForTypeViaLua(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsForTypeViaLua(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        sol::as_table_t<std::vector<Node>> AllNodesViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<Node>> AllNodesForTypeViaLua(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<Relationship>> AllRelationshipsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<Relationship>> AllRelationshipsForTypeViaLua(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
     };
 }

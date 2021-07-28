@@ -307,6 +307,50 @@ namespace ragedb {
         });
     }
 
+    seastar::future<uint64_t> Shard::RelationshipAddEmptyPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2) {
+        // Get the shard ids and check if the type exists
+        uint16_t shard_id1 = CalculateShardId(id1);
+        uint16_t shard_id2 = CalculateShardId(id2);
+
+        // The rel type exists, continue on
+        if (relationship_types.ValidTypeId(rel_type_id)) {
+            // if the shards are the same, then handle this special case
+            if (shard_id1 == shard_id2) {
+                return container().invoke_on(shard_id1, [rel_type_id, id1, id2](Shard &local_shard) {
+                    return local_shard.RelationshipAddEmptySameShard(rel_type_id, id1, id2);
+                });
+            }
+            // we need to validate id2 on its shard
+            return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
+                return local_shard.ValidNodeId(id2);
+            }).then([shard_id1, shard_id2, rel_type_id, id1, id2, this] (bool valid) {
+                // if id2 is valid, we need to validate id1 on its shard
+                if (valid) {
+                    return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
+                        if (local_shard.ValidNodeId(id1)) {
+                            // if both nodes are valid, then go ahead and try to create the relationship
+                            return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
+                        }
+                        // Invalid id1
+                        return uint64_t(0);
+                    }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                        // if the relationship is valid (and by extension both nodes) then add the second part
+                        if (rel_id > 0) {
+                            return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                            });
+                        }
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    });
+                }
+                // Invalid id2
+                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+            });
+        }
+        // Invalid Relationship type id
+        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+    }
+
     seastar::future<uint64_t> Shard::RelationshipAddPeered(const std::string &rel_type, uint64_t id1, uint64_t id2, const std::string& properties) {
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
@@ -388,11 +432,83 @@ namespace ragedb {
         });
     }
 
+    seastar::future<uint64_t> Shard::RelationshipAddPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties) {
+        uint16_t shard_id1 = CalculateShardId(id1);
+        uint16_t shard_id2 = CalculateShardId(id2);
+
+        // The rel type exists, continue on
+        if (relationship_types.ValidTypeId(rel_type_id)) {
+            if (shard_id1 == shard_id2) {
+                return container().invoke_on(shard_id1, [rel_type_id, id1, id2, properties](Shard &local_shard) {
+                    return local_shard.RelationshipAddSameShard(rel_type_id, id1, id2, properties);
+                });
+            }
+
+            // we need to validate id2 on its shard
+            return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
+                return local_shard.ValidNodeId(id2);
+            }).then([shard_id1, shard_id2, rel_type_id, id1, id2, properties, this] (bool valid) {
+                // if id2 is valid, we need to validate id1 on its shard
+                if (valid) {
+                    return container().invoke_on(shard_id1,[rel_type_id, id1, id2, properties](Shard &local_shard) {
+                        if (local_shard.ValidNodeId(id1)) {
+                            // if both nodes are valid, then go ahead and try to create the relationship
+                            return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
+                        }
+                        // Invalid id1
+                        return uint64_t(0);
+                    }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                        // if the relationship is valid (and by extension both nodes) then add the second part
+                        if (rel_id > 0) {
+                            return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                            });
+                        }
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    });
+                }
+                // Invalid id2
+                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+            });
+        }
+
+        // Invalid Relationship type id
+        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+    }
+
     seastar::future<Relationship> Shard::RelationshipGetPeered(uint64_t id) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id] (Shard &local_shard) {
             return local_shard.RelationshipGet(id);
+        });
+    }
+
+    seastar::future<std::vector<Relationship>> Shard::RelationshipsGetPeered(const std::vector<uint64_t> &ids) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_relationship_ids;
+        for (int i = 0; i < cpus; i++) {
+            sharded_relationship_ids.insert({i, std::vector<uint64_t>() });
+        }
+        for (auto id : ids) {
+            sharded_relationship_ids[CalculateShardId(id)].emplace_back(id);
+        }
+
+        std::vector<seastar::future<std::vector<Relationship>>> futures;
+        for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationship_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_relationship_ids] (Shard &local_shard) {
+                return local_shard.RelationshipsGet(grouped_node_ids);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([] (const std::vector<std::vector<Relationship>>& results) {
+            std::vector<Relationship> combined;
+
+            for(const std::vector<Relationship>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            return combined;
         });
     }
 
@@ -446,6 +562,14 @@ namespace ragedb {
 
         return container().invoke_on(rel_shard_id, [id, property](Shard &local_shard) {
             return local_shard.RelationshipPropertyGet(id, property);
+        });
+    }
+
+    seastar::future<bool> Shard::RelationshipPropertySetPeered(uint64_t id, const std::string& property, const std::any& value) {
+        uint16_t rel_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(rel_shard_id, [id, property, value](Shard &local_shard) {
+            return local_shard.RelationshipPropertySet(id, property, value);
         });
     }
 

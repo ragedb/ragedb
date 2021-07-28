@@ -84,6 +84,34 @@ namespace ragedb {
         });
     }
 
+    seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<uint64_t> &ids) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
+        for (int i = 0; i < cpus; i++) {
+            sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
+        }
+        for (auto id : ids) {
+            sharded_nodes_ids[CalculateShardId(id)].emplace_back(id);
+        }
+
+        std::vector<seastar::future<std::vector<Node>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                return local_shard.NodesGet(grouped_node_ids);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([] (const std::vector<std::vector<Node>>& results) {
+            std::vector<Node> combined;
+
+            for(const std::vector<Node>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            return combined;
+        });
+    }
+
     seastar::future<bool> Shard::NodeRemovePeered(const std::string& type, const std::string& key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
@@ -179,6 +207,22 @@ namespace ragedb {
 
         return container().invoke_on(node_shard_id, [id, property](Shard &local_shard) {
             return local_shard.NodePropertyGet(id, property);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertySetPeered(const std::string& type, const std::string& key, const std::string& property, const std::any& value) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, property, value](Shard &local_shard) {
+            return local_shard.NodePropertySet(type, key, property, value);
+        });
+    }
+
+    seastar::future<bool> Shard::NodePropertySetPeered(uint64_t id, const std::string& property, const std::any& value) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, property, value](Shard &local_shard) {
+            return local_shard.NodePropertySet(id, property, value);
         });
     }
 

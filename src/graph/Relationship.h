@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <sol/sol.hpp>
 
 namespace ragedb {
 
@@ -49,6 +50,10 @@ namespace ragedb {
         [[nodiscard]] uint64_t getEndingNodeId() const;
 
         [[nodiscard]] std::map<std::string, std::any> getProperties() const;
+
+        [[nodiscard]] sol::table getPropertiesLua(sol::this_state ts) const;
+
+        [[nodiscard]] std::any getProperty(const std::string& property);
 
         friend std::ostream& operator<<(std::ostream& os, const Relationship& relationship);
 

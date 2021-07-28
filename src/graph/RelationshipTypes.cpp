@@ -168,7 +168,7 @@ namespace ragedb {
         if (ValidTypeId(type_id)) {
             if (getCount(type_id) == 0) {
                 type_to_id[type] = 0;
-                id_to_type[type_id] = "";
+                id_to_type[type_id].clear();
                 starting_node_ids[type_id].clear();
                 ending_node_ids[type_id].clear();
                 properties[type_id].clear();
@@ -211,7 +211,7 @@ namespace ragedb {
         std::vector<uint64_t> allIds;
         int current = 1;
         // links are internal links, we need to switch to external links
-        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
+        for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
             uint64_t max_id = starting_node_ids[type_id].size();
             if (deleted_ids[type_id].isEmpty()) {
                 for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
@@ -276,7 +276,7 @@ namespace ragedb {
         std::vector<Relationship> allRelationships;
         int current = 1;
         // links are internal links, we need to switch to external links
-        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
+        for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
             uint64_t max_id = starting_node_ids[type_id].size();
             if (deleted_ids[type_id].isEmpty()) {
                 for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
@@ -340,8 +340,8 @@ namespace ragedb {
     std::vector<uint64_t>  RelationshipTypes::getDeletedIds() const {
         std::vector<uint64_t>  allIds;
         // links are internal links, we need to switch to external links
-        for (int type_id=1; type_id < id_to_type.size(); type_id++) {
-            for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); iterator++) {
+        for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
+            for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
                 allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
             }
         }
@@ -403,7 +403,7 @@ namespace ragedb {
 
     std::set<uint16_t> RelationshipTypes::getTypeIds() {
         std::set<uint16_t> type_ids;
-        for (int i=1; i < type_to_id.size(); i++) {
+        for (size_t i=1; i < type_to_id.size(); i++) {
             type_ids.insert(i);
         }
 
@@ -420,7 +420,7 @@ namespace ragedb {
 
     std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() {
         std::map<uint16_t,uint64_t> counts;
-        for (int type_id=1; type_id < type_to_id.size(); type_id++) {
+        for (size_t type_id=1; type_id < type_to_id.size(); type_id++) {
             counts.insert({type_id, starting_node_ids[type_id].size() - deleted_ids[type_id].cardinality()});
         }
 

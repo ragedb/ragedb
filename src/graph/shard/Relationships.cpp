@@ -236,7 +236,7 @@ namespace ragedb {
         std::vector<Relationship> sharded_relationships;
 
         for(uint64_t id : rel_ids) {
-            sharded_relationships.push_back(RelationshipGet(id));
+            sharded_relationships.emplace_back(RelationshipGet(id));
         }
 
         return sharded_relationships;
@@ -286,6 +286,13 @@ namespace ragedb {
             return relationship_types.getRelationshipProperty(id, property);
         }
         return std::any();
+    }
+
+    bool Shard::RelationshipPropertySet(uint64_t id, const std::string& property, const std::any& value) {
+        if (ValidRelationshipId(id)) {
+            return relationship_types.setRelationshipProperty(id, property, value);
+        }
+        return false;
     }
 
     bool Shard::RelationshipPropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {

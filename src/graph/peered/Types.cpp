@@ -18,6 +18,62 @@
 
 namespace ragedb {
 
+    uint16_t Shard::NodeTypesGetCountPeered() {
+        return node_types.getSize();
+    }
+
+    seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(uint16_t type_id) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (Shard &local) {
+            return local.NodeTypesGetCount(type_id);
+        });
+
+        return v.then([] (std::vector<uint64_t> counts) {
+            return accumulate(std::begin(counts), std::end(counts), uint64_t(0));
+        });
+    }
+
+    seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(const std::string &type) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type] (Shard &local) {
+            return local.NodeTypesGetCount(type);
+        });
+
+        return v.then([] (std::vector<uint64_t> counts) {
+            return accumulate(std::begin(counts), std::end(counts), uint64_t(0));
+        });
+    }
+
+    std::set<std::string> Shard::NodeTypesGetPeered() {
+        return node_types.getTypes();
+    }
+
+    uint16_t Shard::RelationshipTypesGetCountPeered() {
+        return relationship_types.getSize();
+    }
+
+    seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(uint16_t type_id) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (Shard &local) {
+            return local.RelationshipTypesGetCount(type_id);
+        });
+
+        return v.then([] (std::vector<uint64_t> counts) {
+            return accumulate(std::begin(counts), std::end(counts), uint64_t(0));
+        });
+    }
+
+    seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(const std::string &type) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type] (Shard &local) {
+            return local.RelationshipTypesGetCount(type);
+        });
+
+        return v.then([] (std::vector<uint64_t> counts) {
+            return accumulate(std::begin(counts), std::end(counts), uint64_t(0));
+        });
+    }
+
+    std::set<std::string> Shard::RelationshipTypesGetPeered() {
+        return relationship_types.getTypes();
+    }
+
     std::string Shard::NodeTypeGetTypePeered(uint16_t type_id) {
         return node_types.getType(type_id);
     }

@@ -1,5 +1,7 @@
 #CLion
 .idea
+*.PVS-Studio.cfg
+*.PVS-Studio.i
 
 #PVS Studio
 .PVS-Studio/

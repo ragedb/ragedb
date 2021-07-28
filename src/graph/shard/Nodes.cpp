@@ -94,7 +94,7 @@ namespace ragedb {
         std::vector<Node> sharded_nodes;
 
         for(uint64_t id : node_ids) {
-            sharded_nodes.push_back(NodeGet(id));
+            sharded_nodes.emplace_back(NodeGet(id));
         }
 
         return sharded_nodes;
@@ -137,7 +137,7 @@ namespace ragedb {
 
             // remove the key
             node_types.getKeysToNodeId(node_type_id).erase(key);
-            node_types.getKeys(node_type_id).at(internal_id) = "";
+            node_types.getKeys(node_type_id).at(internal_id).clear();
 
             // remove the id and properties of the node
             node_types.removeId(node_type_id, internal_id);
