@@ -30,6 +30,10 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
         shard.RelationshipPropertyTypeAdd(1, "active", 1);
         shard.RelationshipPropertyTypeAdd(1, "weight", 3);
         shard.RelationshipPropertyTypeAdd(1, "tag", 4);
+        shard.RelationshipPropertyTypeAdd(1, "strength", 3);
+        shard.RelationshipPropertyTypeAdd(1, "color", 4);
+        shard.RelationshipPropertyTypeAdd(1, "expired", 1);
+        shard.RelationshipPropertyTypeAdd(1, "size", 2);
 
         REQUIRE(empty == 1024);
         REQUIRE(existing == 67109888);
@@ -38,14 +42,14 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
 
         shard.RelationshipTypeInsert("KNOWS", 1);
 
-//        WHEN("we print a new relationship") {
-//            uint64_t added = shard.RelationshipAddSameShard(1, "Node", "empty", "Node", "existing", R"({ "strength": 0.8, "color": "blue", "expired": false, "size": 9 })");
-//            std::stringstream out;
-//            out << shard.RelationshipGet(added);
-//            THEN("we get the correct output") {
-//                REQUIRE(out.str() == "{ \"id\": 256, \"type_id\": 1, \"starting_node_id\": 256, \"ending_node_id\": 512, \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
-//            }
-//        }
+        WHEN("we print a new relationship") {
+            uint64_t added = shard.RelationshipAddSameShard(1, "Node", "empty", "Node", "existing", R"({ "strength": 0.8, "color": "blue", "expired": false, "size": 9 })");
+            std::stringstream out;
+            out << shard.RelationshipGet(added);
+            THEN("we get the correct output") {
+                REQUIRE(out.str() == "{ \"id\": 1024, \"type\": \"KNOWS\", \"starting_node_id\": 1024, \"ending_node_id\": 67109888, \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
+            }
+        }
 
         WHEN("an empty relationship is added") {
             uint64_t added = shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");

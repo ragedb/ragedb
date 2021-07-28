@@ -63,9 +63,9 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
             uint64_t added = shard.RelationshipAddSameShard(1, "Node", "empty", "Node", "existing",
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "invalid:3 })");
 
-            THEN("the shard does keep it") {
+            THEN("the shard does not keep it") {
                 REQUIRE(added == 1024);
-                // TODO: So we should not allow it, check in HTTP and Check in Lua
+                // TODO: So we should not allow it, HTTP check is done.  and Check in Lua
             }
         }
 

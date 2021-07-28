@@ -118,29 +118,36 @@ namespace ragedb {
     }
 
     std::ostream &operator<<(std::ostream &os, const Relationship &relationship) {
-        os << "{ \"id\": " << relationship.id << ", \"type\": " << relationship.type << ", \"starting_node_id\": " << relationship.starting_node_id << ", \"ending_node_id\": " << relationship.ending_node_id << ", \"properties\": { ";
+        os << "{ \"id\": " << relationship.id << R"(, "type": ")" << relationship.type << R"(", "starting_node_id": )" << relationship.starting_node_id << ", \"ending_node_id\": " << relationship.ending_node_id << ", \"properties\": { ";
         bool initial = true;
         for (auto [key, value] : relationship.properties) {
             if (!initial) {
                 os << ", ";
             }
+            initial = false;
             os << "\"" << key << "\": ";
 
             if(value.type() == typeid(std::string)) {
                 os << "\"" << std::any_cast<std::string>(value) << "\"";
+                continue;
             }
             if(value.type() == typeid(int64_t)) {
                 os << std::any_cast<int64_t>(value);
+                continue;
             }
             if(value.type() == typeid(double)) {
                 os << std::any_cast<double>(value);
+                continue;
             }
-            if(value.type() == typeid(bool)) {
-                if (std::any_cast<bool>(value)) {
+
+            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+            if(value.type() == typeid(std::_Bit_reference)) {
+                if (std::any_cast<std::_Bit_reference>(value) ) {
                     os << "true" ;
                 } else {
                     os << "false";
                 }
+                continue;
             }
 
             if(value.type() == typeid(std::vector<std::string>)) {
@@ -154,6 +161,7 @@ namespace ragedb {
                     nested_initial = false;
                 }
                 os << ']';
+                continue;
             }
 
             if(value.type() == typeid(std::vector<int64_t>)) {
@@ -167,6 +175,7 @@ namespace ragedb {
                     nested_initial = false;
                 }
                 os << ']';
+                continue;
             }
 
             if(value.type() == typeid(std::vector<double>)) {
@@ -180,6 +189,7 @@ namespace ragedb {
                     nested_initial = false;
                 }
                 os << ']';
+                continue;
             }
 
             if(value.type() == typeid(std::vector<bool>)) {
@@ -193,9 +203,9 @@ namespace ragedb {
                     nested_initial = false;
                 }
                 os << ']';
+                continue;
             }
 
-            initial = false;
         }
         os << " } }";
 

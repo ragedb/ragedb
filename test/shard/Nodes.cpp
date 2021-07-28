@@ -27,6 +27,11 @@ SCENARIO("Shard can handle Nodes", "[node]") {
         shard.NodeTypeInsert("User", 2);
         shard.NodePropertyTypeAdd(1, "name", 4);
         shard.NodePropertyTypeAdd(1, "email", 4);
+        shard.NodePropertyTypeAdd(1, "strength", 3);
+        shard.NodePropertyTypeAdd(1, "color", 4);
+        shard.NodePropertyTypeAdd(1, "expired", 1);
+        shard.NodePropertyTypeAdd(1, "size", 2);
+
         REQUIRE(shard.NodeGetTypeId(1) == 0);
         REQUIRE(shard.NodeGetKey(1).empty());
 
@@ -36,15 +41,14 @@ SCENARIO("Shard can handle Nodes", "[node]") {
         REQUIRE(empty == 1024);
         REQUIRE(existing == 67109888);
 
-//        TODO: Restore this if needed for Lua
-//        WHEN("we print a new node") {
-//            uint64_t added = shard.NodeAdd(1, "new", R"({ "strength": 0.8, "color": "blue", "expired": false, "size": 9 })");
-//            std::stringstream out;
-//            out << shard.NodeGet(added);
-//            THEN("we get the correct output") {
-//                REQUIRE(out.str() == "{ \"id\": 768, \"type_id\": 1, \"key\": \"new\", \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
-//            }
-//        }
+        WHEN("we print a new node") {
+            uint64_t added = shard.NodeAdd(1, "new", R"({ "strength": 0.8, "color": "blue", "expired": false, "size": 9 })");
+            std::stringstream out;
+            out << shard.NodeGet(added);
+            THEN("we get the correct output") {
+                REQUIRE(out.str() == "{ \"id\": 134218752, \"type\": \"Node\", \"key\": \"new\", \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
+            }
+        }
 
         WHEN("an empty node is added") {
             uint64_t added = shard.NodeAddEmpty(1, "added");
