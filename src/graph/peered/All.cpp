@@ -119,7 +119,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<uint64_t>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit, p2] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
                 for (auto result : results) {
