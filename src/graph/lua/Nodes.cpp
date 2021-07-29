@@ -64,6 +64,11 @@ namespace ragedb {
 
     sol::object Shard::NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property) {
         std::any value = NodePropertyGetPeered(type, key, property).get0();
+
+        if (!value.has_value()) {
+            return sol::lua_nil;
+        }
+
         const auto& value_type = value.type();
 
         if(value_type == typeid(std::string)) {
@@ -119,6 +124,11 @@ namespace ragedb {
 
     sol::object Shard::NodePropertyGetByIdViaLua(uint64_t id, const std::string& property) {
         std::any value = NodePropertyGetPeered(id, property).get0();
+
+        if (!value.has_value()) {
+            return sol::lua_nil;
+        }
+
         const auto& value_type = value.type();
 
         if(value_type == typeid(std::string)) {

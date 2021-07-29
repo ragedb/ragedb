@@ -74,6 +74,11 @@ namespace ragedb {
 
     sol::object Shard::RelationshipPropertyGetViaLua(uint64_t id, const std::string& property) {
         std::any value = RelationshipPropertyGetPeered(id, property).get0();
+
+        if (!value.has_value()) {
+            return sol::lua_nil;
+        }
+
         const auto& value_type = value.type();
 
         if(value_type == typeid(std::string)) {

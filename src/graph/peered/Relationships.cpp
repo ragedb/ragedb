@@ -502,7 +502,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([] (const std::vector<std::vector<Relationship>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<Relationship>>& results) {
             std::vector<Relationship> combined;
 
             for(const std::vector<Relationship>& sharded : results) {

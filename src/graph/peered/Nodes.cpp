@@ -102,7 +102,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([] (const std::vector<std::vector<Node>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<Node>>& results) {
             std::vector<Node> combined;
 
             for(const std::vector<Node>& sharded : results) {

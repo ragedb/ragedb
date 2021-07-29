@@ -31,7 +31,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
             uint64_t next = 0;
             int current_shard_id = 0;
@@ -65,7 +65,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<uint64_t>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
                 for (auto result : results) {
@@ -90,7 +90,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([node_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, node_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
             uint64_t next = 0;
             int current_shard_id = 0;
@@ -119,7 +119,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit, p2] (const std::vector<std::vector<uint64_t>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
                 for (auto result : results) {
@@ -143,7 +143,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
@@ -176,7 +176,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<Node>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Node>>& results) {
                 std::vector<Node> requested_nodes;
                 requested_nodes.reserve(limit);
                 for (auto result : results) {
@@ -201,7 +201,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([node_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, node_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
@@ -229,7 +229,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<Node>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Node>>& results) {
                 std::vector<Node> requested_nodes;
                 requested_nodes.reserve(limit);
                 for (auto result : results) {
@@ -254,7 +254,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
             uint64_t next = 0;
             int current_shard_id = 0;
@@ -288,7 +288,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<uint64_t>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
                 for (auto result : results) {
@@ -313,7 +313,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([relationship_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, relationship_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
             uint64_t next = 0;
             int current_shard_id = 0;
@@ -342,7 +342,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<uint64_t>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
                 for (auto result : results) {
@@ -366,7 +366,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
             uint64_t next = 0;
             int current_shard_id = 0;
@@ -400,7 +400,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<Relationship>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Relationship>>& results) {
                 std::vector<Relationship> requested_relationships;
                 requested_relationships.reserve(limit);
                 for (auto result : results) {
@@ -425,7 +425,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([relationship_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, relationship_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
             uint64_t next = 0;
             int current_shard_id = 0;
@@ -454,7 +454,7 @@ namespace ragedb {
             }
 
             auto p2 = make_shared(std::move(futures));
-            return seastar::when_all_succeed(p2->begin(), p2->end()).then([limit] (const std::vector<std::vector<Relationship>>& results) {
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Relationship>>& results) {
                 std::vector<Relationship> requested_relationships;
                 requested_relationships.reserve(limit);
                 for (auto result : results) {

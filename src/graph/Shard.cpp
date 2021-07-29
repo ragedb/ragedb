@@ -19,7 +19,7 @@
 
 namespace ragedb {
 
-    std::string script = R"(
+    std::string json_script = R"(
             local math = require('math')
             local string = require('string')
             local table = require('table')
@@ -139,7 +139,7 @@ namespace ragedb {
 
     Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
         lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table);
-        lua.require_script("json", script);
+        lua.require_script("json", json_script);
 
         // TODO: Create a sanitized environment to sandbox the user's Lua code, and put these user types there.
         lua.new_usertype<Node>("Node",
@@ -150,6 +150,7 @@ namespace ragedb {
                                          Node(uint64_t, std::string, std::string, std::map<std::string, std::any>)>(),
                                  "getId", &Node::getId,
                                  "getTypeId", &Node::getTypeId,
+                                 "getType", &Node::getType,
                                  "getKey", &Node::getKey,
                                  "getProperties", &Node::getPropertiesLua,
                                  "getProperty", &Node::getProperty);
@@ -162,6 +163,7 @@ namespace ragedb {
                                                  Relationship(uint64_t, std::string, uint64_t, uint16_t, std::map<std::string, std::any>)>(),
                                          "getId", &Relationship::getId,
                                          "getTypeId", &Relationship::getTypeId,
+                                         "getType", &Relationship::getType,
                                          "getStartingNodeId", &Relationship::getStartingNodeId,
                                          "getEndingNodeId", &Relationship::getEndingNodeId,
                                          "getProperties", &Relationship::getPropertiesLua,
@@ -373,10 +375,10 @@ namespace ragedb {
                 lines.emplace_back(line);
             }
 
-            std::string json_function2 = "local json = require('json')";
+            std::string json_function = "local json = require('json')";
             lines.back() = "return json.encode({" + lines.back() + "})";
 
-            std::string executable = json_function2 + join(lines, " ");
+            std::string executable = json_function + join(lines, " ");
             sol::protected_function_result script_result;
             // We only have one Lua VM for each Core, so lock it during use.
             this->lua_lock.for_write().lock().get();
