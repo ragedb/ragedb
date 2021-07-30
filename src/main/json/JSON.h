@@ -55,8 +55,13 @@ public:
             return;
         }
 
-        if(value.type() == typeid(bool)) {
-            add(seastar::json::formatter::to_json(std::any_cast<bool>(value)));
+        // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+        if(value.type() == typeid(std::_Bit_reference)) {
+            if (std::any_cast<std::_Bit_reference>(value) ) {
+                add(seastar::json::formatter::to_json(true));
+            } else {
+                add(seastar::json::formatter::to_json(false));
+            }
             return;
         }
 
@@ -86,8 +91,13 @@ public:
                 continue;
             }
 
-            if(value.type() == typeid(bool)) {
-                add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<bool>(value)));
+            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+            if(value.type() == typeid(std::_Bit_reference)) {
+                if (std::any_cast<std::_Bit_reference>(value) ) {
+                    add_object(initial, property, seastar::json::formatter::to_json(true));
+                } else {
+                    add_object(initial, property, seastar::json::formatter::to_json(false));
+                }
                 continue;
             }
 
@@ -152,8 +162,13 @@ public:
                 continue;
             }
 
-            if(value.type() == typeid(bool)) {
-                add(property, seastar::json::formatter::to_json(std::any_cast<bool>(value)));
+            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+            if(value.type() == typeid(std::_Bit_reference)) {
+                if (std::any_cast<std::_Bit_reference>(value) ) {
+                    add(property, seastar::json::formatter::to_json(true));
+                } else {
+                    add(property, seastar::json::formatter::to_json(false));
+                }
                 continue;
             }
 
