@@ -24,8 +24,8 @@ jobs:
     - name: update container base
       run: |
         export DEBIAN_FRONTEND=noninteractive
-        apt-get update -y
-        apt-get install -y git sudo pkg-config ccache
+        sudo apt-get update -y
+        sudo apt-get install -y git sudo pkg-config ccache
             
     - name: install dependencies
       run: ./install-dependencies.sh
