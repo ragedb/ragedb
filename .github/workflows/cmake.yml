@@ -36,7 +36,7 @@ jobs:
     
     - name: install g++-11
       run: |
-        DEBIAN_FRONTEND=noninteractive apt install -y g++-11
+        DEBIAN_FRONTEND=noninteractive sudo apt install -y g++-11
         sudo update-alternatives \
           --install /usr/bin/gcc gcc /usr/bin/gcc-11 60 \
           --slave /usr/bin/g++ g++ /usr/bin/g++-11
