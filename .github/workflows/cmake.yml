@@ -25,14 +25,18 @@ jobs:
       run: |
         export DEBIAN_FRONTEND=noninteractive
         sudo apt-get update -y
-        sudo apt-get install -y git sudo pkg-config ccache
-            
-    - name: install dependencies
-      run: ./install-dependencies.sh
-      
+        sudo apt-get install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev
+        
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@main
+
+    - name: Conan version
+      run: echo "${{ steps.conan.outputs.version }}"
+    
     - name: install g++-11
       run: |
-        DEBIAN_FRONTEND=noninteractive apt install -y g++-11
+        DEBIAN_FRONTEND=noninteractive sudo apt install -y g++-11
         sudo update-alternatives \
           --install /usr/bin/gcc gcc /usr/bin/gcc-11 60 \
           --slave /usr/bin/g++ g++ /usr/bin/g++-11
@@ -41,7 +45,19 @@ jobs:
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1
       with:
-        key: ${{ matrix.os }}-${{ matrix.type }}        
+        key: ${{ matrix.os }}-${{ matrix.type }}   
+        
+    - uses: actions/checkout@master
+      with:
+        repository: scylladb/seastar
+        path: seastar
+             
+    - name: install dependencies
+      run: | 
+        cd seastar
+        sudo ./install-dependencies.sh
+        ./configure.py --mode=release --prefix=/usr/local
+        sudo ninja -C build/release install        
 
     - name: build with cmake
       uses: lukka/run-cmake@v3
