@@ -56,7 +56,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct incoming degree" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", IN);
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::IN);
                 REQUIRE(1 == degree);
             }
         }
@@ -66,7 +66,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct outgoing degree" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", OUT);
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::OUT);
                 REQUIRE(1 == degree);
             }
         }
@@ -76,7 +76,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct BOTH degree" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", BOTH);
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::BOTH);
                 REQUIRE(2 == degree);
             }
         }
@@ -86,7 +86,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct IN degree of TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", IN, "ENEMIES");
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::IN, "ENEMIES");
                 REQUIRE(1 == degree);
             }
         }
@@ -96,7 +96,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct OUT degree of TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", OUT, "ENEMIES");
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::OUT, "ENEMIES");
                 REQUIRE(0 == degree);
             }
         }
@@ -106,7 +106,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct BOTH degree of TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", BOTH, "ENEMIES");
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::BOTH, "ENEMIES");
                 REQUIRE(1 == degree);
             }
         }
@@ -116,7 +116,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct IN degree of Multiple TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", IN, std::vector<std::string>{"FRIENDS", "ENEMIES"});
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::IN, std::vector<std::string>{"FRIENDS", "ENEMIES"});
                 REQUIRE(1 == degree);
             }
         }
@@ -126,7 +126,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct OUT degree of Multiple TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", OUT, std::vector<std::string>{"FRIENDS", "ENEMIES"});
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::OUT, std::vector<std::string>{"FRIENDS", "ENEMIES"});
                 REQUIRE(1 == degree);
             }
         }
@@ -136,7 +136,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct BOTH degree of Multiple TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree("Node","four", BOTH, std::vector<std::string>{"FRIENDS", "ENEMIES"});
+                uint64_t degree = shard.NodeGetDegree("Node","four", ragedb::BOTH, std::vector<std::string>{"FRIENDS", "ENEMIES"});
                 REQUIRE(2 == degree);
             }
         }
@@ -156,7 +156,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct incoming degree" ) {
-                uint64_t degree = shard.NodeGetDegree(four, IN);
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::IN);
                 REQUIRE(1 == degree);
             }
         }
@@ -166,7 +166,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct outgoing degree" ) {
-                uint64_t degree = shard.NodeGetDegree(four, OUT);
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::OUT);
                 REQUIRE(1 == degree);
             }
         }
@@ -176,7 +176,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct BOTH degree" ) {
-                uint64_t degree = shard.NodeGetDegree(four, BOTH);
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::BOTH);
                 REQUIRE(2 == degree);
             }
         }
@@ -186,7 +186,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct IN degree of TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree(four, IN, "ENEMIES");
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::IN, "ENEMIES");
                 REQUIRE(1 == degree);
             }
         }
@@ -196,7 +196,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct OUT degree of TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree(four, OUT, "ENEMIES");
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::OUT, "ENEMIES");
                 REQUIRE(0 == degree);
             }
         }
@@ -206,7 +206,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct BOTH degree of TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree(four, BOTH, "ENEMIES");
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::BOTH, "ENEMIES");
                 REQUIRE(1 == degree);
             }
         }
@@ -216,7 +216,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct IN degree of Multiple TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree(four, IN, std::vector<std::string>{"FRIENDS", "ENEMIES"});
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::IN, std::vector<std::string>{"FRIENDS", "ENEMIES"});
                 REQUIRE(1 == degree);
             }
         }
@@ -226,7 +226,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct OUT degree of Multiple TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree(four, OUT, std::vector<std::string>{"FRIENDS", "ENEMIES"});
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::OUT, std::vector<std::string>{"FRIENDS", "ENEMIES"});
                 REQUIRE(1 == degree);
             }
         }
@@ -236,7 +236,7 @@ SCENARIO( "Shard can handle Node Degrees", "[node]" ) {
             shard.RelationshipAddEmptySameShard(2, five, four);
 
             THEN( "the shard should get the correct BOTH degree of Multiple TYPE" ) {
-                uint64_t degree = shard.NodeGetDegree(four, BOTH, std::vector<std::string>{"FRIENDS", "ENEMIES"});
+                uint64_t degree = shard.NodeGetDegree(four, ragedb::BOTH, std::vector<std::string>{"FRIENDS", "ENEMIES"});
                 REQUIRE(2 == degree);
             }
         }
