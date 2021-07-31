@@ -515,6 +515,14 @@ namespace ragedb {
         std::string NodeGetTypeViaLua(uint64_t id);
         std::string NodeGetKeyViaLua(uint64_t id);
 
+        // Property Types
+        uint8_t NodePropertyTypeInsertViaLua(uint16_t type_id, const std::string& key, const std::string& type);
+        uint8_t RelationshipPropertyTypeInsertViaLua(uint16_t type_id, const std::string& key, const std::string& type);
+        uint8_t NodePropertyTypeAddViaLua(const std::string& node_type, const std::string& key, const std::string& type);
+        uint8_t RelationshipPropertyTypeAddViaLua(const std::string& relationship_type, const std::string& key, const std::string& type);
+        bool NodePropertyTypeDeleteViaLua(const std::string& type, const std::string& key);
+        bool RelationshipPropertyTypeDeleteViaLua(const std::string& type, const std::string& key);
+
         // Node Properties
         sol::object NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property);
         sol::object NodePropertyGetByIdViaLua(uint64_t id, const std::string& property);

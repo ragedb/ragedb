@@ -198,6 +198,14 @@ namespace ragedb {
         lua.set_function("NodeTypeGetTypeId", &Shard::NodeTypeGetTypeIdViaLua, this);
         lua.set_function("NodeTypeInsert", &Shard::NodeTypeInsertViaLua, this);
 
+        // Property Types
+        lua.set_function("NodePropertyTypeInsert", &Shard::NodePropertyTypeInsertViaLua, this);
+        lua.set_function("RelationshipPropertyTypeInsert", &Shard::RelationshipPropertyTypeInsertViaLua, this);
+        lua.set_function("NodePropertyTypeAdd", &Shard::NodePropertyTypeAddViaLua, this);
+        lua.set_function("RelationshipPropertyTypeAdd", &Shard::RelationshipPropertyTypeAddViaLua, this);
+        lua.set_function("NodePropertyTypeDelete", &Shard::NodePropertyTypeDeleteViaLua, this);
+        lua.set_function("RelationshipPropertyTypeDelete", &Shard::RelationshipPropertyTypeDeleteViaLua, this);
+
         //Nodes
         lua.set_function("NodeAddEmpty", &Shard::NodeAddEmptyViaLua, this);
         lua.set_function("NodeAdd", &Shard::NodeAddViaLua, this);
