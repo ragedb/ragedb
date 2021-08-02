@@ -34,7 +34,7 @@ By not having a "query language" we avoid parsing, query planning, query executi
 
 #### Delete a Node Type
 
-    :POST /db/{graph}/schema/nodes/{type}
+    :DELETE /db/{graph}/schema/nodes/{type}
 
 #### Get Relationship Types
 
