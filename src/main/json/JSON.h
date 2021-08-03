@@ -113,7 +113,7 @@ public:
         if (!initial) {
             result << ", ";
         }
-        result << '"' << name << "\": " << str;
+        result << '"' << name << "\": \"" << str << '"';
     }
 
     void add(const std::string& str) {
@@ -264,7 +264,7 @@ public:
         } else {
             result << ", ";
         }
-        result << '"' << name << "\": " << str;
+        result << '"' << name << "\": \"" << str << '"';
     }
 
     void add_key(const std::string& name) {
