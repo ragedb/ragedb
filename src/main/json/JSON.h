@@ -113,7 +113,7 @@ public:
         if (!initial) {
             result << ", ";
         }
-        result << '"' << name << "\": \"" << str << '"';
+        result << '"' << name << "\": " << str;
     }
 
     void add(const std::string& str) {
@@ -264,7 +264,7 @@ public:
         } else {
             result << ", ";
         }
-        result << '"' << name << "\": \"" << str << '"';
+        result << '"' << name << "\": " << str;
     }
 
     void add_key(const std::string& name) {
@@ -292,32 +292,16 @@ private:
 
 };
 
-struct schema_json : public json::jsonable {
-private:
-    std::map<std::string, std::string> schema;
-
-public:
-    schema_json(const std::map<std::string, std::string> &_schema) : schema(_schema) {}
-    schema_json() = default;
-    ~schema_json() {
-        schema.clear();
-    }
-
-    std::string to_json() const {
-        json_properties_builder jsonPropertiesBuilder;
-        for (auto [key, val] : schema) {
-            jsonPropertiesBuilder.add(key, val);
-        }
-
-        return jsonPropertiesBuilder.as_json();
-    }
-};
-
 struct properties_json : public json::jsonable {
 private:
     std::map<std::string, std::any> properties;
 
 public:
+    properties_json(const std::map<std::string, std::string> &_properties) {
+        for(auto [key, value] : _properties) {
+            properties.emplace(key, value);
+        }
+    }
     properties_json(const std::map<std::string, std::any> &_properties) : properties(_properties) {}
     properties_json() = default;
     ~properties_json() {

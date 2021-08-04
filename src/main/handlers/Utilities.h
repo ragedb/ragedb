@@ -17,6 +17,7 @@
 #ifndef RAGEDB_UTILITIES_H
 #define RAGEDB_UTILITIES_H
 
+#include <algorithm>
 #include <Graph.h>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/http/httpd.hh>

@@ -66,7 +66,9 @@ future<std::unique_ptr<reply>> Nodes::GetNodesHandler::handle([[maybe_unused]] c
             .then([rep = std::move(rep)](const std::vector<Node>& nodes) mutable {
                 std::vector<node_json> json_array;
                 json_array.reserve(nodes.size());
-                std::copy(nodes.begin(), nodes.end(), json_array.begin());
+                for(Node node : nodes) {
+                    json_array.emplace_back(node);
+                }
                 rep->write_body("json", json::stream_object(json_array));
                 return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
             });
@@ -84,7 +86,9 @@ future<std::unique_ptr<reply>> Nodes::GetNodesOfTypeHandler::handle([[maybe_unus
                     std::vector<node_json> json_array;
                     json_array.reserve(nodes.size());
                     if (!nodes.empty()) {
-                        std::copy(nodes.begin(), nodes.end(), json_array.begin());
+                        for(Node node : nodes) {
+                            json_array.emplace_back(node);
+                        }
                         rep->write_body("json", json::stream_object(json_array));
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     }

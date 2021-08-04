@@ -128,7 +128,7 @@ Schema::GetNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std::un
 
     if(valid_type) {
         std::map<std::string, std::string> type = parent.graph.shard.local().NodeTypeGet(req->param[Utilities::TYPE]);
-        rep->write_body("json", json::stream_object(schema_json(type)));
+        rep->write_body("json", json::stream_object(properties_json(type)));
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -176,7 +176,7 @@ Schema::GetRelationshipTypeHandler::handle([[maybe_unused]] const sstring &path,
 
     if(valid_type) {
         std::map<std::string, std::string> type = parent.graph.shard.local().RelationshipTypeGet(req->param[Utilities::TYPE]);
-        rep->write_body("json", json::stream_object(schema_json(type)));
+        rep->write_body("json", json::stream_object(properties_json(type)));
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
