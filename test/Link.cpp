@@ -14,14 +14,27 @@
  * limitations under the License.
  */
 
-#include "Link.h"
 
-namespace ragedb {
+#include <catch2/catch.hpp>
+#include <sstream>
+#include "../src/graph/Link.h"
 
-    Link::Link(uint64_t nodeId, uint64_t relId) : node_id(nodeId), rel_id(relId) {}
+SCENARIO( "Link can be created", "[link]" ) {
+    GIVEN("Nothing") {
+        ragedb::Link link(1,2);
 
-    std::ostream &operator<<(std::ostream &os, const Link &link) {
-        os << "{ \"node_id\": " << link.node_id << ", \"rel_id\": " << link.rel_id << " }";
-        return os;
+        WHEN("a node id is requested") {
+            THEN("we get right id back") {
+                REQUIRE(link.node_id == 1);
+                REQUIRE(link.rel_id == 2);
+            }
+        }
+        WHEN("we print a link") {
+            std::stringstream out;
+            out << link;
+            THEN("we get the correct output") {
+                REQUIRE(out.str() == "{ \"node_id\": 1, \"rel_id\": 2 }");
+            }
+        }
     }
 }
