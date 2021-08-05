@@ -157,7 +157,7 @@ namespace ragedb {
                     if (!nested_initial) {
                         os << ", ";
                     }
-                    os << item;
+                    os << "\"" << item << "\"";
                     nested_initial = false;
                 }
                 os << ']';
@@ -199,7 +199,11 @@ namespace ragedb {
                     if (!nested_initial) {
                         os << ", ";
                     }
-                    os << item;
+                    if (item) {
+                        os << "true";
+                    } else {
+                        os << "false";
+                    }
                     nested_initial = false;
                 }
                 os << ']';

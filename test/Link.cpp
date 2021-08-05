@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <catch2/catch.hpp>
 #include <sstream>
 #include "../src/graph/Link.h"

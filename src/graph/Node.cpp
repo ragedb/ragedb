@@ -96,7 +96,7 @@ namespace ragedb {
         if (it != std::end(properties)) {
             return it->second;
         }
-        return std::any();
+        return {};
     }
 
     std::ostream& operator<<(std::ostream& os, const Node& node) {
@@ -139,7 +139,7 @@ namespace ragedb {
                     if (!nested_initial) {
                         os << ", ";
                     }
-                    os << item;
+                    os << "\"" << item << "\"";
                     nested_initial = false;
                 }
                 os << ']';
@@ -181,7 +181,12 @@ namespace ragedb {
                     if (!nested_initial) {
                         os << ", ";
                     }
-                    os << item;
+
+                    if (item) {
+                        os << "true";
+                    } else {
+                        os << "false";
+                    }
                     nested_initial = false;
                 }
                 os << ']';
