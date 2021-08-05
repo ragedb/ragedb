@@ -75,14 +75,14 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}}
 
     - name: Upload coverage report
-        working-directory: ${{github.workspace}}
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: |
-          sudo apt install python3-setuptools python3-idna python3-requests python3-urllib3
-          git clone https://github.com/PredatorCZ/cpp-coveralls.git
-          pushd cpp-coveralls
-          sudo python3 setup.py install
-          popd
-          export COVERALLS_SERVICE_NAME="github-workflows"
-          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e 3rd_party --gcov-options '\-lp' > /dev/null
+      working-directory: ${{github.workspace}}
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: |
+        sudo apt install python3-setuptools python3-idna python3-requests python3-urllib3
+        git clone https://github.com/PredatorCZ/cpp-coveralls.git
+        pushd cpp-coveralls
+        sudo python3 setup.py install
+        popd
+        export COVERALLS_SERVICE_NAME="github-workflows"
+        coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e 3rd_party --gcov-options '\-lp' > /dev/null
