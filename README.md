@@ -1,8 +1,8 @@
 # RageDB
 
-In Memory Property Graph Server using the Shared Nothing design from Seastar.
+In Memory Property Graph Server using the Shared Nothing design from [Seastar](https://seastar.io).
 
-The RageDB server can host multiple Graphs. The graphs are accessible via a REST API (see below).
+The [RageDB](https://ragedb.com) server can host multiple Graphs. The graphs are accessible via a REST API (see below).
 Each Graph is split into multiple Shards. One Shard per Core of the server.
 Shards communicate by explicit message passing. Nodes and Relationships have internal and external ids.
 The external ids embed the type as well as which Shard they belong to.
@@ -15,6 +15,17 @@ External and Internal Ids are assigned upon creation for both Nodes and Relation
 Along side an HTTP API, RageDB also has a Lua http endpoint that allows users to send complex queries.
 These queries are interpreted by LuaJIT, compiled and executed within a Seastar Thread that allows blocking.
 By not having a "query language" we avoid parsing, query planning, query execution and a host of [problems](https://maxdemarzi.com/2020/05/25/declarative-query-languages-are-the-iraq-war-of-computer-science/).
+
+## Docker
+
+    docker run -u 0 -p 127.0.0.1:7243:7243 --name ragedb -t ragedb/ragedb:latest --cap-add=sys_nice
+
+If you are running Docker on a Mac or Windows Host, you may see this error message:
+
+    WARNING: unable to mbind shard memory; performance may suffer:
+
+Run Docker on a Linux host for the best performance.
+
 
 ## HTTP API
 
