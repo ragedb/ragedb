@@ -124,8 +124,10 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertyHandler::handle([[
 
     if(valid_type && valid_key && valid_property) {
         return parent.graph.shard.local().NodePropertyGetPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY])
-        .then([rep = std::move(rep)] (const std::any& property) mutable {
-            Utilities::convert_property_to_json(rep, property);
+        .then([req = std::move(req), rep = std::move(rep)] (const std::any& property) mutable {
+            json_properties_builder json;
+            json.add_property(req->param[Utilities::PROPERTY], property);
+            rep->write_body("json", sstring(json.as_json()));
             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
         });
     }
@@ -139,12 +141,11 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertyByIdHandler::handl
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
-        uint16_t node_shard_id = Shard::CalculateShardId(id);
-
-        return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertyGet(id, req->param[Utilities::PROPERTY]);
-        }).then([rep = std::move(rep)] (const std::any& property) mutable {
-            Utilities::convert_property_to_json(rep, property);
+        return parent.graph.shard.local().NodePropertyGetPeered(id, req->param[Utilities::PROPERTY])
+        .then([req = std::move(req), rep = std::move(rep)] (const std::any& property) mutable {
+            json_properties_builder json;
+            json.add_property(req->param[Utilities::PROPERTY], property);
+            rep->write_body("json", sstring(json.as_json()));
             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
         });
     }

@@ -143,6 +143,106 @@ public:
         result << OPEN << SPACE;
     }
 
+    void add_property(std::string property, std::any value) {
+        if(value.type() == typeid(std::string)) {
+            add(property, seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
+            return;
+        }
+
+        if(value.type() == typeid(int64_t)) {
+            add(property, seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
+            return;
+        }
+
+        if(value.type() == typeid(double)) {
+            add(property, seastar::json::formatter::to_json(std::any_cast<double>(value)));
+            return;
+        }
+
+        // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+        if(value.type() == typeid(std::_Bit_reference)) {
+            if (std::any_cast<std::_Bit_reference>(value) ) {
+                add(property, seastar::json::formatter::to_json(true));
+            } else {
+                add(property, seastar::json::formatter::to_json(false));
+            }
+            return;
+        }
+
+        if(value.type() == typeid(std::vector<std::string>)) {
+            add_key(property);
+            result << OPEN_ARRAY;
+
+            bool nested_initial = true;
+            for (const auto& item : std::any_cast<std::vector<std::string>>(value)) {
+                if (!nested_initial) {
+                    result << ", ";
+                }
+                result << '"' << item << "\"";
+                nested_initial = false;
+            }
+
+            result << CLOSE_ARRAY;
+            return;
+        }
+
+        if(value.type() == typeid(std::vector<int64_t>)) {
+            add_key(property);
+            result << OPEN_ARRAY;
+
+            bool nested_initial = true;
+            for (const auto& item : std::any_cast<std::vector<int64_t>>(value)) {
+                if (!nested_initial) {
+                    result << ", ";
+                }
+                result << item;
+                nested_initial = false;
+            }
+
+            result << CLOSE_ARRAY;
+            return;
+        }
+
+        if(value.type() == typeid(std::vector<double>)) {
+            add_key(property);
+            result << OPEN_ARRAY;
+
+            bool nested_initial = true;
+            for (const auto& item : std::any_cast<std::vector<double>>(value)) {
+                if (!nested_initial) {
+                    result << ", ";
+                }
+                result << item;
+                nested_initial = false;
+            }
+
+            result << CLOSE_ARRAY;
+            return;
+        }
+
+        if(value.type() == typeid(std::vector<bool>)) {
+            add_key(property);
+            result << OPEN_ARRAY;
+
+            bool nested_initial = true;
+            for (const auto& item : std::any_cast<std::vector<bool>>(value)) {
+                if (!nested_initial) {
+                    result << ", ";
+                }
+                result << item;
+                nested_initial = false;
+            }
+
+            result << CLOSE_ARRAY;
+            return;
+        }
+
+        if(value.type() == typeid(std::map<std::string, std::any>)) {
+            add_properties(std::any_cast<std::map<std::string, std::any>>(value));
+            return;
+        }
+    }
+
     void add_properties(std::map<std::string, std::any> const & props) {
         for (auto[key, value] : props) {
             std::string property = static_cast<std::string>(key);
