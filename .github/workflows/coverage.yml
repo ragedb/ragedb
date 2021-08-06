@@ -1,4 +1,4 @@
-name: CMake
+name: Coverage
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   build:
@@ -64,7 +64,7 @@ jobs:
         with:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          cmakeAppendedArgs: '-DCMAKE_BUILD_TYPE=${{ matrix.type }} -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache'
+          cmakeAppendedArgs: '-DCMAKE_BUILD_TYPE=${{ matrix.type }} -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache -DUSE_GCOV=true'
           buildWithCMake: true
           buildDirectory: '${{ github.workspace }}/build'
 
@@ -73,3 +73,16 @@ jobs:
         # Execute tests defined by the CMake configuration.
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ctest -C ${{env.BUILD_TYPE}}
+
+      - name: Upload coverage report
+        working-directory: ${{github.workspace}}
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        run: |
+          sudo apt install python3-setuptools python3-idna python3-requests python3-urllib3
+          git clone https://github.com/PredatorCZ/cpp-coveralls.git
+          pushd cpp-coveralls
+          sudo python3 setup.py install
+          popd
+          export COVERALLS_SERVICE_NAME="github-workflows"
+          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake --gcov-options '\-lp' > /dev/null

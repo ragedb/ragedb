@@ -1,3 +1,6 @@
+#Coveralls
+.coveralls.yml
+
 #CLion
 .idea
 *.PVS-Studio.cfg
@@ -8,6 +11,7 @@
 strace_out
 
 # Build directories
+build
 cmake-build-debug/
 cmake-build-debug-coverage/
 cmake-build-minsizerel/
