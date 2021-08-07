@@ -310,7 +310,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "tag");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "tag");
-                REQUIRE(std::any_cast<std::string>(value).empty());
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -322,7 +322,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "number");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "number");
-                REQUIRE(std::numeric_limits<int64_t>::min() == std::any_cast<int64_t>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -334,7 +334,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "weight");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "weight");
-                REQUIRE(std::numeric_limits<double>::min() == std::any_cast<double>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -346,7 +346,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "active");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "active");
-                REQUIRE(!std::any_cast<bool>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -372,7 +372,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 set = shard.RelationshipPropertiesDelete(added);
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "number");
-                REQUIRE(std::numeric_limits<int64_t>::min() == std::any_cast<int64_t>(value));
+                REQUIRE(!value.has_value());
             }
         }
 

@@ -22,6 +22,7 @@
 #include <map>
 #include <tsl/sparse_map.h>
 #include <seastar/core/rwlock.hh>
+#include <roaring/roaring64map.hh>
 
 namespace ragedb {
     class Properties {
@@ -30,6 +31,7 @@ namespace ragedb {
         tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
         std::vector<std::string> allowed_types;
+        tsl::sparse_map<std::string, Roaring64Map> deleted;
         tsl::sparse_map<std::string, std::vector<bool>> booleans;
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;
         tsl::sparse_map<std::string, std::vector<double>> doubles;
@@ -40,17 +42,7 @@ namespace ragedb {
         tsl::sparse_map<std::string, std::vector<std::vector<std::string>>> strings_list;
         // TODO: Supported Nested Objects
 
-
         const std::any tombstone_any = std::any();
-        const bool tombstone_boolean = false;
-        const int64_t tombstone_int = std::numeric_limits<int64_t>::min();
-        const double tombstone_double = std::numeric_limits<double>::min();
-        const std::string tombstone_string = std::string("");
-
-        const std::vector<bool> tombstone_booleans_list = std::vector<bool>();
-        const std::vector<int64_t> tombstone_integers_list = std::vector<int64_t>();
-        const std::vector<double> tombstone_doubles_list = std::vector<double>();
-        const std::vector<std::string> tombstone_strings_list = std::vector<std::string>();
 
         void addPropertyTypeVectors(const std::string &key, uint8_t type_id);
         void removePropertyTypeVectors(const std::string &key, uint8_t type_id);
@@ -66,17 +58,6 @@ namespace ragedb {
         uint8_t setPropertyType(const std::string& key, const std::string& type);
         bool removePropertyType(const std::string& key);
 
-        tsl::sparse_map<std::string, std::vector<bool>> & getAllBooleanProperties();
-        bool getBooleanProperty(const std::string&, uint64_t);
-        int64_t getIntegerProperty(const std::string&, uint64_t);
-        double getDoubleProperty(const std::string&, uint64_t);
-        std::string getStringProperty(const std::string&, uint64_t);
-
-        std::vector<bool> getListOfBooleanProperty(const std::string&, uint64_t);
-        std::vector<int64_t> getListOfIntegerProperty(const std::string&, uint64_t);
-        std::vector<double> getListOfDoubleProperty(const std::string&, uint64_t);
-        std::vector<std::string> getListOfStringProperty(const std::string&, uint64_t);
-
         bool setBooleanProperty(const std::string&, uint64_t, bool);
         bool setIntegerProperty(const std::string&, uint64_t, int64_t);
         bool setDoubleProperty(const std::string&, uint64_t, double);
@@ -89,10 +70,6 @@ namespace ragedb {
 
         std::map<std::string, std::any> getProperties(uint64_t);
         std::any getProperty(const std::string&, uint64_t);
-        bool setProperty(const std::string&, uint64_t, bool);
-        bool setProperty(const std::string&, uint64_t, int64_t);
-        bool setProperty(const std::string&, uint64_t, double);
-        bool setProperty(const std::string&, uint64_t, const std::string&);
 
         bool deleteProperty(const std::string&, uint64_t);
         bool deleteProperties(uint64_t);

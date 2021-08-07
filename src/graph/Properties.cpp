@@ -47,6 +47,7 @@ namespace ragedb {
     void Properties::clear() {
         types.clear();
         types.insert({"", 0});
+        deleted.clear();
         booleans.clear();
         integers.clear();
         doubles.clear();
@@ -83,6 +84,7 @@ namespace ragedb {
         }
 
         types.emplace(key, property_type_id);
+        deleted.emplace(key, Roaring64Map());
 
         addPropertyTypeVectors(key, property_type_id);
 
@@ -192,6 +194,7 @@ namespace ragedb {
         }
 
         types.emplace(key, type_id);
+        deleted.emplace(key, Roaring64Map());
 
         addPropertyTypeVectors(key, type_id);
 
@@ -202,100 +205,9 @@ namespace ragedb {
         if (types.find(key) != types.end()) {
             removePropertyTypeVectors(key, types[key]);
             types.erase(key);
+            deleted.erase(key);
         }
         return false;
-    }
-
-    tsl::sparse_map<std::string, std::vector<bool>> &Properties::getAllBooleanProperties() {
-        return booleans;
-    }
-
-    bool Properties::getBooleanProperty(const std::string &key, uint64_t index) {
-        auto search = booleans.find(key);
-
-        if (search != booleans.end()) {
-            if (index < booleans[key].size()) {
-                return booleans[key][index];
-            }
-        }
-        return tombstone_boolean;
-    }
-
-    int64_t Properties::getIntegerProperty(const std::string &key, uint64_t index) {
-        auto search = integers.find(key);
-
-        if (search != integers.end()) {
-            if (index < integers[key].size()) {
-                return integers[key][index];
-            }
-        }
-        return tombstone_int;
-    }
-
-    double Properties::getDoubleProperty(const std::string &key, uint64_t index) {
-        auto search = doubles.find(key);
-
-        if (search != doubles.end()) {
-            if (index < doubles[key].size()) {
-                return doubles[key][index];
-            }
-        }
-        return tombstone_double;
-    }
-
-    std::string Properties::getStringProperty(const std::string &key, uint64_t index) {
-        auto search = strings.find(key);
-
-        if (search != strings.end()) {
-            if (index < strings[key].size()) {
-                return strings[key][index];
-            }
-        }
-        return tombstone_string;
-    }
-
-    std::vector<bool> Properties::getListOfBooleanProperty(const std::string &key, uint64_t index) {
-        auto search = booleans_list.find(key);
-
-        if (search != booleans_list.end()) {
-            if (index < booleans_list[key].size()) {
-                return booleans_list[key][index];
-            }
-        }
-        return tombstone_booleans_list;
-    }
-
-    std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string &key, uint64_t index) {
-        auto search = integers_list.find(key);
-
-        if (search != integers_list.end()) {
-            if (index < integers_list[key].size()) {
-                return integers_list[key][index];
-            }
-        }
-        return tombstone_integers_list;
-    }
-
-    std::vector<double> Properties::getListOfDoubleProperty(const std::string &key, uint64_t index) {
-        auto search = doubles_list.find(key);
-
-        if (search != doubles_list.end()) {
-            if (index < doubles_list[key].size()) {
-                return doubles_list[key][index];
-            }
-        }
-        return tombstone_doubles_list;
-    }
-
-    std::vector<std::string> Properties::getListOfStringProperty(const std::string &key, uint64_t index) {
-        auto search = strings_list.find(key);
-
-        if (search != strings_list.end()) {
-            if (index < strings_list[key].size()) {
-                return strings_list[key][index];
-            }
-        }
-        return tombstone_strings_list;
     }
 
     bool Properties::setBooleanProperty(const std::string &key, uint64_t index, bool value) {
@@ -314,6 +226,7 @@ namespace ragedb {
             booleans[key].resize(1 + index);
         }
         booleans[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -334,6 +247,7 @@ namespace ragedb {
             integers[key].resize(1 + index);
         }
         integers[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -354,6 +268,7 @@ namespace ragedb {
             doubles[key].resize(1 + index);
         }
         doubles[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -373,6 +288,7 @@ namespace ragedb {
             strings[key].resize(1 + index);
         }
         strings[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -393,6 +309,7 @@ namespace ragedb {
             booleans_list[key].resize(1 + index);
         }
         booleans_list[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -414,6 +331,7 @@ namespace ragedb {
             integers_list[key].resize(1 + index);
         }
         integers_list[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -434,6 +352,7 @@ namespace ragedb {
             doubles_list[key].resize(1 + index);
         }
         doubles_list[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
@@ -455,14 +374,20 @@ namespace ragedb {
             strings_list[key].resize(1 + index);
         }
         strings_list[key][index] = value;
+        deleted[key].remove(index);
 
         return true;
     }
 
     std::map<std::string, std::any> Properties::getProperties(uint64_t index) {
+        // Build a temporary map of string, any
         std::map<std::string, std::any> properties;
+        // Go through all the property types this Node or Relationship type is supposed to have
         for (auto const&[key, type_id] : types) {
-            switch (type_id) {
+            // If the entry has been deleted, then skip adding it to the map (alternatively we could add an unset Any)
+            if (!deleted[key].contains(index)) {
+                // Find the value based on the type and key and add it to the properties map
+                switch (type_id) {
                 case boolean_type: {
                     if (booleans[key].size() > index) {
                         properties.emplace(key, booleans[key][index]);
@@ -515,202 +440,84 @@ namespace ragedb {
 
                 }
             }
-
+        }
         }
         return properties;
     }
 
     std::any Properties::getProperty(const std::string& key, uint64_t index) {
         if (types.find(key) != types.end()) {
-            switch (types[key]) {
-                case boolean_type: {
-                    if (booleans[key].size() > index) {
-                        // std::any and vector<bool> don't play nice together due to how vector<bool> is optimized
-                        // so this cast makes sure we return the value typed correctly
-                        return static_cast<bool>(booleans[key][index]);
+            if (!deleted[key].contains(index)) {
+                switch (types[key]) {
+                    case boolean_type: {
+                        if (booleans[key].size() > index) {
+                            // std::any and vector<bool> don't play nice together due to how vector<bool> is optimized
+                            // so this cast makes sure we return the value typed correctly
+                            return static_cast<bool>(booleans[key][index]);
+                        }
+                        break;
                     }
-                    return tombstone_boolean;
-                }
-                case integer_type: {
-                    if (integers[key].size() > index) {
-                        return integers[key][index];
+                    case integer_type: {
+                        if (integers[key].size() > index) {
+                            return integers[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_int;
-                }
-                case double_type: {
-                    if (doubles[key].size() > index) {
-                        return doubles[key][index];
+                    case double_type: {
+                        if (doubles[key].size() > index) {
+                            return doubles[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_double;
-                }
-                case string_type: {
-                    if (strings[key].size() > index) {
-                        return strings[key][index];
+                    case string_type: {
+                        if (strings[key].size() > index) {
+                            return strings[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_string;
-                }
-                case boolean_list_type: {
-                    if (booleans_list[key].size() > index) {
-                        return booleans_list[key][index];
+                    case boolean_list_type: {
+                        if (booleans_list[key].size() > index) {
+                            return booleans_list[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_booleans_list;
-                }
-                case integer_list_type: {
-                    if (integers[key].size() > index) {
-                        return integers_list[key][index];
+                    case integer_list_type: {
+                        if (integers[key].size() > index) {
+                            return integers_list[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_integers_list;
-                }
-                case double_list_type: {
-                    if (doubles_list[key].size() > index) {
-                        return doubles_list[key][index];
+                    case double_list_type: {
+                        if (doubles_list[key].size() > index) {
+                            return doubles_list[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_doubles_list;
-                }
-                case string_list_type: {
-                    if (strings_list[key].size() > index) {
-                        return strings_list[key][index];
+                    case string_list_type: {
+                        if (strings_list[key].size() > index) {
+                            return strings_list[key][index];
+                        }
+                        break;
                     }
-                    return tombstone_strings_list;
-                }
-                default: {
+                    default: {
 
+                    }
                 }
             }
         }
         return tombstone_any;
     }
 
-    bool Properties::setProperty(const std::string &key, uint64_t index, bool value) {
-        return setBooleanProperty(key, index, value);
-    }
-
-    bool Properties::setProperty(const std::string &key, uint64_t index, int64_t value) {
-        return setIntegerProperty(key, index, value);
-    }
-
-    bool Properties::setProperty(const std::string &key, uint64_t index, double value) {
-        return setDoubleProperty(key, index, value);
-    }
-
-    bool Properties::setProperty(const std::string &key, uint64_t index, const std::string& value) {
-        return setStringProperty(key, index, value);
-    }
-
     bool Properties::deleteProperties(uint64_t index) {
         for (auto[key, value] : types) {
-            switch (value) {
-                case boolean_type: {
-                    if (booleans[key].size() > index) {
-                        booleans[key][index] = tombstone_boolean;
-                    }
-                    break;
-                }
-                case integer_type: {
-                    if (integers[key].size() > index) {
-                        integers[key][index] = tombstone_int;
-                    }
-                    break;
-                }
-                case double_type: {
-                    if (doubles[key].size() > index) {
-                        doubles[key][index] = tombstone_double;
-                    }
-                    break;
-                }
-                case string_type: {
-                    if (strings[key].size() > index) {
-                        strings[key][index] = tombstone_string;
-                    }
-                    break;
-                }
-                case boolean_list_type: {
-                    if (booleans_list[key].size() > index) {
-                        booleans_list[key][index] = tombstone_booleans_list;
-                    }
-                    break;
-                }
-                case integer_list_type: {
-                    if (integers_list[key].size() > index) {
-                        integers_list[key][index] = tombstone_integers_list;
-                    }
-                    break;
-                }
-                case double_list_type: {
-                    if (doubles_list[key].size() > index) {
-                        doubles_list[key][index] = tombstone_doubles_list;
-                    }
-                    break;
-                }
-                case string_list_type: {
-                    if (strings_list[key].size() > index) {
-                        strings_list[key][index] = tombstone_strings_list;
-                    }
-                    break;
-                }
-                default: {
-                    // The empty key will hit this, do nothing.
-                }
-            }
+            deleted[key].add(index);
         }
         return true;
     }
 
     bool Properties::deleteProperty(const std::string& key, uint64_t index) {
         if (types.find(key) != types.end()) {
-            switch (types[key]) {
-                case boolean_type: {
-                    if (booleans[key].size() > index) {
-                        booleans[key][index] = tombstone_boolean;
-                    }
-                    break;
-                }
-                case integer_type: {
-                    if (integers[key].size() > index) {
-                        integers[key][index] = tombstone_int;
-                    }
-                    break;
-                }
-                case double_type: {
-                    if (doubles[key].size() > index) {
-                        doubles[key][index] = tombstone_double;
-                    }
-                    break;
-                }
-                case string_type: {
-                    if (strings[key].size() > index) {
-                        strings[key][index] = tombstone_string;
-                    }
-                    break;
-                }
-                case boolean_list_type: {
-                    if (booleans_list[key].size() > index) {
-                        booleans_list[key][index] = tombstone_booleans_list;
-                    }
-                    break;
-                }
-                case integer_list_type: {
-                    if (integers_list[key].size() > index) {
-                        integers_list[key][index] = tombstone_integers_list;
-                    }
-                    break;
-                }
-                case double_list_type: {
-                    if (doubles_list[key].size() > index) {
-                        doubles_list[key][index] = tombstone_doubles_list;
-                    }
-                    break;
-                }
-                case string_list_type: {
-                    if (strings_list[key].size() > index) {
-                        strings_list[key][index] = tombstone_strings_list;
-                    }
-                    break;
-                }
-                default: {
-                    return false;
-                }
-            }
+            deleted[key].add(index);
             return true;
         }
         return false;

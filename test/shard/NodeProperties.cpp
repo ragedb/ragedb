@@ -419,7 +419,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "name");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "name");
-                REQUIRE(std::any_cast<std::string>(value).empty());
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -428,7 +428,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "age");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "age");
-                REQUIRE(std::numeric_limits<int64_t>::min() == std::any_cast<int64_t>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -437,7 +437,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "weight");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "weight");
-                REQUIRE(std::numeric_limits<double>::min() == std::any_cast<double>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -446,7 +446,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "name");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "name");
-                REQUIRE(std::any_cast<std::string>(value).empty());
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -455,7 +455,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "age");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "age");
-                REQUIRE(std::numeric_limits<int64_t>::min() == std::any_cast<int64_t>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -464,7 +464,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "weight");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "weight");
-                REQUIRE(std::numeric_limits<double>::min() == std::any_cast<double>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -509,7 +509,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertiesDelete("Node", "existing");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "age");
-                REQUIRE(std::numeric_limits<int64_t>::min() == std::any_cast<int64_t>(value));
+                REQUIRE(!value.has_value());
             }
         }
 
@@ -518,7 +518,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertiesDelete(existing);
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "age");
-                REQUIRE(std::numeric_limits<int64_t>::min() == std::any_cast<int64_t>(value));
+                REQUIRE(!value.has_value());
             }
         }
 

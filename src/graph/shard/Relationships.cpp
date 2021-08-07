@@ -90,9 +90,9 @@ namespace ragedb {
                 relationship_types.getEndingNodeIds(rel_type_id).emplace_back(id2);
             }
 
+            relationship_types.addId(rel_type_id, internal_id);
             relationship_types.setPropertiesFromJSON(rel_type_id, internal_id, properties);
             external_id = internalToExternal(rel_type_id, internal_id);
-            relationship_types.addId(rel_type_id, internal_id);
 
             // Add the relationship to the outgoing node
             auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),

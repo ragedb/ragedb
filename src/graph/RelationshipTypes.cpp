@@ -182,6 +182,7 @@ namespace ragedb {
     bool RelationshipTypes::addId(uint16_t type_id, uint64_t internal_id) {
         if (ValidTypeId(type_id)) {
             deleted_ids[type_id].remove(internal_id);
+            properties[type_id].deleteProperties(internal_id);
             return true;
         }
         // If not valid return false
