@@ -50,39 +50,45 @@ namespace ragedb {
     sol::table Node::getPropertiesLua(sol::this_state ts) {
         sol::state_view lua = ts;
         sol::table property_map = lua.create_table();
-        for(auto prop : getProperties()) {
-            const auto& value_type = prop.second.type();
+        for (auto [_key, value] : getProperties()) {
+            const auto& value_type = value.type();
 
             if(value_type == typeid(std::string)) {
-                property_map[prop.first] = sol::make_object(lua, std::any_cast<std::string>(prop.second));
+                property_map[_key] = sol::make_object(lua, std::any_cast<std::string>(value));
             }
 
             if(value_type == typeid(int64_t)) {
-                property_map[prop.first] = sol::make_object(lua, std::any_cast<int64_t>(prop.second));
+                property_map[_key] = sol::make_object(lua, std::any_cast<int64_t>(value));
             }
 
             if(value_type == typeid(double)) {
-                property_map[prop.first] = sol::make_object(lua, std::any_cast<double>(prop.second));
+                property_map[_key] = sol::make_object(lua, std::any_cast<double>(value));
             }
 
-            if(value_type == typeid(bool)) {
-                property_map[prop.first] = sol::make_object(lua, std::any_cast<bool>(prop.second));
+            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+            if(value_type == typeid(std::_Bit_reference)) {
+                if (std::any_cast<std::_Bit_reference>(value) ) {
+                    property_map[_key] = sol::make_object(lua, true);
+                } else {
+                    property_map[_key] = sol::make_object(lua, false);
+                }
+                continue;
             }
 
             if(value_type == typeid(std::vector<std::string>)) {
-                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<std::string>>(prop.second)));
+                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<std::string>>(value)));
             }
 
             if(value_type == typeid(std::vector<int64_t>)) {
-                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<int64_t>>(prop.second)));
+                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<int64_t>>(value)));
             }
 
             if(value_type == typeid(std::vector<double>)) {
-                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<double>>(prop.second)));
+                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<double>>(value)));
             }
 
             if(value_type == typeid(std::vector<bool>)) {
-                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<bool>>(prop.second)));
+                return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<bool>>(value)));
             }
 
         }

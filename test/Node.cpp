@@ -42,6 +42,8 @@ SCENARIO( "Node can be created", "[node]" ) {
         nicknames.emplace_back("doogie");
         properties.emplace("nicknames", nicknames);
 
+        sol::state lua;
+
         ragedb::Node with_properties(2, "User", "Max", properties);
 
         WHEN("things are requested from a nothing node") {
@@ -50,6 +52,7 @@ SCENARIO( "Node can be created", "[node]" ) {
                 REQUIRE(nothing.getType().empty());
                 REQUIRE(nothing.getKey().empty());
                 REQUIRE(nothing.getProperties().empty());
+                REQUIRE(nothing.getPropertiesLua(lua.lua_state()).empty());
             }
         }
         WHEN("things are requested from an empty node") {
@@ -58,6 +61,7 @@ SCENARIO( "Node can be created", "[node]" ) {
                 REQUIRE(empty.getType() == "User");
                 REQUIRE(empty.getKey() == "Helene");
                 REQUIRE(empty.getProperties().empty());
+                REQUIRE(empty.getPropertiesLua(lua.lua_state()).empty());
             }
         }
         WHEN("things are requested from a node with properties") {
@@ -66,12 +70,14 @@ SCENARIO( "Node can be created", "[node]" ) {
                 REQUIRE(with_properties.getType() == "User");
                 REQUIRE(with_properties.getKey() == "Max");
                 REQUIRE(!with_properties.getProperties().empty());
+                REQUIRE(!with_properties.getPropertiesLua(lua.lua_state()).empty());
                 REQUIRE(std::any_cast<std::string>(with_properties.getProperty("name")) == "max");
                 REQUIRE(std::any_cast<int64_t>(with_properties.getProperty("age")) == 42);
                 REQUIRE(std::any_cast<double>(with_properties.getProperty("weight")) == 239.5);
                 REQUIRE(std::any_cast<std::_Bit_reference>(with_properties.getProperty("valid")));
                 REQUIRE(std::any_cast<std::vector<std::string>>(with_properties.getProperty("nicknames")) == nicknames);
                 REQUIRE(!with_properties.getProperty("not_there").has_value());
+
             }
         }
         WHEN("we print a nothing node") {
