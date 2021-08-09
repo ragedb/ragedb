@@ -188,6 +188,14 @@ RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and
 
 ### Relationships
 
+#### Get All Relationships
+
+    :GET /db/{graph}/relationships?limit=100&offset=0
+
+#### Get All Relationships of a Type
+
+    :GET /db/{graph}/relationships/{type}?limit=100&offset=0
+
 #### Get A Relationship
 
     :GET /db/{graph}/relationship/{id}

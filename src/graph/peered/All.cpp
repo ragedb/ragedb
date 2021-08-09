@@ -50,7 +50,8 @@ namespace ragedb {
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id++, threaded_requests});
+                requests.insert({current_shard_id, threaded_requests});
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -80,7 +81,7 @@ namespace ragedb {
         uint16_t node_type_id = relationship_types.getTypeId(type);
         uint64_t max = skip + limit;
 
-        // Get the {Relationship Type Id, Count} map for each core
+        // Get the {Node Type Id, Count} map for each core
         std::vector<seastar::future<uint64_t>> futures;
         for (int i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [node_type_id] (Shard &local_shard) mutable {
@@ -100,12 +101,13 @@ namespace ragedb {
                 next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
-                    requests.insert({ current_shard_id++, pair });
+                    requests.insert({ current_shard_id, pair });
                     if (next <= max) {
                         break; // We have everything we need
                     }
                 }
                 current = next;
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -161,7 +163,8 @@ namespace ragedb {
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id++, threaded_requests});
+                requests.insert({current_shard_id, threaded_requests});
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<Node>>> futures;
@@ -210,12 +213,13 @@ namespace ragedb {
                 uint64_t next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
-                    requests.insert({ current_shard_id++, pair });
+                    requests.insert({ current_shard_id, pair });
                     if (next <= max) {
                         break; // We have everything we need
                     }
                 }
                 current = next;
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<Node>>> futures;
@@ -273,7 +277,8 @@ namespace ragedb {
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id++, threaded_requests});
+                requests.insert({current_shard_id, threaded_requests});
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -323,12 +328,13 @@ namespace ragedb {
                 next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
-                    requests.insert({ current_shard_id++, pair });
+                    requests.insert({ current_shard_id, pair });
                     if (next <= max) {
                         break; // We have everything we need
                     }
                 }
                 current = next;
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -385,7 +391,8 @@ namespace ragedb {
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id++, threaded_requests});
+                requests.insert({current_shard_id, threaded_requests});
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -412,7 +419,7 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::AllRelationshipsPeered(const std::string &rel_type, uint64_t skip, uint64_t limit) {
-        uint16_t relationship_type_id = node_types.getTypeId(rel_type);
+        uint16_t relationship_type_id = relationship_types.getTypeId(rel_type);
         uint64_t max = skip + limit;
 
         // Get the {Relationship Type Id, Count} map for each core
@@ -435,12 +442,13 @@ namespace ragedb {
                 next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
-                    requests.insert({ current_shard_id++, pair });
+                    requests.insert({ current_shard_id, pair });
                     if (next <= max) {
                         break; // We have everything we need
                     }
                 }
                 current = next;
+                current_shard_id++;
             }
 
             std::vector<seastar::future<std::vector<Relationship>>> futures;
