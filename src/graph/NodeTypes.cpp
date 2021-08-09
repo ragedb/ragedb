@@ -65,8 +65,10 @@ namespace ragedb {
         id_to_type.emplace_back();
         key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
         keys.emplace_back(std::vector<std::string>());
+        properties.emplace_back();
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
+        deleted_ids.emplace_back(Roaring64Map());
     }
 
     uint64_t NodeTypes::internalToExternal(uint16_t type_id, uint64_t internal_id) const {

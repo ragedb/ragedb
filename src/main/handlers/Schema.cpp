@@ -249,8 +249,8 @@ Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const sstring &path
     bool valid_data_type = Utilities::validate_parameter(Utilities::DATA_TYPE, req, rep, "Invalid data type");
 
     if(valid_type && valid_property && valid_data_type) {
-        return parent.graph.shard.local().NodePropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](bool success) mutable {
-            if (success) {
+        return parent.graph.shard.local().NodePropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
+            if (property_type_id > 0) {
                 rep->set_status(reply::status_type::created);
             } else {
                 rep->set_status(reply::status_type::not_modified);
@@ -302,8 +302,8 @@ Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const sstri
     bool valid_data_type = Utilities::validate_parameter(Utilities::DATA_TYPE, req, rep, "Invalid data type");
 
     if(valid_type && valid_property && valid_data_type) {
-        return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](bool success) mutable {
-            if (success) {
+        return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
+            if (property_type_id != 0) {
                 rep->set_status(reply::status_type::created);
             } else {
                 rep->set_status(reply::status_type::not_modified);

@@ -193,7 +193,7 @@ namespace ragedb {
     }
 
     seastar::future<uint8_t> Shard::NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type) {
-        uint16_t node_type_id = node_types.getTypeId(type);
+        uint16_t node_type_id = node_types.getTypeId(node_type);
         if (node_type_id == 0) {
             return container().invoke_on(0, [node_type, key, type, this] (Shard &local_shard) {
                 return local_shard.NodeTypeInsertPeered(node_type).then([node_type, key, type, this](uint16_t node_type_id) {
@@ -209,11 +209,11 @@ namespace ragedb {
         });
     }
 
-    seastar::future<uint8_t> Shard::RelationshipPropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type) {
-        uint16_t relationship_type_id = relationship_types.getTypeId(type);
+    seastar::future<uint8_t> Shard::RelationshipPropertyTypeAddPeered(const std::string& relationship_type, const std::string& key, const std::string& type) {
+        uint16_t relationship_type_id = relationship_types.getTypeId(relationship_type);
         if (relationship_type_id == 0) {
-            return container().invoke_on(0, [node_type, key, type, this] (Shard &local_shard) {
-                return local_shard.RelationshipTypeInsertPeered(node_type).then([node_type, key, type, this](uint16_t node_type_id) {
+            return container().invoke_on(0, [relationship_type, key, type, this] (Shard &local_shard) {
+                return local_shard.RelationshipTypeInsertPeered(relationship_type).then([relationship_type, key, type, this](uint16_t node_type_id) {
                     return container().invoke_on(0, [node_type_id, key, type] (Shard &local_shard) {
                         return local_shard.RelationshipPropertyTypeInsertPeered(node_type_id, key, type);
                     });
