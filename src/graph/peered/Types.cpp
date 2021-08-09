@@ -103,7 +103,7 @@ namespace ragedb {
 
     seastar::future<bool> Shard::DeleteNodeTypePeered(const std::string& type) {
         uint16_t type_id = node_types.getTypeId(type);
-        if (type_id == 0) {
+        if (type_id != 0) {
             // type_id is global so unfortunately we need to lock here
             this->node_type_lock.for_write().lock().get();
             // The type was found and must therefore be deleted on all shards.
@@ -150,14 +150,14 @@ namespace ragedb {
 
     seastar::future<bool> Shard::DeleteRelationshipTypePeered(const std::string& type) {
         uint16_t type_id = relationship_types.getTypeId(type);
-        if (type_id == 0) {
+        if (type_id != 0) {
             // type_id is global so unfortunately we need to lock here
             this->rel_type_lock.for_write().lock().get();
             // The type was found and must therefore be deleted on all shards.
             return container().invoke_on_all([type](Shard &local_shard) {
                         local_shard.DeleteRelationshipType(type);
                     })
-                    .then([type_id, this] {
+                    .then([this] {
                         this->rel_type_lock.for_write().unlock();
                         return seastar::make_ready_future<bool>(true);
                     });
