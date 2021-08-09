@@ -31,6 +31,10 @@ Run Docker on a Linux host for the best performance.
 
 ### Schema
 
+#### Delete Graph
+
+    :DELETE /db/{graph}/schema
+
 #### Get Node Types
 
     :GET /db/{graph}/schema/nodes

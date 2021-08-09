@@ -22,6 +22,9 @@
 #include <seastar/json/formatter.hh>
 
 void Schema::set_routes(routes &routes) {
+    auto clearGraph = new match_rule(&clearGraphHandler);
+    clearGraph->add_str("/db/" + graph.GetName() + "/schema");
+    routes.add(clearGraph, operation_type::DELETE);
 
     auto getNodeTypes = new match_rule(&getNodeTypesHandler);
     getNodeTypes->add_str("/db/" + graph.GetName() + "/schema/nodes");
@@ -108,6 +111,13 @@ void Schema::set_routes(routes &routes) {
 }
 
 future<std::unique_ptr<reply>>
+Schema::ClearGraphHandler::handle([[maybe_unused]] const sstring &path, [[maybe_unused]] std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+    parent.graph.Clear();
+    rep->set_status(reply::status_type::accepted);
+    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<reply>>
 Schema::GetNodeTypesHandler::handle([[maybe_unused]] const sstring &path, [[maybe_unused]] std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
     std::set<std::string> types = parent.graph.shard.local().NodeTypesGet();
     rep->write_body("json", json::stream_object(std::vector<std::string>( types.begin(), types.end() )));
@@ -142,7 +152,7 @@ Schema::PostNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std::u
         return parent.graph.shard.local().NodeTypeInsertPeered(req->param[Utilities::TYPE]).then(
                 [rep = std::move(rep)](bool success) mutable {
                     if (success) {
-                        rep->set_status(reply::status_type::no_content);
+                        rep->set_status(reply::status_type::created);
                     } else {
                         rep->set_status(reply::status_type::not_modified);
                     }
@@ -190,7 +200,7 @@ Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const sstring &path
         return parent.graph.shard.local().RelationshipTypeInsertPeered(req->param[Utilities::TYPE]).then(
                 [rep = std::move(rep)](bool success) mutable {
                     if (success) {
-                        rep->set_status(reply::status_type::no_content);
+                        rep->set_status(reply::status_type::created);
                     } else {
                         rep->set_status(reply::status_type::not_modified);
                     }
@@ -241,7 +251,7 @@ Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const sstring &path
     if(valid_type && valid_property && valid_data_type) {
         return parent.graph.shard.local().NodePropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(reply::status_type::no_content);
+                rep->set_status(reply::status_type::created);
             } else {
                 rep->set_status(reply::status_type::not_modified);
             }
@@ -294,7 +304,7 @@ Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const sstri
     if(valid_type && valid_property && valid_data_type) {
         return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(reply::status_type::no_content);
+                rep->set_status(reply::status_type::created);
             } else {
                 rep->set_status(reply::status_type::not_modified);
             }

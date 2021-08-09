@@ -28,6 +28,14 @@ using namespace ragedb;
 
 class Schema {
 
+    class ClearGraphHandler : public httpd::handler_base {
+    public:
+        explicit ClearGraphHandler(Schema& schema) : parent(schema) {};
+    private:
+        Schema& parent;
+        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+    };
+
     class GetNodeTypesHandler : public httpd::handler_base {
     public:
         explicit GetNodeTypesHandler(Schema& schema) : parent(schema) {};
@@ -142,6 +150,7 @@ class Schema {
 
 private:
     Graph& graph;
+    ClearGraphHandler clearGraphHandler;
     GetNodeTypesHandler getNodeTypesHandler;
     GetRelationshipTypesHandler getRelationshipTypesHandler;
     GetNodeTypeHandler getNodeTypeHandler;
@@ -157,7 +166,8 @@ private:
     PostRelationshipTypePropertyHandler postRelationshipTypePropertyHandler;
     DeleteRelationshipTypePropertyHandler deleteRelationshipTypePropertyHandler;
 public:
-    explicit Schema(Graph &_graph) : graph(_graph), getNodeTypesHandler(*this), getRelationshipTypesHandler(*this),
+    explicit Schema(Graph &_graph) : graph(_graph), clearGraphHandler(*this),
+                                     getNodeTypesHandler(*this), getRelationshipTypesHandler(*this),
                                      getNodeTypeHandler(*this), postNodeTypeHandler(*this), deleteNodeTypeHandler(*this),
                                      getRelationshipTypeHandler(*this), postRelationshipTypeHandler(*this), deleteRelationshipTypeHandler(*this),
                                      getNodeTypePropertyHandler(*this), postNodeTypePropertyHandler(*this), deleteNodeTypePropertyHandler(*this),
