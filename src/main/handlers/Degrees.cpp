@@ -49,7 +49,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
             // Get Node Degree
             return parent.graph.shard.local().NodeGetDegreePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
                     .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                        rep->write_body("json", json::stream_object(degree));
+                        json_properties_builder json;
+                        json.add("degree", degree);
+                        rep->write_body("json", sstring(json.as_json()));
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     });
         }
@@ -73,7 +75,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                 // Get Node Degree with Direction
                 return parent.graph.shard.local().NodeGetDegreePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction)
                         .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                            rep->write_body("json", json::stream_object(degree));
+                            json_properties_builder json;
+                            json.add("degree", degree);
+                            rep->write_body("json", sstring(json.as_json()));
                             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                         });
             case 2: {
@@ -84,7 +88,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                 if (rel_types.size() == 1) {
                     return parent.graph.shard.local().NodeGetDegreePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types[0])
                             .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                                rep->write_body("json", json::stream_object(degree));
+                                json_properties_builder json;
+                                json.add("degree", degree);
+                                rep->write_body("json", sstring(json.as_json()));
                                 return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                             });
                 }
@@ -92,7 +98,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                 // Multiple Relationship Types
                 return parent.graph.shard.local().NodeGetDegreePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types)
                         .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                            rep->write_body("json", json::stream_object(degree));
+                            json_properties_builder json;
+                            json.add("degree", degree);
+                            rep->write_body("json", sstring(json.as_json()));
                             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                         });
             }
@@ -119,7 +127,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
         // Get Node Degree
         return parent.graph.shard.local().NodeGetDegreePeered(id)
                 .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                    rep->write_body("json", json::stream_object(degree));
+                    json_properties_builder json;
+                    json.add("degree", degree);
+                    rep->write_body("json", sstring(json.as_json()));
                     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                 });
     }
@@ -143,7 +153,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
             // Get Node Degree with Direction
             return parent.graph.shard.local().NodeGetDegreePeered(id, direction)
                     .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                        rep->write_body("json", json::stream_object(degree));
+                        json_properties_builder json;
+                        json.add("degree", degree);
+                        rep->write_body("json", sstring(json.as_json()));
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     });
         case 2: {
@@ -154,14 +166,18 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
             if (rel_types.size() == 1) {
                 return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0])
                         .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                            rep->write_body("json", json::stream_object(degree));
+                            json_properties_builder json;
+                            json.add("degree", degree);
+                            rep->write_body("json", sstring(json.as_json()));
                             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                         });
             }
 
             // Multiple Relationship Types
             return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types).then([rep = std::move(rep)] (uint64_t degree) mutable {
-                rep->write_body("json", json::stream_object(degree));
+                json_properties_builder json;
+                json.add("degree", degree);
+                rep->write_body("json", sstring(json.as_json()));
                 return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
             });
         }

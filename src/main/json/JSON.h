@@ -358,6 +358,15 @@ public:
         }
     }
 
+    void add(const std::string& name, uint64_t degree) {
+        if (first) {
+            first = false;
+        } else {
+            result << ", ";
+        }
+        result << '"' << name << "\": " << degree;
+    }
+
     void add(const std::string& name, const std::string& str) {
         if (first) {
             first = false;
