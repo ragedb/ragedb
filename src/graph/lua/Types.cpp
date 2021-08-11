@@ -79,14 +79,6 @@ namespace ragedb {
     }
 
     // Property Types
-    uint8_t Shard::NodePropertyTypeInsertViaLua(uint16_t type_id, const std::string& key, const std::string& type) {
-        return NodePropertyTypeInsertPeered(type_id, key, type).get0();
-    }
-
-    uint8_t Shard::RelationshipPropertyTypeInsertViaLua(uint16_t type_id, const std::string& key, const std::string& type) {
-        return RelationshipPropertyTypeInsertPeered(type_id, key, type).get0();
-    }
-
     uint8_t Shard::NodePropertyTypeAddViaLua(const std::string& node_type, const std::string& key, const std::string& type) {
         return NodePropertyTypeAddPeered(node_type, key, type).get0();
     }

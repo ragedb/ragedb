@@ -72,6 +72,11 @@ namespace ragedb {
         return RelationshipGetEndingNodeIdPeered(id).get0();
     }
 
+    sol::object Shard::RelationshipPropertiesGetViaLua(uint64_t id) {
+        Relationship relationship = RelationshipGetPeered(id).get0();
+        return sol::make_object(lua.lua_state(), relationship.getPropertiesLua(lua.lua_state()));
+    }
+
     sol::object Shard::RelationshipPropertyGetViaLua(uint64_t id, const std::string& property) {
         std::any value = RelationshipPropertyGetPeered(id, property).get0();
 

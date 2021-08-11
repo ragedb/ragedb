@@ -199,8 +199,6 @@ namespace ragedb {
         lua.set_function("NodeTypeInsert", &Shard::NodeTypeInsertViaLua, this);
 
         // Property Types
-        lua.set_function("NodePropertyTypeInsert", &Shard::NodePropertyTypeInsertViaLua, this);
-        lua.set_function("RelationshipPropertyTypeInsert", &Shard::RelationshipPropertyTypeInsertViaLua, this);
         lua.set_function("NodePropertyTypeAdd", &Shard::NodePropertyTypeAddViaLua, this);
         lua.set_function("RelationshipPropertyTypeAdd", &Shard::RelationshipPropertyTypeAddViaLua, this);
         lua.set_function("NodePropertyTypeDelete", &Shard::NodePropertyTypeDeleteViaLua, this);
@@ -222,6 +220,8 @@ namespace ragedb {
         // Node Properties
         lua.set_function("NodePropertyGet", &Shard::NodePropertyGetViaLua, this);
         lua.set_function("NodePropertyGetById", &Shard::NodePropertyGetByIdViaLua, this);
+        lua.set_function("NodePropertiesGet", &Shard::NodePropertiesGetViaLua, this);
+        lua.set_function("NodePropertiesGetById", &Shard::NodePropertiesGetByIdViaLua, this);
         lua.set_function("NodePropertySet", &Shard::NodePropertySetViaLua, this);
         lua.set_function("NodePropertySetById", &Shard::NodePropertySetByIdViaLua, this);
         lua.set_function("NodePropertiesSetFromJson", &Shard::NodePropertiesSetFromJsonViaLua, this);
@@ -241,7 +241,7 @@ namespace ragedb {
         lua.set_function("RelationshipAddByTypeIdByIds", &Shard::RelationshipAddByTypeIdByIdsViaLua, this);
         lua.set_function("RelationshipAddByIds", &Shard::RelationshipAddByIdsViaLua, this);
         lua.set_function("RelationshipGet", &Shard::RelationshipGetViaLua, this);
-        lua.set_function("RelationshipGet", &Shard::RelationshipGetViaLua, this);
+        lua.set_function("RelationshipsGet", &Shard::RelationshipsGetViaLua, this);
         lua.set_function("RelationshipRemove", &Shard::RelationshipRemoveViaLua, this);
         lua.set_function("RelationshipGetType", &Shard::RelationshipGetTypeViaLua, this);
         lua.set_function("RelationshipGetTypeId", &Shard::RelationshipGetTypeIdViaLua, this);
@@ -250,6 +250,7 @@ namespace ragedb {
 
         // Relationship Properties
         lua.set_function("RelationshipPropertyGet", &Shard::RelationshipPropertyGetViaLua, this);
+        lua.set_function("RelationshipPropertiesGet", &Shard::RelationshipPropertiesGetViaLua, this);
         lua.set_function("RelationshipPropertySet", &Shard::RelationshipPropertySetViaLua, this);
         lua.set_function("RelationshipPropertySetFromJson", &Shard::RelationshipPropertySetFromJsonViaLua, this);
         lua.set_function("RelationshipPropertyDelete", &Shard::RelationshipPropertyDeleteViaLua, this);

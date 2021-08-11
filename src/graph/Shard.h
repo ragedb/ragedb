@@ -526,6 +526,8 @@ namespace ragedb {
         // Node Properties
         sol::object NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property);
         sol::object NodePropertyGetByIdViaLua(uint64_t id, const std::string& property);
+        sol::object NodePropertiesGetViaLua(const std::string& type, const std::string& key);
+        sol::object NodePropertiesGetByIdViaLua(uint64_t id);
         bool NodePropertySetViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value);
         bool NodePropertySetByIdViaLua(uint64_t id, const std::string& property, const sol::object& value);
         bool NodePropertiesSetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
@@ -556,6 +558,7 @@ namespace ragedb {
 
         // Relationship Properties
         sol::object RelationshipPropertyGetViaLua(uint64_t id, const std::string& property);
+        sol::object RelationshipPropertiesGetViaLua(uint64_t id);
         bool RelationshipPropertySetViaLua(uint64_t id, const std::string& property, const sol::object& value);
         bool RelationshipPropertySetFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value);
         bool RelationshipPropertyDeleteViaLua(uint64_t id, const std::string& property);

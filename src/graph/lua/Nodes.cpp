@@ -62,6 +62,16 @@ namespace ragedb {
         return NodeGetKeyPeered(id).get0();
     }
 
+    sol::object Shard::NodePropertiesGetViaLua(const std::string& type, const std::string& key) {
+        Node node = NodeGetPeered(type, key).get0();
+        return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
+    }
+
+    sol::object Shard::NodePropertiesGetByIdViaLua(uint64_t id) {
+        Node node = NodeGetPeered(id).get0();
+        return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
+    }
+
     sol::object Shard::NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property) {
         std::any value = NodePropertyGetPeered(type, key, property).get0();
 
