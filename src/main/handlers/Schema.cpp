@@ -236,7 +236,9 @@ Schema::GetNodeTypePropertyHandler::handle([[maybe_unused]] const sstring &path,
 
     if(valid_type && valid_property) {
         std::string data_type = parent.graph.shard.local().NodePropertyTypeGet(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]);
-        rep->write_body("json", json::stream_object(data_type));
+        json_properties_builder json;
+        json.add_property(req->param[Utilities::PROPERTY], data_type);
+        rep->write_body("json", sstring(json.as_json()));
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
@@ -289,7 +291,9 @@ Schema::GetRelationshipTypePropertyHandler::handle([[maybe_unused]] const sstrin
 
     if(valid_type && valid_property) {
         std::string data_type = parent.graph.shard.local().RelationshipPropertyTypeGet(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]);
-        rep->write_body("json", json::stream_object(data_type));
+        json_properties_builder json;
+        json.add_property(req->param[Utilities::PROPERTY], data_type);
+        rep->write_body("json", sstring(json.as_json()));
     }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
