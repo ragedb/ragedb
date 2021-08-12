@@ -129,8 +129,6 @@ namespace ragedb {
             return local_shard.ValidNodeId(external_id);
         }).then([node_shard_id, external_id, this] (bool valid) {
             if(valid) {
-                uint64_t internal_id = externalToInternal(external_id);
-
                 seastar::future<std::vector<bool>> incoming = container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
                     return local_shard.NodeRemoveGetIncoming(external_id);
                 }).then([external_id, this] (auto sharded_grouped_rels) {
@@ -146,7 +144,7 @@ namespace ragedb {
                     return seastar::when_all_succeed(p->begin(), p->end());
                 });
 
-                seastar::future<std::vector<bool>> outgoing = container().invoke_on(shard_id, [external_id] (Shard &local_shard) {
+                seastar::future<std::vector<bool>> outgoing = container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
                     return local_shard.NodeRemoveGetOutgoing(external_id);
                 }).then([external_id, this] (auto sharded_grouped_rels) {
                     std::vector<seastar::future<bool>> futures;
