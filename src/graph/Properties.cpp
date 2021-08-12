@@ -206,6 +206,7 @@ namespace ragedb {
             removePropertyTypeVectors(key, types[key]);
             types.erase(key);
             deleted.erase(key);
+            return true;
         }
         return false;
     }

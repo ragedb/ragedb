@@ -413,7 +413,7 @@ namespace ragedb {
 
     bool RelationshipTypes::deleteTypeProperty(uint16_t type_id, const std::string &property) {
         if (ValidTypeId(type_id) ) {
-            properties[type_id].removePropertyType(property);
+            return properties[type_id].removePropertyType(property);
         }
 
         return false;
