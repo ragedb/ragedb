@@ -150,10 +150,10 @@ private:
 
     GetNodePropertiesHandler getNodePropertiesHandler;
     GetNodePropertiesByIdHandler getNodePropertiesByIdHandler;
-    PostNodePropertiesHandler putNodePropertiesHandler;
-    PutNodePropertiesByIdHandler putNodePropertiesByIdHandler;
-    PutNodePropertiesHandler postNodePropertiesHandler;
+    PostNodePropertiesHandler postNodePropertiesHandler;
+    PutNodePropertiesHandler putNodePropertiesHandler;
     PostNodePropertiesByIdHandler postNodePropertiesByIdHandler;
+    PutNodePropertiesByIdHandler putNodePropertiesByIdHandler;
     DeleteNodePropertiesHandler deleteNodePropertiesHandler;
     DeleteNodePropertiesByIdHandler deleteNodePropertiesByIdHandler;
 
@@ -162,8 +162,8 @@ public:
                                             putNodePropertyHandler(*this), putNodePropertyByIdHandler(*this),
                                             deleteNodePropertyHandler(*this), deleteNodePropertyByIdHandler(*this),
                                             getNodePropertiesHandler(*this), getNodePropertiesByIdHandler(*this),
-                                            putNodePropertiesHandler(*this), putNodePropertiesByIdHandler(*this),
-                                            postNodePropertiesHandler(*this), postNodePropertiesByIdHandler(*this),
+                                            postNodePropertiesHandler(*this), putNodePropertiesHandler(*this),
+                                            postNodePropertiesByIdHandler(*this), putNodePropertiesByIdHandler(*this),
                                             deleteNodePropertiesHandler(*this), deleteNodePropertiesByIdHandler(*this) {}
     void set_routes(routes& routes);
 };
