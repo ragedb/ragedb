@@ -42,6 +42,10 @@ namespace ragedb {
         type_to_id.clear();
         id_to_type.clear();
         id_to_type.shrink_to_fit();
+        starting_node_ids.clear();
+        starting_node_ids.shrink_to_fit();
+        ending_node_ids.clear();
+        ending_node_ids.shrink_to_fit();
         properties.clear();
         properties.shrink_to_fit();
         deleted_ids.clear();

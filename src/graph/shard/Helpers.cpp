@@ -43,6 +43,9 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(external_id);
         uint16_t node_type_id = externalToTypeId(external_id);
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> relationships_to_delete;
+        for (int i = 0; i < cpus; i++) {
+            relationships_to_delete.insert({i, std::map<uint16_t, std::vector<uint64_t>>() });
+        }
 
         // Go through all the outgoing relationships and return the counterparts that I do not own
         for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
@@ -62,12 +65,15 @@ namespace ragedb {
                 }
 
                 for (int i = 0; i < cpus; i++) {
-                    if(node_ids.at(i).empty()) {
-                        node_ids.erase(i);
+                    if(!node_ids.at(i).empty()) {
+                        relationships_to_delete[i].insert({ rel_type, node_ids.at(i) });
                     }
                 }
-
-                relationships_to_delete.insert({ rel_type, node_ids });
+            }
+        }
+        for (int i = 0; i < cpus; i++) {
+            if(relationships_to_delete[i].empty()) {
+                relationships_to_delete.erase(i);
             }
         }
 
@@ -78,13 +84,16 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(external_id);
         uint16_t node_type_id = externalToTypeId(external_id);
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> relationships_to_delete;
+        for (int i = 0; i < cpus; i++) {
+            relationships_to_delete.insert({i, std::map<uint16_t, std::vector<uint64_t>>() });
+        }
 
         // Go through all the incoming relationships and return the counterparts that I do not own
-        for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+        for (auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
             // Get the Relationship Type of the list
-            uint16_t rel_type = types.rel_type_id;
+            uint16_t rel_type = group.rel_type_id;
 
-            for (Link link : types.links) {
+            for (Link link : group.links) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
                 for (int i = 0; i < cpus; i++) {
                     node_ids.insert({ i, std::vector<uint64_t>() });
@@ -97,12 +106,16 @@ namespace ragedb {
                 }
 
                 for (int i = 0; i < cpus; i++) {
-                    if(node_ids.at(i).empty()) {
-                        node_ids.erase(i);
+                    if(!node_ids.at(i).empty()) {
+                        relationships_to_delete[i].insert({ rel_type, node_ids.at(i) });
                     }
                 }
 
-                relationships_to_delete.insert({ rel_type, node_ids });
+            }
+        }
+        for (int i = 0; i < cpus; i++) {
+            if(relationships_to_delete[i].empty()) {
+                relationships_to_delete.erase(i);
             }
         }
 

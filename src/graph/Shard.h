@@ -329,6 +329,8 @@ namespace ragedb {
         seastar::future<std::vector<Node>> NodesGetPeered(const std::vector<uint64_t> &ids);
         seastar::future<bool> NodeRemovePeered(const std::string& type, const std::string& key);
         seastar::future<bool> NodeRemovePeered(uint64_t id);
+        seastar::future<bool> NodeRemovePeeredIncoming(uint16_t node_shard_id, uint64_t external_id);
+        seastar::future<bool> NodeRemovePeeredOutgoing(uint16_t node_shard_id, uint64_t external_id);
         seastar::future<uint16_t> NodeGetTypeIdPeered(uint64_t id);
         seastar::future<std::string> NodeGetTypePeered(uint64_t id);
         seastar::future<std::string> NodeGetKeyPeered(uint64_t id);
