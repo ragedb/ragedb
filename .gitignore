@@ -1,12 +1,15 @@
-#Coveralls
+# Visual Studio
+.vscode/
+
+# Coveralls
 .coveralls.yml
 
-#CLion
+# CLion
 .idea
 *.PVS-Studio.cfg
 *.PVS-Studio.i
 
-#PVS Studio
+# PVS Studio
 .PVS-Studio/
 strace_out
 

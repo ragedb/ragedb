@@ -106,11 +106,15 @@ future<std::unique_ptr<reply>> RelationshipProperties::DeleteRelationshipPropert
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
-        return parent.graph.shard.local().RelationshipPropertyDeletePeered(id, req->param.at(Utilities::PROPERTY))
-                .then([rep = std::move(rep)] (const std::any& property) mutable {
-                    Utilities::convert_property_to_json(rep, property);
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                });
+        return parent.graph.shard.local().RelationshipPropertyDeletePeered(id, req->param[Utilities::PROPERTY])
+                .then([rep = std::move(rep)] (bool success) mutable {
+                   if(success) {
+                       rep->set_status(reply::status_type::no_content);
+                    } else {
+                       rep->set_status(reply::status_type::not_modified);
+                    }
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
     }
 
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
