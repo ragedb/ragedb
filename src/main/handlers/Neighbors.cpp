@@ -91,7 +91,7 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsHandler::handle([[maybe_un
             case 2: {
                 // Get Node Neighbors with Direction and Type(s)
                 std::vector<std::string> rel_types;
-                boost::split(rel_types, options[1], [](char c){ return c == '&'; });
+                boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
                 // Single Relationship Type
                 if (rel_types.size() == 1) {
                     return parent.graph.shard.local().NodeGetNeighborsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types[0])
@@ -181,7 +181,7 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsByIdHandler::handle([[mayb
         case 2: {
             // Get Node Neighbors with Direction and Type(s)
             std::vector<std::string> rel_types;
-            boost::split(rel_types, options[1], [](char c){ return c == '&'; });
+            boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
             // Single Relationship Type
             if (rel_types.size() == 1) {
                 return parent.graph.shard.local().NodeGetNeighborsPeered(id, direction, rel_types[0])

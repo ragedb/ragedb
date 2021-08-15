@@ -83,7 +83,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
             case 2: {
                 // Get Node Degree with Direction and Type(s)
                 std::vector<std::string> rel_types;
-                boost::split(rel_types, options[1], [](char c){ return c == '&'; });
+                boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
                 // Single Relationship Type
                 if (rel_types.size() == 1) {
                     return parent.graph.shard.local().NodeGetDegreePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types[0])
@@ -161,7 +161,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
         case 2: {
             // Get Node Degree with Direction and Type(s)
             std::vector<std::string> rel_types;
-            boost::split(rel_types, options[1], [](char c){ return c == '&'; });
+            boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
             // Single Relationship Type
             if (rel_types.size() == 1) {
                 return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0])

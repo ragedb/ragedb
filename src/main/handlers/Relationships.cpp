@@ -58,6 +58,13 @@ void Relationships::set_routes(routes &routes) {
     deleteRelationship->add_param("id");
     routes.add(deleteRelationship, operation_type::DELETE);
 
+    auto getRelationshipsById = new match_rule(&getNodeRelationshipsByIdHandler);
+    getRelationshipsById->add_str("/db/" + graph.GetName() + "/node");
+    getRelationshipsById->add_param("id");
+    getRelationshipsById->add_str("/relationships");
+    getRelationshipsById->add_param("options", true);
+    routes.add(getRelationshipsById, operation_type::GET);
+
     auto getNodeRelationships = new match_rule(&getNodeRelationshipsHandler);
     getNodeRelationships->add_str("/db/" + graph.GetName() + "/node");
     getNodeRelationships->add_param("type");
@@ -65,13 +72,6 @@ void Relationships::set_routes(routes &routes) {
     getNodeRelationships->add_str("/relationships");
     getNodeRelationships->add_param("options", true);
     routes.add(getNodeRelationships, operation_type::GET);
-
-    auto getRelationshipsById = new match_rule(&getNodeRelationshipsByIdHandler);
-    getRelationshipsById->add_str("/db/" + graph.GetName() + "/node");
-    getRelationshipsById->add_param("id");
-    getRelationshipsById->add_str("/relationships");
-    getRelationshipsById->add_param("options", true);
-    routes.add(getRelationshipsById, operation_type::GET);
 }
 
 future<std::unique_ptr<reply>> Relationships::GetRelationshipsHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
@@ -120,14 +120,12 @@ future<std::unique_ptr<reply>> Relationships::GetRelationshipHandler::handle([[m
     if (id > 0) {
         return parent.graph.shard.local().RelationshipGetPeered(id)
                 .then([rep = std::move(rep)] (Relationship relationship) mutable {
-                    if (relationship.getId() > 0) {
-                        rep->write_body("json", json::stream_object((relationship_json(relationship))));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                    } else {
-                        rep->write_body("json", json::stream_object("Invalid id"));
-                        rep->set_status(reply::status_type::bad_request);
+                    if (relationship.getId() == 0) {
+                        rep->set_status(reply::status_type::not_found);
                         return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                     }
+                    rep->write_body("json", json::stream_object((relationship_json(relationship))));
+                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                 });
     }
 
@@ -309,7 +307,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handl
             case 2: {
                 // Get Node Degree with Direction and Type(s)
                 std::vector<std::string> rel_types;
-                boost::split(rel_types, options[1], [](char c){ return c == '&'; });
+                // Deal with both escaped and unescaped "&"
+                boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
                 // Single Relationship Type
                 if (rel_types.size() == 1) {
                     return parent.graph.shard.local().NodeGetRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types[0])
@@ -401,7 +400,7 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
             case 2: {
                 // Get Node Degree with Direction and Type(s)
                 std::vector<std::string> rel_types;
-                boost::split(rel_types, options[1], [](char c){ return c == '&'; });
+                boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
                 // Single Relationship Type
                 if (rel_types.size() == 1) {
                     return parent.graph.shard.local().NodeGetRelationshipsPeered(id, direction, rel_types[0])

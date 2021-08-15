@@ -204,8 +204,12 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertyHandler::handle
     if(valid_type && valid_key && valid_property) {
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertyDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY]);
-        }).then([rep = std::move(rep)] (const std::any& property) mutable {
-            Utilities::convert_property_to_json(rep, property);
+        }).then([rep = std::move(rep)] (bool success) mutable {
+            if(success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
         });
     }
@@ -222,8 +226,12 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertyByIdHandler::ha
 
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertyDelete(id, req->param[Utilities::PROPERTY]);
-        }).then([rep = std::move(rep)] (const std::any& property) mutable {
-            Utilities::convert_property_to_json(rep, property);
+        }).then([rep = std::move(rep)] (bool success) mutable {
+            if(success) {
+                rep->set_status(reply::status_type::no_content);
+            } else {
+                rep->set_status(reply::status_type::not_modified);
+            }
             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
         });
     }

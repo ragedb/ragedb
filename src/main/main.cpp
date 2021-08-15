@@ -73,12 +73,13 @@ int main(int argc, char** argv) {
                 Neighbors neighbors(graph);
                 Lua lua(graph);
 
+
                 server->set_routes([&relationshipProperties](routes& r) { relationshipProperties.set_routes(r); }).get();
                 server->set_routes([&nodeProperties](routes& r) { nodeProperties.set_routes(r); }).get();
                 server->set_routes([&degrees](routes& r) { degrees.set_routes(r); }).get();
                 server->set_routes([&neighbors](routes& r) { neighbors.set_routes(r); }).get();
-                server->set_routes([&nodes](routes& r) { nodes.set_routes(r); }).get();
                 server->set_routes([&relationships](routes& r) { relationships.set_routes(r); }).get();
+                server->set_routes([&nodes](routes& r) { nodes.set_routes(r); }).get();
                 server->set_routes([&schema](routes& r) { schema.set_routes(r); }).get();
                 server->set_routes([&lua](routes& r) { lua.set_routes(r); }).get();
                 server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();

@@ -24,6 +24,7 @@
 #include <seastar/http/json_path.hh>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace seastar;
 using namespace httpd;
