@@ -83,7 +83,7 @@ jobs:
       - name: Integration    
         working-directory: ${{github.workspace}}/build
         run: |
-          ./ragedb &
+          ./bin/ragedb &
           sleep 10s
           mvn -f ../rage-assured/ test
         
