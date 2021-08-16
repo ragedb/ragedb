@@ -79,14 +79,6 @@ jobs:
           cmakeAppendedArgs: '-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache'
           buildWithCMake: true
           buildDirectory: '${{ github.workspace }}/build'
-          
-      - name: Integration    
-        working-directory: ${{github.workspace}}/build
-        run: |
-          ./bin/ragedb &
-          sleep 10s
-          mvn -f ../rage-assured/ test
-          killall -2 ragedb
         
       - name: Test
         working-directory: ${{github.workspace}}/build
