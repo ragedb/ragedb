@@ -77,7 +77,6 @@ SCENARIO( "Node can be created", "[node]" ) {
                 REQUIRE(std::any_cast<std::_Bit_reference>(with_properties.getProperty("valid")));
                 REQUIRE(std::any_cast<std::vector<std::string>>(with_properties.getProperty("nicknames")) == nicknames);
                 REQUIRE(!with_properties.getProperty("not_there").has_value());
-
             }
         }
         WHEN("we print a nothing node") {

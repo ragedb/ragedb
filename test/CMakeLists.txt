@@ -9,9 +9,13 @@ add_library(catch_main STATIC catch_main.cpp)
 target_link_libraries(catch_main PUBLIC CONAN_PKG::catch2)
 target_link_libraries(catch_main PRIVATE project_options)
 
-add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.cpp Properties.cpp shard/Shards.cpp shard/Nodes.cpp shard/AllNodes.cpp shard/AllRelationships.cpp shard/NodeDegrees.cpp shard/NodeProperties.cpp shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp Link.cpp Node.cpp)
-target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph)
+find_package(Seastar REQUIRED)
 
+
+
+add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.cpp Properties.cpp shard/Shards.cpp shard/Nodes.cpp shard/AllNodes.cpp shard/AllRelationships.cpp shard/NodeDegrees.cpp shard/NodeProperties.cpp shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp Link.cpp Node.cpp Graph.cpp)
+target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph Seastar::seastar)
+target_include_directories(tests PRIVATE ../src/graph ../src/graph/lua ../src/graph/peered ../src/graph/shard ../src/main ../src/main/handlers ../src/main/json ../src/main/util)
 # automatically discover tests that are defined in catch based test files you can modify the unittests. Set TEST_PREFIX
 # to whatever you want, or use different for different binaries
 catch_discover_tests(
