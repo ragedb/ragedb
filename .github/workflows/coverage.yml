@@ -86,6 +86,7 @@ jobs:
           ./bin/ragedb &
           sleep 10s
           mvn -f ../rage-assured/ test
+          killall -2 ragedb
         
       - name: Test
         working-directory: ${{github.workspace}}/build
