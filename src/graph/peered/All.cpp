@@ -25,7 +25,7 @@ namespace ragedb {
         std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
         for (int i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
-                return local_shard.AllNodeIdCounts();
+                return local_shard.NodeCounts();
             });
             futures.push_back(std::move(future));
         }
@@ -85,7 +85,7 @@ namespace ragedb {
         std::vector<seastar::future<uint64_t>> futures;
         for (int i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [node_type_id] (Shard &local_shard) mutable {
-                return local_shard.AllNodeIdCounts(node_type_id);
+                return local_shard.NodeCount(node_type_id);
             });
             futures.push_back(std::move(future));
         }
@@ -139,7 +139,7 @@ namespace ragedb {
         std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
         for (int i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
-                return local_shard.AllNodeIdCounts();
+                return local_shard.NodeCounts();
             });
             futures.push_back(std::move(future));
         }
@@ -198,7 +198,7 @@ namespace ragedb {
         std::vector<seastar::future<uint64_t>> futures;
         for (int i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [node_type_id] (Shard &local_shard) mutable {
-                return local_shard.AllNodeIdCounts(node_type_id);
+                return local_shard.NodeCount(node_type_id);
             });
             futures.push_back(std::move(future));
         }

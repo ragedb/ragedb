@@ -8,7 +8,9 @@ set(HEADER_FILES
         NodeTypes.h
         RelationshipTypes.h
         Properties.h
-        Direction.h)
+        Direction.h
+        Operation.h
+        Expression.h)
 
 set(SOURCE_FILES
         Graph.cpp
@@ -20,8 +22,9 @@ set(SOURCE_FILES
         NodeTypes.cpp
         RelationshipTypes.cpp
         Properties.cpp
-        shard/Ids.cpp shard/Types.cpp shard/Nodes.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Helpers.cpp
+        shard/Ids.cpp shard/Types.cpp shard/Nodes.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Find.cpp shard/Helpers.cpp
         peered/Types.cpp peered/Nodes.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp
-        lua/Types.cpp lua/Nodes.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp)
+        lua/Types.cpp lua/Nodes.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp
+        )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

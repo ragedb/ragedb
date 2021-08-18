@@ -325,6 +325,99 @@ namespace ragedb {
         return allNodes;
     }
 
+    uint64_t NodeTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, std::any value) {
+        uint64_t count = 0;
+        if (ValidTypeId(type_id)) {
+            uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+            uint64_t max_id = key_to_node_id[type_id].size();
+
+            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                // If the node has been deleted, ignore it
+                if (deleted_ids[type_id].contains(internal_id)) {
+                    continue;
+                }
+                // If the operation is to check for [not]null add to the count if it's [not]deleted
+                bool isDeleted = properties[type_id].isDeleted(property, internal_id);
+                // zero is true, 1 is false, so we can just add the inverse
+                if(operation == Operation::IS_NULL) {
+                    count += !isDeleted;
+                    continue;
+                }
+                if(operation == Operation::NOT_IS_NULL) {
+                    count += isDeleted;
+                    continue;
+                }
+
+                // If the property has been deleted, ignore it
+                if (isDeleted) {
+                    continue;
+                }
+
+                switch (property_type_id) {
+                    case Properties::getBooleanPropertyType(): {
+                        if (Properties::isBooleanProperty(value)) {
+                            count += !Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), std::any_cast<bool>(value) );
+                        }
+                        break;
+                    }
+                    case Properties::getIntegerPropertyType(): {
+                        if (Properties::isIntegerProperty(value)) {
+                            count += !Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), std::any_cast<int64_t>(value) );
+                        }
+                        break;
+                    }
+                    case Properties::getDoublePropertyType(): {
+                        if (Properties::isDoubleProperty(value)) {
+                            count += !Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), std::any_cast<double>(value) );
+                        }
+                        break;
+                    }
+                    case Properties::getStringPropertyType(): {
+                        if (Properties::isStringProperty(value)) {
+                            count += !Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), std::any_cast<std::string>(value) );
+                        }
+                        break;
+                    }
+                    case Properties::getBooleanListPropertyType(): {
+                        if (Properties::isBooleanListProperty(value)) {
+                            count += !Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), std::any_cast<std::vector<bool>>(value) );
+                            }
+                            break;
+                        }
+                        case Properties::getIntegerListPropertyType(): {
+                            if (Properties::isIntegerListProperty(value)) {
+                                count += !Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), std::any_cast<std::vector<int64_t>>(value) );
+                            }
+                            break;
+                        }
+                        case Properties::getDoubleListPropertyType(): {
+                            if (Properties::isDoubleListProperty(value)) {
+                                count += !Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), std::any_cast<std::vector<double>>(value) );
+                            }
+                            break;
+                        }
+                        case Properties::getStringListPropertyType(): {
+                            if (Properties::isStringListProperty(value)) {
+                                count += !Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), std::any_cast<std::vector<std::string>>(value) );
+                            }
+                            break;
+                        }
+                    default: {
+                        break;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value) {
+        std::vector<uint64_t>  ids;
+
+        return ids;
+    }
+
+
     std::vector<uint64_t>  NodeTypes::getDeletedIds() const {
         std::vector<uint64_t>  allIds;
         // links are internal links, we need to switch to external links

@@ -20,9 +20,11 @@
 #include <cstdint>
 #include <roaring/roaring64map.hh>
 #include <set>
+#include "Expression.h"
 #include "Group.h"
 #include "Node.h"
 #include "Properties.h"
+#include "Operation.h"
 
 namespace ragedb {
 
@@ -63,6 +65,9 @@ namespace ragedb {
         std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
         std::vector<Node> getNodes(uint64_t skip, uint64_t limit);
         std::vector<Node> getNodes(uint16_t type_id, uint64_t skip, uint64_t limit);
+
+        uint64_t findCount(uint16_t type_id, const std::string &property, Operation operation, std::any value);
+        std::vector<uint64_t> findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value);
 
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);

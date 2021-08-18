@@ -44,6 +44,16 @@ namespace ragedb {
 
         const std::any tombstone_any = std::any();
 
+        const bool tombstone_boolean = false;
+        const int64_t tombstone_int = std::numeric_limits<int64_t>::min();
+        const double tombstone_double = std::numeric_limits<double>::min();
+        const std::string tombstone_string = std::string("");
+
+        const std::vector<bool> tombstone_list_of_booleans = std::vector<bool>();
+        const std::vector<int64_t> tombstone_list_of_ints = std::vector<int64_t>();
+        const std::vector<double> tombstone_list_of_doubles = std::vector<double>();
+        const std::vector<std::string> tombstone_list_of_strings = std::vector<std::string>();
+
         void addPropertyTypeVectors(const std::string &key, uint8_t type_id);
         void removePropertyTypeVectors(const std::string &key, uint8_t type_id);
 
@@ -70,9 +80,29 @@ namespace ragedb {
 
         std::map<std::string, std::any> getProperties(uint64_t);
         std::any getProperty(const std::string&, uint64_t);
+        bool isDeleted(const std::string&, uint64_t);
+
+        bool getBooleanProperty(const std::string&, uint64_t);
+        int64_t getIntegerProperty(const std::string&, uint64_t);
+        double getDoubleProperty(const std::string&, uint64_t);
+        std::string getStringProperty(const std::string&, uint64_t);
+
+        std::vector<bool> getListOfBooleanProperty(const std::string&, uint64_t);
+        std::vector<int64_t> getListOfIntegerProperty(const std::string&, uint64_t);
+        std::vector<double> getListOfDoubleProperty(const std::string&, uint64_t);
+        std::vector<std::string> getListOfStringProperty(const std::string&, uint64_t);
 
         bool deleteProperty(const std::string&, uint64_t);
         bool deleteProperties(uint64_t);
+
+        bool static isBooleanProperty(std::any value);
+        bool static isIntegerProperty(std::any value);
+        bool static isDoubleProperty(std::any value);
+        bool static isStringProperty(std::any value);
+        bool static isBooleanListProperty(std::any value);
+        bool static isIntegerListProperty(std::any value);
+        bool static isDoubleListProperty(std::any value);
+        bool static isStringListProperty(std::any value);
 
         constexpr static uint16_t getBooleanPropertyType() {
             return 1;

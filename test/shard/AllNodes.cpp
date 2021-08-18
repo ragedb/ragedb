@@ -44,18 +44,18 @@ SCENARIO( "Shard can handle All Nodes", "[node]" ) {
             shard.NodeAddEmpty(2, "two");
 
             THEN( "the shard should get the right node counts" ) {
-                auto counts = shard.AllNodeIdCounts();
+                auto counts = shard.NodeCounts();
                 REQUIRE(counts.at(1) == 6);
                 REQUIRE(counts.at(2) == 2);
 
-                REQUIRE(shard.AllNodeIdCounts(1) == 6);
-                REQUIRE(shard.AllNodeIdCounts(2) == 2);
+                REQUIRE(shard.NodeCount(1) == 6);
+                REQUIRE(shard.NodeCount(2) == 2);
 
-                REQUIRE(shard.AllNodeIdCounts("Node") == 6);
-                REQUIRE(shard.AllNodeIdCounts("User") == 2);
+                REQUIRE(shard.NodeCount("Node") == 6);
+                REQUIRE(shard.NodeCount("User") == 2);
 
-                REQUIRE(shard.AllNodeIdCounts(99) == 0);
-                REQUIRE(shard.AllNodeIdCounts("Wrong") == 0);
+                REQUIRE(shard.NodeCount(99) == 0);
+                REQUIRE(shard.NodeCount("Wrong") == 0);
             }
         }
 
@@ -73,7 +73,7 @@ SCENARIO( "Shard can handle All Nodes", "[node]" ) {
             shard.NodeAddEmpty(2, "two");
 
             THEN( "the shard should get all the node ids" ) {
-                auto it = shard.AllNodeIdCounts();
+                auto it = shard.NodeCounts();
                 uint64_t counter = 0;
                 for( auto [k, v] : it) {
                     counter += v;
@@ -99,8 +99,8 @@ SCENARIO( "Shard can handle All Nodes", "[node]" ) {
 
             THEN( "the shard should get all the node ids by type" ) {
 
-                REQUIRE(shard.AllNodeIdCounts("User") == 2);
-                REQUIRE(shard.AllNodeIdCounts("Node") == 6);
+                REQUIRE(shard.NodeCount("User") == 2);
+                REQUIRE(shard.NodeCount("Node") == 6);
             }
         }
 

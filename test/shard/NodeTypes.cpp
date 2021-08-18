@@ -153,6 +153,26 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
                 REQUIRE(node3id == shard.NodeGetID("Node", "three"));
             }
         }
+
+        WHEN("find count of nodes") {
+            shard.NodeTypeInsert("Person", 2);
+            shard.NodePropertyTypeAdd(2, "name", 4);
+            shard.NodePropertyTypeAdd(2, "age", 2);
+            shard.NodePropertyTypeAdd(2, "weight", 3);
+            shard.NodePropertyTypeAdd(2, "active", 1);
+            shard.NodePropertyTypeAdd(2, "vector", 6);
+            shard.NodeAdd(2, "one", R"({ "name":"max", "age":99, "weight":230.5, "active":true, "vector":[1,2,3,4] })");
+            shard.NodeAdd(2, "two", R"({ "name":"max", "age":99, "weight":230.5, "active":true, "vector":[1,2,3,4] })");
+            shard.NodeAdd(2, "three", R"({ "name":"alex", "age":55, "weight":199, "active":false, "vector":[1,2] })");
+            shard.NodeAdd(2, "four", R"({ "name":"alex", "age":55, "weight":199, "active":false, "vector":[3,4] })");
+
+            THEN("find the count of the nodes") {
+                std::any value = int64_t(55);
+                uint64_t find_eq_integer = shard.FindNodeCount(2, "age", ragedb::Operation::EQ, value);
+                REQUIRE(find_eq_integer == 2);
+
+            }
+        }
     }
 
 }

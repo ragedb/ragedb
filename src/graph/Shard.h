@@ -27,6 +27,7 @@
 #include <tsl/sparse_map.h>
 #include "Direction.h"
 #include "Node.h"
+#include "Operation.h"
 #include "Relationship.h"
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
@@ -265,9 +266,9 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         // All
-        std::map<uint16_t, uint64_t> AllNodeIdCounts();
-        uint64_t AllNodeIdCounts(const std::string& type);
-        uint64_t AllNodeIdCounts(uint16_t type_id);
+        std::map<uint16_t, uint64_t> NodeCounts();
+        uint64_t NodeCount(const std::string& type);
+        uint64_t NodeCount(uint16_t type_id);
 
         std::vector<uint64_t> AllNodeIds(uint64_t skip = SKIP, uint64_t limit = LIMIT);
         std::vector<uint64_t> AllNodeIds(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
@@ -288,6 +289,13 @@ namespace ragedb {
         std::map<uint16_t, uint64_t> AllRelationshipIdCounts();
         uint64_t AllRelationshipIdCounts(const std::string& type);
         uint64_t AllRelationshipIdCounts(uint16_t type_id);
+
+        // Find
+        uint64_t FindNodeCount(const std::string& type, const std::string& property, Operation operation, std::any value);
+        uint64_t FindNodeCount(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+
+        std::vector<uint64_t> FindNodeIds(const std::string& type, const std::string& property, Operation operation, std::any value);
+        std::vector<uint64_t> FindNodeIds(uint16_t type_id, const std::string& property, Operation operation, std::any value);
 
         // *****************************************************************************************************************************
         //                                               Peered

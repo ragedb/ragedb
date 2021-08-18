@@ -18,16 +18,16 @@
 
 namespace ragedb {
 
-    std::map<uint16_t, uint64_t> Shard::AllNodeIdCounts() {
+    std::map<uint16_t, uint64_t> Shard::NodeCounts() {
         return node_types.getCounts();
     }
 
-    uint64_t Shard::AllNodeIdCounts(const std::string &type) {
+    uint64_t Shard::NodeCount(const std::string &type) {
         uint16_t type_id = node_types.getTypeId(type);
-        return AllNodeIdCounts(type_id);
+        return NodeCount(type_id);
     }
 
-    uint64_t Shard::AllNodeIdCounts(uint16_t type_id) {
+    uint64_t Shard::NodeCount(uint16_t type_id) {
         return node_types.getCount(type_id);
     }
 

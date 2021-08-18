@@ -446,6 +446,13 @@ namespace ragedb {
         return properties;
     }
 
+    bool Properties::isDeleted(const std::string& key, uint64_t index) {
+        if (types.find(key) != types.end()) {
+            return deleted[key].contains(index);
+        }
+        return true;
+    }
+
     std::any Properties::getProperty(const std::string& key, uint64_t index) {
         if (types.find(key) != types.end()) {
             if (!deleted[key].contains(index)) {
@@ -509,6 +516,94 @@ namespace ragedb {
         return tombstone_any;
     }
 
+    bool Properties::getBooleanProperty(const std::string& key, uint64_t index) {
+        auto search = booleans.find(key);
+
+        if (search != booleans.end()) {
+            if (index < booleans[key].size() ) {
+                return booleans[key][index];
+            }
+        }
+        return tombstone_boolean;
+    }
+
+    int64_t Properties::getIntegerProperty(const std::string& key, uint64_t index) {
+        auto search = integers.find(key);
+
+        if (search != integers.end()) {
+            if (index < integers[key].size() ) {
+                return integers[key][index];
+            }
+        }
+        return tombstone_int;
+    }
+
+    double Properties::getDoubleProperty(const std::string& key, uint64_t index) {
+        auto search = doubles.find(key);
+
+        if (search != doubles.end()) {
+            if (index < doubles[key].size() ) {
+                return doubles[key][index];
+            }
+        }
+        return tombstone_double;
+    }
+
+    std::string Properties::getStringProperty(const std::string& key, uint64_t index) {
+        auto search = strings.find(key);
+
+        if (search != strings.end()) {
+            if (index < strings[key].size() ) {
+                return strings[key][index];
+            }
+        }
+        return tombstone_string;
+    }
+
+    std::vector<bool> Properties::getListOfBooleanProperty(const std::string& key, uint64_t index) {
+        auto search = booleans_list.find(key);
+
+        if (search != booleans_list.end()) {
+            if (index < booleans_list[key].size() ) {
+                return booleans_list[key][index];
+            }
+        }
+        return tombstone_list_of_booleans;
+    }
+
+    std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string& key, uint64_t index) {
+        auto search = integers_list.find(key);
+
+        if (search != integers_list.end()) {
+            if (index < integers_list[key].size() ) {
+                return integers_list[key][index];
+            }
+        }
+        return tombstone_list_of_ints;
+    }
+
+    std::vector<double> Properties::getListOfDoubleProperty(const std::string& key, uint64_t index) {
+        auto search = doubles_list.find(key);
+
+        if (search != doubles_list.end()) {
+            if (index < doubles_list[key].size() ) {
+                return doubles_list[key][index];
+            }
+        }
+        return tombstone_list_of_doubles;
+    }
+
+    std::vector<std::string> Properties::getListOfStringProperty(const std::string& key, uint64_t index) {
+        auto search = strings_list.find(key);
+
+        if (search != strings_list.end()) {
+            if (index < strings_list[key].size() ) {
+                return strings_list[key][index];
+            }
+        }
+        return tombstone_list_of_strings;
+    }
+
     bool Properties::deleteProperties(uint64_t index) {
         for (auto[key, value] : types) {
             deleted[key].add(index);
@@ -524,4 +619,35 @@ namespace ragedb {
         return false;
     }
 
+    bool Properties::isBooleanProperty(std::any value) {
+        return value.type() == typeid(bool);
+    }
+
+    bool Properties::isIntegerProperty(std::any value) {
+        return value.type() == typeid(int64_t);
+    }
+
+    bool Properties::isDoubleProperty(std::any value) {
+        return value.type() == typeid(double);
+    }
+
+    bool Properties::isStringProperty(std::any value) {
+        return value.type() == typeid(std::string);
+    }
+
+    bool Properties::isBooleanListProperty(std::any value) {
+        return value.type() == typeid(std::vector<bool>);
+    }
+
+    bool Properties::isIntegerListProperty(std::any value) {
+        return value.type() == typeid(std::vector<int64_t>);
+    }
+
+    bool Properties::isDoubleListProperty(std::any value) {
+        return value.type() == typeid(std::vector<double>);
+    }
+
+    bool Properties::isStringListProperty(std::any value) {
+        return value.type() == typeid(std::vector<std::string>);
+    }
 }
