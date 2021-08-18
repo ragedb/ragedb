@@ -486,6 +486,13 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> AllRelationshipsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<Relationship>> AllRelationshipsPeered(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
+        // Find
+        seastar::future<uint64_t> FindNodeCountPeered(const std::string& type, const std::string& property, Operation operation, std::any value);
+        seastar::future<uint64_t> FindNodeCountPeered(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+
+        seastar::future<std::vector<uint64_t>> FindNodeIdsPeered(const std::string& type, const std::string& property, Operation operation, std::any value);
+        seastar::future<std::vector<uint64_t>> FindNodeIdsPeered(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+
         // *****************************************************************************************************************************
         //                                                              Via Lua
         // *****************************************************************************************************************************
