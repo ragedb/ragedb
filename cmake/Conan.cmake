@@ -23,8 +23,8 @@ macro(run_conan)
     luajit/2.0.5
     sol2/3.2.3
     tsl-sparse-map/0.6.2
-    simdjson/0.9.6
-    roaring/0.2.66
+    simdjson/0.9.7
+    roaring/0.3.3
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

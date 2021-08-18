@@ -37,7 +37,7 @@ namespace ragedb {
         std::vector<Properties> properties;                             // Store of the properties of Nodes
         std::vector<std::vector<std::vector<Group>>> outgoing_relationships; // Outgoing relationships of each node
         std::vector<std::vector<std::vector<Group>>> incoming_relationships; // Incoming relationships of each node
-        std::vector<Roaring64Map> deleted_ids; // all links are internal links
+        std::vector<roaring::Roaring64Map> deleted_ids; // all links are internal links
 
         simdjson::dom::parser parser;
         uint shard_id;

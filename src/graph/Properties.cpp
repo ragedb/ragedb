@@ -84,7 +84,7 @@ namespace ragedb {
         }
 
         types.emplace(key, property_type_id);
-        deleted.emplace(key, Roaring64Map());
+        deleted.emplace(key, roaring::Roaring64Map());
 
         addPropertyTypeVectors(key, property_type_id);
 
@@ -194,7 +194,7 @@ namespace ragedb {
         }
 
         types.emplace(key, type_id);
-        deleted.emplace(key, Roaring64Map());
+        deleted.emplace(key, roaring::Roaring64Map());
 
         addPropertyTypeVectors(key, type_id);
 

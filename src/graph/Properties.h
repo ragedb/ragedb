@@ -31,7 +31,7 @@ namespace ragedb {
         tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
         std::vector<std::string> allowed_types;
-        tsl::sparse_map<std::string, Roaring64Map> deleted;
+        tsl::sparse_map<std::string, roaring::Roaring64Map> deleted;
         tsl::sparse_map<std::string, std::vector<bool>> booleans;
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;
         tsl::sparse_map<std::string, std::vector<double>> doubles;

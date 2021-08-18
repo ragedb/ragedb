@@ -32,7 +32,7 @@ namespace ragedb {
         std::vector<std::vector<uint64_t>> starting_node_ids;
         std::vector<std::vector<uint64_t>> ending_node_ids;
         std::vector<Properties> properties;                             // Store of the properties of Relationships
-        std::vector<Roaring64Map> deleted_ids;
+        std::vector<roaring::Roaring64Map> deleted_ids;
 
         simdjson::dom::parser parser;
         uint shard_id;

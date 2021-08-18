@@ -40,7 +40,7 @@ namespace ragedb {
         properties.emplace_back();
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(roaring::Roaring64Map());
     }
 
     void NodeTypes::Clear() {
@@ -68,7 +68,7 @@ namespace ragedb {
         properties.emplace_back();
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(roaring::Roaring64Map());
     }
 
     uint64_t NodeTypes::internalToExternal(uint16_t type_id, uint64_t internal_id) const {
@@ -100,7 +100,7 @@ namespace ragedb {
         properties.emplace_back(Properties());
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(roaring::Roaring64Map());
         return true;
     }
 
@@ -127,7 +127,7 @@ namespace ragedb {
         properties.emplace_back(Properties());
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(Roaring64Map());
+        deleted_ids.emplace_back(roaring::Roaring64Map());
         return type_id;
     }
 
@@ -422,7 +422,7 @@ namespace ragedb {
         std::vector<uint64_t>  allIds;
         // links are internal links, we need to switch to external links
         for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
-            for (Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
+            for (roaring::Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
                 allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
             }
         }
