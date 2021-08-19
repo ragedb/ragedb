@@ -40,17 +40,23 @@ namespace ragedb {
             for (const auto& map : results) {
                 std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
                 for (auto entry : map) {
+                    // If we have no results of this type, skip it
+                    if (entry.second == 0) {
+                        continue;
+                    }
                     next = current + entry.second;
                     if (next > skip) {
-                        std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                         threaded_requests.insert({ entry.first, pair });
-                        if (next <= max) {
+                        if (next > max) {
                             break; // We have everything we need
                         }
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id, threaded_requests});
+                if(!threaded_requests.empty()) {
+                    requests.insert({current_shard_id, threaded_requests});
+                }
                 current_shard_id++;
             }
 
@@ -98,11 +104,16 @@ namespace ragedb {
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
             for (const auto& count : results) {
+                // If we have no results on this shard, skip it
+                if (count == 0) {
+                    current_shard_id++;
+                    continue;
+                }
                 next = current + count;
                 if (next > skip) {
-                    std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                    std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                     requests.insert({ current_shard_id, pair });
-                    if (next <= max) {
+                    if (next > max) {
                         break; // We have everything we need
                     }
                 }
@@ -117,7 +128,6 @@ namespace ragedb {
                     return local_shard.AllNodeIds(node_type_id, request.second.first, request.second.second);
                 });
                 futures.push_back(std::move(future));
-
             }
 
             auto p2 = make_shared(std::move(futures));
@@ -153,17 +163,26 @@ namespace ragedb {
             for (const auto& map : results) {
                 std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
                 for (auto entry : map) {
+                    // If we have no results of this type, skip it
+                    if (entry.second == 0) {
+                        continue;
+                    }
+                    // current is 2, limit is 10, skip 3, entry.second is 15
+                    // skip = skip - current
+
                     uint64_t next = current + entry.second;
                     if (next > skip) {
-                        std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                         threaded_requests.insert({ entry.first, pair });
-                        if (next <= max) {
+                        if (next > max) {
                             break; // We have everything we need
                         }
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id, threaded_requests});
+                if(!threaded_requests.empty()) {
+                    requests.insert({current_shard_id, threaded_requests});
+                }
                 current_shard_id++;
             }
 
@@ -210,11 +229,16 @@ namespace ragedb {
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
             for (const auto& count : results) {
+                // If we have no results on this shard, skip it
+                if (count == 0) {
+                    current_shard_id++;
+                    continue;
+                }
                 uint64_t next = current + count;
                 if (next > skip) {
-                    std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                    std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                     requests.insert({ current_shard_id, pair });
-                    if (next <= max) {
+                    if (next > max) {
                         break; // We have everything we need
                     }
                 }
@@ -244,7 +268,6 @@ namespace ragedb {
         });
     }
 
-
     seastar::future<std::vector<uint64_t>> Shard::AllRelationshipIdsPeered(uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
@@ -267,17 +290,23 @@ namespace ragedb {
             for (const auto& map : results) {
                 std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
                 for (auto entry : map) {
+                    // If we have no results of this type, skip it
+                    if (entry.second == 0) {
+                        continue;
+                    }
                     next = current + entry.second;
                     if (next > skip) {
-                        std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                         threaded_requests.insert({ entry.first, pair });
-                        if (next <= max) {
+                        if (next > max) {
                             break; // We have everything we need
                         }
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id, threaded_requests});
+                if(!threaded_requests.empty()) {
+                    requests.insert({current_shard_id, threaded_requests});
+                }
                 current_shard_id++;
             }
 
@@ -325,11 +354,16 @@ namespace ragedb {
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
             for (const auto& count : results) {
+                // If we have no results on this shard, skip it
+                if (count == 0) {
+                    current_shard_id++;
+                    continue;
+                }
                 next = current + count;
                 if (next > skip) {
-                    std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                    std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                     requests.insert({ current_shard_id, pair });
-                    if (next <= max) {
+                    if (next > max) {
                         break; // We have everything we need
                     }
                 }
@@ -381,17 +415,23 @@ namespace ragedb {
             for (const auto& map : results) {
                 std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
                 for (auto entry : map) {
+                    // If we have no results of this type, skip it
+                    if (entry.second == 0) {
+                        continue;
+                    }
                     next = current + entry.second;
                     if (next > skip) {
-                        std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                         threaded_requests.insert({ entry.first, pair });
-                        if (next <= max) {
+                        if (next > max) {
                             break; // We have everything we need
                         }
                     }
                     current = next;
                 }
-                requests.insert({current_shard_id, threaded_requests});
+                if(!threaded_requests.empty()) {
+                    requests.insert({current_shard_id, threaded_requests});
+                }
                 current_shard_id++;
             }
 
@@ -439,11 +479,16 @@ namespace ragedb {
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
             for (const auto& count : results) {
+                // If we have no results on this shard, skip it
+                if (count == 0) {
+                    current_shard_id++;
+                    continue;
+                }
                 next = current + count;
                 if (next > skip) {
-                    std::pair<uint64_t, uint64_t> pair = std::make_pair(skip - current, limit);
+                    std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
                     requests.insert({ current_shard_id, pair });
-                    if (next <= max) {
+                    if (next > max) {
                         break; // We have everything we need
                     }
                 }

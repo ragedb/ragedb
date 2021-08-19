@@ -198,7 +198,7 @@ namespace ragedb {
     std::vector<uint64_t> NodeTypes::getIds(uint64_t skip, uint64_t limit) const {
         std::vector<uint64_t> allIds;
         int current = 1;
-        // links are internal links, we need to switch to external links
+        // ids are internal ids, we need to switch to external ids
         for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
             uint64_t max_id = key_to_node_id[type_id].size();
             if (deleted_ids[type_id].isEmpty()) {
@@ -233,28 +233,17 @@ namespace ragedb {
         if (ValidTypeId(type_id)) {
             int current = 1;
             uint64_t max_id = key_to_node_id[type_id].size();
-            if (deleted_ids[type_id].isEmpty()) {
-                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
-                    if (current > (skip + limit)) {
-                        return allIds;
-                    }
-                    if (current > skip) {
+
+            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                if (current > (skip + limit)) {
+                    return allIds;
+                }
+                if (current > skip) {
+                    if (!deleted_ids[type_id].contains(internal_id)) {
                         allIds.emplace_back(internalToExternal(type_id, internal_id));
                     }
-                    current++;
                 }
-            } else {
-                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
-                    if (current > (skip + limit)) {
-                        return allIds;
-                    }
-                    if (current > skip) {
-                        if (!deleted_ids[type_id].contains(internal_id)) {
-                            allIds.emplace_back(internalToExternal(type_id, internal_id));
-                        }
-                    }
-                    current++;
-                }
+                current++;
             }
         }
         return allIds;
@@ -338,13 +327,17 @@ namespace ragedb {
                 }
                 // If the operation is to check for [not]null add to the count if it's [not]deleted
                 bool isDeleted = properties[type_id].isDeleted(property, internal_id);
-                // zero is true, 1 is false, so we can just add the inverse
+
                 if(operation == Operation::IS_NULL) {
-                    count += !isDeleted;
+                    if (isDeleted) {
+                        count++;
+                    }
                     continue;
                 }
                 if(operation == Operation::NOT_IS_NULL) {
-                    count += isDeleted;
+                    if (!isDeleted) {
+                        count++;
+                    }
                     continue;
                 }
 
@@ -356,52 +349,68 @@ namespace ragedb {
                 switch (property_type_id) {
                     case Properties::getBooleanPropertyType(): {
                         if (Properties::isBooleanProperty(value)) {
-                            count += !Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), std::any_cast<bool>(value) );
+                            if (Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), std::any_cast<bool>(value))) {
+                                count++;
+                            }
                         }
                         break;
                     }
                     case Properties::getIntegerPropertyType(): {
                         if (Properties::isIntegerProperty(value)) {
-                            count += !Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), std::any_cast<int64_t>(value) );
+                            if (Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), std::any_cast<int64_t>(value))) {
+                                count++;
+                            }
                         }
                         break;
                     }
                     case Properties::getDoublePropertyType(): {
                         if (Properties::isDoubleProperty(value)) {
-                            count += !Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), std::any_cast<double>(value) );
+                            if (Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), std::any_cast<double>(value))) {
+                                count++;
+                            }
                         }
                         break;
                     }
                     case Properties::getStringPropertyType(): {
                         if (Properties::isStringProperty(value)) {
-                            count += !Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), std::any_cast<std::string>(value) );
+                            if (Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), std::any_cast<std::string>(value))) {
+                             count++;
+                            }
                         }
                         break;
                     }
                     case Properties::getBooleanListPropertyType(): {
                         if (Properties::isBooleanListProperty(value)) {
-                            count += !Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), std::any_cast<std::vector<bool>>(value) );
+                            if (Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), std::any_cast<std::vector<bool>>(value))) {
+                                count++;
                             }
-                            break;
                         }
-                        case Properties::getIntegerListPropertyType(): {
-                            if (Properties::isIntegerListProperty(value)) {
-                                count += !Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), std::any_cast<std::vector<int64_t>>(value) );
+                        break;
+                    }
+                    case Properties::getIntegerListPropertyType(): {
+                        if (Properties::isIntegerListProperty(value)) {
+                            if (Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), std::any_cast<std::vector<int64_t>>(value))) {
+                                count++;
                             }
-                            break;
                         }
-                        case Properties::getDoubleListPropertyType(): {
-                            if (Properties::isDoubleListProperty(value)) {
-                                count += !Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), std::any_cast<std::vector<double>>(value) );
+                        break;
+                    }
+                    case Properties::getDoubleListPropertyType(): {
+                        if (Properties::isDoubleListProperty(value)) {
+                            if (Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), std::any_cast<std::vector<double>>(value))) {
+                                count++;
                             }
-                            break;
                         }
-                        case Properties::getStringListPropertyType(): {
-                            if (Properties::isStringListProperty(value)) {
-                                count += !Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), std::any_cast<std::vector<std::string>>(value) );
+                        break;
+                    }
+                    case Properties::getStringListPropertyType(): {
+                        if (Properties::isStringListProperty(value)) {
+                            if (Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), std::any_cast<std::vector<std::string>>(value))) {
+                                count++;
                             }
-                            break;
                         }
+                        break;
+                    }
                     default: {
                         break;
                     }
@@ -411,12 +420,241 @@ namespace ragedb {
         return count;
     }
 
-    std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value) {
+    std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit) {
         std::vector<uint64_t>  ids;
+        if (ValidTypeId(type_id)) {
+            uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+            int current = 1;
+            uint64_t max_id = key_to_node_id[type_id].size();
+            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                // If we reached out limit, return
+                if (current > (skip + limit)) {
+                    return ids;
+                }
+                // If the node has been deleted, ignore it
+                if (deleted_ids[type_id].contains(internal_id)) {
+                    continue;
+                }
+                // If the operation is to check for [not]null add it if it's [not]deleted
+                bool isDeleted = properties[type_id].isDeleted(property, internal_id);
 
+                if(operation == Operation::IS_NULL) {
+                    if (isDeleted) {
+                        ids.emplace_back(internalToExternal(type_id, internal_id));
+                    }
+                    continue;
+                }
+                if(operation == Operation::NOT_IS_NULL) {
+                    if (!isDeleted) {
+                        ids.emplace_back(internalToExternal(type_id, internal_id));
+                    }
+                    continue;
+                }
+
+                // If the property has been deleted, ignore it
+                if (isDeleted) {
+                    continue;
+                }
+
+                // If it's false, ignore it
+                switch (property_type_id) {
+                    case Properties::getBooleanPropertyType(): {
+                        if (Properties::isBooleanProperty(value)) {
+                            if (!Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), std::any_cast<bool>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getIntegerPropertyType(): {
+                        if (Properties::isIntegerProperty(value)) {
+                            if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), std::any_cast<int64_t>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getDoublePropertyType(): {
+                        if (Properties::isDoubleProperty(value)) {
+                            if( !Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), std::any_cast<double>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getStringPropertyType(): {
+                        if (Properties::isStringProperty(value)) {
+                            if (!Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), std::any_cast<std::string>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getBooleanListPropertyType(): {
+                        if (Properties::isBooleanListProperty(value)) {
+                            if (!Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), std::any_cast<std::vector<bool>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getIntegerListPropertyType(): {
+                        if (Properties::isIntegerListProperty(value)) {
+                            if(!Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), std::any_cast<std::vector<int64_t>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getDoubleListPropertyType(): {
+                        if (Properties::isDoubleListProperty(value)) {
+                            if (!Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), std::any_cast<std::vector<double>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getStringListPropertyType(): {
+                        if (Properties::isStringListProperty(value)) {
+                            if (!Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), std::any_cast<std::vector<std::string>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        continue;
+                    }
+                }
+                // If it is true add it if we are over the skip, otherwise ignore it
+                if (current > skip) {
+                    ids.emplace_back(internalToExternal(type_id, internal_id));
+                }
+
+                current++;
+            }
+        }
         return ids;
     }
 
+    std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit) {
+        std::vector<Node>  nodes;
+        if (ValidTypeId(type_id)) {
+            uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+            int current = 1;
+            uint64_t max_id = key_to_node_id[type_id].size();
+            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                // If we reached out limit, return
+                if (current > (skip + limit)) {
+                    return nodes;
+                }
+                // If the node has been deleted, ignore it
+                if (deleted_ids[type_id].contains(internal_id)) {
+                    continue;
+                }
+                // If the operation is to check for [not]null add it if it's [not]deleted
+                bool isDeleted = properties[type_id].isDeleted(property, internal_id);
+
+                if(operation == Operation::IS_NULL) {
+                    if (isDeleted) {
+                        nodes.emplace_back(getNode(type_id, internal_id));
+                        current++;
+                    }
+                    continue;
+                }
+                if(operation == Operation::NOT_IS_NULL) {
+                    if (!isDeleted) {
+                        nodes.emplace_back(getNode(type_id, internal_id));
+                        current++;
+                    }
+                    continue;
+                }
+
+                // If the property has been deleted, ignore it
+                if (isDeleted) {
+                    continue;
+                }
+
+                // If it's false, ignore it
+                switch (property_type_id) {
+                    case Properties::getBooleanPropertyType(): {
+                        if (Properties::isBooleanProperty(value)) {
+                            if (!Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), std::any_cast<bool>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getIntegerPropertyType(): {
+                        if (Properties::isIntegerProperty(value)) {
+                            if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), std::any_cast<int64_t>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getDoublePropertyType(): {
+                        if (Properties::isDoubleProperty(value)) {
+                            if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), std::any_cast<double>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getStringPropertyType(): {
+                        if (Properties::isStringProperty(value)) {
+                            if (!Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), std::any_cast<std::string>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getBooleanListPropertyType(): {
+                        if (Properties::isBooleanListProperty(value)) {
+                            if (!Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), std::any_cast<std::vector<bool>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getIntegerListPropertyType(): {
+                        if (Properties::isIntegerListProperty(value)) {
+                            if(!Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), std::any_cast<std::vector<int64_t>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getDoubleListPropertyType(): {
+                        if (Properties::isDoubleListProperty(value)) {
+                            if (!Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), std::any_cast<std::vector<double>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    case Properties::getStringListPropertyType(): {
+                        if (Properties::isStringListProperty(value)) {
+                            if (!Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), std::any_cast<std::vector<std::string>>(value))) {
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        continue;
+                    }
+                }
+                // If it is true add it if we are over the skip, otherwise ignore it
+                if (current > skip) {
+                    nodes.emplace_back(getNode(type_id, internal_id));
+                }
+
+                current++;
+            }
+        }
+        return nodes;
+    }
 
     std::vector<uint64_t>  NodeTypes::getDeletedIds() const {
         std::vector<uint64_t>  allIds;

@@ -291,11 +291,23 @@ namespace ragedb {
         uint64_t AllRelationshipIdCounts(uint16_t type_id);
 
         // Find
-        uint64_t FindNodeCount(const std::string& type, const std::string& property, Operation operation, std::any value);
-        uint64_t FindNodeCount(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+        uint64_t FindNodeCount(const std::string& type, const std::string& property, const Operation& operation, const std::any& value);
+        uint64_t FindNodeCount(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value);
 
-        std::vector<uint64_t> FindNodeIds(const std::string& type, const std::string& property, Operation operation, std::any value);
-        std::vector<uint64_t> FindNodeIds(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+        std::vector<uint64_t> FindNodeIds(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> FindNodeIds(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        std::vector<Node> FindNodes(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Node> FindNodes(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        uint64_t FindRelationshipCount(const std::string& type, const std::string& property, const Operation& operation, const std::any& value);
+        uint64_t FindRelationshipCount(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value);
+
+        std::vector<uint64_t> FindRelationshipIds(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> FindRelationshipIds(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        std::vector<Node> FindRelationships(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Node> FindRelationships(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -487,11 +499,23 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> AllRelationshipsPeered(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
         // Find
-        seastar::future<uint64_t> FindNodeCountPeered(const std::string& type, const std::string& property, Operation operation, std::any value);
-        seastar::future<uint64_t> FindNodeCountPeered(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+        seastar::future<uint64_t> FindNodeCountPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value);
+        seastar::future<uint64_t> FindNodeCountPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value);
 
-        seastar::future<std::vector<uint64_t>> FindNodeIdsPeered(const std::string& type, const std::string& property, Operation operation, std::any value);
-        seastar::future<std::vector<uint64_t>> FindNodeIdsPeered(uint16_t type_id, const std::string& property, Operation operation, std::any value);
+        seastar::future<std::vector<uint64_t>> FindNodeIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> FindNodeIdsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        seastar::future<std::vector<Node>> FindNodesPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Node>> FindNodesPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        seastar::future<uint64_t> FindRelationshipCountPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value);
+        seastar::future<uint64_t> FindRelationshipCountPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value);
+
+        seastar::future<std::vector<uint64_t>> FindRelationshipIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> FindRelationshipIdsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+
+        seastar::future<std::vector<Node>> FindRelationshipsPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Node>> FindRelationshipsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
         // *****************************************************************************************************************************
         //                                                              Via Lua

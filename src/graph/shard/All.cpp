@@ -31,7 +31,7 @@ namespace ragedb {
         return node_types.getCount(type_id);
     }
 
-    std::vector<uint64_t> Shard::AllNodeIds(uint64_t skip, uint64_t limit ) {
+    std::vector<uint64_t> Shard::AllNodeIds(uint64_t skip, uint64_t limit) {
         return node_types.getIds(skip, limit);
     }
 

@@ -76,9 +76,9 @@ void Relationships::set_routes(routes &routes) {
 
 future<std::unique_ptr<reply>> Relationships::GetRelationshipsHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
     uint64_t limit = Utilities::validate_limit(req, rep);
-    uint64_t offset = Utilities::validate_offset(req, rep);
+    uint64_t skip = Utilities::validate_skip(req, rep);
 
-    return parent.graph.shard.local().AllRelationshipsPeered(offset, limit)
+    return parent.graph.shard.local().AllRelationshipsPeered(skip, limit)
             .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
                 std::vector<relationship_json> json_array;
                 json_array.reserve(relationships.size());
@@ -95,9 +95,9 @@ future<std::unique_ptr<reply>> Relationships::GetRelationshipsOfTypeHandler::han
 
     if(valid_type) {
         uint64_t limit = Utilities::validate_limit(req, rep);
-        uint64_t offset = Utilities::validate_offset(req, rep);
+        uint64_t skip = Utilities::validate_skip(req, rep);
 
-        return parent.graph.shard.local().AllRelationshipsPeered(req->param[Utilities::TYPE], offset, limit)
+        return parent.graph.shard.local().AllRelationshipsPeered(req->param[Utilities::TYPE], skip, limit)
                 .then([rep = std::move(rep)](const std::vector<Relationship>& relationships) mutable {
                     std::vector<relationship_json> json_array;
                     json_array.reserve(relationships.size());

@@ -84,6 +84,14 @@ class Nodes {
         future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
     };
 
+    class FindNodesOfTypeHandler : public httpd::handler_base {
+    public:
+        explicit FindNodesOfTypeHandler(Nodes& nodes) : parent(nodes) {};
+    private:
+        Nodes& parent;
+        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+    };
+
 
 private:
     Graph& graph;
@@ -94,9 +102,12 @@ private:
     PostNodeHandler postNodeHandler;
     DeleteNodeHandler deleteNodeHandler;
     DeleteNodeByIdHandler deleteNodeByIdHandler;
+    FindNodesOfTypeHandler findNodesOfTypeHandler;
 
 public:
-    explicit Nodes(Graph &_graph) : graph(_graph), getNodesHandler(*this), getNodesOfTypeHandler(*this), getNodeHandler(*this), getNodeByIdHandler(*this), postNodeHandler(*this), deleteNodeHandler(*this), deleteNodeByIdHandler(*this) {}
+    explicit Nodes(Graph &_graph) : graph(_graph), getNodesHandler(*this), getNodesOfTypeHandler(*this),
+    getNodeHandler(*this), getNodeByIdHandler(*this), postNodeHandler(*this), deleteNodeHandler(*this),
+    deleteNodeByIdHandler(*this), findNodesOfTypeHandler(*this) {}
     void set_routes(routes& routes);
 };
 

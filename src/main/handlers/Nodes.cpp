@@ -56,13 +56,20 @@ void Nodes::set_routes(routes &routes) {
     deleteNodeById->add_str("/db/" + graph.GetName() + "/node");
     deleteNodeById->add_param("id");
     routes.add(deleteNodeById, operation_type::DELETE);
+
+    auto findNodesOfType = new match_rule(&findNodesOfTypeHandler);
+    findNodesOfType->add_str("/db/" + graph.GetName() + "/nodes");
+    findNodesOfType->add_param("type");
+    findNodesOfType->add_param("property");
+    findNodesOfType->add_param("operation");
+    routes.add(findNodesOfType, operation_type::POST);
 }
 
 future<std::unique_ptr<reply>> Nodes::GetNodesHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+    uint64_t skip = Utilities::validate_skip(req, rep);
     uint64_t limit = Utilities::validate_limit(req, rep);
-    uint64_t offset = Utilities::validate_offset(req, rep);
 
-    return parent.graph.shard.local().AllNodesPeered(offset, limit)
+    return parent.graph.shard.local().AllNodesPeered(skip, limit)
             .then([rep = std::move(rep)](const std::vector<Node>& nodes) mutable {
                 std::vector<node_json> json_array;
                 json_array.reserve(nodes.size());
@@ -78,10 +85,10 @@ future<std::unique_ptr<reply>> Nodes::GetNodesOfTypeHandler::handle([[maybe_unus
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
+        uint64_t skip = Utilities::validate_skip(req, rep);
         uint64_t limit = Utilities::validate_limit(req, rep);
-        uint64_t offset = Utilities::validate_offset(req, rep);
 
-        return parent.graph.shard.local().AllNodesPeered(req->param[Utilities::TYPE], offset, limit)
+        return parent.graph.shard.local().AllNodesPeered(req->param[Utilities::TYPE], skip, limit)
                 .then([rep = std::move(rep)](std::vector<Node> nodes) mutable {
                     std::vector<node_json> json_array;
                     json_array.reserve(nodes.size());
@@ -213,5 +220,33 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unus
         });
     }
 
+    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<reply>> Nodes::FindNodesOfTypeHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
+    ragedb::Operation operation = Utilities::validate_operation(req, rep);
+    std::any value = Utilities::validate_json_property(req, rep);
+
+    if(valid_type && valid_property && (operation != ragedb::Operation::UNKNOWN) && value.has_value()) {
+
+        uint64_t skip = Utilities::validate_skip(req, rep);
+        uint64_t limit = Utilities::validate_limit(req, rep);
+
+        return parent.graph.shard.local().FindNodesPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], operation, value, skip, limit)
+        .then([rep = std::move(rep)](std::vector<Node> nodes) mutable {
+            std::vector<node_json> json_array;
+            json_array.reserve(nodes.size());
+            if (!nodes.empty()) {
+                for(Node node : nodes) {
+                    json_array.emplace_back(node);
+                }
+                rep->write_body("json", json::stream_object(json_array));
+                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            }
+            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+        });
+    }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
