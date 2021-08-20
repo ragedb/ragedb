@@ -228,9 +228,9 @@ future<std::unique_ptr<reply>> Nodes::FindNodesOfTypeHandler::handle([[maybe_unu
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
     ragedb::Operation operation = Utilities::validate_operation(req, rep);
     std::any value = Utilities::validate_json_property(req, rep);
+    bool valid_combination = Utilities::validate_combination(operation, value);
 
-    if(valid_type && valid_property && (operation != ragedb::Operation::UNKNOWN) && value.has_value()) {
-
+    if(valid_type && valid_property && valid_combination) {
         uint64_t skip = Utilities::validate_skip(req, rep);
         uint64_t limit = Utilities::validate_limit(req, rep);
 

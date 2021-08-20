@@ -122,6 +122,16 @@ ragedb::Operation Utilities::validate_operation(std::unique_ptr<request> &req, s
     }
 }
 
+bool Utilities::validate_combination(const ragedb::Operation& operation, const std::any &property) {
+    if (operation == ragedb::Operation::UNKNOWN) {
+        return false;
+    }
+    if (operation == ragedb::Operation::IS_NULL || operation == ragedb::Operation::NOT_IS_NULL) {
+        return true;
+    }
+    return property.has_value();
+}
+
 void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property) {
     if(property.type() == typeid(std::string)) {
         rep->write_body("json", json::stream_object(std::any_cast<std::string>(property)));

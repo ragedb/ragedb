@@ -81,6 +81,8 @@ namespace ragedb {
         std::map<std::string, std::any> getProperties(uint64_t);
         std::any getProperty(const std::string&, uint64_t);
         bool isDeleted(const std::string&, uint64_t);
+        uint64_t getDeletedCount(const std::string&);
+        roaring::Roaring64Map getDeletedMap(const std::string&);
 
         bool getBooleanProperty(const std::string&, uint64_t);
         int64_t getIntegerProperty(const std::string&, uint64_t);

@@ -80,6 +80,7 @@ namespace ragedb {
         std::map<uint16_t, uint64_t> getCounts();
         uint64_t getCount(uint16_t type_id);
         uint64_t getDeletedCount(uint16_t type_id);
+        roaring::Roaring64Map getDeletedMap(uint16_t type_id);
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();

@@ -320,29 +320,26 @@ namespace ragedb {
             uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
             uint64_t max_id = key_to_node_id[type_id].size();
 
+            if(operation == Operation::IS_NULL) {
+                uint64_t deleted_nodes = getDeletedCount(type_id);
+                uint64_t deleted_properties = properties[type_id].getDeletedCount(property);
+                return (deleted_properties - deleted_nodes);
+            }
+
+            if(operation == Operation::NOT_IS_NULL) {
+                uint64_t deleted_nodes = getDeletedCount(type_id);
+                uint64_t deleted_properties = properties[type_id].getDeletedCount(property);
+                return max_id - (deleted_properties - deleted_nodes);
+            }
+
             for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
                 // If the node has been deleted, ignore it
                 if (deleted_ids[type_id].contains(internal_id)) {
                     continue;
                 }
-                // If the operation is to check for [not]null add to the count if it's [not]deleted
-                bool isDeleted = properties[type_id].isDeleted(property, internal_id);
-
-                if(operation == Operation::IS_NULL) {
-                    if (isDeleted) {
-                        count++;
-                    }
-                    continue;
-                }
-                if(operation == Operation::NOT_IS_NULL) {
-                    if (!isDeleted) {
-                        count++;
-                    }
-                    continue;
-                }
 
                 // If the property has been deleted, ignore it
-                if (isDeleted) {
+                if (properties[type_id].isDeleted(property, internal_id)) {
                     continue;
                 }
 
@@ -426,6 +423,31 @@ namespace ragedb {
             uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
             int current = 1;
             uint64_t max_id = key_to_node_id[type_id].size();
+
+            // Start blank, union with deleted properties, remove deleted nodes
+            if(operation == Operation::IS_NULL) {
+                roaring::Roaring64Map blank;
+                blank |= properties[type_id].getDeletedMap(property);
+                blank -=   getDeletedMap(type_id);
+                for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+                    ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                }
+                return ids;
+            }
+
+            // Start blank, fill from 0 to max_id, remove deleted nodes, remove deleted properties
+            if(operation == Operation::NOT_IS_NULL) {
+                roaring::Roaring64Map blank;
+                blank.flip(0, max_id);
+                blank -= getDeletedMap(type_id);
+                blank -= properties[type_id].getDeletedMap(property);
+
+                for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+                    ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                }
+                return ids;
+            }
+
             for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
                 // If we reached out limit, return
                 if (current > (skip + limit)) {
@@ -435,24 +457,9 @@ namespace ragedb {
                 if (deleted_ids[type_id].contains(internal_id)) {
                     continue;
                 }
-                // If the operation is to check for [not]null add it if it's [not]deleted
-                bool isDeleted = properties[type_id].isDeleted(property, internal_id);
-
-                if(operation == Operation::IS_NULL) {
-                    if (isDeleted) {
-                        ids.emplace_back(internalToExternal(type_id, internal_id));
-                    }
-                    continue;
-                }
-                if(operation == Operation::NOT_IS_NULL) {
-                    if (!isDeleted) {
-                        ids.emplace_back(internalToExternal(type_id, internal_id));
-                    }
-                    continue;
-                }
 
                 // If the property has been deleted, ignore it
-                if (isDeleted) {
+                if (properties[type_id].isDeleted(property, internal_id)) {
                     continue;
                 }
 
@@ -543,6 +550,31 @@ namespace ragedb {
             uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
             int current = 1;
             uint64_t max_id = key_to_node_id[type_id].size();
+
+            // Start blank, union with deleted properties, remove deleted nodes
+            if(operation == Operation::IS_NULL) {
+                roaring::Roaring64Map blank;
+                blank |= properties[type_id].getDeletedMap(property);
+                blank -=   getDeletedMap(type_id);
+                for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+                    nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                }
+                return nodes;
+            }
+
+            // Start blank, fill from 0 to max_id, remove deleted nodes, remove deleted properties
+            if(operation == Operation::NOT_IS_NULL) {
+                roaring::Roaring64Map blank;
+                blank.flip(0, max_id);
+                blank -= getDeletedMap(type_id);
+                blank -= properties[type_id].getDeletedMap(property);
+
+                for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+                    nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                }
+                return nodes;
+            }
+
             for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
                 // If we reached out limit, return
                 if (current > (skip + limit)) {
@@ -552,26 +584,9 @@ namespace ragedb {
                 if (deleted_ids[type_id].contains(internal_id)) {
                     continue;
                 }
-                // If the operation is to check for [not]null add it if it's [not]deleted
-                bool isDeleted = properties[type_id].isDeleted(property, internal_id);
-
-                if(operation == Operation::IS_NULL) {
-                    if (isDeleted) {
-                        nodes.emplace_back(getNode(type_id, internal_id));
-                        current++;
-                    }
-                    continue;
-                }
-                if(operation == Operation::NOT_IS_NULL) {
-                    if (!isDeleted) {
-                        nodes.emplace_back(getNode(type_id, internal_id));
-                        current++;
-                    }
-                    continue;
-                }
 
                 // If the property has been deleted, ignore it
-                if (isDeleted) {
+                if (properties[type_id].isDeleted(property, internal_id)) {
                     continue;
                 }
 
@@ -709,6 +724,13 @@ namespace ragedb {
         }
         // If not valid return 0
         return 0;
+    }
+
+    roaring::Roaring64Map NodeTypes::getDeletedMap(uint16_t type_id) {
+        if (ValidTypeId(type_id)) {
+            return deleted_ids[type_id];
+        }
+        return roaring::Roaring64Map();
     }
 
     uint16_t NodeTypes::getSize() const {

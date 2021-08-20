@@ -98,7 +98,6 @@ namespace ragedb {
     seastar::future<std::vector<Node>> Shard::FindNodesPeered(uint16_t node_type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
-        // TODO: Find out why I only get 1 back...
         // Get the {Node Type Id, Count} map for each core
         std::vector<seastar::future<uint64_t>> futures;
         for (int i=0; i < cpus; i++) {

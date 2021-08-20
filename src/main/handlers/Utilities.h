@@ -56,7 +56,7 @@ public:
     static ragedb::Operation validate_operation(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static bool validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static std::any validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
-
+    static bool validate_combination(const ragedb::Operation& operation, const std::any &property);
 
     static void convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property);
 

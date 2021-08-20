@@ -453,6 +453,21 @@ namespace ragedb {
         return true;
     }
 
+    // Be careful with this method since it includes deleted nodes
+    uint64_t Properties::getDeletedCount(const std::string& key) {
+        if (types.find(key) != types.end()) {
+            return deleted[key].cardinality();
+        }
+        return 0;
+    }
+
+    roaring::Roaring64Map Properties::getDeletedMap(const std::string& key) {
+        if (types.find(key) != types.end()) {
+            return deleted[key];
+        }
+        return roaring::Roaring64Map();
+    }
+
     std::any Properties::getProperty(const std::string& key, uint64_t index) {
         if (types.find(key) != types.end()) {
             if (!deleted[key].contains(index)) {
