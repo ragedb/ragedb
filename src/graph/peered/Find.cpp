@@ -61,7 +61,7 @@ namespace ragedb {
                     if (++current > skip) {
                         ids.push_back(id);
                     }
-                    if (current >= limit) {
+                    if (current >= max) {
                         return ids;
                     }
                 }
@@ -98,7 +98,7 @@ namespace ragedb {
                     if (++current > skip) {
                         nodes.push_back(node);
                     }
-                    if (current >= limit) {
+                    if (current >= max) {
                         return nodes;
                     }
                 }
