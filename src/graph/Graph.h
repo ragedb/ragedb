@@ -19,6 +19,7 @@
 
 
 #include <string>
+#include <seastar/core/coroutine.hh>
 #include <seastar/core/future.hh>
 #include <seastar/core/sharded.hh>
 

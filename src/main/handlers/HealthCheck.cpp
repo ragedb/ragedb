@@ -27,10 +27,7 @@ future<std::unique_ptr<reply>> HealthCheck::HealthCheckHandler::handle(
         [[maybe_unused]] std::unique_ptr<request> req,
         std::unique_ptr<reply> rep) {
 
-    return parent.graph.shard.local().HealthCheckPeered()
-            .then([rep = std::move(rep)] (const std::vector<std::string>& checks) mutable {
-                rep->write_body("json", json::stream_object(checks));
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-            });
-
+    auto checks = co_await parent.graph.shard.local().HealthCheckPeered();
+    rep->write_body("json", json::stream_object(checks));
+    co_return rep;
 }

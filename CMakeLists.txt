@@ -7,13 +7,15 @@ include(cmake/PreventInSourceBuilds.cmake)
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
 set(CMAKE_CXX_STANDARD 20)
-#target_compile_features(project_options INTERFACE cxx_std_20)
+target_compile_features(project_options INTERFACE cxx_std_20)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
   option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
   if(ENABLE_BUILD_WITH_TIME_TRACE)
     target_compile_options(project_options INTERFACE -ftime-trace)
   endif()
+else()
+  target_compile_options(project_options INTERFACE -fcoroutines)
 endif()
 
 # Link this 'library' to use the warnings specified in CompilerWarnings.cmake
@@ -101,6 +103,7 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Lua.cpp src/main/handlers/Lua.h)
 target_link_libraries(
         Graph
+        project_options
         Seastar::seastar
         CONAN_PKG::tsl-sparse-map
         CONAN_PKG::simdjson
