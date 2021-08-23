@@ -347,7 +347,7 @@ namespace ragedb {
         // links are internal links, we need to switch to external links
         for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
             for (roaring::Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
-                allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                allIds.emplace_back(internalToExternal(type_id, *iterator));
             }
         }
 

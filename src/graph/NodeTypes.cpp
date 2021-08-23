@@ -434,7 +434,7 @@ namespace ragedb {
                         break;
                     }
                     if (current++ > skip ) {
-                        ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                        ids.emplace_back(internalToExternal(type_id, *iterator));
                     }
                 }
                 return ids;
@@ -452,7 +452,7 @@ namespace ragedb {
                         break;
                     }
                     if (current++ > skip ) {
-                        ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                        ids.emplace_back(internalToExternal(type_id, *iterator));
                     }
                 }
                 return ids;
@@ -571,7 +571,7 @@ namespace ragedb {
                         break;
                     }
                     if (current++ > skip ) {
-                        nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                        nodes.emplace_back(getNode(type_id, *iterator));
                     }
                 }
                 return nodes;
@@ -589,7 +589,7 @@ namespace ragedb {
                         break;
                     }
                     if (current++ > skip ) {
-                        nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                        nodes.emplace_back(getNode(type_id, *iterator));
                     }
                 }
                 return nodes;
@@ -696,7 +696,7 @@ namespace ragedb {
         // links are internal links, we need to switch to external links
         for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
             for (roaring::Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
-                allIds.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                allIds.emplace_back(internalToExternal(type_id, *iterator));
             }
         }
 
