@@ -27,7 +27,8 @@
 namespace ragedb {
     class Properties {
 
-    private:
+    //private:
+    public:
         tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
         std::vector<std::string> allowed_types;

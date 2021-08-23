@@ -595,6 +595,70 @@ namespace ragedb {
                 return nodes;
             }
 
+            void* valuePointer;
+
+            switch (property_type_id) {
+                case Properties::getBooleanPropertyType(): {
+                    if (Properties::isBooleanProperty(value)) {
+                        valuePointer = std::any_cast<bool>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getIntegerPropertyType(): {
+                    if (Properties::isIntegerProperty(value)) {
+                        valuePointer = std::any_cast<int64_t>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getDoublePropertyType(): {
+                    if (Properties::isDoubleProperty(value)) {
+                        valuePointer = std::any_cast<double>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getStringPropertyType(): {
+                    if (Properties::isStringProperty(value)) {
+                        valuePointer = std::any_cast<std::string>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getBooleanListPropertyType(): {
+                    if (Properties::isBooleanListProperty(value)) {
+                        valuePointer = std::any_cast<std::vector<bool>>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getIntegerListPropertyType(): {
+                    if (Properties::isIntegerListProperty(value)) {
+                        valuePointer = std::any_cast<std::vector<int64_t>>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getDoubleListPropertyType(): {
+                    if (Properties::isDoubleListProperty(value)) {
+                        valuePointer = std::any_cast<std::vector<double>>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                case Properties::getStringListPropertyType(): {
+                    if (Properties::isStringListProperty(value)) {
+                        valuePointer = std::any_cast<std::vector<std::string>>(&value);
+                        break;
+                    }
+                    return nodes;
+                }
+                default: {
+                    return nodes;
+                }
+            }
+
             for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
                 // If we reached out limit, return
                 if (current > (skip + limit)) {
@@ -613,66 +677,53 @@ namespace ragedb {
                 // If it's false, ignore it
                 switch (property_type_id) {
                     case Properties::getBooleanPropertyType(): {
-                        if (Properties::isBooleanProperty(value)) {
-                            if (!Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), std::any_cast<bool>(value))) {
-                                continue;
-                            }
+                        if (!Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property, internal_id), *reinterpret_cast<bool*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
                     case Properties::getIntegerPropertyType(): {
-                        if (Properties::isIntegerProperty(value)) {
-                            if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), std::any_cast<int64_t>(value))) {
-                                continue;
-                            }
+                        if (!Expression::Evaluate<int64_t>(operation, properties[type_id].integers[property][internal_id], *reinterpret_cast<int64_t*>(valuePointer))) {
+                            continue;
                         }
+//                        if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), int64Value)) {
+//                            continue;
+//                        }
                         break;
                     }
                     case Properties::getDoublePropertyType(): {
-                        if (Properties::isDoubleProperty(value)) {
-                            if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), std::any_cast<double>(value))) {
-                                continue;
-                            }
+                        if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property, internal_id), *reinterpret_cast<double*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
                     case Properties::getStringPropertyType(): {
-                        if (Properties::isStringProperty(value)) {
-                            if (!Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), std::any_cast<std::string>(value))) {
-                                continue;
-                            }
+                        if (!Expression::EvaluateString(operation, properties[type_id].getStringProperty(property, internal_id), *reinterpret_cast<std::string*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
                     case Properties::getBooleanListPropertyType(): {
-                        if (Properties::isBooleanListProperty(value)) {
-                            if (!Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), std::any_cast<std::vector<bool>>(value))) {
-                                continue;
-                            }
+                        if (!Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property, internal_id), *reinterpret_cast<std::vector<bool>*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
                     case Properties::getIntegerListPropertyType(): {
-                        if (Properties::isIntegerListProperty(value)) {
-                            if(!Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), std::any_cast<std::vector<int64_t>>(value))) {
-                                continue;
-                            }
+                        if(!Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property, internal_id), *reinterpret_cast<std::vector<int64_t>*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
                     case Properties::getDoubleListPropertyType(): {
-                        if (Properties::isDoubleListProperty(value)) {
-                            if (!Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), std::any_cast<std::vector<double>>(value))) {
-                                continue;
-                            }
+                        if (!Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property, internal_id), *reinterpret_cast<std::vector<double>*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
                     case Properties::getStringListPropertyType(): {
-                        if (Properties::isStringListProperty(value)) {
-                            if (!Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), std::any_cast<std::vector<std::string>>(value))) {
-                                continue;
-                            }
+                        if (!Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property, internal_id), *reinterpret_cast<std::vector<std::string>*>(valuePointer))) {
+                            continue;
                         }
                         break;
                     }
