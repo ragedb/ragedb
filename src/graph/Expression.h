@@ -181,10 +181,6 @@ namespace ragedb {
             return a == b;
         }
 
-        static bool EQ(std::string a, std::string b) {
-            return a.compare(b) == 0;
-        }
-
         template <typename T>
         static bool NEQ(T a, T b) {
             return a != b;
