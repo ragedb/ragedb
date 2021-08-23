@@ -428,9 +428,14 @@ namespace ragedb {
             if(operation == Operation::IS_NULL) {
                 roaring::Roaring64Map blank;
                 blank |= properties[type_id].getDeletedMap(property);
-                blank -=   getDeletedMap(type_id);
+                blank -= getDeletedMap(type_id);
                 for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
-                    ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                    if (current > (skip + limit)) {
+                        break;
+                    }
+                    if (current++ > skip ) {
+                        ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                    }
                 }
                 return ids;
             }
@@ -443,7 +448,12 @@ namespace ragedb {
                 blank -= properties[type_id].getDeletedMap(property);
 
                 for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
-                    ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                    if (current > (skip + limit)) {
+                        break;
+                    }
+                    if (current++ > skip ) {
+                        ids.emplace_back(internalToExternal(type_id, iterator.operator*()));
+                    }
                 }
                 return ids;
             }
@@ -555,9 +565,14 @@ namespace ragedb {
             if(operation == Operation::IS_NULL) {
                 roaring::Roaring64Map blank;
                 blank |= properties[type_id].getDeletedMap(property);
-                blank -=   getDeletedMap(type_id);
+                blank -= getDeletedMap(type_id);
                 for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
-                    nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                    if (current > (skip + limit)) {
+                        break;
+                    }
+                    if (current++ > skip ) {
+                        nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                    }
                 }
                 return nodes;
             }
@@ -570,7 +585,12 @@ namespace ragedb {
                 blank -= properties[type_id].getDeletedMap(property);
 
                 for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
-                    nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                    if (current > (skip + limit)) {
+                        break;
+                    }
+                    if (current++ > skip ) {
+                        nodes.emplace_back(getNode(type_id, iterator.operator*()));
+                    }
                 }
                 return nodes;
             }

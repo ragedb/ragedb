@@ -68,7 +68,7 @@ jobs:
         run: |
           cd seastar
           sudo ./install-dependencies.sh
-          ./configure.py --mode=release --prefix=/usr/local --c++-dialect=gnu++20 --without-tests
+          ./configure.py --mode=release --prefix=/usr/local --c++-dialect=gnu++20 --without-tests --without-apps --without-demos
           sudo ninja -C build/release install
 
       - name: build with cmake

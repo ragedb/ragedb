@@ -125,13 +125,11 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
 
     if(options_string.empty()) {
         // Get Node Degree
-        return parent.graph.shard.local().NodeGetDegreePeered(id)
-                .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                    json_properties_builder json;
-                    json.add("degree", degree);
-                    rep->write_body("json", sstring(json.as_json()));
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                });
+        auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id);
+        json_properties_builder json;
+        json.add("degree", degree);
+        rep->write_body("json", sstring(json.as_json()));
+        co_return rep;
     }
 
     std::vector<std::string> options;
@@ -149,43 +147,40 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
     }
 
     switch(options.size()) {
-        case 1:
+        case 1: {
             // Get Node Degree with Direction
-            return parent.graph.shard.local().NodeGetDegreePeered(id, direction)
-                    .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                        json_properties_builder json;
-                        json.add("degree", degree);
-                        rep->write_body("json", sstring(json.as_json()));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                    });
+            auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction);
+            json_properties_builder json;
+            json.add("degree", degree);
+            rep->write_body("json", sstring(json.as_json()));
+            co_return rep;
+        }
+
         case 2: {
             // Get Node Degree with Direction and Type(s)
             std::vector<std::string> rel_types;
             boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
             // Single Relationship Type
             if (rel_types.size() == 1) {
-                return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0])
-                        .then([rep = std::move(rep)] (uint64_t degree) mutable {
-                            json_properties_builder json;
-                            json.add("degree", degree);
-                            rep->write_body("json", sstring(json.as_json()));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-                        });
-            }
-
-            // Multiple Relationship Types
-            return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types).then([rep = std::move(rep)] (uint64_t degree) mutable {
+                auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0]);
                 json_properties_builder json;
                 json.add("degree", degree);
                 rep->write_body("json", sstring(json.as_json()));
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
-            });
+                co_return rep;
+            }
+
+            // Multiple Relationship Types
+            auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types);
+            json_properties_builder json;
+            json.add("degree", degree);
+            rep->write_body("json", sstring(json.as_json()));
+            co_return rep;
         }
 
         default:  {
             rep->write_body("json", json::stream_object("Invalid request"));
             rep->set_status(reply::status_type::bad_request);
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            co_return rep;
         }
     }
 }
