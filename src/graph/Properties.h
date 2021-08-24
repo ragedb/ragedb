@@ -27,8 +27,7 @@
 namespace ragedb {
     class Properties {
 
-    //private:
-    public:
+    private:
         tsl::sparse_map<std::string, uint8_t> types;
         tsl::sparse_map<std::string, uint8_t> type_map;
         std::vector<std::string> allowed_types;
@@ -83,7 +82,16 @@ namespace ragedb {
         std::any getProperty(const std::string&, uint64_t);
         bool isDeleted(const std::string&, uint64_t);
         uint64_t getDeletedCount(const std::string&);
-        roaring::Roaring64Map getDeletedMap(const std::string&);
+        roaring::Roaring64Map& getDeletedMap(const std::string&);
+
+        std::vector<bool>& getBooleans(const std::string&);
+        std::vector<int64_t>& getIntegers(const std::string&);
+        std::vector<double>& getDoubles(const std::string&);
+        std::vector<std::string>& getStrings(const std::string&);
+        std::vector<std::vector<bool>>& getBooleansList(const std::string&);
+        std::vector<std::vector<int64_t>>& getIntegersList(const std::string&);
+        std::vector<std::vector<double>>& getDoublesList(const std::string&);
+        std::vector<std::vector<std::string>>& getStringsList(const std::string&);
 
         bool getBooleanProperty(const std::string&, uint64_t);
         int64_t getIntegerProperty(const std::string&, uint64_t);

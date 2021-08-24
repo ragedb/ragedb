@@ -41,21 +41,30 @@ namespace ragedb {
 
         allowed_types = {"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list"};
 
-        types.insert({"", 0});
+        clear();
     }
 
     void Properties::clear() {
         types.clear();
-        types.insert({"", 0});
+        types.emplace("", 0);
         deleted.clear();
+        deleted.emplace("", roaring::Roaring64Map());
         booleans.clear();
+        booleans.emplace("", std::vector<bool>());
         integers.clear();
+        integers.emplace("", std::vector<int64_t>());
         doubles.clear();
+        doubles.emplace("", std::vector<double>());
         strings.clear();
+        strings.emplace("", std::vector<std::string>());
         booleans_list.clear();
+        booleans_list.emplace("", std::vector<std::vector<bool>>());
         integers_list.clear();
+        integers_list.emplace("", std::vector<std::vector<int64_t>>());
         doubles_list.clear();
+        doubles_list.emplace("", std::vector<std::vector<double>>());
         strings_list.clear();
+        strings_list.emplace("", std::vector<std::vector<std::string>>());
     }
 
     std::map<std::string, std::string> Properties::getPropertyTypes() {
@@ -461,11 +470,67 @@ namespace ragedb {
         return 0;
     }
 
-    roaring::Roaring64Map Properties::getDeletedMap(const std::string& key) {
+    roaring::Roaring64Map& Properties::getDeletedMap(const std::string& key) {
         if (types.find(key) != types.end()) {
             return deleted[key];
         }
-        return roaring::Roaring64Map();
+        return deleted[""];
+    }
+
+    std::vector<bool>& Properties::getBooleans(const std::string& key) {
+        if (booleans.find(key) != booleans.end()) {
+            return booleans[key];
+        }
+        return booleans[""];
+    }
+
+    std::vector<int64_t>& Properties::getIntegers(const std::string& key) {
+        if (integers.find(key) != integers.end()) {
+            return integers[key];
+        }
+        return integers[""];
+    }
+
+    std::vector<double>& Properties::getDoubles(const std::string& key) {
+        if (doubles.find(key) != doubles.end()) {
+            return doubles[key];
+        }
+        return doubles[""];
+    }
+
+    std::vector<std::string>& Properties::getStrings(const std::string& key) {
+        if (strings.find(key) != strings.end()) {
+            return strings[key];
+        }
+        return strings[""];
+    }
+
+    std::vector<std::vector<bool>>& Properties::getBooleansList(const std::string& key) {
+        if (booleans_list.find(key) != booleans_list.end()) {
+            return booleans_list[key];
+        }
+        return booleans_list[""];
+    }
+
+    std::vector<std::vector<int64_t>>& Properties::getIntegersList(const std::string& key) {
+        if (integers_list.find(key) != integers_list.end()) {
+            return integers_list[key];
+        }
+        return integers_list[""];
+    }
+
+    std::vector<std::vector<double>>& Properties::getDoublesList(const std::string& key) {
+        if (doubles_list.find(key) != doubles_list.end()) {
+            return doubles_list[key];
+        }
+        return doubles_list[""];
+    }
+
+    std::vector<std::vector<std::string>>& Properties::getStringsList(const std::string& key) {
+        if (strings_list.find(key) != strings_list.end()) {
+            return strings_list[key];
+        }
+        return strings_list[""];
     }
 
     std::any Properties::getProperty(const std::string& key, uint64_t index) {
