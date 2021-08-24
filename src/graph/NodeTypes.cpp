@@ -555,11 +555,11 @@ namespace ragedb {
     }
 
     std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit) {
-        std::vector<Node>  nodes;
+        std::vector<Node> nodes;
         if (ValidTypeId(type_id)) {
-            uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+            const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
             int current = 1;
-            uint64_t max_id = key_to_node_id[type_id].size();
+            const uint64_t max_id = key_to_node_id[type_id].size();
 
             // Start blank, union with deleted properties, remove deleted nodes
             if(operation == Operation::IS_NULL) {
@@ -596,6 +596,11 @@ namespace ragedb {
             }
 
             void* valuePointer;
+            int64_t* integerVector = properties[type_id].integers[property].data();
+
+            roaring::Roaring64Map blank;
+            blank |= properties[type_id].getDeletedMap(property);
+            blank |= getDeletedMap(type_id);
 
             switch (property_type_id) {
                 case Properties::getBooleanPropertyType(): {
@@ -606,11 +611,31 @@ namespace ragedb {
                     return nodes;
                 }
                 case Properties::getIntegerPropertyType(): {
-                    if (Properties::isIntegerProperty(value)) {
-                        valuePointer = std::any_cast<int64_t>(&value);
-                        break;
-                    }
+                    if (Properties::isIntegerProperty(value)) {             
+                
+                        const int64_t integerValue = std::any_cast<int64_t>(value);
+                        const std::vector<int64_t> &vec = properties[type_id].integers[property];
+                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+                            // If we reached out limit, return
+                            if (current > (skip + limit)) {
+                                return nodes;
+                            }
+                            // If the node or property has been deleted, ignore it
+                            if (blank.contains(internal_id)) {
+                                continue;
+                            }
+                            if (!Expression::Evaluate<int64_t>(operation, vec[internal_id], integerValue)) {
+                                continue;
+                            }
+                             // If it is true add it if we are over the skip, otherwise ignore it
+                            if (current > skip) {
+                                nodes.emplace_back(getNode(type_id, internal_id));
+                            }
+
+                             current++;
+                        }
                     return nodes;
+                    }
                 }
                 case Properties::getDoublePropertyType(): {
                     if (Properties::isDoubleProperty(value)) {
@@ -660,6 +685,7 @@ namespace ragedb {
             }
 
             for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+
                 // If we reached out limit, return
                 if (current > (skip + limit)) {
                     return nodes;
@@ -683,9 +709,12 @@ namespace ragedb {
                         break;
                     }
                     case Properties::getIntegerPropertyType(): {
-                        if (!Expression::Evaluate<int64_t>(operation, properties[type_id].integers[property][internal_id], *reinterpret_cast<int64_t*>(valuePointer))) {
+                        if (!Expression::Evaluate<int64_t>(operation, integerVector[internal_id], *reinterpret_cast<int64_t*>(valuePointer))) {
                             continue;
                         }
+//                        if (!Expression::Evaluate<int64_t>(operation, properties[type_id].integers[property][internal_id], *reinterpret_cast<int64_t*>(valuePointer))) {
+//                            continue;
+//                        }
 //                        if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property, internal_id), int64Value)) {
 //                            continue;
 //                        }
