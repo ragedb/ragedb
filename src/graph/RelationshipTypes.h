@@ -22,6 +22,7 @@
 #include <set>
 #include "Relationship.h"
 #include "Properties.h"
+#include "Operation.h"
 
 namespace ragedb {
 
@@ -60,6 +61,11 @@ namespace ragedb {
         std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
         std::vector<Relationship> getRelationships(uint64_t skip, uint64_t limit);
         std::vector<Relationship> getRelationships(uint16_t type_id, uint64_t skip, uint64_t limit);
+
+        uint64_t findCount(uint16_t type_id, const std::string &property, Operation operation, std::any value);
+        std::vector<uint64_t> findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit);
+        std::vector<Relationship> findRelationships(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit);
+
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);
         uint64_t getDeletedIdsMinimum(uint16_t type_id);
@@ -70,6 +76,7 @@ namespace ragedb {
         std::map<uint16_t, uint64_t> getCounts();
         uint64_t getCount(uint16_t type_id);
         uint64_t getDeletedCount(uint16_t node_type_id);
+        roaring::Roaring64Map& getDeletedMap(uint16_t type_id);
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();

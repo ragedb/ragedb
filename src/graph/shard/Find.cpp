@@ -27,6 +27,15 @@ namespace ragedb {
         return node_types.findCount(type_id, property, operation, value);
     }
 
+    uint64_t Shard::FindRelationshipCount(const std::string& type, const std::string& property, const Operation& operation, const std::any& value) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        return FindRelationshipCount(type_id, property, operation, value);
+    }
+
+    uint64_t Shard::FindRelationshipCount(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value) {
+        return relationship_types.findCount(type_id, property, operation, value);
+    }
+
     std::vector<uint64_t> Shard::FindNodeIds(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
         uint16_t type_id = node_types.getTypeId(type);
         return FindNodeIds(type_id, property, operation, value, skip, limit);
@@ -36,6 +45,15 @@ namespace ragedb {
         return node_types.findIds(type_id, property, operation, value, skip, limit);
     }
 
+    std::vector<uint64_t> Shard::FindRelationshipIds(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        return FindRelationshipIds(type_id, property, operation, value, skip, limit);
+    }
+
+    std::vector<uint64_t> Shard::FindRelationshipIds(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+        return relationship_types.findIds(type_id, property, operation, value, skip, limit);
+    }
+
     std::vector<Node> Shard::FindNodes(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
         uint16_t type_id = node_types.getTypeId(type);
         return FindNodes(type_id, property, operation, value, skip, limit);
@@ -43,6 +61,15 @@ namespace ragedb {
 
     std::vector<Node> Shard::FindNodes(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
         return node_types.findNodes(type_id, property, operation, value, skip, limit);
+    }
+
+    std::vector<Relationship> Shard::FindRelationships(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        return FindRelationships(type_id, property, operation, value, skip, limit);
+    }
+
+    std::vector<Relationship> Shard::FindRelationships(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+        return relationship_types.findRelationships(type_id, property, operation, value, skip, limit);
     }
 
 }

@@ -72,6 +72,13 @@ void Relationships::set_routes(routes &routes) {
     getNodeRelationships->add_str("/relationships");
     getNodeRelationships->add_param("options", true);
     routes.add(getNodeRelationships, operation_type::GET);
+
+    auto findRelationshipsOfType = new match_rule(&findRelationshipsOfTypeHandler);
+    findRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
+    findRelationshipsOfType->add_param("type");
+    findRelationshipsOfType->add_param("property");
+    findRelationshipsOfType->add_param("operation");
+    routes.add(findRelationshipsOfType, operation_type::POST);
 }
 
 future<std::unique_ptr<reply>> Relationships::GetRelationshipsHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
@@ -436,5 +443,33 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
         }
     }
 
+    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<reply>> Relationships::FindRelationshipsOfTypeHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
+    ragedb::Operation operation = Utilities::validate_operation(req, rep);
+    std::any value = Utilities::validate_json_property(req, rep);
+    bool valid_combination = Utilities::validate_combination(operation, value);
+
+    if(valid_type && valid_property && valid_combination) {
+        uint64_t skip = Utilities::validate_skip(req, rep);
+        uint64_t limit = Utilities::validate_limit(req, rep);
+
+        return parent.graph.shard.local().FindRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], operation, value, skip, limit)
+                .then([rep = std::move(rep)](std::vector<Relationship> relationships) mutable {
+                    std::vector<relationship_json> json_array;
+                    json_array.reserve(relationships.size());
+                    if (!relationships.empty()) {
+                        for(Relationship relationship : relationships) {
+                            json_array.emplace_back(relationship);
+                        }
+                        rep->write_body("json", json::stream_object(json_array));
+                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    }
+                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                });
+    }
     return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }

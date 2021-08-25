@@ -92,6 +92,14 @@ class Relationships {
         future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
     };
 
+    class FindRelationshipsOfTypeHandler : public httpd::handler_base {
+    public:
+        explicit FindRelationshipsOfTypeHandler(Relationships& relationships) : parent(relationships) {};
+    private:
+        Relationships& parent;
+        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+    };
+
 private:
     Graph& graph;
     GetRelationshipsHandler getRelationshipsHandler;
@@ -102,11 +110,13 @@ private:
     DeleteRelationshipHandler deleteRelationshipHandler;
     GetNodeRelationshipsHandler getNodeRelationshipsHandler;
     GetNodeRelationshipsByIdHandler getNodeRelationshipsByIdHandler;
+    FindRelationshipsOfTypeHandler findRelationshipsOfTypeHandler;
 
 public:
     explicit Relationships(Graph &_graph) : graph(_graph), getRelationshipsHandler(*this), getRelationshipsOfTypeHandler(*this),
                                            getRelationshipHandler(*this), postRelationshipHandler(*this), postRelationshipByIdHandler(*this),
-                                           deleteRelationshipHandler(*this), getNodeRelationshipsHandler(*this), getNodeRelationshipsByIdHandler(*this) {}
+                                           deleteRelationshipHandler(*this), getNodeRelationshipsHandler(*this), getNodeRelationshipsByIdHandler(*this),
+                                           findRelationshipsOfTypeHandler(*this) {}
     void set_routes(routes& routes);
 
 };

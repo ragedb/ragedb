@@ -324,6 +324,7 @@ namespace ragedb {
         lua.set_function("NodeGetNeighborsByIdForDirectionForTypeId", &Shard::NodeGetNeighborsByIdForDirectionForTypeIdViaLua, this);
         lua.set_function("NodeGetNeighborsByIdForDirectionForTypes", &Shard::NodeGetNeighborsByIdForDirectionForTypesViaLua, this);
 
+        // All
         lua.set_function("AllNodeIds", &Shard::AllNodeIdsViaLua, this);
         lua.set_function("AllNodeIdsForType", &Shard::AllNodeIdsForTypeViaLua, this);
         lua.set_function("AllRelationshipIds", &Shard::AllRelationshipIdsViaLua, this);
@@ -332,6 +333,15 @@ namespace ragedb {
         lua.set_function("AllNodesForType", &Shard::AllNodesForTypeViaLua, this);
         lua.set_function("AllRelationships", &Shard::AllRelationshipsViaLua, this);
         lua.set_function("AllRelationshipsForType", &Shard::AllRelationshipsForTypeViaLua, this);
+
+        // Find
+        lua.set_function("FindNodeCount", &Shard::FindNodeCountViaLua, this);
+        lua.set_function("FindNodeIds", &Shard::FindNodeIdsViaLua, this);
+        lua.set_function("FindNodes", &Shard::FindNodesViaLua, this);
+        lua.set_function("FindRelationshipCount", &Shard::FindRelationshipCountViaLua, this);
+        lua.set_function("FindRelationshipIds", &Shard::FindRelationshipIdsViaLua, this);
+        lua.set_function("FindRelationships", &Shard::FindRelationshipsViaLua, this);
+
     }
 
 

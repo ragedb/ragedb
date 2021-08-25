@@ -99,11 +99,11 @@ RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and
 
 #### Get All Nodes
 
-    :GET /db/{graph}/nodes?limit=100&offset=0
+    :GET /db/{graph}/nodes?limit=100&skip=0
 
 #### Get All Nodes of a Type
 
-    :GET /db/{graph}/nodes/{type}?limit=100&offset=0
+    :GET /db/{graph}/nodes/{type}?limit=100&skip=0
 
 #### Get A Node By Type and Key
 
@@ -125,6 +125,10 @@ RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and
 #### Delete A Node By Id
 
     :DELETE /db/{graph}/node/{id}
+
+#### Find Nodes
+
+    :POST /db/{graph}/nodes/{type}/{property}/{operation}?limit=100&skip=0 {json value}
 
 ### Node Properties
 
@@ -194,11 +198,11 @@ RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and
 
 #### Get All Relationships
 
-    :GET /db/{graph}/relationships?limit=100&offset=0
+    :GET /db/{graph}/relationships?limit=100&skip=0
 
 #### Get All Relationships of a Type
 
-    :GET /db/{graph}/relationships/{type}?limit=100&offset=0
+    :GET /db/{graph}/relationships/{type}?limit=100&skip=0
 
 #### Get A Relationship
 
@@ -217,6 +221,10 @@ RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and
 #### Delete A Relationship
 
     :DELETE /db/{graph}/relationship/{id}
+
+#### Find Relationships
+
+    :POST /db/{graph}/relationships/{type}/{property}/{operation}?limit=100&skip=0 {json value}
 
 #### Get the Relationships of a Node By Node Type
 
