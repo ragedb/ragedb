@@ -78,7 +78,7 @@ namespace ragedb {
             return false;
         }
         if (ValidTypeId(type_id)) {
-            // Id already exists
+            // Invalid
             return false;
         }
         type_to_id.emplace(type, type_id);

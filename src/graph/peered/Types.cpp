@@ -127,25 +127,25 @@ namespace ragedb {
         return relationship_types.getTypeId(type);
     }
 
-    seastar::future<uint16_t> Shard::RelationshipTypeInsertPeered(const std::string &rel_type) {
-        // rel_type_id is global, so we need to calculate it here
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-        if (rel_type_id == 0) {
-            // rel_type_id is global so unfortunately we need to lock here
+    seastar::future<uint16_t> Shard::RelationshipTypeInsertPeered(const std::string &type) {
+        // type_id is global, so we need to calculate it here
+        uint16_t type_id = relationship_types.getTypeId(type);
+        if (type_id == 0) {
+            // type_id is global so unfortunately we need to lock here
             this->rel_type_lock.for_write().lock().get();
 
             // The relationship type was not found and must therefore be new, add it to all shards.
-            rel_type_id = relationship_types.insertOrGetTypeId(rel_type);
+            type_id = relationship_types.insertOrGetTypeId(type);
             this->rel_type_lock.for_write().unlock();
-            return container().invoke_on_all([rel_type, rel_type_id](Shard &local_shard) {
-                        local_shard.RelationshipTypeInsert(rel_type, rel_type_id);
+            return container().invoke_on_all([type, type_id](Shard &local_shard) {
+                        local_shard.RelationshipTypeInsert(type, type_id);
                     })
-                    .then([rel_type_id] {
-                        return seastar::make_ready_future<uint16_t>(rel_type_id);
+                    .then([type_id] {
+                        return seastar::make_ready_future<uint16_t>(type_id);
                     });
         }
 
-        return seastar::make_ready_future<uint16_t>(rel_type_id);
+        return seastar::make_ready_future<uint16_t>(type_id);
     }
 
     seastar::future<bool> Shard::DeleteRelationshipTypePeered(const std::string& type) {

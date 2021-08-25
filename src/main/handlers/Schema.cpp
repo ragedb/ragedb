@@ -149,7 +149,11 @@ Schema::PostNodeTypeHandler::handle([[maybe_unused]] const sstring &path, std::u
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-        return parent.graph.shard.local().NodeTypeInsertPeered(req->param[Utilities::TYPE]).then(
+
+        // The node type needs to be set by Shard 0 and propagated
+        return parent.graph.shard.invoke_on(0, [type = req->param[Utilities::TYPE]](Shard &local_shard) {
+            return local_shard.NodeTypeInsertPeered(type);
+        }).then(
                 [rep = std::move(rep)](bool success) mutable {
                     if (success) {
                         rep->set_status(reply::status_type::created);
@@ -197,8 +201,10 @@ Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const sstring &path
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-        return parent.graph.shard.local().RelationshipTypeInsertPeered(req->param[Utilities::TYPE]).then(
-                [rep = std::move(rep)](bool success) mutable {
+        // The relationship type needs to be set by Shard 0 and propagated
+        return parent.graph.shard.invoke_on(0, [type = req->param[Utilities::TYPE]](Shard &local_shard) {
+            return local_shard.RelationshipTypeInsertPeered(type);
+        }).then([rep = std::move(rep)](bool success) mutable {
                     if (success) {
                         rep->set_status(reply::status_type::created);
                     } else {

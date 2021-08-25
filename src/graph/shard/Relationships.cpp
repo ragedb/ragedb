@@ -37,8 +37,8 @@ namespace ragedb {
                 relationship_types.getEndingNodeIds(rel_type_id).emplace_back(id2);
             }
 
-            external_id = internalToExternal(rel_type_id, internal_id);
             relationship_types.addId(rel_type_id, internal_id);
+            external_id = internalToExternal(rel_type_id, internal_id);
 
             // Add the relationship to the outgoing node
             auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
@@ -61,9 +61,6 @@ namespace ragedb {
                 // otherwise create a new type with the links
                 node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, external_id)})));
             }
-
-            // Add relationship id to Types
-            relationship_types.addId(rel_type_id, external_id);
 
             return external_id;
         }
@@ -116,9 +113,6 @@ namespace ragedb {
                 node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, external_id)})));
             }
 
-            // Add relationship id to Types
-            relationship_types.addId(rel_type_id, external_id);
-
             return external_id;
         }
         // Invalid node links
@@ -155,8 +149,8 @@ namespace ragedb {
             relationship_types.getEndingNodeIds(rel_type_id).emplace_back(id2);
         }
 
+        relationship_types.addId(rel_type_id, internal_id);
         external_id = internalToExternal(rel_type_id, internal_id);
-        relationship_types.addId(rel_type_id, external_id);
 
         // Add the relationship to the outgoing node
         auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
@@ -168,9 +162,6 @@ namespace ragedb {
             // otherwise create a new type with the links
             node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
         }
-
-        // Add relationship id to Types
-        relationship_types.addId(rel_type_id, external_id);
 
         return external_id;
     }
@@ -193,9 +184,9 @@ namespace ragedb {
             relationship_types.getEndingNodeIds(rel_type_id).emplace_back(id2);
         }
 
+        relationship_types.addId(rel_type_id, internal_id);
         relationship_types.setPropertiesFromJSON(rel_type_id, internal_id, properties);
         external_id = internalToExternal(rel_type_id, internal_id);
-        relationship_types.addId(rel_type_id, external_id);
 
         // Add the relationship to the outgoing node
         auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
@@ -207,9 +198,6 @@ namespace ragedb {
             // otherwise create a new type with the links
             node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
         }
-
-        // Add relationship id to Types
-        relationship_types.addId(rel_type_id, external_id);
 
         return external_id;
     }
