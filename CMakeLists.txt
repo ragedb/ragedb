@@ -18,6 +18,13 @@ else()
   target_compile_options(project_options INTERFACE -fcoroutines)
 endif()
 
+# Add
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+if(COMPILER_SUPPORTS_MARCH_NATIVE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
+
 # Link this 'library' to use the warnings specified in CompilerWarnings.cmake
 add_library(project_warnings INTERFACE)
 
@@ -110,6 +117,7 @@ target_link_libraries(
         CONAN_PKG::roaring
         CONAN_PKG::sol2
         CONAN_PKG::luajit
+        CONAN_PKG::jfalcou-eve
 )
 
 target_link_libraries(

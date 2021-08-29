@@ -540,7 +540,7 @@ namespace ragedb {
                         const bool typedValue = std::any_cast<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -566,7 +566,7 @@ namespace ragedb {
                         const int64_t typedValue = std::any_cast<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -592,7 +592,7 @@ namespace ragedb {
                         const double typedValue = std::any_cast<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -618,7 +618,7 @@ namespace ragedb {
                         const std::string typedValue = std::any_cast<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -644,7 +644,7 @@ namespace ragedb {
                         const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -670,7 +670,7 @@ namespace ragedb {
                         const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -696,7 +696,7 @@ namespace ragedb {
                         const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -722,7 +722,7 @@ namespace ragedb {
                         const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -802,7 +802,7 @@ namespace ragedb {
                         const bool typedValue = std::any_cast<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -827,8 +827,25 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const int64_t typedValue = std::any_cast<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
+
+                        if(operation == Operation::EQ) {
+                            std::vector<std::uint32_t> idxs =
+                                    ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+
+                            remove_if(idxs.begin(), idxs.end(), [blank](uint32_t i) { return blank.contains(i); });
+                            for(auto idx : idxs) {
+                                if(current++ > skip) {
+                                    nodes.emplace_back(getNode(type_id, idx));
+                                }
+                                if (current > (skip + limit)) {
+                                    return nodes;
+                                }
+                            }
+                            return nodes;
+                        }
+
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -854,7 +871,7 @@ namespace ragedb {
                         const double typedValue = std::any_cast<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -880,7 +897,7 @@ namespace ragedb {
                         const std::string typedValue = std::any_cast<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -906,7 +923,7 @@ namespace ragedb {
                         const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -932,7 +949,7 @@ namespace ragedb {
                         const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -958,7 +975,7 @@ namespace ragedb {
                         const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
@@ -984,7 +1001,7 @@ namespace ragedb {
                         const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return nodes;
                             }

@@ -31,6 +31,7 @@
 #include "Relationship.h"
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
+#include "eve/CollectIndexes.h"
 
 namespace ragedb {
 

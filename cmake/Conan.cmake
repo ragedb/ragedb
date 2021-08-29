@@ -25,6 +25,7 @@ macro(run_conan)
     tsl-sparse-map/0.6.2
     simdjson/0.9.7
     roaring/0.3.3
+    jfalcou-eve/cci.20210823
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

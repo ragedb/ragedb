@@ -10,7 +10,8 @@ set(HEADER_FILES
         Properties.h
         Direction.h
         Operation.h
-        Expression.h)
+        Expression.h
+        eve/CollectIndexes.h)
 
 set(SOURCE_FILES
         Graph.cpp
