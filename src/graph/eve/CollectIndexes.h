@@ -29,15 +29,13 @@
 #include <eve/function/replace.hpp>
 
 // auto collect_indexes(std::vector<T>, Predicate predicate) ->
-//   std::vector<std::uint32_t>
+//   std::vector<std::uint64_t>
 //
 // Returns indexes of all elements for which Predicate returns true.
 //
 // I'd suggest to pass `auto` parameter in predicate, because otherwise
 // You'd need to compute the cardinal.
 //
-// Assumption: 32 bit indexes will be enough.
-// Using 64 bit indexes will be more expensive.
 //
 // Unfortunaty at the moment we don't expose all the things to make it nice,
 // but it should work reasonably well on x86 from ssse3 to avx2
@@ -53,7 +51,7 @@ namespace ragedb {
     struct collect_indexes_delegate
     {
 
-        collect_indexes_delegate(P _p, std::uint32_t* _out) :
+        collect_indexes_delegate(P _p, std::uint64_t* _out) :
                 p(_p),
                 idx([](int i, int) { return i; }), // 0, 1, 2, 3, 4 ...
                 out{_out}
@@ -66,7 +64,7 @@ namespace ragedb {
 
             // We need to convert it to the logical of index type.
             // This should be fixed after https://github.com/jfalcou/eve/issues/868
-            auto idx_test = eve::convert(test, eve::as<eve::logical<std::uint32_t>>{});
+            auto idx_test = eve::convert(test, eve::as<eve::logical<std::uint64_t>>{});
 
             // Because we don't want to deal with ignored elements in compress store,
             // We'll do it here.
@@ -84,13 +82,13 @@ namespace ragedb {
 
         P p;
 
-        eve::wide<std::uint32_t, N> idx;  // This would be i in for (i = 0; i != size; ++i)
+        eve::wide<std::uint64_t, N> idx;  // This would be i in for (i = 0; i != size; ++i)
 
-        eve::algo::unaligned_ptr_iterator<std::uint32_t, N> out;  // A wrapper around a pointer
+        eve::algo::unaligned_ptr_iterator<std::uint64_t, N> out;  // A wrapper around a pointer
     };
 
     template <typename I, typename P>
-    std::vector<std::uint32_t> collect_indexes(I f, I l, P p)
+    std::vector<std::uint64_t> collect_indexes(I f, I l, P p)
     {
         if (f == l) return {};
 
@@ -98,10 +96,10 @@ namespace ragedb {
 
         // We need to decide how big of register we are going to use
         // eve::expected_cardinal_v - will tell you the native cardinal of a type
-        // We need to take the bigger one of std::uint32_t and T
-        using N = eve::fixed<sizeof(T) < sizeof(std::uint32_t) ?
+        // We need to take the bigger one of std::uint64_t and T
+        using N = eve::fixed<sizeof(T) < sizeof(std::uint64_t) ?
                              eve::expected_cardinal_v<T> :
-                             eve::expected_cardinal_v<std::uint32_t> >;
+                             eve::expected_cardinal_v<std::uint64_t> >;
         // Construct iteration traits
         eve::algo::traits iteration_traits{
                 eve::algo::no_aligning,          // This means that will not do use aligned reads.
@@ -117,7 +115,7 @@ namespace ragedb {
 
         // Buffer to store indexes.
         // Added an extra step to size so that we don't have to do ignore at the end
-        std::vector<std::uint32_t> res(unsigned((l - f) + N{}()), 0);
+        std::vector<std::uint64_t> res(unsigned((l - f) + N{}()), 0);
 
         // Create our callback
         collect_indexes_delegate<N, P> delegate{p, res.data()};
@@ -130,7 +128,7 @@ namespace ragedb {
         iteration(delegate);
 
         // Now we need to remove the extra allocation
-        std::uint32_t* new_end = delegate.out.ptr;
+        std::uint64_t* new_end = delegate.out.ptr;
         res.resize(static_cast<std::size_t>(new_end - res.data()));
 
         res.shrink_to_fit();  // optional - remove extra allocation

@@ -829,10 +829,10 @@ namespace ragedb {
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
 
                         if(operation == Operation::EQ) {
-                            std::vector<std::uint32_t> idxs =
+                            std::vector<std::uint64_t> idxs =
                                     ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
 
-                            remove_if(idxs.begin(), idxs.end(), [blank](uint32_t i) { return blank.contains(i); });
+                            remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
                             for(auto idx : idxs) {
                                 if(current++ > skip) {
                                     nodes.emplace_back(getNode(type_id, idx));
