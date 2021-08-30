@@ -565,50 +565,143 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const int64_t typedValue = std::any_cast<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
-                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached our limit, return
+                        std::vector<std::uint64_t> idxs;
+
+                        switch(operation) {
+                            case Operation::EQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                                break;
+                            }
+                            case Operation::NEQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                                break;
+                            }
+                            case Operation::GT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                                break;
+                            }
+                            case Operation::GTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                                break;
+                            }
+                            case Operation::LT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                                break;
+                            }
+                            case Operation::LTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                                break;
+                            }
+                        }
+
+                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+                        idxs.erase(it, idxs.end());
+
+                        for(auto idx : idxs) {
+                            if(current++ > skip) {
+                                ids.emplace_back(internalToExternal(type_id, idx));
+                            }
                             if (current > (skip + limit)) {
                                 return ids;
                             }
-                            // If the node or property has been deleted, ignore it
-                            if (blank.contains(internal_id)) {
-                                continue;
-                            }
-                            if (!Expression::Evaluate<int64_t>(operation, vec[internal_id], typedValue)) {
-                                continue;
-                            }
-                            // If it is true add it if we are over the skip, otherwise ignore it
-                            if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
-                            }
-
-                            current++;
                         }
                         return ids;
                     }
                 }
                 case Properties::getDoublePropertyType(): {
-                    if (Properties::isDoubleProperty(value)) {
-                        const double typedValue = std::any_cast<double>(value);
+
+                    // Handle values that are parsed as Integers (230 vs 230.0)
+                    if (Properties::isIntegerProperty(value)) {
+                        const double typedValue = static_cast<double>(std::any_cast<int64_t>(value));
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
-                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached our limit, return
+                        std::vector<std::uint64_t> idxs;
+
+                        switch(operation) {
+                            case Operation::EQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                                break;
+                            }
+                            case Operation::NEQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                                break;
+                            }
+                            case Operation::GT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                                break;
+                            }
+                            case Operation::GTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                                break;
+                            }
+                            case Operation::LT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                                break;
+                            }
+                            case Operation::LTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                                break;
+                            }
+                        }
+
+                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+                        idxs.erase(it, idxs.end());
+
+                        for(auto idx : idxs) {
+                            if(current++ > skip) {
+                                ids.emplace_back(internalToExternal(type_id, idx));
+                            }
                             if (current > (skip + limit)) {
                                 return ids;
                             }
-                            // If the node or property has been deleted, ignore it
-                            if (blank.contains(internal_id)) {
-                                continue;
-                            }
-                            if (!Expression::Evaluate<double>(operation, vec[internal_id], typedValue)) {
-                                continue;
-                            }
-                            // If it is true add it if we are over the skip, otherwise ignore it
-                            if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
-                            }
+                        }
+                        return ids;
+                    }
 
-                            current++;
+                    if (Properties::isDoubleProperty(value)) {
+                        const double typedValue = std::any_cast<double>(value);
+                        const std::vector<double> &vec = properties[type_id].getDoubles(property);
+                        std::vector<std::uint64_t> idxs;
+
+                        switch(operation) {
+                            case Operation::EQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                                break;
+                            }
+                            case Operation::NEQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                                break;
+                            }
+                            case Operation::GT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                                break;
+                            }
+                            case Operation::GTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                                break;
+                            }
+                            case Operation::LT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                                break;
+                            }
+                            case Operation::LTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                                break;
+                            }
+                        }
+
+                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+                        idxs.erase(it, idxs.end());
+
+                        for(auto idx : idxs) {
+                            if(current++ > skip) {
+                                ids.emplace_back(internalToExternal(type_id, idx));
+                            }
+                            if (current > (skip + limit)) {
+                                return ids;
+                            }
                         }
                         return ids;
                     }
@@ -692,6 +785,32 @@ namespace ragedb {
                     }
                 }
                 case Properties::getDoubleListPropertyType(): {
+                    if (Properties::isIntegerListProperty(value)) {
+                        std::vector<int64_t> integerTypedValue = std::any_cast<std::vector<int64_t>>(value);
+                        const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
+                        const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
+                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+                            // If we reached our limit, return
+                            if (current > (skip + limit)) {
+                                return ids;
+                            }
+                            // If the node or property has been deleted, ignore it
+                            if (blank.contains(internal_id)) {
+                                continue;
+                            }
+                            if (!Expression::EvaluateVector<double>(operation, vec[internal_id], typedValue)) {
+                                continue;
+                            }
+                            // If it is true add it if we are over the skip, otherwise ignore it
+                            if (current > skip) {
+                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                            }
+
+                            current++;
+                        }
+                        return ids;
+                    }
+
                     if (Properties::isDoubleListProperty(value)) {
                         const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
@@ -869,31 +988,100 @@ namespace ragedb {
                             }
                         }
                         return nodes;
-
                     }
                 }
                 case Properties::getDoublePropertyType(): {
-                    if (Properties::isDoubleProperty(value)) {
-                        const double typedValue = std::any_cast<double>(value);
+                    // Handle values that are parsed as Integers (230 vs 230.0)
+                    if (Properties::isIntegerProperty(value)) {
+                        const double typedValue = static_cast<double>(std::any_cast<int64_t>(value));
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
-                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached our limit, return
+                        std::vector<std::uint64_t> idxs;
+
+                        switch(operation) {
+                            case Operation::EQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                                break;
+                            }
+                            case Operation::NEQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                                break;
+                            }
+                            case Operation::GT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                                break;
+                            }
+                            case Operation::GTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                                break;
+                            }
+                            case Operation::LT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                                break;
+                            }
+                            case Operation::LTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                                break;
+                            }
+                        }
+
+                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+                        idxs.erase(it, idxs.end());
+
+                        for(auto idx : idxs) {
+                            if(current++ > skip) {
+                                nodes.emplace_back(getNode(type_id, idx));
+                            }
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
-                            // If the node or property has been deleted, ignore it
-                            if (blank.contains(internal_id)) {
-                                continue;
-                            }
-                            if (!Expression::Evaluate<double>(operation, vec[internal_id], typedValue)) {
-                                continue;
-                            }
-                            // If it is true add it if we are over the skip, otherwise ignore it
-                            if (current > skip) {
-                                nodes.emplace_back(getNode(type_id, internal_id));
-                            }
+                        }
+                        return nodes;
+                    }
 
-                            current++;
+                    if (Properties::isDoubleProperty(value)) {
+                        const double typedValue = std::any_cast<double>(value);
+                        const std::vector<double> &vec = properties[type_id].getDoubles(property);
+                        std::vector<std::uint64_t> idxs;
+
+                        switch(operation) {
+                            case Operation::EQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                                break;
+                            }
+                            case Operation::NEQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                                break;
+                            }
+                            case Operation::GT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                                break;
+                            }
+                            case Operation::GTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                                break;
+                            }
+                            case Operation::LT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                                break;
+                            }
+                            case Operation::LTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                                break;
+                            }
+                        }
+
+                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+                        idxs.erase(it, idxs.end());
+
+                        for(auto idx : idxs) {
+                            if(current++ > skip) {
+                                nodes.emplace_back(getNode(type_id, idx));
+                            }
+                            if (current > (skip + limit)) {
+                                return nodes;
+                            }
                         }
                         return nodes;
                     }
@@ -977,6 +1165,31 @@ namespace ragedb {
                     }
                 }
                 case Properties::getDoubleListPropertyType(): {
+                    if (Properties::isIntegerListProperty(value)) {
+                        std::vector<int64_t> integerTypedValue = std::any_cast<std::vector<int64_t>>(value);
+                        const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
+                        const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
+                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+                            // If we reached our limit, return
+                            if (current > (skip + limit)) {
+                                return nodes;
+                            }
+                            // If the node or property has been deleted, ignore it
+                            if (blank.contains(internal_id)) {
+                                continue;
+                            }
+                            if (!Expression::EvaluateVector<double>(operation, vec[internal_id], typedValue)) {
+                                continue;
+                            }
+                            // If it is true add it if we are over the skip, otherwise ignore it
+                            if (current > skip) {
+                                nodes.emplace_back(getNode(type_id, internal_id));
+                            }
+
+                            current++;
+                        }
+                        return nodes;
+                    }
                     if (Properties::isDoubleListProperty(value)) {
                         const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
@@ -1310,76 +1523,142 @@ namespace ragedb {
                 // Add the node properties
                 for (auto[key, value] : object) {
                     auto property = static_cast<std::string>(key);
-                    switch (value.type()) {
-                        case simdjson::dom::element_type::INT64:
-                            properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
-                            break;
-                        case simdjson::dom::element_type::UINT64:
-                            // Unsigned Integer Values are not allowed, convert to signed
-                            properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
-                            break;
-                        case simdjson::dom::element_type::DOUBLE:
-                            properties[type_id].setDoubleProperty(property, internal_id, double(value));
-                            break;
-                        case simdjson::dom::element_type::STRING:
-                            properties[type_id].setStringProperty(property, internal_id, std::string(value));
-                            break;
-                        case simdjson::dom::element_type::BOOL:
-                            properties[type_id].setBooleanProperty(property, internal_id, bool(value));
-                            break;
-                        case simdjson::dom::element_type::NULL_VALUE:
-                            // Null Values are not allowed, just ignore them
-                            break;
-                        case simdjson::dom::element_type::OBJECT: {
-                            // TODO: Add support for nested properties
-                            break;
-                        }
-                        case simdjson::dom::element_type::ARRAY: {
-                            auto array = simdjson::dom::array(value);
-                            if (array.size() > 0) {
-                                simdjson::dom::element first = array.at(0);
-                                std::vector<int64_t> int_vector;
-                                std::vector<double> double_vector;
-                                std::vector<std::string> string_vector;
-                                std::vector<bool> bool_vector;
-                                switch (first.type()) {
-                                    case simdjson::dom::element_type::ARRAY:
-                                        break;
-                                    case simdjson::dom::element_type::OBJECT:
-                                        break;
+                    const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+                    // If the property exists at all
+                    if (property_type_id > 0) {
+                        // We are going to check that the property type matches the value type
+                        // and handle some conversions
+
+                        switch (property_type_id) {
+                            // For booleans only allow bool property types
+                            case Properties::getBooleanPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::BOOL) {
+                                    properties[type_id].setBooleanProperty(property, internal_id, bool(value));
+                                }
+                                break;
+                            }
+
+                            case Properties::getIntegerPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::INT64) {
+                                    properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
+                                    break;
+                                }
+                                if (value.type() == simdjson::dom::element_type::UINT64) {
+                                    // Unsigned Integer Values are not allowed, convert to signed
+                                    properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
+                                    break;
+                                }
+                            }
+
+                            case Properties::getDoublePropertyType(): {
+                                switch (value.type()) {
                                     case simdjson::dom::element_type::INT64:
-                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                            int_vector.emplace_back(int64_t(child));
-                                        }
-                                        properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        properties[type_id].setDoubleProperty(property, internal_id, static_cast<double>(int64_t(value)));
                                         break;
                                     case simdjson::dom::element_type::UINT64:
-                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                            int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
-                                        }
-                                        properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                        // Unsigned Integer Values are not allowed, convert to signed
+                                        properties[type_id].setDoubleProperty(property, internal_id, static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(value)));
                                         break;
                                     case simdjson::dom::element_type::DOUBLE:
-                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                            double_vector.emplace_back(double(child));
+                                        properties[type_id].setDoubleProperty(property, internal_id, double(value));
+                                        break;
+                                }
+                            }
+
+                            case Properties::getStringPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::STRING) {
+                                    properties[type_id].setStringProperty(property, internal_id, std::string(value));
+                                    break;
+                                }
+                            }
+
+                            case Properties::getBooleanListPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::ARRAY) {
+                                    auto array = simdjson::dom::array(value);
+                                    if (array.size() > 0) {
+                                        simdjson::dom::element first = array.at(0);
+                                        if (first.type() == simdjson::dom::element_type::BOOL) {
+                                            std::vector<bool> bool_vector;
+                                            for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                bool_vector.emplace_back(bool(child));
+                                            }
+                                            properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
+                                            break;
                                         }
-                                        properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
-                                        break;
-                                    case simdjson::dom::element_type::STRING:
-                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                            string_vector.emplace_back(child);
+                                    }
+                                }
+                            }
+
+                            case Properties::getIntegerListPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::ARRAY) {
+                                    auto array = simdjson::dom::array(value);
+                                    if (array.size() > 0) {
+                                        simdjson::dom::element first = array.at(0);
+                                        std::vector<int64_t> int_vector;
+
+                                        switch (first.type()) {
+                                            case simdjson::dom::element_type::INT64:
+                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                    int_vector.emplace_back(int64_t(child));
+                                                }
+                                                properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                                break;
+                                            case simdjson::dom::element_type::UINT64:
+                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                    int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
+                                                }
+                                                properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+                                                break;
                                         }
-                                        properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
-                                        break;
-                                    case simdjson::dom::element_type::BOOL:
-                                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                            bool_vector.emplace_back(bool(child));
+                                    }
+                                }
+                            }
+
+                            case Properties::getDoubleListPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::ARRAY) {
+                                    auto array = simdjson::dom::array(value);
+                                    if (array.size() > 0) {
+                                        simdjson::dom::element first = array.at(0);
+                                        std::vector<double> double_vector;
+
+                                        switch (first.type()) {
+                                            case simdjson::dom::element_type::INT64:
+                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                    double_vector.emplace_back(static_cast<double>(int64_t(child)));
+                                                }
+                                                properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                                                break;
+                                            case simdjson::dom::element_type::UINT64:
+                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                    double_vector.emplace_back(static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(child)));
+                                                }
+                                                properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                                                break;
+                                            case simdjson::dom::element_type::DOUBLE:
+                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                    double_vector.emplace_back(double(child));
+                                                }
+                                                properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+                                                break;
                                         }
-                                        properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
-                                        break;
-                                    case simdjson::dom::element_type::NULL_VALUE:
-                                        // Null Values are not allowed, just ignore them
-                                        break;
+                                    }
+                                }
+                            }
+
+                            case Properties::getStringListPropertyType(): {
+                                if (value.type() == simdjson::dom::element_type::ARRAY) {
+                                    auto array = simdjson::dom::array(value);
+                                    if (array.size() > 0) {
+                                        simdjson::dom::element first = array.at(0);
+                                        if (first.type() == simdjson::dom::element_type::STRING) {
+                                            std::vector<std::string> string_vector;
+                                            for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                                                string_vector.emplace_back(child);
+                                            }
+                                            properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                         }
