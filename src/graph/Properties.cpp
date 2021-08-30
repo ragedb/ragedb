@@ -456,7 +456,7 @@ namespace ragedb {
     }
 
     bool Properties::isDeleted(const std::string& key, uint64_t index) {
-        if (types.find(key) != types.end()) {
+        if (deleted.find(key) != deleted.end()) {
             return deleted[key].contains(index);
         }
         return true;
@@ -464,14 +464,14 @@ namespace ragedb {
 
     // Be careful with this method since it includes deleted nodes
     uint64_t Properties::getDeletedCount(const std::string& key) {
-        if (types.find(key) != types.end()) {
+        if (deleted.find(key) != deleted.end()) {
             return deleted[key].cardinality();
         }
         return 0;
     }
 
     roaring::Roaring64Map& Properties::getDeletedMap(const std::string& key) {
-        if (types.find(key) != types.end()) {
+        if (deleted.find(key) != deleted.end()) {
             return deleted[key];
         }
         return deleted[""];

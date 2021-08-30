@@ -827,43 +827,49 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const int64_t typedValue = std::any_cast<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
+                        std::vector<std::uint64_t> idxs;
 
-                        if(operation == Operation::EQ) {
-                            std::vector<std::uint64_t> idxs =
-                                    ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
-
-                            remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
-                            for(auto idx : idxs) {
-                                if(current++ > skip) {
-                                    nodes.emplace_back(getNode(type_id, idx));
-                                }
-                                if (current > (skip + limit)) {
-                                    return nodes;
-                                }
+                        switch(operation) {
+                            case Operation::EQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                                break;
                             }
-                            return nodes;
+                            case Operation::NEQ: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                                break;
+                            }
+                            case Operation::GT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                                break;
+                            }
+                            case Operation::GTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                                break;
+                            }
+                            case Operation::LT: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                                break;
+                            }
+                            case Operation::LTE: {
+                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                                break;
+                            }
                         }
 
-                        for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached our limit, return
+                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+                        idxs.erase(it, idxs.end());
+
+                        for(auto idx : idxs) {
+                            if(current++ > skip) {
+                                nodes.emplace_back(getNode(type_id, idx));
+                            }
                             if (current > (skip + limit)) {
                                 return nodes;
                             }
-                            // If the node or property has been deleted, ignore it
-                            if (blank.contains(internal_id)) {
-                                continue;
-                            }
-                            if (!Expression::Evaluate<int64_t>(operation, vec[internal_id], typedValue)) {
-                                continue;
-                            }
-                             // If it is true add it if we are over the skip, otherwise ignore it
-                            if (current > skip) {
-                                nodes.emplace_back(getNode(type_id, internal_id));
-                            }
-
-                             current++;
                         }
-                    return nodes;
+                        return nodes;
+
                     }
                 }
                 case Properties::getDoublePropertyType(): {
