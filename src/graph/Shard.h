@@ -18,6 +18,7 @@
 #define RAGEDB_SHARD_H
 
 #include <any>
+#include <coroutine>
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
 #include <seastar/core/when_all.hh>
@@ -55,6 +56,8 @@ namespace ragedb {
         inline static const uint64_t LIMIT = 100;
         inline static const std::string EXCEPTION = "An exception has occurred: ";
 
+        std::vector<uint16_t> carousel;
+
     public:
         explicit Shard(uint _cpus);
 
@@ -69,6 +72,7 @@ namespace ragedb {
         static uint16_t externalToTypeId(uint64_t id);
         static uint16_t CalculateShardId(uint64_t id);
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
+        uint16_t CalculateShardId(const std::string &type, const std::string &key, const std::any &value) const;
         bool ValidNodeId(uint64_t id);
         bool ValidRelationshipId(uint64_t id);
 

@@ -51,6 +51,34 @@ namespace ragedb {
         return (uint16_t)(((__uint128_t)x64 * (__uint128_t)cpus) >> SIXTY_FOUR);
     }
 
+    uint16_t Shard::CalculateShardId(const std::string &type, const std::string &property, const std::any &value) const {
+        // We need to find where the find goes, so we use the type, property and value to create a 64 bit number
+
+        std::ostringstream ss;
+        ss << type;
+        ss << '-';
+        ss << property;
+        ss << '-';
+
+        if (value.type() == typeid(bool)) {
+            ss << std::boolalpha << std::any_cast<bool>(value);
+        }
+        if (value.type() == typeid(int64_t)) {
+            ss << std::to_string(std::any_cast<int64_t>(value));
+        }
+        if (value.type() == typeid(double)) {
+            ss << std::to_string(std::any_cast<double>(value));
+        }
+        if (value.type() == typeid(std::string)) {
+            ss << std::any_cast<std::string>(value);
+        }
+
+        uint64_t x64 = std::hash<std::string>()(ss.str());
+
+        // Then we bucket it into a shard depending on the number of cpus we have
+        return (uint16_t)(((__uint128_t)x64 * (__uint128_t)cpus) >> SIXTY_FOUR);
+    }
+
     bool Shard::ValidNodeId(uint64_t id) {
         // Node must be greater than zero,
         // less than maximum node id,
