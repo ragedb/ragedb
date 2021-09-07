@@ -31,7 +31,7 @@ add_library(project_warnings INTERFACE)
 # enable cache system
 include(cmake/Cache.cmake)
 
-# standard compiler warnings
+# standard compiler warning
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(project_warnings)
 
@@ -107,7 +107,8 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/RelationshipProperties.cpp src/main/handlers/RelationshipProperties.h
         src/main/handlers/Degrees.cpp src/main/handlers/Degrees.h
         src/main/handlers/Neighbors.cpp src/main/handlers/Neighbors.h
-        src/main/handlers/Lua.cpp src/main/handlers/Lua.h)
+        src/main/handlers/Lua.cpp src/main/handlers/Lua.h
+        src/main/handlers/Restore.cpp src/main/handlers/Restore.h)
 target_link_libraries(
         Graph
         project_options
@@ -118,6 +119,8 @@ target_link_libraries(
         CONAN_PKG::sol2
         CONAN_PKG::luajit
         CONAN_PKG::jfalcou-eve
+        CONAN_PKG::cppcodec
+        CONAN_PKG::cpr
 )
 
 target_link_libraries(

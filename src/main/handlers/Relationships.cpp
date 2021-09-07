@@ -149,6 +149,7 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipHandler::handle([[
     if(valid_type && valid_key && valid_type2 && valid_key2 && valid_rel_type) {
         // If there are no properties
         if (req->content.empty()) {
+            parent.graph.Log(req->_method, req->get_url());
             return parent.graph.shard.local().RelationshipAddEmptyPeered(req->param[Utilities::REL_TYPE], req->param[Utilities::TYPE],req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2])
                     .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this] (uint64_t id) mutable {
                         if (id > 0) {
@@ -165,6 +166,7 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipHandler::handle([[
                     });
         } else {
             if (Utilities::validate_json(req, rep)) {
+                parent.graph.Log(req->_method, req->get_url(), req->content);
                 return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE],
                                                                         req->param[Utilities::TYPE],
                                                                         req->param[Utilities::KEY],
@@ -201,6 +203,7 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handl
     if(id > 0 && id2 > 0 && valid_rel_type) {
         // If there are no properties
         if (req->content.empty()) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.local().RelationshipAddEmptyPeered(req->param[Utilities::REL_TYPE], id, id2)
                     .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this] (uint64_t relationship_id) mutable {
                         if (relationship_id > 0) {
@@ -217,6 +220,7 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handl
                     });
         } else {
             if (Utilities::validate_json(req, rep)) {
+                parent.graph.Log(req->_method, req->get_url(), req->content);
                 return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE], id, id2,
                                                                         req->content.c_str())
                         .then([rep = std::move(rep), rel_type = req->param[Utilities::REL_TYPE], this](
@@ -245,7 +249,8 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handl
 future<std::unique_ptr<reply>> Relationships::DeleteRelationshipHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
-    if (id >0) {
+    if (id > 0) {
+        parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);

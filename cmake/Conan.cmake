@@ -26,6 +26,8 @@ macro(run_conan)
     simdjson/0.9.7
     roaring/0.3.3
     jfalcou-eve/cci.20210823
+    cppcodec/0.2
+    cpr/1.6.2
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

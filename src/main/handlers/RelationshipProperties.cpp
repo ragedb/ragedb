@@ -87,6 +87,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::PutRelationshipPropertyBy
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.local().RelationshipPropertySetFromJsonPeered(id, req->param[Utilities::PROPERTY], req->content.c_str())
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {
@@ -106,6 +107,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::DeleteRelationshipPropert
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipPropertyDeletePeered(id, req->param[Utilities::PROPERTY])
                 .then([rep = std::move(rep)] (bool success) mutable {
                    if(success) {
@@ -141,6 +143,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::PostRelationshipPropertie
 
     if (id > 0) {
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.local().RelationshipPropertiesResetFromJsonPeered(id, req->content.c_str())
                     .then([rep = std::move(rep)] (bool success) mutable {
                         if(success) {
@@ -161,6 +164,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::PutRelationshipProperties
 
     if (id > 0) {
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.local().RelationshipPropertiesSetFromJsonPeered(id, req->content.c_str())
                     .then([rep = std::move(rep)](bool success) mutable {
                         if (success) {
@@ -180,6 +184,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::DeleteRelationshipPropert
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
+        parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipPropertiesDeletePeered(id)
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {

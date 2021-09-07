@@ -18,6 +18,7 @@
 #define RAGEDB_EXPRESSION_H
 
 #include <string>
+#include <vector>
 #include "Operation.h"
 
 namespace ragedb {

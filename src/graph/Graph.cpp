@@ -35,7 +35,25 @@ namespace ragedb {
      * @return future
      */
     seastar::future<> Graph::Start() {
+
         return shard.start(seastar::smp::count);
+    }
+
+    void Graph::StartLogging() {
+        std::cout << "Logging to " << GetName() <<  ".log\n";
+        std::filesystem::path from{GetName() + ".log"};
+
+        // If the log file exists, move it to restore
+        if (std::filesystem::exists(from)) {
+            std::filesystem::path to{GetName() + ".restore"};
+            copy_file(from, to, std::filesystem::copy_options::overwrite_existing);
+        }
+
+        // Set the logger output
+        log_file.open(GetName() + ".log", std::ios::out | std::ios::ate);
+        if (log_file.is_open()) {
+            logger.set_ostream(log_file);
+        }
     }
 
     /**
@@ -59,6 +77,25 @@ namespace ragedb {
                 .handle_exception([](const std::exception_ptr& e) {
                     std::cerr << "Exception in Graph::Clear\n";
                 }));
+    }
+
+    static const seastar::logger::format_info format("{1}&method={0}");
+    static const seastar::logger::format_info with_body_format("{1}&method={0}&body={2}");
+
+    void Graph::Log(const seastar::sstring method, const seastar::sstring url) {
+        // TODO: Temporary logging for now
+        logger.info(format, method.c_str(), url.c_str());
+    }
+
+    void Graph::Log(const seastar::sstring method, const seastar::sstring url, const seastar::sstring body) {
+        // TODO: Temporary logging for now
+        logger.info(with_body_format, method.c_str(), url.c_str(), base64::encode(body).c_str());
+    }
+
+
+    seastar::future<seastar::output_stream<char>> Graph::make_output_stream(const seastar::sstring filename) {
+        auto file = co_await seastar::open_file_dma("useless_file.txt", seastar::open_flags::create | seastar::open_flags::wo);
+        co_return co_await seastar::make_file_output_stream(file);
     }
 
 }

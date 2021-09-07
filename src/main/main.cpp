@@ -28,6 +28,7 @@
 #include "handlers/Schema.h"
 #include "handlers/Utilities.h"
 #include "handlers/Lua.h"
+#include "handlers/Restore.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/net/inet_address.hh>
@@ -63,6 +64,7 @@ int main(int argc, char** argv) {
 
                 ragedb::Graph graph("rage");
                 graph.Start().get();
+                graph.StartLogging();
                 HealthCheck healthCheck(graph);
                 Schema schema(graph);
                 Nodes nodes(graph);
@@ -72,7 +74,7 @@ int main(int argc, char** argv) {
                 Degrees degrees(graph);
                 Neighbors neighbors(graph);
                 Lua lua(graph);
-
+                Restore restore(graph);
 
                 server->set_routes([&relationshipProperties](routes& r) { relationshipProperties.set_routes(r); }).get();
                 server->set_routes([&nodeProperties](routes& r) { nodeProperties.set_routes(r); }).get();
@@ -83,6 +85,7 @@ int main(int argc, char** argv) {
                 server->set_routes([&schema](routes& r) { schema.set_routes(r); }).get();
                 server->set_routes([&lua](routes& r) { lua.set_routes(r); }).get();
                 server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();
+                server->set_routes([&restore](routes& r) { restore.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes& r) {
                     r.add(seastar::operation_type::GET,
@@ -93,12 +96,13 @@ int main(int argc, char** argv) {
                 }).get();
 
                 server->listen(seastar::socket_address{addr, port}).get();
-
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
+                //graph.Restore().get();
                 seastar::engine().at_exit([&server, &graph] {
                     std::cout << "Stopping RageDB HTTP server" << std::endl;
                     return graph.Stop().then([&] () { return server->stop(); });
                 });
+
                 stop_signal.wait().get();  // this will wait till we receive SIGINT or SIGTERM signal
             });
         });

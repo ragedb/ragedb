@@ -18,13 +18,13 @@
 #define RAGEDB_NODETYPES_H
 
 #include <cstdint>
-#include <roaring/roaring64map.hh>
 #include <set>
 #include "Expression.h"
 #include "Group.h"
 #include "Node.h"
 #include "Properties.h"
 #include "Operation.h"
+#include <simdjson.h>
 
 namespace ragedb {
 

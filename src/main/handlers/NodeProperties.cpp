@@ -159,6 +159,7 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertyHandler::handle([[
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_key && valid_property) {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertySetFromJsonPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY], req->content.c_str());
         }).then([rep = std::move(rep)] (bool success) mutable {
@@ -179,8 +180,8 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertyByIdHandler::handl
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
         uint16_t node_shard_id = Shard::CalculateShardId(id);
-
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertySetFromJson(id, req->param[Utilities::PROPERTY], req->content.c_str());
         }).then([rep = std::move(rep)] (bool success) mutable {
@@ -202,6 +203,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertyHandler::handle
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_key && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertyDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY]);
         }).then([rep = std::move(rep)] (bool success) mutable {
@@ -222,8 +224,8 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertyByIdHandler::ha
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
         uint16_t node_shard_id = Shard::CalculateShardId(id);
-
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertyDelete(id, req->param[Utilities::PROPERTY]);
         }).then([rep = std::move(rep)] (bool success) mutable {
@@ -281,6 +283,7 @@ future<std::unique_ptr<reply>> NodeProperties::PostNodePropertiesHandler::handle
 
     if(valid_type && valid_key) {
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)](Shard &local_shard) {
                 return local_shard.NodePropertiesResetFromJsonPeered(req->param[Utilities::TYPE],
                                                                      req->param[Utilities::KEY], req->content.c_str());
@@ -303,6 +306,7 @@ future<std::unique_ptr<reply>> NodeProperties::PostNodePropertiesByIdHandler::ha
 
     if (id > 0) {
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             uint16_t node_shard_id = Shard::CalculateShardId(id);
             return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)](Shard &local_shard) {
                 return local_shard.NodePropertiesResetFromJson(id, req->content.c_str());
@@ -326,6 +330,7 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertiesHandler::handle(
 
     if(valid_type && valid_key) {
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)](Shard &local_shard) {
                 return local_shard.NodePropertiesSetFromJsonPeered(req->param[Utilities::TYPE],
                                                                    req->param[Utilities::KEY], req->content.c_str());
@@ -348,6 +353,7 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertiesByIdHandler::han
 
     if (id > 0) {
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             uint16_t node_shard_id = Shard::CalculateShardId(id);
             return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)](Shard &local_shard) {
                 return local_shard.NodePropertiesSetFromJson(id, req->content.c_str());
@@ -370,6 +376,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesHandler::hand
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
     if(valid_type && valid_key) {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodePropertiesDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
         }).then([rep = std::move(rep)] (bool success) mutable {
@@ -389,6 +396,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesByIdHandler::
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id] (Shard &local_shard) {
             return local_shard.NodePropertiesDelete(id);

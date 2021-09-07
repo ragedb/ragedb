@@ -19,10 +19,15 @@
 
 #include <any>
 #include <coroutine>
+#include <iostream>
+#include <fstream>
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
 #include <seastar/core/when_all.hh>
 #include <seastar/core/thread.hh>
+#include <seastar/core/file.hh>
+#include <seastar/core/fstream.hh>
+#include <seastar/core/io_intent.hh>
 #include <simdjson.h>
 #include <sol/sol.hpp>
 #include <tsl/sparse_map.h>
@@ -33,6 +38,8 @@
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
 #include "eve/CollectIndexes.h"
+#include <cppcodec/base64_default_url_unpadded.hpp>
+#include <cpr/cpr.h>
 
 namespace ragedb {
 
@@ -319,6 +326,7 @@ namespace ragedb {
         // *****************************************************************************************************************************
 
         seastar::future<std::vector<std::string>> HealthCheckPeered();
+        seastar::future<std::string> RestorePeered(const std::string& name);
 
         // Node Types
         uint16_t NodeTypesGetCountPeered();

@@ -19,9 +19,16 @@
 
 
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <seastar/core/sleep.hh>
+#include <seastar/core/seastar.hh>
 #include <seastar/core/coroutine.hh>
 #include <seastar/core/future.hh>
 #include <seastar/core/sharded.hh>
+#include <seastar/core/file.hh>
+#include <seastar/core/fstream.hh>
+#include <seastar/core/io_intent.hh>
 
 #include "Shard.h"
 
@@ -30,15 +37,21 @@ namespace ragedb {
     class Graph {
     private:
         std::string name;
+        std::fstream log_file;
+        seastar::logger logger;
+        seastar::future<seastar::output_stream<char>> make_output_stream(const seastar::sstring filename);
 
     public:
         seastar::sharded <Shard> shard;
-        explicit Graph(std::string _name) : name (std::move(_name)) {}
+        explicit Graph(std::string _name) : name (std::move(_name)), logger(_name)  {};
 
         std::string GetName();
         seastar::future<> Start();
+        void StartLogging();
         seastar::future<> Stop();
         void Clear();
+        void Log(const seastar::sstring method, const seastar::sstring url);
+        void Log(const seastar::sstring method, const seastar::sstring url, const seastar::sstring body);
     };
 }
 

@@ -151,6 +151,7 @@ future<std::unique_ptr<reply>> Nodes::PostNodeHandler::handle([[maybe_unused]] c
     if(valid_type && valid_key) {
         // If there are no properties
         if (req->content.empty()) {
+            parent.graph.Log(req->_method, req->get_url());
             return parent.graph.shard.local().NodeAddEmptyPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
                     .then([rep = std::move(rep), type = req->param[Utilities::TYPE], key = req->param[Utilities::KEY]](uint64_t id) mutable {
                         if (id > 0) {
@@ -165,6 +166,7 @@ future<std::unique_ptr<reply>> Nodes::PostNodeHandler::handle([[maybe_unused]] c
                     });
         }
         if (Utilities::validate_json(req, rep)) {
+            parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.local().NodeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY],
                                                             req->content.c_str())
                     .then([rep = std::move(
@@ -194,6 +196,7 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeHandler::handle([[maybe_unused]]
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
     if(valid_type && valid_key) {
+        parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().NodeRemovePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(reply::status_type::no_content);
@@ -210,6 +213,7 @@ future<std::unique_ptr<reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unus
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id >0) {
+        parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().NodeRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
