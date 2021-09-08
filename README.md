@@ -31,6 +31,10 @@ Run Docker on a Linux host for the best performance.
 
 ### Schema
 
+#### Restore Graph
+
+    :POST /db/{graph}/restore
+
 #### Delete Graph
 
     :DELETE /db/{graph}/schema
@@ -387,6 +391,17 @@ Install LuaJIT
 If you get errors regarding conan locks, run:
 
     conan remove --locks
+
+### Todos
+
+    - Command Logging (started)
+    - Recovering (started)
+    - Snapshots
+    - Front End UI
+    - Metrics
+    - Everthing Else
+    - Take over the world
+
 
 ### Missing Features that can be added "easily"
     - Allow Node and Relationship Type handlers to take a json map defining the property keys and data types
