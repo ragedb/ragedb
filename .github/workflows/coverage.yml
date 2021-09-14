@@ -20,17 +20,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-          
-      - uses: actions/checkout@master
-        with:
-          repository: ragedb/rage-assured
-          path: rage-assured    
 
       - name: update container base
         run: |
@@ -84,7 +73,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         # Execute tests defined by the CMake configuration.
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest -C ${{env.BUILD_TYPE}}
+        run: ctest -C ${{env.BUILD_TYPE}} --rerun-failed --output-on-failure
 
       - name: Upload coverage report
         working-directory: ${{github.workspace}}
