@@ -45,15 +45,6 @@ namespace ragedb {
         return result;
     }
 
-    void little_sleep(std::chrono::microseconds us)
-    {
-        auto start = std::chrono::high_resolution_clock::now();
-        auto end = start + us;
-        do {
-            std::this_thread::yield();
-        } while (std::chrono::high_resolution_clock::now() < end);
-    }
-
     void Restore(const std::string& name) {
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -63,45 +54,36 @@ namespace ragedb {
         if (restore_file.is_open()) {
             if (restore_file.peek() != std::ifstream::traits_type::eof()) {
 
-                // This is too slow
+                // If this is too slow
                 // Alternative log an id for the URL type
                 // in a Case statement execute the actual peered method
                 // in a thread, wait for it via .get()
 
-                auto json_mime_type = cpr::Header{{"Content-Type", "application/json; charset=utf-8"}};
-                auto timeout = cpr::Timeout{1000};
-                auto long_timeout = cpr::Timeout{3000};
+                cpr::Session session;
+                session.SetTimeout(cpr::Timeout{1000});
+
                 std::string line;
                 while (std::getline(restore_file, line)) {
                     try {
                         std::map<std::string, std::string> parsed = parseURL(line);
+                        session.SetUrl(cpr::Url{parsed["address"]});
 
-                        cpr::Response r;
-                        auto url = cpr::Url{parsed["address"]};
                         auto body_search = parsed.find("body");
                         if (body_search != std::end(parsed)) {
-                            // prep request body to post
-                            auto body = cpr::Body{base64::decode<std::string>(body_search->second)};
-
-                            if (parsed["method"] == "POST") {
-                                r = cpr::Post(url, body, json_mime_type, long_timeout);
-                            }
-                            if (parsed["method"] == "PUT") {
-                                r = cpr::Put(url, body, json_mime_type, long_timeout);
-                            }
+                             session.SetBody(cpr::Body{base64::decode<std::string>(body_search->second)});
                         } else {
-                            // no body
-                            if (parsed["method"] == "POST") {
-                                r = cpr::Post(url, cpr::Body{}, json_mime_type, timeout);
-                            }
-                            if (parsed["method"] == "PUT") {
-                                r = cpr::Put(url, cpr::Body{}, json_mime_type, timeout);
-                            }
-                            if (parsed["method"] == "DELETE") {
-                                r = cpr::Delete(url, timeout);
-                            }
+                            session.SetBody(cpr::Body{});
                         }
-                        //little_sleep(std::chrono::microseconds(500));
+
+                        cpr::Response r;
+
+                        if (parsed["method"] == "POST")
+                            r = session.Post();
+                        else if (parsed["method"] == "PUT")
+                            r = session.Put();
+                        else if (parsed["method"] == "DELETE")
+                            r = session.Delete();
+
                         if (r.status_code >= 300) {
                             std::cout << "HTTP Error: (" << r.status_code << ") on line " << count << " : " << line << std::endl;
                         }

@@ -46,6 +46,7 @@ namespace ragedb {
     class Graph {
     private:
         std::string name;
+        seastar::logger logger;
         char log_path[260] = {0};
         reckless::file_writer writer;
         log_t r_logger;
@@ -54,7 +55,7 @@ namespace ragedb {
 
     public:
         seastar::sharded <Shard> shard;
-        explicit Graph(std::string _name) : name (std::move(_name)), writer(strcat(strcat(log_path, name.c_str()), ".log")), r_logger(&writer) {};
+        explicit Graph(std::string _name) : name (std::move(_name)), logger(_name), writer(strcat(strcat(log_path, name.c_str()), ".log")), r_logger(&writer) {};
         std::string GetName();
         seastar::future<> Start();
         void StartLogging();
