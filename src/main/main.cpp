@@ -64,7 +64,6 @@ int main(int argc, char** argv) {
 
                 ragedb::Graph graph("rage");
                 graph.Start().get();
-                graph.StartLogging();
                 HealthCheck healthCheck(graph);
                 Schema schema(graph);
                 Nodes nodes(graph);
