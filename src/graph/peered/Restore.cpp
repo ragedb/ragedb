@@ -45,12 +45,28 @@ namespace ragedb {
         return result;
     }
 
+    void little_sleep(std::chrono::microseconds us)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        auto end = start + us;
+        do {
+            std::this_thread::yield();
+        } while (std::chrono::high_resolution_clock::now() < end);
+    }
+
     void Restore(const std::string& name) {
+        auto start = std::chrono::high_resolution_clock::now();
+
         uint64_t count = 0;
         std::fstream restore_file;
         restore_file.open(name + ".restore", std::ios::in);
         if (restore_file.is_open()) {
             if (restore_file.peek() != std::ifstream::traits_type::eof()) {
+
+                // This is too slow
+                // Alternative log an id for the URL type
+                // in a Case statement execute the actual peered method
+                // in a thread, wait for it via .get()
 
                 auto json_mime_type = cpr::Header{{"Content-Type", "application/json; charset=utf-8"}};
                 auto timeout = cpr::Timeout{1000};
@@ -85,7 +101,7 @@ namespace ragedb {
                                 r = cpr::Delete(url, timeout);
                             }
                         }
-
+                        //little_sleep(std::chrono::microseconds(500));
                         if (r.status_code >= 300) {
                             std::cout << "HTTP Error: (" << r.status_code << ") on line " << count << " : " << line << std::endl;
                         }

@@ -397,6 +397,8 @@ If you get errors regarding conan locks, run:
     - Command Logging (started)
     - Recovering (started)
     - Snapshots
+    - Replication
+    - Bulk Loading
     - Front End UI
     - Metrics
     - Everthing Else

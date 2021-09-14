@@ -40,20 +40,16 @@ namespace ragedb {
     }
 
     void Graph::StartLogging() {
-        std::cout << "Logging to " << GetName() <<  ".log\n";
-        std::filesystem::path from{GetName() + ".log"};
+        std::cout << "Logging to " << log_path <<  '\n';
+        std::filesystem::path from{log_path};
 
         // If the log file exists, move it to restore
         if (std::filesystem::exists(from)) {
             std::filesystem::path to{GetName() + ".restore"};
             copy_file(from, to, std::filesystem::copy_options::overwrite_existing);
+            std::filesystem::resize_file(from, 0);
         }
-
-        // Set the logger output
-        log_file.open(GetName() + ".log", std::ios::out | std::ios::ate);
-        if (log_file.is_open()) {
-            logger.set_ostream(log_file);
-        }
+        reckless::install_crash_handler(&r_logger);
     }
 
     /**
@@ -62,6 +58,7 @@ namespace ragedb {
      * @return future
      */
     seastar::future<> Graph::Stop() {
+        reckless::uninstall_crash_handler();
         return shard.stop();
     }
 
@@ -79,19 +76,16 @@ namespace ragedb {
                 }));
     }
 
-    static const seastar::logger::format_info format("{1}&method={0}");
-    static const seastar::logger::format_info with_body_format("{1}&method={0}&body={2}");
+    static const char* format("%s&method=%s");
+    static const char* with_body_format("%s&method=%s&body=%s");
 
     void Graph::Log(const seastar::sstring method, const seastar::sstring url) {
-        // TODO: Temporary logging for now
-        logger.info(format, method.c_str(), url.c_str());
+        r_logger.write(format, std::string(url.c_str()), std::string(method.c_str()));
     }
 
     void Graph::Log(const seastar::sstring method, const seastar::sstring url, const seastar::sstring body) {
-        // TODO: Temporary logging for now
-        logger.info(with_body_format, method.c_str(), url.c_str(), base64::encode(body).c_str());
+        r_logger.write(with_body_format, std::string(url.c_str()), std::string(method.c_str()), base64::encode(body));
     }
-
 
     seastar::future<seastar::output_stream<char>> Graph::make_output_stream(const seastar::sstring filename) {
         auto file = co_await seastar::open_file_dma("useless_file.txt", seastar::open_flags::create | seastar::open_flags::wo);

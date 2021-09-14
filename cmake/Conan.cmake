@@ -16,8 +16,8 @@ macro(run_conan)
   conan_cmake_run(
     REQUIRES
     ${CONAN_EXTRA_REQUIRES}
-    catch2/2.13.3
-    docopt.cpp/0.6.2
+    catch2/2.13.7
+    docopt.cpp/0.6.3
     fmt/7.1.3
     spdlog/1.8.5
     luajit/2.0.5
@@ -28,6 +28,7 @@ macro(run_conan)
     jfalcou-eve/cci.20210823
     cppcodec/0.2
     cpr/1.6.2
+    reckless/3.0.3
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

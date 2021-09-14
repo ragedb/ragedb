@@ -32,8 +32,8 @@ future<std::unique_ptr<reply>> Lua::PostLuaHandler::handle([[maybe_unused]] cons
         rep->write_body("json", json::stream_object("Empty script"));
         rep->set_status(reply::status_type::bad_request);
     } else {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
         std::string body = req->content;
-
         return parent.graph.shard.invoke_on(this_shard_id(), [body](Shard &local_shard) {
             return local_shard.RunLua(body);
         }).then([rep = std::move(rep)] (const std::string& result) mutable {

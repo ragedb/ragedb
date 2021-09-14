@@ -121,6 +121,7 @@ target_link_libraries(
         CONAN_PKG::jfalcou-eve
         CONAN_PKG::cppcodec
         CONAN_PKG::cpr
+        CONAN_PKG::reckless
 )
 
 target_link_libraries(
