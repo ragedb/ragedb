@@ -392,6 +392,28 @@ If you get errors regarding conan locks, run:
 
     conan remove --locks
 
+If you get errors like:
+    
+    Creation of perf_event based stall detector failed, falling back to posix timer: std::system_error
+
+Then this should fix it: 
+
+    echo 0 > /proc/sys/kernel/perf_event_paranoid
+
+To make it permanent edit /etc/sysctl.conf by adding:
+
+    kernel.perf_event_paranoid = 0
+
+If you get errors about aio-max-nr you'll want to increase it:
+
+    sudo echo 88208 > /proc/sys/fs/aio-max-nr
+
+We allocate 11026 aio slots per shard (10000 + 1024 + 2) so 8 shards = 88208
+
+To make it permanent edit /etc/sysctl.conf by adding:
+
+    fs.aio-max-nr = 88208
+
 ### Todos
 
     - Command Logging (started)
