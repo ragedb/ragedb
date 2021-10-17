@@ -29,6 +29,7 @@
 #include "handlers/Utilities.h"
 #include "handlers/Lua.h"
 #include "handlers/Restore.h"
+#include "handlers/Connected.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/net/inet_address.hh>
@@ -72,6 +73,7 @@ int main(int argc, char** argv) {
                 RelationshipProperties relationshipProperties(graph);
                 Degrees degrees(graph);
                 Neighbors neighbors(graph);
+                Connected connected(graph);
                 Lua lua(graph);
                 Restore restore(graph);
 
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
                 server->set_routes([&nodeProperties](routes& r) { nodeProperties.set_routes(r); }).get();
                 server->set_routes([&degrees](routes& r) { degrees.set_routes(r); }).get();
                 server->set_routes([&neighbors](routes& r) { neighbors.set_routes(r); }).get();
+                server->set_routes([&connected](routes& r) { connected.set_routes(r); }).get();
                 server->set_routes([&relationships](routes& r) { relationships.set_routes(r); }).get();
                 server->set_routes([&nodes](routes& r) { nodes.set_routes(r); }).get();
                 server->set_routes([&schema](routes& r) { schema.set_routes(r); }).get();

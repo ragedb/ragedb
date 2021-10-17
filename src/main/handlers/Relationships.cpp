@@ -25,10 +25,10 @@ void Relationships::set_routes(routes &routes) {
     getRelationships->add_str("/db/" + graph.GetName() + "/relationships");
     routes.add(getRelationships, operation_type::GET);
 
-    auto getgetRelationshipsOfType = new match_rule(&getRelationshipsOfTypeHandler);
-    getgetRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
-    getgetRelationshipsOfType->add_param("type");
-    routes.add(getgetRelationshipsOfType, operation_type::GET);
+    auto getRelationshipsOfType = new match_rule(&getRelationshipsOfTypeHandler);
+    getRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
+    getRelationshipsOfType->add_param("type");
+    routes.add(getRelationshipsOfType, operation_type::GET);
 
     auto getRelationship = new match_rule(&getRelationshipHandler);
     getRelationship->add_str("/db/" + graph.GetName() + "/relationship");
@@ -317,7 +317,7 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handl
                             return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
                         });
             case 2: {
-                // Get Node Degree with Direction and Type(s)
+                // Get Node Relationships with Direction and Type(s)
                 std::vector<std::string> rel_types;
                 // Deal with both escaped and unescaped "&"
                 boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
@@ -398,7 +398,7 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
 
         switch(options.size()) {
             case 1:
-                // Get Node Degree with Direction
+                // Get Node Relationships with Direction
                 return parent.graph.shard.local().NodeGetRelationshipsPeered(id, direction)
                         .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
                             std::vector<relationship_json> json_array;
@@ -463,7 +463,7 @@ future<std::unique_ptr<reply>> Relationships::FindRelationshipsOfTypeHandler::ha
         uint64_t limit = Utilities::validate_limit(req, rep);
 
         return parent.graph.shard.local().FindRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], operation, value, skip, limit)
-                .then([rep = std::move(rep)](std::vector<Relationship> relationships) mutable {
+                .then([rep = std::move(rep)](const std::vector<Relationship>& relationships) mutable {
                     std::vector<relationship_json> json_array;
                     json_array.reserve(relationships.size());
                     if (!relationships.empty()) {

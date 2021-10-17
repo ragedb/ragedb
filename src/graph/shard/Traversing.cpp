@@ -944,7 +944,7 @@ namespace ragedb {
 
             return sharded_nodes_ids;
         }
-        return std::map<uint16_t , std::vector<uint64_t>>();
+        return {};
     }
 
     std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, Direction direction) {
@@ -966,7 +966,7 @@ namespace ragedb {
             }
             return ids;
         }
-        return std::vector<Link>();
+        return {};
     }
 
     std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, Direction direction, const std::string &rel_type) {

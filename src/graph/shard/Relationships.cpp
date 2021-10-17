@@ -220,6 +220,16 @@ namespace ragedb {
         return rel_id;
     }
 
+    std::vector<Relationship> Shard::RelationshipsGet(const std::vector<Link>& links) {
+      std::vector<Relationship> sharded_relationships;
+
+      for(Link link : links) {
+        sharded_relationships.emplace_back(RelationshipGet(link.rel_id));
+      }
+
+      return sharded_relationships;
+    }
+
     std::vector<Relationship> Shard::RelationshipsGet(const std::vector<uint64_t>& rel_ids) {
         std::vector<Relationship> sharded_relationships;
 

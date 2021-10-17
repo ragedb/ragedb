@@ -512,6 +512,34 @@ namespace ragedb {
         });
     }
 
+    seastar::future<std::vector<Relationship>> Shard::RelationshipsGetPeered(const std::vector<Link>& links) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_relationship_ids;
+      for (int i = 0; i < cpus; i++) {
+        sharded_relationship_ids.insert({i, std::vector<uint64_t>() });
+      }
+      for(Link link : links) {
+        sharded_relationship_ids[CalculateShardId(link.rel_id)].emplace_back(link.rel_id);
+      }
+
+      std::vector<seastar::future<std::vector<Relationship>>> futures;
+      for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationship_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_relationship_ids] (Shard &local_shard) {
+          return local_shard.RelationshipsGet(grouped_node_ids);
+        });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<Relationship>>& results) {
+        std::vector<Relationship> combined;
+
+        for(const std::vector<Relationship>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
+    }
+
     seastar::future<bool> Shard::RelationshipRemovePeered(uint64_t external_id) {
         uint16_t rel_shard_id = CalculateShardId(external_id);
 
