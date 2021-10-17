@@ -21,8 +21,8 @@ namespace ragedb {
 
     std::map<std::string, std::string> parseURL(std::string url) {
         std::map<std::string, std::string> result;
-        size_t start = 0;
-        size_t pos = 0;
+        size_t start;
+        size_t pos;
         const std::string http_delimiter = "http";
         const std::string method_delimiter = "&method=";
         const std::string body_delimiter = "&body=";

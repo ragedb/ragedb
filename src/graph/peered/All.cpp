@@ -33,7 +33,7 @@ namespace ragedb {
         auto p = make_shared(std::move(futures));
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
-            uint64_t next = 0;
+            uint64_t next;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
@@ -99,7 +99,7 @@ namespace ragedb {
         auto p = make_shared(std::move(futures));
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, node_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
-            uint64_t next = 0;
+            uint64_t next;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
@@ -283,7 +283,7 @@ namespace ragedb {
         auto p = make_shared(std::move(futures));
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
-            uint64_t next = 0;
+            uint64_t next;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
@@ -349,7 +349,7 @@ namespace ragedb {
         auto p = make_shared(std::move(futures));
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, relationship_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
-            uint64_t next = 0;
+            uint64_t next;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
@@ -408,7 +408,7 @@ namespace ragedb {
         auto p = make_shared(std::move(futures));
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             uint64_t current = 0;
-            uint64_t next = 0;
+            uint64_t next;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
@@ -474,7 +474,7 @@ namespace ragedb {
         auto p = make_shared(std::move(futures));
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, relationship_type_id, skip, max, limit, this] (const std::vector<uint64_t>& results) {
             uint64_t current = 0;
-            uint64_t next = 0;
+            uint64_t next;
             int current_shard_id = 0;
             std::vector<uint64_t> ids;
             std::map<uint16_t, std::pair<uint64_t , uint64_t>> requests;
