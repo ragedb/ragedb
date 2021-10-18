@@ -95,14 +95,14 @@ namespace ragedb {
 
             for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    sharded_relationships_ids.at(shard_id).emplace_back(link.rel_id);
+                    sharded_relationships_ids.at(shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
             for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -132,7 +132,7 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    sharded_relationships_ids.at(shard_id).emplace_back(link.rel_id);
+                    sharded_relationships_ids.at(shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -141,8 +141,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -171,7 +171,7 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    sharded_relationships_ids.at(shard_id).emplace_back(link.rel_id);
+                    sharded_relationships_ids.at(shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -180,8 +180,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -214,7 +214,7 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            sharded_relationships_ids.at(shard_id).emplace_back(link.rel_id);
+                            sharded_relationships_ids.at(shard_id).emplace_back(Link::rel_id(link));
                         }
                     }
 
@@ -223,8 +223,8 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            uint16_t node_shard_id = CalculateShardId(link.node_id);
-                            sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                            uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                            sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                         }
                     }
 
@@ -277,15 +277,15 @@ namespace ragedb {
 
             for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
             for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
@@ -315,8 +315,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
@@ -325,8 +325,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                 }
             }
 
@@ -355,8 +355,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                   uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                   uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
@@ -365,8 +365,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                 }
             }
 
@@ -398,8 +398,8 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            uint16_t node_shard_id = CalculateShardId(link.node_id);
-                            sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                            uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                            sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                         }
                     }
 
@@ -408,8 +408,8 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            uint16_t node_shard_id = CalculateShardId(link.node_id);
-                            sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                            uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                            sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                         }
                     }
                 }
@@ -453,7 +453,7 @@ namespace ragedb {
             uint64_t internal_id = externalToInternal(id);
             for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    node_relationships.emplace_back(relationship_types.getRelationship(link.rel_id));
+                    node_relationships.emplace_back(relationship_types.getRelationship(Link::rel_id(link)));
                 }
             }
         }
@@ -472,7 +472,7 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    node_relationships.emplace_back(relationship_types.getRelationship(link.rel_id));
+                    node_relationships.emplace_back(relationship_types.getRelationship(Link::rel_id(link)));
                 }
             }
 
@@ -491,7 +491,7 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    node_relationships.emplace_back(relationship_types.getRelationship(link.rel_id));
+                    node_relationships.emplace_back(relationship_types.getRelationship(Link::rel_id(link)));
                 }
             }
 
@@ -512,7 +512,7 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            node_relationships.emplace_back(relationship_types.getRelationship(link.rel_id));
+                            node_relationships.emplace_back(relationship_types.getRelationship(Link::rel_id(link)));
                         }
                     }
                 }
@@ -552,8 +552,8 @@ namespace ragedb {
 
             for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_relationships_ids.at(node_shard_id).push_back(link.rel_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_relationships_ids.at(node_shard_id).push_back(Link::rel_id(link));
                 }
             }
 
@@ -583,8 +583,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -613,8 +613,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                 }
             }
 
@@ -645,8 +645,8 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            uint16_t node_shard_id = CalculateShardId(link.node_id);
-                            sharded_relationships_ids.at(node_shard_id).emplace_back(link.rel_id);
+                            uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                            sharded_relationships_ids.at(node_shard_id).emplace_back(Link::rel_id(link));
                         }
                     }
                 }
@@ -694,8 +694,8 @@ namespace ragedb {
 
             for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                 }
             }
 
@@ -725,8 +725,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                 }
             }
 
@@ -755,8 +755,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                 }
             }
 
@@ -787,8 +787,8 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            uint16_t node_shard_id = CalculateShardId(link.node_id);
-                            sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
+                            uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                            sharded_nodes_ids.at(node_shard_id).emplace_back(Link::node_id(link));
                         }
                     }
                 }
@@ -836,8 +836,8 @@ namespace ragedb {
 
             for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 for (Link link : types.links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
@@ -867,8 +867,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
@@ -897,8 +897,8 @@ namespace ragedb {
 
             if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
-                    uint16_t node_shard_id = CalculateShardId(link.node_id);
-                    sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                    uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                    sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                 }
             }
 
@@ -929,8 +929,8 @@ namespace ragedb {
 
                     if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                         for(Link link : group->links) {
-                            uint16_t node_shard_id = CalculateShardId(link.node_id);
-                            sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
+                            uint16_t node_shard_id = CalculateShardId(Link::node_id(link));
+                            sharded_nodes_ids.at(node_shard_id).push_back(Link::node_id(link));
                         }
                     }
                 }

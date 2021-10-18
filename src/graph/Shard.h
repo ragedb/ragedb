@@ -38,6 +38,7 @@
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
 #include "eve/CollectIndexes.h"
+#include "eve/FilterLinks.h"
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
 

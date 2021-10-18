@@ -45,10 +45,10 @@ namespace ragedb {
                                  [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-                group->links.emplace_back(id2, external_id);
+                group->links.emplace_back(Link{id2, external_id});
             } else {
                 // otherwise create a new type with the links
-                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link {id2, external_id}})));
             }
 
             // Add the relationship to the incoming node
@@ -56,10 +56,10 @@ namespace ragedb {
                             [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2))) {
-                group->links.emplace_back(id1, external_id);
+                group->links.emplace_back(Link{id1, external_id});
             } else {
                 // otherwise create a new type with the links
-                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, external_id)})));
+                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link{id1, external_id}})));
             }
 
             return external_id;
@@ -96,10 +96,10 @@ namespace ragedb {
                                  [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-                group->links.emplace_back(id2, external_id);
+                group->links.emplace_back(Link{id2, external_id});
             } else {
                 // otherwise create a new type with the links
-                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link{id2, external_id}})));
             }
 
             // Add the relationship to the incoming node
@@ -107,10 +107,10 @@ namespace ragedb {
                             [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2))) {
-                group->links.emplace_back(id1, external_id);
+                group->links.emplace_back(Link{id1, external_id});
             } else {
                 // otherwise create a new type with the links
-                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, external_id)})));
+                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link{id1, external_id}})));
             }
 
             return external_id;
@@ -157,10 +157,10 @@ namespace ragedb {
                              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
         // See if the relationship type is already there
         if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-            group->links.emplace_back(id2, external_id);
+            group->links.emplace_back(Link{id2, external_id});
         } else {
             // otherwise create a new type with the links
-            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link{id2, external_id}})));
         }
 
         return external_id;
@@ -191,10 +191,10 @@ namespace ragedb {
                              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
         // See if the relationship type is already there
         if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-            group->links.emplace_back(id2, external_id);
+            group->links.emplace_back(Link{id2, external_id});
         } else {
             // otherwise create a new type with the links
-            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link{id2, external_id}})));
         }
 
         return external_id;
@@ -209,10 +209,10 @@ namespace ragedb {
                              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
         // See if the relationship type is already there
         if (group != std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2))) {
-            group->links.emplace_back(id1, rel_id);
+            group->links.emplace_back(Link{id1, rel_id});
         } else {
             // otherwise create a new type with the links
-            node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, rel_id)})));
+            node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link{id1, rel_id}})));
         }
 
         return rel_id;
@@ -222,7 +222,7 @@ namespace ragedb {
       std::vector<Relationship> sharded_relationships;
 
       for(Link link : links) {
-        sharded_relationships.emplace_back(RelationshipGet(link.rel_id));
+        sharded_relationships.emplace_back(RelationshipGet(Link::rel_id(link)));
       }
 
       return sharded_relationships;

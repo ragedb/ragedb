@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_LINK_H
-#define RAGEDB_LINK_H
+#ifndef RAGEDB_FILTERLINKS_H
+#define RAGEDB_FILTERLINKS_H
 
-#include <cstdint>
-#include <ostream>
 #include <eve/product_type.hpp>
 
+#include <eve/algo/container/soa_vector.hpp>
+#include <eve/algo/remove.hpp>
+
 namespace ragedb {
-  struct Link : eve::struct_support<Link, std::uint64_t, std::uint64_t> {
 
-        static decltype(auto) node_id(eve::like<Link> auto&& self) {
-          return get<0>(std::forward<decltype(self)>(self));
-        }
-
-        static decltype(auto) rel_id(eve::like<Link> auto&& self) {
-          return get<1>(std::forward<decltype(self)>(self));
-        }
-
-        friend std::ostream& operator<<(std::ostream& os, const Link& ids);
-    };
+  void filter_links(eve::algo::soa_vector<Link>& links, std::uint64_t node_id2) {
+    auto it = eve::algo::remove_if(links, [node_id2](eve::like<Link> auto link) {
+      return Link::node_id(link) != node_id2;
+    });
+    links.erase(it, links.end());
+  }
 }
-
-
-#endif //RAGEDB_LINK_H
+#endif// RAGEDB_FILTERLINKS_H
