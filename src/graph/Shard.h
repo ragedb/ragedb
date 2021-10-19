@@ -218,6 +218,17 @@ namespace ragedb {
         std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, Direction direction, uint16_t type_id);
         std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
+        std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key, uint64_t id2);
+        std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key, uint64_t id2, Direction direction);
+        std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key, uint64_t id2, Direction direction, const std::string& rel_type);
+        std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key, uint64_t id2, Direction direction, uint16_t type_id);
+        std::vector<Link> NodeGetRelationshipsIDs(const std::string& type, const std::string& key, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+        std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, uint64_t id2);
+        std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction);
+        std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
+        std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id);
+        std::vector<Link> NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key, const std::string& rel_type);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key, uint16_t type_id);
