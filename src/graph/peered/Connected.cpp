@@ -25,18 +25,11 @@ namespace ragedb {
     // Shortcut if the shards are the same
     if (shard_id1 == shard_id2) {
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
 
         return RelationshipsGetPeered(links);
       });
@@ -45,17 +38,10 @@ namespace ragedb {
     // Nodes are on different Shards, so get the node id first, then check for it
     return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) { return local_shard.NodeGetID(type2, key2); }).then([this, shard_id1, type1, key1](uint64_t node_id2) {
       return container().invoke_on(shard_id1, [type1, key1, node_id2, this](Shard &local_shard) {
-        std::vector<Link> links;
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
 
         return RelationshipsGetPeered(links);
       });
@@ -71,18 +57,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, rel_type, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_type);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_type)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -92,17 +72,11 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, rel_type](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, rel_type, this](Shard &local_shard) {
-          std::vector<Link> links;
-          eve::algo::soa_vector<Link> links_vector;
-          for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_type)) {
-            links_vector.push_back(link);
-          }
-          filter_links(links_vector, node_id2);
+          std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_type);
 
-          auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-          for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-            links.push_back(eve::read(link));
-          }
+          auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+          links.erase(it, links.end());
+
           return RelationshipsGetPeered(links);
         });
       });
@@ -117,18 +91,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, type_id, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, type_id);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, type_id)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -138,18 +106,11 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, type_id](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, type_id, this](Shard &local_shard) {
-          std::vector<Link> links;
+          std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, type_id);
 
-          eve::algo::soa_vector<Link> links_vector;
-          for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, type_id)) {
-            links_vector.push_back(link);
-          }
-          filter_links(links_vector, node_id2);
+          auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+          links.erase(it, links.end());
 
-          auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-          for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-            links.push_back(eve::read(link));
-          }
           return RelationshipsGetPeered(links);
         });
       });
@@ -164,18 +125,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, rel_types, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_types);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_types)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -185,17 +140,11 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, rel_types](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, rel_types, this](Shard &local_shard) {
-          std::vector<Link> links;
-          eve::algo::soa_vector<Link> links_vector;
-          for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_types)) {
-            links_vector.push_back(link);
-          }
-          filter_links(links_vector, node_id2);
+          std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, BOTH, rel_types);
 
-          auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-          for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-            links.push_back(eve::read(link));
-          }
+          auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+          links.erase(it, links.end());
+
           return RelationshipsGetPeered(links);
         });
       });
@@ -210,18 +159,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, direction, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -231,17 +174,11 @@ namespace ragedb {
              return local_shard.NodeGetID(type2, key2);
            }).then([this, shard_id1, type1, key1, direction](uint64_t node_id2) {
       return container().invoke_on(shard_id1, [type1, key1, node_id2, direction, this](Shard &local_shard) {
-        std::vector<Link> links;
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
     });
@@ -256,18 +193,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, direction, rel_type, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_type);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_type)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -277,17 +208,11 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, direction, rel_type](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, direction, rel_type, this](Shard &local_shard) {
-          std::vector<Link> links;
-          eve::algo::soa_vector<Link> links_vector;
-          for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_type)) {
-            links_vector.push_back(link);
-          }
-          filter_links(links_vector, node_id2);
+          std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_type);
 
-          auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-          for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-            links.push_back(eve::read(link));
-          }
+          auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+          links.erase(it, links.end());
+
           return RelationshipsGetPeered(links);
         });
       });
@@ -302,18 +227,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, direction, type_id, this](Shard &local_shard) {
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction, type_id);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        std::vector<Link> links;
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction, type_id)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -323,17 +242,11 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, direction, type_id](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, direction, type_id, this](Shard &local_shard) {
-          std::vector<Link> links;
-          eve::algo::soa_vector<Link> links_vector;
-          for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction, type_id)) {
-            links_vector.push_back(link);
-          }
-          filter_links(links_vector, node_id2);
+          std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction, type_id);
 
-          auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-          for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-            links.push_back(eve::read(link));
-          }
+          auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+          links.erase(it, links.end());
+
           return RelationshipsGetPeered(links);
         });
       });
@@ -348,18 +261,12 @@ namespace ragedb {
     if (shard_id1 == shard_id2) {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, direction, rel_types, this](Shard &local_shard) {
-        std::vector<Link> links;
+        std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_types);
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        eve::algo::soa_vector<Link> links_vector;
-        for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_types)) {
-          links_vector.push_back(link);
-        }
-        filter_links(links_vector, node_id2);
 
-        auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-        for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-          links.push_back(eve::read(link));
-        }
+        auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+        links.erase(it, links.end());
+
         return RelationshipsGetPeered(links);
       });
 
@@ -369,17 +276,11 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, direction, rel_types](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, direction, rel_types, this](Shard &local_shard) {
-          std::vector<Link> links;
-          eve::algo::soa_vector<Link> links_vector;
-          for (auto link : local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_types)) {
-            links_vector.push_back(link);
-          }
-          filter_links(links_vector, node_id2);
+          std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(type1, key1, direction, rel_types);
 
-          auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-          for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-            links.push_back(eve::read(link));
-          }
+          auto it = remove_if(links.begin(), links.end(), [node_id2](Link link) { return link.node_id != node_id2; });
+          links.erase(it, links.end());
+
           return RelationshipsGetPeered(links);
         });
       });
@@ -390,17 +291,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, this](Shard &local_shard) {
-      std::vector<Link> links;
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 
@@ -410,17 +305,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, rel_type, this](Shard &local_shard) {
-      std::vector<Link> links;
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, BOTH, rel_type)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, BOTH, rel_type);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 
@@ -430,18 +319,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, type_id, this](Shard &local_shard) {
-      std::vector<Link> links;
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, BOTH, type_id);
 
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, BOTH, type_id)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
       return RelationshipsGetPeered(links);
     });
 
@@ -451,17 +333,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, rel_types, this](Shard &local_shard) {
-      std::vector<Link> links;
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, BOTH, rel_types)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, BOTH, rel_types);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 
@@ -471,17 +347,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, direction, this](Shard &local_shard) {
-      std::vector<Link> links;
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, direction)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, direction);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 
@@ -491,17 +361,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, direction, rel_type, this](Shard &local_shard) {
-      std::vector<Link> links;
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, direction, rel_type)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, direction, rel_type);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 
@@ -511,17 +375,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, direction, type_id, this](Shard &local_shard) {
-      std::vector<Link> links;
-          eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, direction, type_id)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, direction, type_id);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 
@@ -531,17 +389,11 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, direction, rel_types, this](Shard &local_shard) {
-      std::vector<Link> links;
-      eve::algo::soa_vector<Link> links_vector;
-      for (auto link : local_shard.NodeGetRelationshipsIDs(id, direction, rel_types)) {
-        links_vector.push_back(link);
-      }
-      filter_links(links_vector, id2);
+      std::vector<Link> links = local_shard.NodeGetRelationshipsIDs(id, direction, rel_types);
 
-      auto as_links = eve::algo::views::convert(links_vector, eve::as<Link>{});
-      for (auto link = as_links.begin(); link != as_links.end(); ++link) {
-        links.push_back(eve::read(link));
-      }
+      auto it = remove_if(links.begin(), links.end(), [id2](Link link) { return link.node_id != id2; });
+      links.erase(it, links.end());
+
       return RelationshipsGetPeered(links);
     });
 

@@ -19,18 +19,14 @@
 
 #include <cstdint>
 #include <ostream>
-#include <eve/product_type.hpp>
 
 namespace ragedb {
-  struct Link : eve::struct_support<Link, std::uint64_t, std::uint64_t> {
+    class Link {
 
-        static decltype(auto) node_id(eve::like<Link> auto&& self) {
-          return get<0>(std::forward<decltype(self)>(self));
-        }
-
-        static decltype(auto) rel_id(eve::like<Link> auto&& self) {
-          return get<1>(std::forward<decltype(self)>(self));
-        }
+    public:
+        Link(uint64_t nodeId, uint64_t relId);
+        uint64_t node_id;
+        uint64_t rel_id;
 
         friend std::ostream& operator<<(std::ostream& os, const Link& ids);
     };

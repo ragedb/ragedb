@@ -173,13 +173,11 @@ namespace ragedb {
                                          "getEndingNodeId", &Relationship::getEndingNodeId,
                                          "getProperties", &Relationship::getPropertiesLua,
                                          "getProperty", &Relationship::getProperty);
-        sol::usertype<Link> link_type = lua.new_usertype<Link>("Link");
 
-
-//        lua.new_usertype<Link>("Link",
-//                                sol::constructors<Link(uint64_t, uint64_t)>(),
-//                                "node_id", &Link::node_id,
-//                                "rel_id", &Link::rel_id);
+        lua.new_usertype<Link>("Link",
+                                sol::constructors<Link(uint64_t, uint64_t)>(),
+                                "node_id", &Link::node_id,
+                                "rel_id", &Link::rel_id);
 
         // Lua does not like overloading, Sol warns about performance problems if we overload, so overloaded methods have been renamed.
 
@@ -466,7 +464,7 @@ namespace ragedb {
 
         if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
             auto rel_to_delete = find_if(std::begin(group->links), std::end(group->links), [external_id](Link entry) {
-                return Link::rel_id(entry) == external_id;
+                return entry.rel_id == external_id;
             });
             if (rel_to_delete != std::end(group->links)) {
                 group->links.erase(rel_to_delete);
@@ -492,7 +490,7 @@ namespace ragedb {
                              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
         auto rel_to_delete = find_if(std::begin(group->links), std::end(group->links), [external_id](Link entry) {
-            return Link::rel_id(entry) == external_id;
+            return entry.rel_id == external_id;
         });
         if (rel_to_delete != std::end(group->links)) {
             group->links.erase(rel_to_delete);

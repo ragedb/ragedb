@@ -113,13 +113,12 @@ target_link_libraries(
         Graph
         project_options
         Seastar::seastar
-
         CONAN_PKG::tsl-sparse-map
         CONAN_PKG::simdjson
         CONAN_PKG::roaring
         CONAN_PKG::sol2
         CONAN_PKG::luajit
-     #   CONAN_PKG::jfalcou-eve
+        CONAN_PKG::jfalcou-eve
         CONAN_PKG::cppcodec
         CONAN_PKG::cpr
         CONAN_PKG::reckless

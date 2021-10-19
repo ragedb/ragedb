@@ -518,7 +518,7 @@ namespace ragedb {
         sharded_relationship_ids.insert({i, std::vector<uint64_t>() });
       }
       for(Link link : links) {
-        sharded_relationship_ids[CalculateShardId(Link::rel_id(link))].emplace_back(Link::rel_id(link));
+        sharded_relationship_ids[CalculateShardId(link.rel_id)].emplace_back(link.rel_id);
       }
 
       std::vector<seastar::future<std::vector<Relationship>>> futures;

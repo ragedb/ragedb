@@ -149,7 +149,7 @@ namespace ragedb {
                 uint16_t rel_type_id = types.rel_type_id;
 
                 for (Link link : types.links) {
-                    uint64_t internal_relationship_id = externalToInternal(Link::rel_id(link));
+                    uint64_t internal_relationship_id = externalToInternal(link.rel_id);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
                     relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
@@ -158,9 +158,9 @@ namespace ragedb {
                     relationship_types.removeId(rel_type_id, internal_relationship_id);
 
                     // Remove relationship from other node that I own
-                    if (CalculateShardId(Link::node_id(link)) == shard_id) {
-                        uint64_t other_internal_id = externalToInternal(Link::node_id(link));
-                        uint16_t other_node_type_id = externalToTypeId(Link::node_id(link));
+                    if (CalculateShardId(link.node_id) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.node_id);
+                        uint16_t other_node_type_id = externalToTypeId(link.node_id);
 
                         for (auto &other_types : node_types.getIncomingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
@@ -168,7 +168,7 @@ namespace ragedb {
                                 other_types.links.erase(
                                         std::remove_if(std::begin(other_types.links), std::end(other_types.links),
                                                        [link](Link entry) {
-                                                           return Link::rel_id(entry) == Link::rel_id(link);
+                                                           return entry.rel_id == link.rel_id;
                                                        }), std::end(other_types.links));
                             }
                         }
@@ -185,7 +185,7 @@ namespace ragedb {
                 uint16_t rel_type_id = types.rel_type_id;
 
                 for (Link link : types.links) {
-                    uint64_t internal_relationship_id = externalToInternal(Link::rel_id(link));
+                    uint64_t internal_relationship_id = externalToInternal(link.rel_id);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
                     relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
@@ -194,9 +194,9 @@ namespace ragedb {
                     relationship_types.removeId(rel_type_id, internal_relationship_id);
 
                     // Remove relationship from other node that I own
-                    if (CalculateShardId(Link::node_id(link)) == shard_id) {
-                        uint64_t other_internal_id = externalToInternal(Link::node_id(link));
-                        uint16_t other_node_type_id = externalToTypeId(Link::node_id(link));
+                    if (CalculateShardId(link.node_id) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.node_id);
+                        uint16_t other_node_type_id = externalToTypeId(link.node_id);
 
                         for (auto &other_types : node_types.getOutgoingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
@@ -204,7 +204,7 @@ namespace ragedb {
                                 other_types.links.erase(
                                         std::remove_if(std::begin(other_types.links), std::end(other_types.links),
                                                        [link](Link entry) {
-                                                           return Link::rel_id(entry) == Link::rel_id(link);
+                                                           return entry.rel_id == link.rel_id;
                                                        }), std::end(other_types.links));
                             }
                         }
