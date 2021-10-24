@@ -18,14 +18,14 @@ macro(run_conan)
     ${CONAN_EXTRA_REQUIRES}
     catch2/2.13.7
     docopt.cpp/0.6.3
-    fmt/7.1.3
-    spdlog/1.8.5
+    fmt/8.0.1
+    spdlog/1.9.2
     luajit/2.0.5
     sol2/3.2.3
     tsl-sparse-map/0.6.2
-    simdjson/0.9.7
-    roaring/0.3.3
-    jfalcou-eve/cci.20210823
+    simdjson/1.0.1
+    roaring/0.4.0
+    jfalcou-eve/v2021.10.0
     cppcodec/0.2
     cpr/1.6.2
     reckless/3.0.3
