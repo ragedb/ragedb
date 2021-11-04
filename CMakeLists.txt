@@ -93,6 +93,8 @@ if(ENABLE_UNITY)
   set_target_properties(ragedb PROPERTIES UNITY_BUILD ON)
 endif()
 
+file(COPY public DESTINATION bin)
+
 add_subdirectory(src/graph)
 include_directories(src/graph)
 

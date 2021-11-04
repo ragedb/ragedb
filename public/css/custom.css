@@ -1,0 +1,12 @@
+div.code {
+    white-space: pre;
+}
+
+#code {
+    position: relative;
+    height: 400px;
+}
+
+.dropdown-trigger {
+    padding-top: 2px;
+}

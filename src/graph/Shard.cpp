@@ -147,6 +147,13 @@ namespace ragedb {
         lua.require_script("json", json_script);
 
         // TODO: Create a sanitized environment to sandbox the user's Lua code, and put these user types there.
+
+        lua.new_enum("Direction",
+          "BOTH", Direction::BOTH,
+          "IN", Direction::IN,
+          "OUT", Direction::OUT
+        );
+
         lua.new_usertype<Node>("Node",
                 // 3 constructors
                                  sol::constructors<
@@ -176,8 +183,8 @@ namespace ragedb {
 
         lua.new_usertype<Link>("Link",
                                 sol::constructors<Link(uint64_t, uint64_t)>(),
-                                "node_id", &Link::node_id,
-                                "rel_id", &Link::rel_id);
+                                "getNodeId", &Link::node_id,
+                                "getRelationshipId", &Link::rel_id);
 
         // Lua does not like overloading, Sol warns about performance problems if we overload, so overloaded methods have been renamed.
 

@@ -32,6 +32,7 @@
 #include "handlers/Connected.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
+#include <seastar/http/file_handler.hh>
 #include <seastar/net/inet_address.hh>
 #include <iostream>
 #include <Graph.h>
@@ -52,7 +53,7 @@ int main(int argc, char** argv) {
 
             return seastar::async([&] {
                 seastar_apps_lib::stop_signal stop_signal;
-                auto&& config = app.configuration();
+                auto &&config = app.configuration();
 
                 // Start Server
                 seastar::net::inet_address addr(config["address"].as<seastar::sstring>());
@@ -77,25 +78,32 @@ int main(int argc, char** argv) {
                 Lua lua(graph);
                 Restore restore(graph);
 
-                server->set_routes([&relationshipProperties](routes& r) { relationshipProperties.set_routes(r); }).get();
-                server->set_routes([&nodeProperties](routes& r) { nodeProperties.set_routes(r); }).get();
-                server->set_routes([&degrees](routes& r) { degrees.set_routes(r); }).get();
-                server->set_routes([&neighbors](routes& r) { neighbors.set_routes(r); }).get();
-                server->set_routes([&connected](routes& r) { connected.set_routes(r); }).get();
-                server->set_routes([&relationships](routes& r) { relationships.set_routes(r); }).get();
-                server->set_routes([&nodes](routes& r) { nodes.set_routes(r); }).get();
-                server->set_routes([&schema](routes& r) { schema.set_routes(r); }).get();
-                server->set_routes([&lua](routes& r) { lua.set_routes(r); }).get();
-                server->set_routes([&healthCheck](routes& r) { healthCheck.set_routes(r); }).get();
-                server->set_routes([&restore](routes& r) { restore.set_routes(r); }).get();
+                server->set_routes([&relationshipProperties](routes &r) { relationshipProperties.set_routes(r); }).get();
+                server->set_routes([&nodeProperties](routes &r) { nodeProperties.set_routes(r); }).get();
+                server->set_routes([&degrees](routes &r) { degrees.set_routes(r); }).get();
+                server->set_routes([&neighbors](routes &r) { neighbors.set_routes(r); }).get();
+                server->set_routes([&connected](routes &r) { connected.set_routes(r); }).get();
+                server->set_routes([&relationships](routes &r) { relationships.set_routes(r); }).get();
+                server->set_routes([&nodes](routes &r) { nodes.set_routes(r); }).get();
+                server->set_routes([&schema](routes &r) { schema.set_routes(r); }).get();
+                server->set_routes([&lua](routes &r) { lua.set_routes(r); }).get();
+                server->set_routes([&healthCheck](routes &r) { healthCheck.set_routes(r); }).get();
+                server->set_routes([&restore](routes &r) { restore.set_routes(r); }).get();
 
-                server->set_routes([](seastar::routes& r) {
-                    r.add(seastar::operation_type::GET,
+                server->set_routes([](seastar::routes &r) {
+                        r.add(seastar::operation_type::GET,
                           seastar::url("/hello"),
                           new seastar::function_handler([]([[maybe_unused]] seastar::const_req req) {
-                            return  "hello";
+                            return "hello";
                           }));
+                      })
+                  .get();
+
+                server->set_routes([](seastar::routes &r) {
+                  r.add(operation_type::GET, url("").remainder("path"),
+                    new directory_handler("./public/"));
                 }).get();
+
 
                 server->listen(seastar::socket_address{addr, port}).get();
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";

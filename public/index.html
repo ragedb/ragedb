@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RageDB</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/images/favicon/site.webmanifest">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/ragedb_styles.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/ace/theme-dracula.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/ace/mode-lua.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/ace/worker-lua.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/font-awesome.min.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+<nav class="navbar is-transparent">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="/">
+            <img src="/images/mascot-logo-wide.png" alt="RageDB: In Memory Property Graph Server"  height="48">
+        </a>
+        <div class="navbar-burger" data-target="navbarExampleTransparentExample">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+</nav>
+
+<div class="tile is-ancestor">
+    <div class="tile is-2 is-vertical is-parent">
+        <div class="tile is-child box">
+            <p class="title">Lua</p>
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <button class="button" aria-haspopup="true" aria-controls="dropdown-node">
+                        <span>Node</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-node" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item" onClick="addtext('.getId');">
+                            getId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getTypeId');">
+                            getTypeId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getType');">
+                            getType
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getKey');">
+                            getKey
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getProperties');">
+                            getProperties
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getProperty(&quot;&quot;)');">
+                            getProperty
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <button class="button" aria-haspopup="true" aria-controls="dropdown-relationship">
+                        <span>Relationship</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-relationship" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item" onClick="addtext('.getId');">
+                            getId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getTypeId');">
+                            getTypeId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getType');">
+                            getType
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getStartingNodeId');">
+                            getStartingNodeId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getEndingNodeId');">
+                            getEndingNodeId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getProperties');">
+                            getProperties
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getProperty(&quot;&quot;)');">
+                            getProperty
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <button class="button" aria-haspopup="true" aria-controls="dropdown-link">
+                        <span>Link</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-link" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item" onClick="addtext('.getNodeId');">
+                            getNodeId
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('.getRelationshipId');">
+                            getRelationshipId
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <button class="button" aria-haspopup="true" aria-controls="dropdown-all">
+                        <span>All</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-all" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item" onClick="addtext('AllNodeIds');">
+                            AllNodeIds
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllNodeIdsForType(&quot;&quot;)');">
+                            AllNodeIdsForType
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIds');">
+                            AllRelationshipIds
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIdsForType(&quot;&quot;)');">
+                            AllRelationshipIdsForType
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllNodes');">
+                            AllNodes
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllNodesForType(&quot;&quot;)');">
+                            AllNodesForType
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationships');">
+                            AllRelationships
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipsForType(&quot;&quot;)');">
+                            AllRelationshipsForType
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <button class="button" aria-haspopup="true" aria-controls="dropdown-node-degrees">
+                        <span>Node Degrees</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-node-degrees" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegree(&quot;type&quot;,&quot;key&quot;)');">
+                            NodeGetDegree
+                        </a>
+                        <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegreeForDirection(&quot;type&quot;,&quot;key&quot;)');">
+                            NodeGetDegree
+                        </a>
+                    </div>
+                </div>
+            </div>
+q
+        </div>
+        <div class="tile is-child box">
+            <p class="title">Schema</p>
+        </div>
+    </div>
+    <div class="tile is-parent">
+        <div class="tile is-child box">
+            <p class="title">Script</p>
+            <div id="code"></div>
+
+        </div>
+    </div>
+</div>
+<script src="/js/ragedb.js"></script>
+</body>
+</html>
