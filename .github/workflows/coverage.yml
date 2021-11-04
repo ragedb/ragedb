@@ -25,7 +25,7 @@ jobs:
         run: |
           export DEBIAN_FRONTEND=noninteractive
           sudo apt-get update -y
-          sudo apt-get install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libcrypto++8 libcrypto++8-dbg libcrypto++-dev
+          sudo apt-get install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libcrypto++-dev
 
       - name: Install Conan
         id: conan
