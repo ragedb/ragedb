@@ -181,16 +181,39 @@
                     </div>
                 </div>
             </div>
-q
         </div>
         <div class="tile is-child box">
-            <p class="title">Schema</p>
+            <p class="title">Schema
+            <button class="button">
+                <span class="icon is-small">
+                  <i class="fas fa-sync"></i>
+                </span>
+                <span>Reload</span>
+            </button>
+            </p>
         </div>
     </div>
     <div class="tile is-parent">
         <div class="tile is-child box">
-            <p class="title">Script</p>
+            <p class="title">Script
+                <button class="button" onclick="sendscript()">
+                <span class="icon is-small">
+                  <i class="fas fa-play"></i>
+                </span>
+                    <span>Run</span>
+                </button>
+                <button class="button" onclick="clearscript()">
+                <span class="icon is-small">
+                  <i class="fas fa-backspace"></i>
+                </span>
+                    <span>Clear</span>
+                </button>
+
+            </p>
             <div id="code"></div>
+            <br>
+            <p class="title">Response</p>
+            <div id="response"></div>
 
         </div>
     </div>
