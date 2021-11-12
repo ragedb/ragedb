@@ -1,5 +1,8 @@
+bulmaCollapsible.attach();
+
 var editor = ace.edit("code");
 editor.setTheme("ace/theme/dracula");
+editor.setShowPrintMargin(false);
 
 var LuaHighlightRules = ace.require("ace/mode/lua").Mode;
 editor.session.setMode(new LuaHighlightRules());

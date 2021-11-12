@@ -9,12 +9,15 @@
     <link rel="manifest" href="/images/favicon/site.webmanifest">
     <link rel="stylesheet" href="/css/font-awesome.min.css">
     <link rel="stylesheet" href="/css/ragedb_styles.css">
+    <link rel="stylesheet" href="/css/bulma-tooltip.min.css">
+    <link rel="stylesheet" href="/css/bulma-collapsible.min.css">
     <link rel="stylesheet" href="/css/custom.css">
     <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/theme-dracula.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/mode-lua.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/worker-lua.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/font-awesome.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/bulma-collapsible.min.js"></script>
 </head>
 <body>
 <nav class="navbar is-transparent">
@@ -31,193 +34,250 @@
 
 </nav>
 
-<div class="tile is-ancestor">
-    <div class="tile is-2 is-vertical is-parent">
-        <div class="tile is-child box">
-            <p class="title">Lua</p>
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button" aria-haspopup="true" aria-controls="dropdown-node">
-                        <span>Node</span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-                <div class="dropdown-menu" id="dropdown-node" role="menu">
-                    <div class="dropdown-content">
-                        <a href="#" class="dropdown-item" onClick="addtext('.getId');">
-                            getId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getTypeId');">
-                            getTypeId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getType');">
-                            getType
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getKey');">
-                            getKey
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getProperties');">
-                            getProperties
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getProperty(&quot;&quot;)');">
-                            getProperty
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button" aria-haspopup="true" aria-controls="dropdown-relationship">
-                        <span>Relationship</span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-                <div class="dropdown-menu" id="dropdown-relationship" role="menu">
-                    <div class="dropdown-content">
-                        <a href="#" class="dropdown-item" onClick="addtext('.getId');">
-                            getId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getTypeId');">
-                            getTypeId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getType');">
-                            getType
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getStartingNodeId');">
-                            getStartingNodeId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getEndingNodeId');">
-                            getEndingNodeId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getProperties');">
-                            getProperties
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getProperty(&quot;&quot;)');">
-                            getProperty
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button" aria-haspopup="true" aria-controls="dropdown-link">
-                        <span>Link</span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-                <div class="dropdown-menu" id="dropdown-link" role="menu">
-                    <div class="dropdown-content">
-                        <a href="#" class="dropdown-item" onClick="addtext('.getNodeId');">
-                            getNodeId
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('.getRelationshipId');">
-                            getRelationshipId
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button" aria-haspopup="true" aria-controls="dropdown-all">
-                        <span>All</span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-                <div class="dropdown-menu" id="dropdown-all" role="menu">
-                    <div class="dropdown-content">
-                        <a href="#" class="dropdown-item" onClick="addtext('AllNodeIds');">
-                            AllNodeIds
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllNodeIdsForType(&quot;&quot;)');">
-                            AllNodeIdsForType
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIds');">
-                            AllRelationshipIds
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIdsForType(&quot;&quot;)');">
-                            AllRelationshipIdsForType
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllNodes');">
-                            AllNodes
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllNodesForType(&quot;&quot;)');">
-                            AllNodesForType
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationships');">
-                            AllRelationships
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipsForType(&quot;&quot;)');">
-                            AllRelationshipsForType
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button" aria-haspopup="true" aria-controls="dropdown-node-degrees">
-                        <span>Node Degrees</span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-                <div class="dropdown-menu" id="dropdown-node-degrees" role="menu">
-                    <div class="dropdown-content">
-                        <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegree(&quot;type&quot;,&quot;key&quot;)');">
-                            NodeGetDegree
-                        </a>
-                        <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegreeForDirection(&quot;type&quot;,&quot;key&quot;)');">
-                            NodeGetDegree
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="tile is-child box">
-            <p class="title">Schema
-            <button class="button">
-                <span class="icon is-small">
-                  <i class="fas fa-sync"></i>
-                </span>
-                <span>Reload</span>
-            </button>
-            </p>
+<div class="columns">
+    <div class="column is-narrow">
+        <div class="box" style="width: 100px;">
+            <a href="#collapsible-inbox" data-action="collapse">
+               <img src="images/icons/mail-dynamic-color.png" height="100" width="100"  alt="Inbox" />
+            </a>
+            <a href="#collapsible-schema" data-action="collapse">
+               <img src="images/icons/key-dynamic-color.png" height="100" width="100" alt="Schema" />
+            </a>
+            <a href="#collapsible-history" data-action="collapse">
+                <img src="images/icons/clock-dynamic-color.png" height="100" width="100" alt="History" />
+            </a>
+            <a href="#collapsible-favorites" data-action="collapse">
+                <img src="images/icons/star-dynamic-color.png" height="100" width="100" alt="Favorites" />
+            </a>
+            <a href="#collapsible-documentation" data-action="collapse">
+                <img src="images/icons/notebook-dynamic-color.png" height="100" width="100" alt="Documentation" />
+            </a>
+            <a href="#collapsible-recipes" data-action="collapse">
+                <img src="images/icons/lab-dynamic-color.png" height="100" width="100" alt="Recipes" />
+            </a>
+            <a href="#collapsible-settings" data-action="collapse">
+                <img src="images/icons/tool-dynamic-color.png" height="100" width="100" alt="Settings" />
+            </a>
+            <a href="#collapsible-community" data-action="collapse">
+                <img src="images/icons/chat-bubble-dynamic-color.png" height="100" width="100" alt="Community" />
+            </a>
         </div>
     </div>
-    <div class="tile is-parent">
-        <div class="tile is-child box">
-            <p class="title">Script
-                <button class="button" onclick="sendscript()">
+    <div class="column is-one-fifth" id="only_one">
+              <div class="box">
+                <div id="collapsible-inbox" class="is-collapsible is-active" data-parent="only_one">
+                    <p class="title">Inbox</p>
+                    <p>A random message</p>
+                    <p>Another random message</p>
+                </div>
+                <div id="collapsible-schema" class="is-collapsible" data-parent="only_one">
+                    <p class="title">Schema</p>
+                </div>
+                <div id="collapsible-history" class="is-collapsible" data-parent="only_one">
+                    <p class="title">History</p>
+                </div>
+                <div id="collapsible-favorites" class="is-collapsible" data-parent="only_one">
+                    <p class="title">Favorites</p>
+                </div>
+                <div id="collapsible-documentation" class="is-collapsible" data-parent="only_one">
+                    <p class="title">Documentation</p>
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-node">
+                                <span>Node</span>
+                                <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-node" role="menu">
+                            <div class="dropdown-content">
+                                <a href="#" class="dropdown-item" onClick="addtext('.getId');">
+                                    getId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getTypeId');">
+                                    getTypeId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getType');">
+                                    getType
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getKey');">
+                                    getKey
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getProperties');">
+                                    getProperties
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getProperty(&quot;&quot;)');">
+                                    getProperty
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-relationship">
+                                <span>Relationship</span>
+                                <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-relationship" role="menu">
+                            <div class="dropdown-content">
+                                <a href="#" class="dropdown-item" onClick="addtext('.getId');">
+                                    getId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getTypeId');">
+                                    getTypeId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getType');">
+                                    getType
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getStartingNodeId');">
+                                    getStartingNodeId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getEndingNodeId');">
+                                    getEndingNodeId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getProperties');">
+                                    getProperties
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getProperty(&quot;&quot;)');">
+                                    getProperty
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-link">
+                                <span>Link</span>
+                                <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-link" role="menu">
+                            <div class="dropdown-content">
+                                <a href="#" class="dropdown-item" onClick="addtext('.getNodeId');">
+                                    getNodeId
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('.getRelationshipId');">
+                                    getRelationshipId
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-all">
+                                <span>All</span>
+                                <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-all" role="menu">
+                            <div class="dropdown-content">
+                                <a href="#" class="dropdown-item" onClick="addtext('AllNodeIds');">
+                                    AllNodeIds
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllNodeIdsForType(&quot;&quot;)');">
+                                    AllNodeIdsForType
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIds');">
+                                    AllRelationshipIds
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIdsForType(&quot;&quot;)');">
+                                    AllRelationshipIdsForType
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllNodes');">
+                                    AllNodes
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllNodesForType(&quot;&quot;)');">
+                                    AllNodesForType
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationships');">
+                                    AllRelationships
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipsForType(&quot;&quot;)');">
+                                    AllRelationshipsForType
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-node-degrees">
+                                <span>Node Degrees</span>
+                                <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-node-degrees" role="menu">
+                            <div class="dropdown-content">
+                                <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegree(&quot;type&quot;,&quot;key&quot;)');">
+                                    NodeGetDegree
+                                </a>
+                                <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegreeForDirection(&quot;type&quot;,&quot;key&quot;)');">
+                                    NodeGetDegree
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="collapsible-recipes" class="is-collapsible" data-parent="only_one">
+                    <p class="title">Recipes</p>
+                </div>
+                <div id="collapsible-settings" class="is-collapsible" data-parent="only_one">
+                    <p class="title">Settings</p>
+                </div>
+                <div id="collapsible-community" class="is-collapsible" data-parent="only_one">
+                    <p class="title">Community</p>
+                </div>
+            </div>
+    </div>
+    <div class="column">
+            <div class="tile is-vertical">
+                <div class="tile is-child box">
+                    <p class="title">Script
+                        <button class="button" onclick="sendscript()">
                 <span class="icon is-small">
                   <i class="fas fa-play"></i>
                 </span>
-                    <span>Run</span>
-                </button>
-                <button class="button" onclick="clearscript()">
+                            <span>Run</span>
+                        </button>
+                        <button class="button" onclick="clearscript()">
                 <span class="icon is-small">
                   <i class="fas fa-backspace"></i>
                 </span>
-                    <span>Clear</span>
-                </button>
+                            <span>Clear</span>
+                        </button>
 
-            </p>
-            <div id="code"></div>
-            <br>
-            <p class="title">Response</p>
-            <div id="response"></div>
+                    </p>
+                    <div id="code"></div>
+                    <br>
+                </div>
+                <div class="tile is-child box">
+                    <p class="title">Response</p>
+                    <div id="response"></div>
+                </div>
 
+            </div>
+    </div>
+    <div class="column">
+        <div class="box">
+            <p class="title is-5">Graph Visualization</p>
+            <p class="subtitle">This column will contain the graph visualization.</p>
         </div>
     </div>
 </div>
+
 <script src="/js/ragedb.js"></script>
 </body>
 </html>
