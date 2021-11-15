@@ -12,12 +12,14 @@
     <link rel="stylesheet" href="/css/bulma-tooltip.min.css">
     <link rel="stylesheet" href="/css/bulma-collapsible.min.css">
     <link rel="stylesheet" href="/css/custom.css">
+    <script src="/js/index-min.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/theme-dracula.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/mode-lua.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/worker-lua.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/font-awesome.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="/js/bulma-collapsible.min.js"></script>
+    <script src="/js/bulma-collapsible.min.js" type="text/javascript" charset="utf-8"></script>
+
 </head>
 <body>
 <nav class="navbar is-transparent">
@@ -43,7 +45,7 @@
             <a href="#collapsible-schema" data-action="collapse">
                <img src="images/icons/key-dynamic-color.png" height="100" width="100" alt="Schema" />
             </a>
-            <a href="#collapsible-history" data-action="collapse">
+            <a href="#collapsible-history" data-action="collapse" onclick="listHistory()">
                 <img src="images/icons/clock-dynamic-color.png" height="100" width="100" alt="History" />
             </a>
             <a href="#collapsible-favorites" data-action="collapse">
@@ -64,17 +66,18 @@
         </div>
     </div>
     <div class="column is-one-fifth" id="only_one">
-              <div class="box">
+              <div id="second-column" class="box">
                 <div id="collapsible-inbox" class="is-collapsible is-active" data-parent="only_one">
                     <p class="title">Inbox</p>
-                    <p>A random message</p>
-                    <p>Another random message</p>
+                    <div id="inbox"></div>
                 </div>
                 <div id="collapsible-schema" class="is-collapsible" data-parent="only_one">
                     <p class="title">Schema</p>
+                    <div id="schema"></div>
                 </div>
                 <div id="collapsible-history" class="is-collapsible" data-parent="only_one">
                     <p class="title">History</p>
+                    <div id="history"></div>
                 </div>
                 <div id="collapsible-favorites" class="is-collapsible" data-parent="only_one">
                     <p class="title">Favorites</p>
@@ -252,7 +255,7 @@
                             </span>
                             <span>Run</span>
                         </button>
-                        <button class="button" onclick="clearscript()">
+                        <button class="button" onclick="clearEditor()">
                             <span class="icon is-small">
                                 <img src="images/icons/roll-brush-dynamic-color-modified.png"/>
                             </span>

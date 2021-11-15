@@ -10,3 +10,7 @@ div.code {
 .dropdown-trigger {
     padding-top: 2px;
 }
+
+#second-column {
+    height: 100%;
+}
