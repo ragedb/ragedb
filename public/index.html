@@ -48,7 +48,7 @@
             <a href="#collapsible-history" data-action="collapse" onclick="listHistory()">
                 <img src="images/icons/clock-dynamic-color.png" height="100" width="100" alt="History" />
             </a>
-            <a href="#collapsible-favorites" data-action="collapse">
+            <a href="#collapsible-favorites" data-action="collapse" onclick="listFavorites()">
                 <img src="images/icons/star-dynamic-color.png" height="100" width="100" alt="Favorites" />
             </a>
             <a href="#collapsible-documentation" data-action="collapse">
@@ -76,11 +76,19 @@
                     <div id="schema"></div>
                 </div>
                 <div id="collapsible-history" class="is-collapsible" data-parent="only_one">
-                    <p class="title">History</p>
+                    <p class="title">History
+                        <button class="button" onclick="clearHistory()">
+                                <span class="icon is-small">
+                                    <img src="/images/icons/fire-front-color.png"/>
+                                </span>
+                            <span>Clear</span>
+                        </button>
+                    </p>
                     <div id="history"></div>
                 </div>
                 <div id="collapsible-favorites" class="is-collapsible" data-parent="only_one">
                     <p class="title">Favorites</p>
+                    <div id="favorites"></div>
                 </div>
                 <div id="collapsible-documentation" class="is-collapsible" data-parent="only_one">
                     <p class="title">Documentation</p>
@@ -242,6 +250,10 @@
                 </div>
                 <div id="collapsible-community" class="is-collapsible" data-parent="only_one">
                     <p class="title">Community</p>
+                    <p>Let's build something outrageous!</p>
+                    <p>Follow RageDB on <a target="_blank" href="https://twitter.com/rage_database">Twitter</a></p>
+                    <p>Join us on <a target="_blank" href="https://ragedb.slack.com/">Slack</a></p>
+                    <p>Help out on <a target="_blank" href="https://github.com/ragedb">GitHub</a></p>
                 </div>
             </div>
     </div>
@@ -251,17 +263,22 @@
                     <p class="title">Script
                         <button class="button" onclick="sendscript()">
                             <span class="icon">
-                                <img src="images/icons/rocket-dynamic-color.png"/>
+                                <img src="/images/icons/rocket-dynamic-color.png"/>
                             </span>
                             <span>Run</span>
                         </button>
                         <button class="button" onclick="clearEditor()">
                             <span class="icon is-small">
-                                <img src="images/icons/roll-brush-dynamic-color-modified.png"/>
+                                <img src="/images/icons/roll-brush-dynamic-color-modified.png"/>
                             </span>
                             <span>Clear</span>
                         </button>
-
+                        <button class="button" onclick="addQueryToFavorites()">
+                            <span class="icon is-small">
+                                <img src="/images/icons/heart-dynamic-color.png"/>
+                            </span>
+                            <span>Favorite</span>
+                        </button>
                     </p>
                     <div id="code"></div>
                     <br>
