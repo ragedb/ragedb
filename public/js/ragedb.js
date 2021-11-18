@@ -12,29 +12,27 @@ function addtext(newtext) {
 }
 
 
-function sendscript() {
-    const url = "/db/rage/lua";
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
-
-    xhr.setRequestHeader("Accept", "application/json");
-
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            console.log(xhr.status);
-            console.log(xhr.responseText);
-
-            let ele = document.getElementById('response');
-            ele.innerHTML = xhr.responseText;
-        }};
-
+async function sendscript() {
     let query = editor.getValue();
 
     if (query) {
-       addQueryToHistory(query);
+        addQueryToHistory(query);
     }
 
-    xhr.send( editor.getValue());
+    let url = '/db/rage/lua';
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: query
+        });
+        let ele = document.getElementById('response');
+        ele.innerHTML = await res.text();
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 function clearEditor() {
@@ -75,7 +73,6 @@ async function renderMail() {
     container.innerHTML = html;
     let collapsible = document.getElementById("collapsible-inbox");
     collapsible.style.height = "100%";
-
 }
 
 renderMail();
