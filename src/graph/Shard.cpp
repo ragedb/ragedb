@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-    std::string json_script = R"(
+        std::string json_script = R"(
             local math = require('math')
             local string = require('string')
             local table = require('table')
@@ -136,12 +136,7 @@ namespace ragedb {
             return json
 		)";
 
-    Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
-        carousel.reserve(2 * cpus);
-        for (int i = 0; i < cpus; i++) {
-            carousel[i] = i;
-            carousel[i + cpus] = i;
-        }
+        Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {}
 
         lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table);
         lua.require_script("json", json_script);

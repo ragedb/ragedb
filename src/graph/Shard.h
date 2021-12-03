@@ -63,8 +63,6 @@ namespace ragedb {
         inline static const uint64_t LIMIT = 100;
         inline static const std::string EXCEPTION = "An exception has occurred: ";
 
-        std::vector<uint16_t> carousel;
-
     public:
         explicit Shard(uint _cpus);
 
