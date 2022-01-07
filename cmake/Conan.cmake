@@ -23,7 +23,7 @@ macro(run_conan)
     luajit/2.0.5
     sol2/3.2.3
     tsl-sparse-map/0.6.2
-    simdjson/1.0.1
+    simdjson/1.0.2
     roaring/0.4.0
     jfalcou-eve/v2021.10.0
     cppcodec/0.2
