@@ -47,6 +47,7 @@ public:
     static inline const sstring KEY2 = sstring ("key2");
     static inline const sstring REL_TYPE = sstring ("rel_type");
     static inline const sstring OPTIONS = sstring ("options");
+    static inline const std::unordered_set<std::string> allowed_types = {"boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list"};
 
     static bool validate_parameter(const seastar::sstring& parameter, std::unique_ptr<request> &req, std::unique_ptr<reply> &rep, std::string message);
     static uint64_t validate_id(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
@@ -57,7 +58,7 @@ public:
     static bool validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static std::any validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static bool validate_combination(const ragedb::Operation& operation, const std::any &property);
-
+    static bool validate_allowed_data_type(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static void convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property);
 
 };

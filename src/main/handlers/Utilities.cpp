@@ -16,6 +16,8 @@
 
 #include "Utilities.h"
 
+
+
 bool Utilities::validate_parameter(const sstring &parameter, std::unique_ptr<request> &req, std::unique_ptr<reply> &rep, std::string message) {
     bool valid_type = req->param.exists(parameter);
     if (!valid_type) {
@@ -262,6 +264,17 @@ std::any Utilities::validate_json_property(const std::unique_ptr<request> &req, 
     return std::any();
 }
 
+bool Utilities::validate_allowed_data_type(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+  if ( req->param.exists(Utilities::DATA_TYPE) ) {
+    bool allowed_type = allowed_types.find(req->param.at(Utilities::DATA_TYPE)) != allowed_types.end();
+    if (!allowed_type) {
+      rep->write_body("json", json::stream_object("Allowed data types: \"boolean\", \"integer\", \"double\", \"string\", \"boolean_list\", \"integer_list\", \"double_list\", \"string_list\""));
+      rep->set_status(reply::status_type::bad_request);
+    }
+    return allowed_type;
+  }
+  return false;
+}
 
 Utilities::Utilities() {
     // We need to create one parser per core because otherwise we get parsing errors
