@@ -188,6 +188,7 @@ namespace ragedb {
         lua.set_function("RelationshipTypesGetCountByType", &Shard::RelationshipTypesGetCountByTypeViaLua, this);
         lua.set_function("RelationshipTypesGetCountById", &Shard::RelationshipTypesGetCountByIdViaLua, this);
         lua.set_function("RelationshipTypesGet", &Shard::RelationshipTypesGetViaLua, this);
+        lua.set_function("RelationshipTypeGet", &Shard::RelationshipTypeGetViaLua, this);
 
         // Relationship Type
         lua.set_function("RelationshipTypeGetType", &Shard::RelationshipTypeGetTypeViaLua, this);
@@ -199,6 +200,7 @@ namespace ragedb {
         lua.set_function("NodeTypesGetCountByType", &Shard::NodeTypesGetCountByTypeViaLua, this);
         lua.set_function("NodeTypesGetCountById", &Shard::NodeTypesGetCountByIdViaLua, this);
         lua.set_function("NodeTypesGet", &Shard::NodeTypesGetViaLua, this);
+        lua.set_function("NodeTypeGet", &Shard::NodeTypeGetViaLua, this);
 
         // Node Type
         lua.set_function("NodeTypeGetType", &Shard::NodeTypeGetTypeViaLua, this);

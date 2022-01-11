@@ -1,0 +1,7 @@
+NodeTypeInsert("Person")
+NodePropertyTypeAdd("Person", "username", "string")
+NodeTypeInsert("Item")
+NodePropertyTypeAdd("Item", "name", "string")
+RelationshipTypeInsert("LIKES")
+RelationshipPropertyTypeAdd("LIKES", "weight", "double")
+NodeTypesGet(), RelationshipTypesGet(), NodeTypeGet("Person"), NodeTypeGet("Item"), RelationshipTypeGet("LIKES")

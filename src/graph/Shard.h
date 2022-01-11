@@ -343,12 +343,14 @@ namespace ragedb {
         seastar::future<uint64_t> NodeTypesGetCountPeered(uint16_t type_id);
         seastar::future<uint64_t> NodeTypesGetCountPeered(const std::string& type);
         std::set<std::string> NodeTypesGetPeered();
+        std::map<std::string, std::string> NodeTypeGetPeered(const std::string& type);
 
         // Relationship Types
         uint16_t RelationshipTypesGetCountPeered();
         seastar::future<uint64_t> RelationshipTypesGetCountPeered(uint16_t type_id);
         seastar::future<uint64_t> RelationshipTypesGetCountPeered(const std::string& type);
         std::set<std::string> RelationshipTypesGetPeered();
+        std::map<std::string, std::string> RelationshipTypeGetPeered(const std::string& type);
 
         // Node Type
         std::string NodeTypeGetTypePeered(uint16_t type_id);
@@ -570,6 +572,7 @@ namespace ragedb {
         uint64_t RelationshipTypesGetCountByTypeViaLua(const std::string& type);
         uint64_t RelationshipTypesGetCountByIdViaLua(uint16_t type_id);
         sol::as_table_t<std::set<std::string>> RelationshipTypesGetViaLua();
+        sol::as_table_t<std::map<std::string, std::string>> RelationshipTypeGetViaLua(const std::string& type);
 
         // Relationship Type
         std::string RelationshipTypeGetTypeViaLua(uint16_t type_id);
@@ -581,6 +584,7 @@ namespace ragedb {
         uint64_t NodeTypesGetCountByTypeViaLua(const std::string& type);
         uint64_t NodeTypesGetCountByIdViaLua(uint16_t type_id);
         sol::as_table_t<std::set<std::string>> NodeTypesGetViaLua();
+        sol::as_table_t<std::map<std::string, std::string>> NodeTypeGetViaLua(const std::string& type);
 
         // Node Type
         std::string NodeTypeGetTypeViaLua(uint16_t type_id);
