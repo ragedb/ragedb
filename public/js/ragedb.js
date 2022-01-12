@@ -11,6 +11,34 @@ function addtext(newtext) {
     editor.insert(newtext);
 }
 
+/**
+ * Converts milliseconds into greater time units as possible
+ * @param {int} ms - Amount of time measured in milliseconds
+ * @return {Object|null} Reallocated time units. NULL on failure.
+ */
+function timeUnits( ms ) {
+
+    /**
+     * Takes as many whole units from the time pool (ms) as possible
+     * @param {int} msUnit - Size of a single unit in milliseconds
+     * @return {int} Number of units taken from the time pool
+     */
+    const allocate = msUnit => {
+        const units = Math.trunc(ms / msUnit)
+        ms -= units * msUnit
+        return units
+    }
+    // Property order is important here.
+    // These arguments are the respective units in ms.
+    return {
+        // weeks: (604800000), // Uncomment for weeks
+        d: allocate(86400000),
+        h: allocate(3600000),
+        m: allocate(60000),
+        s: allocate(1000),
+        ms: parseInt(ms)
+    }
+}
 
 async function sendscript() {
     let query = editor.getValue();
@@ -21,6 +49,8 @@ async function sendscript() {
 
     let url = '/db/rage/lua';
     try {
+        let ele = document.getElementById('response');
+        let sentTime = performance.now();
         let res = await fetch(url, {
             method: 'POST',
             headers: {
@@ -28,8 +58,9 @@ async function sendscript() {
             },
             body: query
         });
-        let ele = document.getElementById('response');
         ele.innerHTML = await res.text();
+        let responseTime = performance.now();
+        console.log("Query Time: ", timeUnits(responseTime - sentTime));
     } catch (error) {
         console.log(error);
     }
