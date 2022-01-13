@@ -2,7 +2,6 @@
  	NodeAdd("Item", "item"..i, "{\"name\":".."\"item"..i.."\"}")
  end
 
-
  for i=1,100000 do
  	NodeAdd("Person", "person"..i, "{\"username\":".."\"person"..i.."\"}")
  	for j=1,100 do

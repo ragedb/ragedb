@@ -28,6 +28,13 @@ namespace ragedb {
         uint64_t node_id;
         uint64_t rel_id;
 
+
+       // overload `<` operator to use a `Link` object as a key in a `std::map`
+       // It returns true if the current object appears before the specified object
+       bool operator<(const Link &ob) const {
+         return node_id < ob.node_id || (node_id == ob.node_id && rel_id < ob.rel_id);
+       }
+
         friend std::ostream& operator<<(std::ostream& os, const Link& ids);
     };
 }

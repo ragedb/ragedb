@@ -68,4 +68,4 @@ namespace ragedb {
         return NodeGetDegreePeered(id, rel_types).get0();
     }
 
-}
+    }

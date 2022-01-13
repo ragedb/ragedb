@@ -333,6 +333,16 @@ namespace ragedb {
         lua.set_function("NodeGetNeighborsByIdForDirectionForTypeId", &Shard::NodeGetNeighborsByIdForDirectionForTypeIdViaLua, this);
         lua.set_function("NodeGetNeighborsByIdForDirectionForTypes", &Shard::NodeGetNeighborsByIdForDirectionForTypesViaLua, this);
 
+        //Bulk
+        lua.set_function("LinksGetRelationshipsIdsById", &Shard::LinksGetRelationshipsIdsByIdViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForDirection", &Shard::LinksGetRelationshipsIdsByIdForDirectionViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForDirectionForType", &Shard::LinksGetRelationshipsIdsByIdForDirectionForTypeViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForDirectionForTypeId", &Shard::LinksGetRelationshipsIdsByIdForDirectionForTypeIdViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForDirectionForTypes", &Shard::LinksGetRelationshipsIdsByIdForDirectionForTypesViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForType", &Shard::LinksGetRelationshipsIdsByIdForTypeViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForTypeId", &Shard::LinksGetRelationshipsIdsByIdForTypeIdViaLua, this);
+        lua.set_function("LinksGetRelationshipsIdsByIdForTypes", &Shard::LinksGetRelationshipsIdsByIdForTypesViaLua, this);
+
         // All
         lua.set_function("AllNodeIds", &Shard::AllNodeIdsViaLua, this);
         lua.set_function("AllNodeIdsForType", &Shard::AllNodeIdsForTypeViaLua, this);
