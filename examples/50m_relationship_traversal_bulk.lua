@@ -1,7 +1,6 @@
 count = 0
 person = "person"..math.random(NodeTypesGetCountByType("Person"))
 person_id=NodeGetId("Person", person)
-person_id = 232330888193
 liked_items = NodeGetRelationshipsIdsByIdForDirectionForType(person_id, Direction.OUT, "LIKES")
 item_likes = LinksGetRelationshipsIdsById(liked_items, Direction.IN, "LIKES")
 
