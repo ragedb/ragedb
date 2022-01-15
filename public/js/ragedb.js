@@ -32,7 +32,7 @@ function timeUnits( ms ) {
     // These arguments are the respective units in ms.
     return {
         // weeks: (604800000), // Uncomment for weeks
-        d: allocate(86400000),
+        // d: allocate(86400000), // Uncomment for days
         h: allocate(3600000),
         m: allocate(60000),
         s: allocate(1000),
@@ -50,6 +50,7 @@ async function sendscript() {
     let url = '/db/rage/lua';
     try {
         let ele = document.getElementById('response');
+		let timer = document.getElementById('timer');
         let sentTime = performance.now();
         let res = await fetch(url, {
             method: 'POST',
@@ -60,14 +61,14 @@ async function sendscript() {
         });
         ele.innerHTML = await res.text();
         let responseTime = performance.now();
-        console.log("Query Time: ", timeUnits(responseTime - sentTime));
+		timer.innerHTML = timeUnits(responseTime - sentTime);
     } catch (error) {
         console.log(error);
     }
 }
 
 function clearEditor() {
-    editor.clear();
+	editor.setValue("");
 }
 
 function setEditor(query) {
