@@ -30,7 +30,7 @@ function timeUnits( ms ) {
     }
     // Property order is important here.
     // These arguments are the respective units in ms.
-    return {
+    let obj =  {
         // weeks: (604800000), // Uncomment for weeks
         // d: allocate(86400000), // Uncomment for days
         h: allocate(3600000),
@@ -38,6 +38,12 @@ function timeUnits( ms ) {
         s: allocate(1000),
         ms: parseInt(ms)
     }
+	
+    let str = '';
+    for (const [p, val] of Object.entries(obj)) {
+        str += `${p}: ${val} `;
+    }
+    return str;
 }
 
 async function sendscript() {
