@@ -26,6 +26,33 @@ If you are running Docker on a Mac or Windows Host, you may see this error messa
 
 Run Docker on a Linux host for the best performance.
 
+## Terraform
+
+- This is work in progress, if you can make this better please help!
+- Generate an SSH key if you don't already have one with `ssh-keygen -t rsa -b 4096`.
+- [Install Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+- [Install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html).
+- [Configure the AWS CLI with an access key ID and secret access key](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html).
+
+### Variables
+
+#### your_region
+- Which AWS Region. The options are [here](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).
+- E.g. `eu-west-2`.
+
+#### your_public_key
+- This will be in `~/.ssh/id_rsa.pub` by default.
+
+### Steps
+- Run `terraform init`.
+- Run `terraform apply`.
+- Wait a few minutes for the code to compile and the server to spin up.
+- Copy the IP output by the previous command into your browser http://x.x.x.x:/7243
+- Do Graphy Stuff.
+- Irrecoverably shut everything down with `terraform destroy`.
+
+This will bring up an [r5.2xlarge](https://aws.amazon.com/ec2/instance-types/r5/) with 4 cores set to 1 thread per core with 100 GB of space. 
+
 
 ## HTTP API
 
