@@ -56,14 +56,15 @@ resource "aws_key_pair" "home" {
 
 resource "aws_instance" "ragedb" {
   ami                         = "ami-0883f2d26628ad0cf"
-  instance_type               = "r5.2xlarge"
-  vpc_security_group_ids      = [aws_security_group.ragedb.id]
   associate_public_ip_address = true
+  cpu_core_count              = 4
+  cpu_threads_per_core        = 1
+  instance_type               = "r5.2xlarge"
   key_name                    = aws_key_pair.home.key_name
   user_data                   = <<-EOF
     #!/bin/bash
     sudo dnf update -y
-    sudo dnf install -y  git-all luajit perl pip screen
+    sudo dnf install -y  git-all luajit perl pip
     git clone https://github.com/scylladb/seastar.git
     cd seastar
     sudo ./install-dependencies.sh
@@ -84,6 +85,11 @@ resource "aws_instance" "ragedb" {
   tags = {
     Name = "RageDB"
   }
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = 100
+  }
+  vpc_security_group_ids      = [aws_security_group.ragedb.id]
 }
 
 output "instance_ip_addr" {
