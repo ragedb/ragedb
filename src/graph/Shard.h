@@ -32,6 +32,7 @@
 #include <sol/sol.hpp>
 #include <tsl/sparse_map.h>
 #include "Direction.h"
+#include "Link.h"
 #include "Node.h"
 #include "Operation.h"
 #include "Relationship.h"

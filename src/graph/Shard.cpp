@@ -178,8 +178,8 @@ namespace ragedb {
 
         lua.new_usertype<Link>("Link",
                                 sol::constructors<Link(uint64_t, uint64_t)>(),
-                                "getNodeId", &Link::node_id,
-                                "getRelationshipId", &Link::rel_id);
+                                "getNodeId", &Link::getNodeId,
+                                "getRelationshipId", &Link::getRelationshipId);
 
         // Lua does not like overloading, Sol warns about performance problems if we overload, so overloaded methods have been renamed.
 

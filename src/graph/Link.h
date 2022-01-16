@@ -28,6 +28,9 @@ namespace ragedb {
         uint64_t node_id;
         uint64_t rel_id;
 
+        [[nodiscard]] uint64_t getNodeId() const;
+
+        [[nodiscard]] uint64_t getRelationshipId() const;
 
        // overload `<` operator to use a `Link` object as a key in a `std::map`
        // It returns true if the current object appears before the specified object

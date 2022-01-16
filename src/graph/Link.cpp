@@ -20,6 +20,14 @@ namespace ragedb {
 
     Link::Link(uint64_t nodeId, uint64_t relId) : node_id(nodeId), rel_id(relId) {}
 
+    uint64_t Link::getNodeId() const {
+      return node_id;
+    }
+
+    uint64_t Link::getRelationshipId() const{
+      return rel_id;
+    }
+
     std::ostream &operator<<(std::ostream &os, const Link &link) {
         os << "{ \"node_id\": " << link.node_id << ", \"rel_id\": " << link.rel_id << " }";
         return os;
