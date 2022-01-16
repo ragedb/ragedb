@@ -57,6 +57,8 @@ async function sendscript() {
     try {
         let ele = document.getElementById('response');
 		let timer = document.getElementById('timer');
+        let clock = document.getElementById('clock');
+        clock.classList.add("rotate");
         let sentTime = performance.now();
         let res = await fetch(url, {
             method: 'POST',
@@ -67,6 +69,7 @@ async function sendscript() {
         });
         ele.innerHTML = await res.text();
         let responseTime = performance.now();
+        clock.classList.remove("rotate");
 		timer.innerHTML = timeUnits(responseTime - sentTime);
     } catch (error) {
         console.log(error);
