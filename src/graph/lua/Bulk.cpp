@@ -18,35 +18,35 @@
 
 namespace ragedb {
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdViaLua(std::vector<Link> links) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsViaLua(std::vector<Link> links) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForDirectionViaLua(std::vector<Link> links, Direction direction) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForDirectionViaLua(std::vector<Link> links, Direction direction) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, direction).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, direction, rel_type).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, direction, type_id).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, direction, rel_types).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, rel_type).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForTypeIdViaLua(std::vector<Link> links, uint16_t type_id) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForTypeIdViaLua(std::vector<Link> links, uint16_t type_id) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, type_id).get0());
     }
 
-    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsByIdForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types) {
+    sol::as_table_t<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIdsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types) {
       return sol::as_table(LinksGetRelationshipsIDsPeered(links, rel_types).get0());
     }
 

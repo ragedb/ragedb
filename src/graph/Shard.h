@@ -776,15 +776,15 @@ namespace ragedb {
         sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Bulk
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdViaLua(std::vector<Link> links);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForDirectionViaLua(std::vector<Link> links, Direction direction);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsViaLua(std::vector<Link> links);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForDirectionViaLua(std::vector<Link> links, Direction direction);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsByIdForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
+        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         // All
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
