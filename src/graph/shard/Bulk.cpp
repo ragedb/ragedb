@@ -58,4 +58,26 @@ namespace ragedb {
       return link_rels;
     }
 
+    std::map<Link, std::vector<Relationship>> Shard::LinksGetRelationships(std::map<Link, std::vector<Link>> links) {
+      std::map<Link, std::vector<Relationship>> link_rels;
+      for (auto const &[key, vector_of_links] : links) {
+        for (auto const link : vector_of_links) {
+          link_rels[key].push_back(RelationshipGet(link.rel_id));
+        }
+      }
+      return link_rels;
+    }
+
+    std::map<Link, std::vector<Node>> Shard::LinksGetNeighbors(std::map<Link, std::vector<Link>> links) {
+      std::map<Link, std::vector<Node>> link_nodes;
+      for (auto const &[key, vector_of_links] : links) {
+        for (auto const link : vector_of_links) {
+          link_nodes[key].push_back(NodeGet(link.node_id));
+        }
+      }
+      return link_nodes;
+    }
+
+
+
 }

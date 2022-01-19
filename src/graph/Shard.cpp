@@ -343,6 +343,8 @@ namespace ragedb {
         lua.set_function("LinksGetRelationshipsIdsForTypeId", &Shard::LinksGetRelationshipsIdsForTypeIdViaLua, this);
         lua.set_function("LinksGetRelationshipsIdsForTypes", &Shard::LinksGetRelationshipsIdsForTypesViaLua, this);
 
+        lua.set_function("LinksGetRelationships", &Shard::LinksGetRelationshipsViaLua, this);
+
         // All
         lua.set_function("AllNodeIds", &Shard::AllNodeIdsViaLua, this);
         lua.set_function("AllNodeIdsForType", &Shard::AllNodeIdsForTypeViaLua, this);
