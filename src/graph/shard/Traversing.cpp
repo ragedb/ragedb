@@ -853,37 +853,6 @@ namespace ragedb {
         return NodeGetShardedIncomingRelationshipIDs(id, rel_types);
     }
 
-    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(std::vector<Link> links) {
-      std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
-
-      for (int i = 0; i < cpus; i++) {
-        sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
-      }
-
-      for (auto ids : links) {
-        uint64_t id = ids.node_id;
-        if (ValidNodeId(id)) {
-          uint16_t node_type_id = externalToTypeId(id);
-          uint64_t internal_id = externalToInternal(id);
-
-          for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
-            for (Link link : types.links) {
-              uint16_t node_shard_id = CalculateShardId(link.node_id);
-              sharded_link_links.at(node_shard_id)[ids].push_back(link);
-            }
-          }
-        }
-      }
-
-      for (int i = 0; i < cpus; i++) {
-        if(sharded_link_links.at(i).empty()) {
-          sharded_link_links.erase(i);
-        }
-      }
-
-      return sharded_link_links;
-    }
-
     std::map<uint16_t, std::vector<uint64_t>> Shard::NodeGetShardedIncomingRelationshipIDs(uint64_t id) {
         if (ValidNodeId(id)) {
             uint16_t node_type_id = externalToTypeId(id);

@@ -297,6 +297,9 @@ namespace ragedb {
         std::map<Link, std::vector<Link>> LinksGetRelationshipsIDs(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links, const std::string& rel_type);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links, uint16_t type_id);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         std::map<Link, std::vector<Relationship>> LinksGetRelationships(std::map<Link, std::vector<Link>> links);
 
@@ -546,9 +549,9 @@ namespace ragedb {
 //        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, Direction direction, uint16_t type_id);
 //        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 //
-//        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, const std::string& rel_type);
-//        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, uint16_t type_id);
-//        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, const std::vector<std::string> &rel_types);
+        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, const std::string& rel_type);
+        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, uint16_t type_id);
+        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
 //        seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(std::vector<Link> links);
 //        seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(std::vector<Link> links, Direction direction);
@@ -793,14 +796,14 @@ namespace ragedb {
         sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetRelationshipsIdsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsViaLua(std::vector<Link> links);
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction);
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
+//        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction);
+//        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
+//        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
+//        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 //
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
-//        sol::as_table_t<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
 //        sol::as_table_t<std::map<Link, std::vector<Node>>> LinksGetNeighborsViaLua(std::vector<Link> links);
 //        sol::as_table_t<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionViaLua(std::vector<Link> links, Direction direction);
