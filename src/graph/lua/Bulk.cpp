@@ -54,23 +54,23 @@ namespace ragedb {
       return sol::as_table(LinksGetRelationshipsPeered(links).get0());
     }
     
-//    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction) {
-//      return sol::as_table(LinksGetRelationshipsPeered(links, direction).get0());
-//    }
-//
-//    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
-//      return sol::as_table(LinksGetRelationshipsPeered(links, direction, rel_type).get0());
-//    }
-//
-//    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id) {
-//      return sol::as_table(LinksGetRelationshipsPeered(links, direction, type_id).get0());
-//    }
-//
-//    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
-//      return sol::as_table(LinksGetRelationshipsPeered(links, direction, rel_types).get0());
-//    }
-//
-//
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction) {
+      return sol::as_table(LinksGetRelationshipsPeered(links, direction).get0());
+    }
+
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+      return sol::as_table(LinksGetRelationshipsPeered(links, direction, rel_type).get0());
+    }
+
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id) {
+      return sol::as_table(LinksGetRelationshipsPeered(links, direction, type_id).get0());
+    }
+
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+      return sol::as_table(LinksGetRelationshipsPeered(links, direction, rel_types).get0());
+    }
+
+
     sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
       return sol::as_table(LinksGetRelationshipsPeered(links, rel_type).get0());
     }

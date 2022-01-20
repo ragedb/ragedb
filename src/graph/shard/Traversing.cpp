@@ -111,30 +111,25 @@ namespace ragedb {
         uint16_t type_id = relationship_types.getTypeId(rel_type);
         uint64_t internal_id = externalToInternal(id);
         std::vector<Link> ids;
-        uint64_t size = 0;
-        // Use the two ifs to handle ALL for a direction
-        auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
-          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-        if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-          size += out_group->links.size();
-        }
-
-        auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-        if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-          size += in_group->links.size();
-        }
-
-        ids.reserve(size);
 
         // Use the two ifs to handle ALL for a direction
         if (direction != IN) {
-          std::copy(std::begin(out_group->links), std::end(out_group->links), std::back_inserter(ids));
+          auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), [type_id](const Group &g) { return g.rel_type_id == type_id; });
+
+          if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
+            ids.reserve(out_group->links.size());
+            std::copy(std::begin(out_group->links), std::end(out_group->links), std::back_inserter(ids));
+          }
         }
+
         if (direction != OUT) {
-          std::copy(std::begin(in_group->links), std::end(in_group->links), std::back_inserter(ids));
+          auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
+            [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+
+          if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
+            ids.reserve(ids.size() + in_group->links.size());
+            std::copy(std::begin(in_group->links), std::end(in_group->links), std::back_inserter(ids));
+          }
         }
         return ids;
       }
@@ -145,46 +140,28 @@ namespace ragedb {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
-        if (direction == IN) {
 
+        std::vector<Link> ids;
+
+        // Use the two ifs to handle ALL for a direction
+        if (direction != IN) {
+          auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), [type_id](const Group &g) { return g.rel_type_id == type_id; });
+
+          if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
+            ids.reserve(out_group->links.size());
+            std::copy(std::begin(out_group->links), std::end(out_group->links), std::back_inserter(ids));
+          }
+        }
+
+        if (direction != OUT) {
           auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
           if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-            return in_group->links;
+            ids.reserve(ids.size() + in_group->links.size());
+            std::copy(std::begin(in_group->links), std::end(in_group->links), std::back_inserter(ids));
           }
         }
-
-        if (direction == OUT) {
-          auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
-            [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-          if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-            return out_group->links;
-          }
-        }
-
-        std::vector<Link> ids;
-        uint64_t size = 0;
-        auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
-          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-        if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-          size += out_group->links.size();
-        }
-
-        auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-        if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-          size += in_group->links.size();
-        }
-
-        ids.reserve(size);
-
-        std::copy(std::begin(out_group->links), std::end(out_group->links), std::back_inserter(ids));
-        std::copy(std::begin(in_group->links), std::end(in_group->links), std::back_inserter(ids));
-
         return ids;
       }
       return std::vector<Link>();
