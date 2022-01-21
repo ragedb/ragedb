@@ -568,7 +568,7 @@ namespace ragedb {
                         const bool typedValue = std::any_cast<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -593,40 +593,40 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const int64_t typedValue = std::any_cast<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
-                        std::vector<std::uint64_t> idxs;
+                        std::vector<std::uint64_t> indexes;
 
                         switch(operation) {
                             case Operation::EQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
                                 break;
                             }
                             case Operation::NEQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
                                 break;
                             }
                             case Operation::GT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
                                 break;
                             }
                             case Operation::GTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
                                 break;
                             }
                             case Operation::LT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
                                 break;
                             }
                             case Operation::LTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
                                 break;
                             }
                         }
 
-                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+                        auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
 
-                        idxs.erase(it, idxs.end());
+                        indexes.erase(it, indexes.end());
 
-                        for(auto idx : idxs) {
+                        for(auto idx : indexes) {
                             if(current++ > skip) {
                                 ids.emplace_back(internalToExternal(type_id, idx));
                             }
@@ -642,40 +642,40 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const double typedValue = static_cast<double>(std::any_cast<int64_t>(value));
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
-                        std::vector<std::uint64_t> idxs;
+                        std::vector<std::uint64_t> indexes;
 
                         switch(operation) {
                             case Operation::EQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
                                 break;
                             }
                             case Operation::NEQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
                                 break;
                             }
                             case Operation::GT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
                                 break;
                             }
                             case Operation::GTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
                                 break;
                             }
                             case Operation::LT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
                                 break;
                             }
                             case Operation::LTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
                                 break;
                             }
                         }
 
-                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+                        auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
 
-                        idxs.erase(it, idxs.end());
+                        indexes.erase(it, indexes.end());
 
-                        for(auto idx : idxs) {
+                        for(auto idx : indexes) {
                             if(current++ > skip) {
                                 ids.emplace_back(internalToExternal(type_id, idx));
                             }
@@ -689,40 +689,40 @@ namespace ragedb {
                     if (Properties::isDoubleProperty(value)) {
                         const double typedValue = std::any_cast<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
-                        std::vector<std::uint64_t> idxs;
+                        std::vector<std::uint64_t> indexes;
 
                         switch(operation) {
                             case Operation::EQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
                                 break;
                             }
                             case Operation::NEQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
                                 break;
                             }
                             case Operation::GT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
                                 break;
                             }
                             case Operation::GTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
                                 break;
                             }
                             case Operation::LT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
                                 break;
                             }
                             case Operation::LTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
                                 break;
                             }
                         }
 
-                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+                        auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
 
-                        idxs.erase(it, idxs.end());
+                        indexes.erase(it, indexes.end());
 
-                        for(auto idx : idxs) {
+                        for(auto idx : indexes) {
                             if(current++ > skip) {
                                 ids.emplace_back(internalToExternal(type_id, idx));
                             }
@@ -738,7 +738,7 @@ namespace ragedb {
                         const std::string typedValue = std::any_cast<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -764,7 +764,7 @@ namespace ragedb {
                         const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -790,7 +790,7 @@ namespace ragedb {
                         const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -817,7 +817,7 @@ namespace ragedb {
                         const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -842,7 +842,7 @@ namespace ragedb {
                         const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -868,7 +868,7 @@ namespace ragedb {
                         const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return ids;
                             }
@@ -948,7 +948,7 @@ namespace ragedb {
                         const bool typedValue = std::any_cast<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
@@ -973,40 +973,40 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const int64_t typedValue = std::any_cast<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
-                        std::vector<std::uint64_t> idxs;
+                        std::vector<std::uint64_t> indexes;
 
                         switch(operation) {
                             case Operation::EQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
                                 break;
                             }
                             case Operation::NEQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
                                 break;
                             }
                             case Operation::GT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
                                 break;
                             }
                             case Operation::GTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
                                 break;
                             }
                             case Operation::LT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
                                 break;
                             }
                             case Operation::LTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
                                 break;
                             }
                         }
 
-                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+                        auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
 
-                        idxs.erase(it, idxs.end());
+                        indexes.erase(it, indexes.end());
 
-                        for(auto idx : idxs) {
+                        for(auto idx : indexes) {
                             if(current++ > skip) {
                                 relationships.emplace_back(getRelationship(type_id, idx));
                             }
@@ -1022,40 +1022,40 @@ namespace ragedb {
                     if (Properties::isIntegerProperty(value)) {
                         const double typedValue = static_cast<double>(std::any_cast<int64_t>(value));
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
-                        std::vector<std::uint64_t> idxs;
+                        std::vector<std::uint64_t> indexes;
 
                         switch(operation) {
                             case Operation::EQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
                                 break;
                             }
                             case Operation::NEQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
                                 break;
                             }
                             case Operation::GT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
                                 break;
                             }
                             case Operation::GTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
                                 break;
                             }
                             case Operation::LT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
                                 break;
                             }
                             case Operation::LTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
                                 break;
                             }
                         }
 
-                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+                        auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
 
-                        idxs.erase(it, idxs.end());
+                        indexes.erase(it, indexes.end());
 
-                        for(auto idx : idxs) {
+                        for(auto idx : indexes) {
                             if(current++ > skip) {
                                 relationships.emplace_back(getRelationship(type_id, idx));
                             }
@@ -1069,40 +1069,40 @@ namespace ragedb {
                     if (Properties::isDoubleProperty(value)) {
                         const double typedValue = std::any_cast<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
-                        std::vector<std::uint64_t> idxs;
+                        std::vector<std::uint64_t> indexes;
 
                         switch(operation) {
                             case Operation::EQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
                                 break;
                             }
                             case Operation::NEQ: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
                                 break;
                             }
                             case Operation::GT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
                                 break;
                             }
                             case Operation::GTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
                                 break;
                             }
                             case Operation::LT: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
                                 break;
                             }
                             case Operation::LTE: {
-                                idxs = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+                              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
                                 break;
                             }
                         }
 
-                        auto it = remove_if(idxs.begin(), idxs.end(), [blank](uint64_t i) { return blank.contains(i); });
+                        auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
 
-                        idxs.erase(it, idxs.end());
+                        indexes.erase(it, indexes.end());
 
-                        for(auto idx : idxs) {
+                        for(auto idx : indexes) {
                             if(current++ > skip) {
                                 relationships.emplace_back(getRelationship(type_id, idx));
                             }
@@ -1118,7 +1118,7 @@ namespace ragedb {
                         const std::string typedValue = std::any_cast<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
@@ -1144,7 +1144,7 @@ namespace ragedb {
                         const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
@@ -1170,7 +1170,7 @@ namespace ragedb {
                         const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
@@ -1197,7 +1197,7 @@ namespace ragedb {
                         const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
@@ -1222,7 +1222,7 @@ namespace ragedb {
                         const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
@@ -1248,7 +1248,7 @@ namespace ragedb {
                         const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-                            // If we reached out limit, return
+                            // If we reached our limit, return
                             if (current > (skip + limit)) {
                                 return relationships;
                             }
