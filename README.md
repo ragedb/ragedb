@@ -413,6 +413,17 @@ Install LuaJIT
 
     sudo apt-get install -y luajit luajit-5.1-dev
 
+Install RageDB
+
+    git clone https://github.com/ragedb/ragedb.git
+    cd ragedb
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake --build . --target ragedb
+    cd bin
+    sudo ./ragedb
+
 ### Troubleshooting
 
 If you get errors regarding conan locks, run:

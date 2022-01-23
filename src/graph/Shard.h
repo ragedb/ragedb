@@ -60,12 +60,14 @@ namespace ragedb {
         NodeTypes node_types;                           // Store string and id of node types
         RelationshipTypes relationship_types;           // Store string and id of relationship types
 
-        inline static const uint64_t SKIP = 0;
-        inline static const uint64_t LIMIT = 100;
+
         inline static const std::string EXCEPTION = "An exception has occurred: ";
 
     public:
         explicit Shard(uint _cpus);
+
+        inline static const uint64_t SKIP = 0;
+        inline static const uint64_t LIMIT = 100;
 
         static seastar::future<> stop();
         void Clear();
@@ -837,15 +839,15 @@ namespace ragedb {
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         // All
-        sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        sol::as_table_t<std::vector<uint64_t>> AllNodeIdsForTypeViaLua(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsForTypeViaLua(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<uint64_t>> AllNodeIdsForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsForTypeViaLua(const std::string& rel_type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
 
-        sol::as_table_t<std::vector<Node>> AllNodesViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        sol::as_table_t<std::vector<Node>> AllNodesForTypeViaLua(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        sol::as_table_t<std::vector<Relationship>> AllRelationshipsViaLua(uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        sol::as_table_t<std::vector<Relationship>> AllRelationshipsForTypeViaLua(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        sol::as_table_t<std::vector<Node>> AllNodesViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<Node>> AllNodesForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<Relationship>> AllRelationshipsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<Relationship>> AllRelationshipsForTypeViaLua(const std::string& rel_type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
 
         // Find
         uint64_t FindNodeCountViaLua(const std::string& type, const std::string& property, const Operation& operation, const std::any& value);

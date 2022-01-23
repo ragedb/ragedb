@@ -19,36 +19,36 @@
 
 namespace ragedb {
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::AllNodeIdsViaLua(uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllNodeIdsPeered(skip, limit).get0());
+    sol::as_table_t<std::vector<uint64_t>> Shard::AllNodeIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllNodeIdsPeered(skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::AllNodeIdsForTypeViaLua(const std::string& type, uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllNodeIdsPeered(type, skip, limit).get0());
+    sol::as_table_t<std::vector<uint64_t>> Shard::AllNodeIdsForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllNodeIdsPeered(type, skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::AllRelationshipIdsViaLua(uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllRelationshipIdsPeered(skip, limit).get0());
+    sol::as_table_t<std::vector<uint64_t>> Shard::AllRelationshipIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllRelationshipIdsPeered(skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::AllRelationshipIdsForTypeViaLua(const std::string& rel_type, uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllRelationshipIdsPeered(rel_type, skip, limit).get0());
+    sol::as_table_t<std::vector<uint64_t>> Shard::AllRelationshipIdsForTypeViaLua(const std::string& rel_type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllRelationshipIdsPeered(rel_type, skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::AllNodesViaLua(uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllNodesPeered(skip, limit).get0());
+    sol::as_table_t<std::vector<Node>> Shard::AllNodesViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllNodesPeered(skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::AllNodesForTypeViaLua(const std::string& type, uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllNodesPeered(type, skip, limit).get0());
+    sol::as_table_t<std::vector<Node>> Shard::AllNodesForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllNodesPeered(type, skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::AllRelationshipsViaLua(uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllRelationshipsPeered(skip, limit).get0());
+    sol::as_table_t<std::vector<Relationship>> Shard::AllRelationshipsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllRelationshipsPeered(skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::AllRelationshipsForTypeViaLua(const std::string& rel_type, uint64_t skip, uint64_t limit) {
-        return sol::as_table(AllRelationshipsPeered(rel_type, skip, limit).get0());
+    sol::as_table_t<std::vector<Relationship>> Shard::AllRelationshipsForTypeViaLua(const std::string& rel_type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+        return sol::as_table(AllRelationshipsPeered(rel_type, skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }
 
 }
