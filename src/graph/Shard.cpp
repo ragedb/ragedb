@@ -20,9 +20,10 @@ namespace ragedb {
 
     Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
 
-        lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io);
+        lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io, sol::lib::os);
         lua.require_file("json", "./lua/json.lua");
         lua.require_file("ftcsv", "./lua/ftcsv.lua");
+        lua.require_file("date", "./lua/date.lua");
 
         // TODO: Create a sanitized environment to sandbox the user's Lua code, and put these user types there.
 
