@@ -24,8 +24,9 @@ jobs:
       - name: update container base
         run: |
           export DEBIAN_FRONTEND=noninteractive
+          echo "deb http://mirrors.kernel.org/ubuntu hirsute main universe" | tee -a /etc/apt/sources.list
           sudo apt-get -qq update -y
-          sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev
+          sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libcrypto++8 libcrypto++-dev
 
       - name: Install Conan
         id: conan
@@ -52,7 +53,6 @@ jobs:
         with:
           repository: scylladb/seastar
           path: seastar
-          ref: 48f43b27be1ddc9ae30f37d0cbaf0bdf1da0d332
 
       - name: install dependencies
         run: |
