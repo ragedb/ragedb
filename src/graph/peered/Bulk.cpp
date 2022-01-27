@@ -548,51 +548,43 @@ namespace ragedb {
     }
 
     seastar::future<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsPeered(std::vector<Link> links, Direction direction) {
-      if(direction == Direction::BOTH) {
-        return LinksGetRelationshipsPeered(links);
-      }
       if(direction == Direction::IN) {
         return LinksGetIncomingRelationshipsPeered(links);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingRelationshipsPeered(links);
       }
+      return LinksGetRelationshipsPeered(links);
     }
 
     seastar::future<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsPeered(std::vector<Link> links, Direction direction, const std::string &rel_type) {
-      if(direction == Direction::BOTH) {
-        return LinksGetRelationshipsPeered(links, rel_type);
-      }
       if(direction == Direction::IN) {
         return LinksGetIncomingRelationshipsPeered(links, rel_type);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingRelationshipsPeered(links, rel_type);
       }
+      return LinksGetRelationshipsPeered(links, rel_type);
     }
 
     seastar::future<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsPeered(std::vector<Link> links, Direction direction, uint16_t type_id) {
-      if(direction == Direction::BOTH) {
-        return LinksGetRelationshipsPeered(links, type_id);
-      }
-      if(direction == Direction::IN) {
+       if(direction == Direction::IN) {
         return LinksGetIncomingRelationshipsPeered(links, type_id);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingRelationshipsPeered(links, type_id);
       }
+      return LinksGetRelationshipsPeered(links, type_id);
     }
 
     seastar::future<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsPeered(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
-      if(direction == Direction::BOTH) {
-        return LinksGetRelationshipsPeered(links, rel_types);
-      }
       if(direction == Direction::IN) {
         return LinksGetIncomingRelationshipsPeered(links, rel_types);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingRelationshipsPeered(links, rel_types);
       }
+      return LinksGetRelationshipsPeered(links, rel_types);
     }
 
     seastar::future<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsPeered(std::vector<Link> links, const std::string &rel_type) {
@@ -1130,51 +1122,43 @@ namespace ragedb {
 
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsPeered(std::vector<Link> links, Direction direction) {
-      if(direction == Direction::BOTH) {
-        return LinksGetNeighborsPeered(links);
-      }
       if(direction == Direction::IN) {
         return LinksGetIncomingNeighborsPeered(links);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingNeighborsPeered(links);
       }
+      return LinksGetNeighborsPeered(links);
     }
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsPeered(std::vector<Link> links, Direction direction, const std::string &rel_type) {
-      if(direction == Direction::BOTH) {
-        return LinksGetNeighborsPeered(links, rel_type);
-      }
       if(direction == Direction::IN) {
         return LinksGetIncomingNeighborsPeered(links, rel_type);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingNeighborsPeered(links, rel_type);
       }
+      return LinksGetNeighborsPeered(links, rel_type);
     }
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsPeered(std::vector<Link> links, Direction direction, uint16_t type_id) {
-      if(direction == Direction::BOTH) {
-        return LinksGetNeighborsPeered(links, type_id);
-      }
-      if(direction == Direction::IN) {
+       if(direction == Direction::IN) {
         return LinksGetIncomingNeighborsPeered(links, type_id);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingNeighborsPeered(links, type_id);
       }
+      return LinksGetNeighborsPeered(links, type_id);
     }
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsPeered(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
-      if(direction == Direction::BOTH) {
-        return LinksGetNeighborsPeered(links, rel_types);
-      }
       if(direction == Direction::IN) {
         return LinksGetIncomingNeighborsPeered(links, rel_types);
       }
       if(direction == Direction::OUT) {
         return LinksGetOutgoingNeighborsPeered(links, rel_types);
       }
+      return LinksGetNeighborsPeered(links, rel_types);
     }
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsPeered(std::vector<Link> links, const std::string &rel_type) {

@@ -44,7 +44,7 @@ namespace ragedb {
                                  "getType", &Node::getType,
                                  "getKey", &Node::getKey,
                                  "getProperties", &Node::getPropertiesLua,
-                                 "getProperty", &Node::getProperty);
+                                 "getProperty", &Node::getPropertyLua);
 
         lua.new_usertype<Relationship>("Relationship",
                 // 3 constructors
@@ -58,7 +58,7 @@ namespace ragedb {
                                          "getStartingNodeId", &Relationship::getStartingNodeId,
                                          "getEndingNodeId", &Relationship::getEndingNodeId,
                                          "getProperties", &Relationship::getPropertiesLua,
-                                         "getProperty", &Relationship::getProperty);
+                                         "getProperty", &Relationship::getPropertyLua);
 
         lua.new_usertype<Link>("Link",
                                 sol::constructors<Link(uint64_t, uint64_t)>(),

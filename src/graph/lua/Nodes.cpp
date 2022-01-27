@@ -209,6 +209,18 @@ namespace ragedb {
         if (value.is<bool>()) {
             return NodePropertySetPeered(type, key, property, value.as<bool>()).get0();
         }
+        if (value.is<std::vector<std::string>>()) {
+          return NodePropertySetPeered(type, key, property, value.as<std::vector<std::string>>()).get0();
+        }
+        if (value.is<std::vector<double>>()) {
+          return NodePropertySetPeered(type, key, property, value.as<std::vector<double>>()).get0();
+        }
+        if (value.is<std::vector<int64_t>>()) {
+          return NodePropertySetPeered(type, key, property, value.as<std::vector<int64_t>>()).get0();
+        }
+        if (value.is<std::vector<bool>>()) {
+          return NodePropertySetPeered(type, key, property, value.as<std::vector<bool>>()).get0();
+        }
 
         return false;
     }
