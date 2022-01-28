@@ -28,13 +28,6 @@ jobs:
           sudo apt-get -qq update -y
           sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libcrypto++8 libcrypto++-dev
 
-      - name: Install Conan
-        run: |
-          python -m pip install conan
-
-      - name: Conan version
-        run: echo "${{ steps.conan.outputs.version }}"
-
       - name: install g++-11
         run: |
           DEBIAN_FRONTEND=noninteractive sudo apt install -y g++-11
@@ -60,7 +53,11 @@ jobs:
           sudo ./install-dependencies.sh
           ./configure.py --mode=release --prefix=/usr/local --c++-dialect=gnu++20 --without-tests --without-apps --without-demos
           sudo ninja -C build/release install
-
+ 
+      - name: Install Conan
+        run: |
+          python -m pip install conan
+          
       - name: build with cmake
         uses: lukka/run-cmake@v3
         with:
