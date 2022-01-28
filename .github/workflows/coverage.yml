@@ -29,8 +29,8 @@ jobs:
           sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libcrypto++8 libcrypto++-dev
 
       - name: Install Conan
-        id: conan
-        uses: turtlebrowser/get-conan@main
+        run: |
+          python -m pip install conan
 
       - name: Conan version
         run: echo "${{ steps.conan.outputs.version }}"
