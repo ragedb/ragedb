@@ -51,7 +51,7 @@ jobs:
         run: |
           cd seastar
           sudo ./install-dependencies.sh
-          ./configure.py --mode=release --prefix=/usr/local --c++-dialect=c++20 --without-tests --without-apps --without-demos
+          ./configure.py --mode=release --prefix=/usr/local --c++-dialect=c++20 --compiler=g++-11 --c-compiler=gcc-11 --without-tests --without-apps --without-demos
           sudo ninja -C build/release install
  
       - name: Install Conan
