@@ -75,7 +75,12 @@ jobs:
         working-directory: ${{github.workspace}}/build
         # Execute tests defined by the CMake configuration.
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest -C ${{env.BUILD_TYPE}} --rerun-failed --output-on-failure --extra-verbose --success
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --output-log ctest.log
+        
+      - name: reMarkable  
+        uses: reMarkable/github-action-ctest@v1
+        with:
+         logfile: ${{github.workspace}}/build/ctest.log
 
       - name: Upload coverage report
         working-directory: ${{github.workspace}}
