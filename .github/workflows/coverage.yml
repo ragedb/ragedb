@@ -61,7 +61,11 @@ jobs:
           export CC=/usr/bin/gcc-11
           export CXX=/usr/bin/g++-11
           conan profile update settings.compiler.version=11 default
-          
+
+      - name: make with cmake
+        working-directory: '${{ github.workspace }}/build'
+        run: cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
       - name: build with cmake
         uses: lukka/run-cmake@v3
         with:
