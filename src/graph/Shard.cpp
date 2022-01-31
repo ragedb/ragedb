@@ -15,7 +15,8 @@
  */
 
 #include "Shard.h"
-
+#include "Roar.h"
+using namespace roaring;
 namespace ragedb {
 
     Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
@@ -32,6 +33,41 @@ namespace ragedb {
           "IN", Direction::IN,
           "OUT", Direction::OUT
         );
+
+        lua.new_usertype<Roar>("Roar", sol::constructors<Roar()>(),
+          "addIds", &Roar::addIds,
+          "addNodeIds", &Roar::addNodeIds,
+          "addRelationshipIds", &Roar::addRelationshipIds,
+          "add", &Roar::add,
+          "remove", &Roar::remove,
+          "addChecked", &Roar::addChecked,
+          "removeChecked", &Roar::removeChecked,
+          "clear", &Roar::clear,
+          "maximum", &Roar::maximum,
+          "minimum", &Roar::minimum,
+          "contains", &Roar::contains,
+          "inplace_intersection", &Roar::operator&=,
+          "inplace_difference", &Roar::operator-=,
+          "inplace_union", &Roar::operator|=,
+          "inplace_xor", &Roar::operator^=,
+          "swap", &Roar::swap,
+          "cardinality", &Roar::cardinality,
+          "isEmpty", &Roar::isEmpty,
+          "isFull", &Roar::isFull,
+          "isSubset", &Roar::isSubset,
+          "isStrictSubset", &Roar::isStrictSubset,
+          "sol::meta_function::equal_to", &Roar::operator==,
+          "flip", &Roar::flip,
+          "removeRunCompression", &Roar::removeRunCompression,
+          "runOptimize", &Roar::runOptimize,
+          "shrinkToFit", &Roar::shrinkToFit,
+          "rank", &Roar::rank,
+          "intersection", &Roar::operator&,
+          "difference", &Roar::operator-,
+          "union", &Roar::operator|,
+          "xor", &Roar::operator^,
+          "toString", &Roar::toString
+          );
 
         lua.new_usertype<Node>("Node",
                 // 3 constructors

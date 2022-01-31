@@ -16,7 +16,7 @@
 
 #include <catch2/catch.hpp>
 #include <sstream>
-#include "../src/graph/Node.h"
+#include <Graph.h>
 
 SCENARIO( "Node can be created", "[node]" ) {
     GIVEN("Given Nothing") {

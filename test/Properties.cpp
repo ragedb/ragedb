@@ -15,7 +15,7 @@
  */
 
 #include <catch2/catch.hpp>
-#include "../src/graph/Properties.h"
+#include <Graph.h>
 
 SCENARIO( "Properties can be added", "[properties]" ) {
     GIVEN("Empty properties") {

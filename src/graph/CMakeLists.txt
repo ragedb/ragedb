@@ -11,6 +11,7 @@ set(HEADER_FILES
         Direction.h
         Operation.h
         Expression.h
+        Roar.h
         eve/CollectIndexes.h)
 
 set(SOURCE_FILES
@@ -23,8 +24,9 @@ set(SOURCE_FILES
         NodeTypes.cpp
         RelationshipTypes.cpp
         Properties.cpp
-        shard/Ids.cpp shard/Types.cpp shard/Nodes.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Find.cpp shard/Helpers.cpp
-        peered/Types.cpp peered/Nodes.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp peered/Find.cpp
-        lua/Types.cpp lua/Nodes.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp lua/Find.cpp peered/Restore.cpp peered/Connected.cpp peered/Bulk.cpp shard/Bulk.cpp lua/Bulk.cpp)
+        shard/Ids.cpp shard/Types.cpp shard/Nodes.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Find.cpp shard/Helpers.cpp shard/Bulk.cpp
+        peered/Types.cpp peered/Nodes.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp peered/Find.cpp peered/Bulk.cpp peered/Restore.cpp peered/Connected.cpp
+        lua/Types.cpp lua/Nodes.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp lua/Find.cpp lua/Bulk.cpp
+        Roar.cpp)
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

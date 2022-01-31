@@ -16,7 +16,7 @@
 
 #include <catch2/catch.hpp>
 #include <sstream>
-#include "../src/graph/Link.h"
+#include <Graph.h>
 
 SCENARIO( "Link can be created", "[link]" ) {
     GIVEN("Nothing") {

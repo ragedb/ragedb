@@ -15,7 +15,7 @@
  */
 
 #include <catch2/catch.hpp>
-#include "../../src/graph/Shard.h"
+#include <Graph.h>
 
 SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
     GIVEN("An empty shard") {

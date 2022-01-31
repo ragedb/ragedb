@@ -15,7 +15,7 @@
  */
 
 #include <catch2/catch.hpp>
-#include "../../src/graph/Shard.h"
+#include <Graph.h>
 
 SCENARIO( "Shard can calculate shard ids", "[ids]" ) {
     GIVEN("An empty shard") {
