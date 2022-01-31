@@ -15,7 +15,17 @@ find_package(Seastar REQUIRED)
 
 add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.cpp Properties.cpp shard/Shards.cpp shard/Nodes.cpp shard/AllNodes.cpp shard/AllRelationships.cpp shard/NodeDegrees.cpp shard/NodeProperties.cpp shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp Link.cpp Node.cpp Graph.cpp)
 target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph Seastar::seastar)
-target_include_directories(tests PRIVATE ../src/graph ../src/graph/lua ../src/graph/peered ../src/graph/shard ../src/main ../src/main/handlers ../src/main/json ../src/main/util)
+target_include_directories(tests PRIVATE
+        ../src/graph
+        ../src/graph/eve
+        ../src/graph/lua
+        ../src/graph/peered
+        ../src/graph/shard
+        ../src/main
+        ../src/main/handlers
+        ../src/main/json
+        ../src/main/util
+        ../lua)
 # automatically discover tests that are defined in catch based test files you can modify the unittests. Set TEST_PREFIX
 # to whatever you want, or use different for different binaries
 catch_discover_tests(
