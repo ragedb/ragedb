@@ -18,131 +18,131 @@
 
 namespace ragedb {
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key);
+            return local_shard.NodeGetLinks(type, key);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, Direction direction) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, Direction direction) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, direction);
+            return local_shard.NodeGetLinks(type, key, direction);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, direction, rel_type);
+            return local_shard.NodeGetLinks(type, key, direction, rel_type);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, Direction direction, uint16_t type_id) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, Direction direction, uint16_t type_id) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction, type_id](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, direction, type_id);
+            return local_shard.NodeGetLinks(type, key, direction, type_id);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, direction, rel_types);
+            return local_shard.NodeGetLinks(type, key, direction, rel_types);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, const std::string &rel_type) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, const std::string &rel_type) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, BOTH, rel_type);
+            return local_shard.NodeGetLinks(type, key, BOTH, rel_type);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, uint16_t type_id) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, uint16_t type_id) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, type_id](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, BOTH, type_id);
+            return local_shard.NodeGetLinks(type, key, BOTH, type_id);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(const std::string &type, const std::string &key, const std::vector<std::string> &rel_types) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(const std::string &type, const std::string &key, const std::vector<std::string> &rel_types) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(type, key, BOTH, rel_types);
+            return local_shard.NodeGetLinks(type, key, BOTH, rel_types);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id);
+            return local_shard.NodeGetLinks(external_id);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, Direction direction) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, Direction direction) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, direction](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, direction);
+            return local_shard.NodeGetLinks(external_id, direction);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, Direction direction, const std::string &rel_type) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, Direction direction, const std::string &rel_type) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, direction, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, direction, rel_type);
+            return local_shard.NodeGetLinks(external_id, direction, rel_type);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, Direction direction, uint16_t type_id) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, Direction direction, uint16_t type_id) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, direction, type_id](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, direction, type_id);
+            return local_shard.NodeGetLinks(external_id, direction, type_id);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, Direction direction, const std::vector<std::string> &rel_types) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, direction, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, direction, rel_types);
+            return local_shard.NodeGetLinks(external_id, direction, rel_types);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, const std::string &rel_type) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, const std::string &rel_type) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, BOTH, rel_type);
+            return local_shard.NodeGetLinks(external_id, BOTH, rel_type);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, uint16_t type_id) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, uint16_t type_id) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, type_id](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, BOTH, type_id);
+            return local_shard.NodeGetLinks(external_id, BOTH, type_id);
         });
     }
 
-    seastar::future<std::vector<Link>> Shard::NodeGetRelationshipsIDsPeered(uint64_t external_id, const std::vector<std::string> &rel_types) {
+    seastar::future<std::vector<Link>> Shard::NodeGetLinksPeered(uint64_t external_id, const std::vector<std::string> &rel_types) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetRelationshipsIDs(external_id, BOTH, rel_types);
+            return local_shard.NodeGetLinks(external_id, BOTH, rel_types);
         });
     }
 

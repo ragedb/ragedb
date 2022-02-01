@@ -18,68 +18,68 @@
 
 namespace ragedb {
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsViaLua(const std::string& type, const std::string& key) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksViaLua(const std::string& type, const std::string& key) {
+        return sol::as_table(NodeGetLinksPeered(type, key).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForDirectionViaLua(const std::string& type, const std::string& key, Direction direction) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, direction).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForDirectionViaLua(const std::string& type, const std::string& key, Direction direction) {
+        return sol::as_table(NodeGetLinksPeered(type, key, direction).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, direction, rel_type).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
+        return sol::as_table(NodeGetLinksPeered(type, key, direction, rel_type).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForDirectionForTypeIdViaLua(const std::string& type, const std::string& key, Direction direction, uint16_t type_id) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, direction, type_id).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForDirectionForTypeIdViaLua(const std::string& type, const std::string& key, Direction direction, uint16_t type_id) {
+        return sol::as_table(NodeGetLinksPeered(type, key, direction, type_id).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, direction, rel_types).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types) {
+        return sol::as_table(NodeGetLinksPeered(type, key, direction, rel_types).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, rel_type).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type) {
+        return sol::as_table(NodeGetLinksPeered(type, key, rel_type).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForTypeIdViaLua(const std::string& type, const std::string& key, uint16_t type_id) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, type_id).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForTypeIdViaLua(const std::string& type, const std::string& key, uint16_t type_id) {
+        return sol::as_table(NodeGetLinksPeered(type, key, type_id).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsForTypesViaLua(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(type, key, rel_types).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksForTypesViaLua(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types) {
+        return sol::as_table(NodeGetLinksPeered(type, key, rel_types).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdViaLua(uint64_t id) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdViaLua(uint64_t id) {
+        return sol::as_table(NodeGetLinksPeered(id).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForDirectionViaLua(uint64_t id, Direction direction) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, direction).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForDirectionViaLua(uint64_t id, Direction direction) {
+        return sol::as_table(NodeGetLinksPeered(id, direction).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, direction, rel_type).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type) {
+        return sol::as_table(NodeGetLinksPeered(id, direction, rel_type).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForDirectionForTypeIdViaLua(uint64_t id, Direction direction, uint16_t type_id) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, direction, type_id).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForDirectionForTypeIdViaLua(uint64_t id, Direction direction, uint16_t type_id) {
+        return sol::as_table(NodeGetLinksPeered(id, direction, type_id).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, direction, rel_types).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
+        return sol::as_table(NodeGetLinksPeered(id, direction, rel_types).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForTypeViaLua(uint64_t id, const std::string& rel_type) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, rel_type).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForTypeViaLua(uint64_t id, const std::string& rel_type) {
+        return sol::as_table(NodeGetLinksPeered(id, rel_type).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForTypeIdViaLua(uint64_t id, uint16_t type_id) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, type_id).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForTypeIdViaLua(uint64_t id, uint16_t type_id) {
+        return sol::as_table(NodeGetLinksPeered(id, type_id).get0());
     }
 
-    sol::as_table_t<std::vector<Link>> Shard::NodeGetRelationshipsIdsByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types) {
-        return sol::as_table(NodeGetRelationshipsIDsPeered(id, rel_types).get0());
+    sol::as_table_t<std::vector<Link>> Shard::NodeGetLinksByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types) {
+        return sol::as_table(NodeGetLinksPeered(id, rel_types).get0());
     }
 
 

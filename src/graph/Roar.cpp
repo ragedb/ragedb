@@ -175,4 +175,42 @@ namespace ragedb {
     os << ']';
     return os;
   }
+
+  std::vector<uint64_t> Roar::getIds() {
+    std::vector<uint64_t> ids;
+    ids.reserve(map.cardinality());
+    uint64_t array[map.cardinality()];
+    map.toUint64Array(array);
+    ids.assign(array, array + map.cardinality());
+    return ids;
+  }
+
+  std::vector<Link> Roar::getNodeHalfLinks() {
+    std::vector<Link> links;
+    links.reserve(map.cardinality());
+
+    uint64_t array[map.cardinality()];
+    map.toUint64Array(array);
+
+    for (auto element : array) {
+      links.push_back( Link({element,0}));
+    }
+
+    return links;
+  }
+
+  std::vector<Link> Roar::getRelationshipHalfLinks() {
+    std::vector<Link> links;
+    links.reserve(map.cardinality());
+
+    uint64_t array[map.cardinality()];
+    map.toUint64Array(array);
+
+    for (auto element : array) {
+      links.push_back( Link({0,element}));
+    }
+
+    return links;
+  }
+
 }

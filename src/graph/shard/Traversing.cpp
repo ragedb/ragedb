@@ -18,56 +18,56 @@
 
 namespace ragedb {
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
-        return NodeGetRelationshipsIDs(id);
+        return NodeGetLinks(id);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, Direction direction) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, Direction direction) {
         uint64_t id = NodeGetID(type, key);
-        return NodeGetRelationshipsIDs(id, direction);
+        return NodeGetLinks(id, direction);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type) {
         uint64_t id = NodeGetID(type, key);
-        return NodeGetRelationshipsIDs(id, direction, rel_type);
+        return NodeGetLinks(id, direction, rel_type);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, Direction direction, uint16_t type_id) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, Direction direction, uint16_t type_id) {
         uint64_t id = NodeGetID(type, key);
-        return NodeGetRelationshipsIDs(id, direction, type_id);
+        return NodeGetLinks(id, direction, type_id);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
         uint64_t id = NodeGetID(type, key);
-        return NodeGetRelationshipsIDs(id, direction, rel_types);
+        return NodeGetLinks(id, direction, rel_types);
     }
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, uint64_t id2) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2) {
       uint64_t id = NodeGetID(type, key);
-      return NodeGetRelationshipsIDs(id, id2);
+      return NodeGetLinks(id, id2);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, uint64_t id2, Direction direction) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction) {
       uint64_t id = NodeGetID(type, key);
-      return NodeGetRelationshipsIDs(id, id2, direction);
+      return NodeGetLinks(id, id2, direction);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, uint64_t id2, Direction direction, const std::string &rel_type) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction, const std::string &rel_type) {
       uint64_t id = NodeGetID(type, key);
-      return NodeGetRelationshipsIDs(id, id2, direction, rel_type);
+      return NodeGetLinks(id, id2, direction, rel_type);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, uint64_t id2, Direction direction, uint16_t type_id) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction, uint16_t type_id) {
       uint64_t id = NodeGetID(type, key);
-      return NodeGetRelationshipsIDs(id, id2, direction, type_id);
+      return NodeGetLinks(id, id2, direction, type_id);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(const std::string &type, const std::string &key, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
+    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
       uint64_t id = NodeGetID(type, key);
-      return NodeGetRelationshipsIDs(id, id2, direction, rel_types);
+      return NodeGetLinks(id, id2, direction, rel_types);
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id) {
         if (ValidNodeId(id)) {
             uint64_t internal_id = externalToInternal(id);
             uint16_t type_id = externalToTypeId(id);
@@ -83,7 +83,7 @@ namespace ragedb {
         return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, Direction direction) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, Direction direction) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
@@ -105,7 +105,7 @@ namespace ragedb {
       return {};
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, Direction direction, const std::string &rel_type) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, Direction direction, const std::string &rel_type) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -136,7 +136,7 @@ namespace ragedb {
       return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, Direction direction, uint16_t type_id) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, Direction direction, uint16_t type_id) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
@@ -167,7 +167,7 @@ namespace ragedb {
       return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
@@ -207,7 +207,7 @@ namespace ragedb {
       return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, uint64_t id2) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, uint64_t id2) {
       if (ValidNodeId(id)) {
         uint64_t internal_id = externalToInternal(id);
         uint16_t type_id = externalToTypeId(id);
@@ -223,7 +223,7 @@ namespace ragedb {
       return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, uint64_t id2, Direction direction) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
@@ -245,7 +245,7 @@ namespace ragedb {
       return {};
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction, const std::string &rel_type) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, const std::string &rel_type) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -270,7 +270,7 @@ namespace ragedb {
       return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
@@ -309,7 +309,7 @@ namespace ragedb {
       return std::vector<Link>();
     }
 
-    std::vector<Link> Shard::NodeGetRelationshipsIDs(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
+    std::vector<Link> Shard::NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);

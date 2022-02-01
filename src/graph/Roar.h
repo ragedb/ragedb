@@ -34,6 +34,9 @@ namespace ragedb {
     void addIds(std::vector<uint64_t> ids);
     void addNodeIds(std::vector<Link> links);
     void addRelationshipIds(std::vector<Link> links);
+    std::vector<uint64_t> getIds();
+    std::vector<Link> getNodeHalfLinks();
+    std::vector<Link> getRelationshipHalfLinks();
     void add(uint64_t x);
     void remove(uint64_t x);
     bool addChecked(uint64_t x);

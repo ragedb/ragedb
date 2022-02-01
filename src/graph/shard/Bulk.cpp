@@ -18,42 +18,42 @@
 
 namespace ragedb {
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetRelationshipsIDs(std::vector<Link> links) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
-        link_rels[link] = NodeGetRelationshipsIDs(link.node_id);
+        link_rels[link] = NodeGetLinks(link.node_id);
       }
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetRelationshipsIDs(std::vector<Link> links, Direction direction) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
-        link_rels[link] = NodeGetRelationshipsIDs(link.node_id, direction);
+        link_rels[link] = NodeGetLinks(link.node_id, direction);
       }
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetRelationshipsIDs(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction, const std::string& rel_type) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
-        link_rels[link] = NodeGetRelationshipsIDs(link.node_id, direction, rel_type);
+        link_rels[link] = NodeGetLinks(link.node_id, direction, rel_type);
       }
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetRelationshipsIDs(std::vector<Link> links, Direction direction, uint16_t type_id) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction, uint16_t type_id) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
-        link_rels[link] = NodeGetRelationshipsIDs(link.node_id, direction, type_id);
+        link_rels[link] = NodeGetLinks(link.node_id, direction, type_id);
       }
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetRelationshipsIDs(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
-        link_rels[link] = NodeGetRelationshipsIDs(link.node_id, direction, rel_types);
+        link_rels[link] = NodeGetLinks(link.node_id, direction, rel_types);
       }
       return link_rels;
     }

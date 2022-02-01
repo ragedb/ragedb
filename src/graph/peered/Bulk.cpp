@@ -37,13 +37,13 @@ namespace ragedb {
       return sharded_links;
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links);
+          return local_shard.LinksGetLinks(grouped_links);
         });
         futures.push_back(std::move(future));
       }
@@ -59,13 +59,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, Direction direction) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, Direction direction) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, direction);
+          return local_shard.LinksGetLinks(grouped_links, direction);
         });
         futures.push_back(std::move(future));
       }
@@ -81,13 +81,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, Direction direction, const std::string &rel_type) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, Direction direction, const std::string &rel_type) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction, rel_type](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, direction, rel_type);
+          return local_shard.LinksGetLinks(grouped_links, direction, rel_type);
         });
         futures.push_back(std::move(future));
       }
@@ -103,13 +103,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, Direction direction, uint16_t type_id) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, Direction direction, uint16_t type_id) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction, type_id](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, direction, type_id);
+          return local_shard.LinksGetLinks(grouped_links, direction, type_id);
         });
         futures.push_back(std::move(future));
       }
@@ -125,13 +125,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction, rel_types](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, direction, rel_types);
+          return local_shard.LinksGetLinks(grouped_links, direction, rel_types);
         });
         futures.push_back(std::move(future));
       }
@@ -147,13 +147,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, const std::string &rel_type) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, const std::string &rel_type) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::BOTH);
+          return local_shard.LinksGetLinks(grouped_links, Direction::BOTH);
         });
         futures.push_back(std::move(future));
       }
@@ -169,13 +169,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, uint16_t type_id) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, uint16_t type_id) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, type_id](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::BOTH, type_id);
+          return local_shard.LinksGetLinks(grouped_links, Direction::BOTH, type_id);
         });
         futures.push_back(std::move(future));
       }
@@ -191,13 +191,13 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetRelationshipsIDsPeered(std::vector<Link> links, const std::vector<std::string> &rel_types) {
+    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links, const std::vector<std::string> &rel_types) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_types](Shard &local_shard) {
-          return local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::BOTH, rel_types);
+          return local_shard.LinksGetLinks(grouped_links, Direction::BOTH, rel_types);
         });
         futures.push_back(std::move(future));
       }
@@ -399,7 +399,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-          return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT));
+          return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT));
         });
         futures.push_back(std::move(future));
       }
@@ -421,7 +421,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
-          return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_type));
+          return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_type));
         });
         futures.push_back(std::move(future));
       }
@@ -443,7 +443,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, type_id](Shard &local_shard) {
-          return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, type_id));
+          return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT, type_id));
         });
         futures.push_back(std::move(future));
       }
@@ -465,7 +465,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_types](Shard &local_shard) {
-          return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_types));
+          return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_types));
         });
         futures.push_back(std::move(future));
       }
@@ -520,7 +520,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-              return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT));
+              return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT));
             });
             futures.push_back(std::move(future));
           }
@@ -626,7 +626,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
-              return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_type));
+              return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_type));
             });
             futures.push_back(std::move(future));
           }
@@ -692,7 +692,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, type_id](Shard &local_shard) {
-              return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, type_id));
+              return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT, type_id));
             });
             futures.push_back(std::move(future));
           }
@@ -758,7 +758,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Relationship>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_types](Shard &local_shard) {
-              return local_shard.LinksGetRelationships(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_types));
+              return local_shard.LinksGetRelationships(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_types));
             });
             futures.push_back(std::move(future));
           }
@@ -825,7 +825,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-              return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT));
+              return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT));
             });
             futures.push_back(std::move(future));
           }
@@ -1038,7 +1038,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-          return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT));
+          return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT));
         });
         futures.push_back(std::move(future));
       }
@@ -1060,7 +1060,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
-          return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_type));
+          return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_type));
         });
         futures.push_back(std::move(future));
       }
@@ -1082,7 +1082,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, type_id](Shard &local_shard) {
-          return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, type_id));
+          return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT, type_id));
         });
         futures.push_back(std::move(future));
       }
@@ -1104,7 +1104,7 @@ namespace ragedb {
       std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
       for (auto const &[their_shard, grouped_links] : sharded_links) {
         auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_types](Shard &local_shard) {
-          return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_types));
+          return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_types));
         });
         futures.push_back(std::move(future));
       }
@@ -1200,7 +1200,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
-              return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_type));
+              return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_type));
             });
             futures.push_back(std::move(future));
           }
@@ -1266,7 +1266,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, type_id](Shard &local_shard) {
-              return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, type_id));
+              return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT, type_id));
             });
             futures.push_back(std::move(future));
           }
@@ -1332,7 +1332,7 @@ namespace ragedb {
           std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures;
           for (auto const &[their_shard, grouped_links] : sharded_links) {
             auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_types](Shard &local_shard) {
-              return local_shard.LinksGetNeighbors(local_shard.LinksGetRelationshipsIDs(grouped_links, Direction::OUT, rel_types));
+              return local_shard.LinksGetNeighbors(local_shard.LinksGetLinks(grouped_links, Direction::OUT, rel_types));
             });
             futures.push_back(std::move(future));
           }
