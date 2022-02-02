@@ -94,7 +94,6 @@ if(ENABLE_UNITY)
 endif()
 
 file(COPY public DESTINATION bin)
-file(COPY lua DESTINATION bin)
 
 add_subdirectory(src/graph)
 include_directories(src/graph)

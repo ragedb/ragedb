@@ -11,6 +11,7 @@ set(HEADER_FILES
         Direction.h
         Operation.h
         Expression.h
+        Lua.h
         Roar.h
         eve/CollectIndexes.h)
 
