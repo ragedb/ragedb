@@ -593,7 +593,7 @@
     -- Year, if year is in BCE, prints the BCE Year representation, otherwise result is similar to "%Y" (1 BCE, 40 BCE)
     ['%\b']=function(self) local x = self:getyear() return fmt("%.4d%s", x>0 and x or (-x+1), x>0 and "" or " BCE") end,
     -- Seconds including fraction (59.998, 01.123)
-    ['%\f']=function(self) local x = self:getfracsec() return fmt("%s%.9f",x >= 10 and "" or "0", x) end,
+    ['%\f']=function(self) local x = self:getfracsec() return fmt("%s%.3f",x >= 10 and "" or "0", x) end,
     -- percent character %
     ['%%']=function(self) return "%" end,
     -- Group Spec --
@@ -602,7 +602,7 @@
     -- hour:minute, from 01:00 (06:55); same as "%I:%M"
     ['%R']=function(self) return self:fmt0("%I:%M")  end,
     -- 24-hour time, from 00:00:00 (06:55:15); same as "%H:%M:%S"
-    ['%T']=function(self) return self:fmt0("%H:%M:%S") end,
+    ['%T']=function(self) return self:fmt0("%H:%M:%\f") end,
     -- month/day/year from 01/01/00 (12/02/79); same as "%m/%d/%y"
     ['%D']=function(self) return self:fmt0("%m/%d/%y") end,
     -- year-month-day (1979-12-02); same as "%Y-%m-%d"
@@ -614,8 +614,8 @@
     -- The preferred time representation, same as "%H:%M:%\f"
     ['%X']=function(self) return self:fmt0("%H:%M:%\f") end,
     -- GroupSpec --
-    -- Iso format, same as "%Y-%m-%dT%T"
-    ['${iso}'] = function(self) return self:fmt0("%Y-%m-%dT%T") end,
+    -- Iso format, same as "%Y-%m-%dT%T", assumes UTC Time Zone
+    ['${iso}'] = function(self) return self:fmt0("%Y-%m-%dT%T+0000") end,
     -- http format, same as "%a, %d %b %Y %T GMT"
     ['${http}'] = function(self) return self:fmt0("%a, %d %b %Y %T GMT") end,
     -- ctime format, same as "%a %b %d %T GMT %Y"
