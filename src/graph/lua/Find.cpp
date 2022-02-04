@@ -37,7 +37,8 @@ namespace ragedb {
     if (o.is<unsigned long long>()) return o.as<int64_t>();
     if (o.is<float>()) return o.as<double>();
     // TODO: Any missing? What about arrays?
-      }
+    return std::any();
+  }
 
 
     uint64_t Shard::FindNodeCountViaLua(const std::string& type, const std::string& property, const Operation& operation, const sol::object& object) {

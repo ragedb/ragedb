@@ -58,8 +58,8 @@ namespace ragedb {
           "addNodeIds", &Roar::addNodeIds,
           "addRelationshipIds", &Roar::addRelationshipIds,
           "getIds", &Roar::getIds,
-          "getNodeHalfLinks", &Roar::getNodeHalfLinks,
-          "getRelationshipHalfLinks", &Roar::getRelationshipHalfLinks,
+          "getNodeHalfLinks", &Roar::getNodeHalfLinksLua,
+          "getRelationshipHalfLinks", &Roar::getRelationshipHalfLinksLua,
           "add", &Roar::add,
           "remove", &Roar::remove,
           "addChecked", &Roar::addChecked,
@@ -155,11 +155,10 @@ namespace ragedb {
         lua.set_function("NodePropertyTypeDelete", &Shard::NodePropertyTypeDeleteViaLua, this);
         lua.set_function("RelationshipPropertyTypeDelete", &Shard::RelationshipPropertyTypeDeleteViaLua, this);
 
-        //Nodes
+        //Node
         lua.set_function("NodeAddEmpty", &Shard::NodeAddEmptyViaLua, this);
         lua.set_function("NodeAdd", &Shard::NodeAddViaLua, this);
         lua.set_function("NodeGetId", &Shard::NodeGetIdViaLua, this);
-        lua.set_function("NodesGet", &Shard::NodesGetViaLua, this);
         lua.set_function("NodeGet", &Shard::NodeGetViaLua, this);
         lua.set_function("NodeGetById", &Shard::NodeGetByIdViaLua, this);
         lua.set_function("NodeRemove", &Shard::NodeRemoveViaLua, this);
@@ -167,6 +166,20 @@ namespace ragedb {
         lua.set_function("NodeGetTypeId", &Shard::NodeGetTypeIdViaLua, this);
         lua.set_function("NodeGetType", &Shard::NodeGetTypeViaLua, this);
         lua.set_function("NodeGetKey", &Shard::NodeGetKeyViaLua, this);
+
+        // Nodes
+        lua.set_function("NodesGet", &Shard::NodesGetViaLua, this);
+        lua.set_function("NodesGetByLinks", &Shard::NodesGetByLinksViaLua, this);
+        lua.set_function("NodesGetKey", &Shard::NodesGetKeyViaLua, this);
+        lua.set_function("NodesGetKeyByLinks", &Shard::NodesGetKeyByLinksViaLua, this);
+        lua.set_function("NodesGetType", &Shard::NodesGetTypeViaLua, this);
+        lua.set_function("NodesGetTypeByLinks", &Shard::NodesGetTypeByLinksViaLua, this);
+        lua.set_function("NodesGetTypeId", &Shard::NodesGetTypeIdViaLua, this);
+        lua.set_function("NodesGetTypeIdByLinks", &Shard::NodesGetTypeIdByLinksViaLua, this);
+        lua.set_function("NodesGetProperty", &Shard::NodesGetPropertyViaLua, this);
+        lua.set_function("NodesGetPropertyByLinks", &Shard::NodesGetPropertyByLinksViaLua, this);
+        lua.set_function("NodesGetProperties", &Shard::NodesGetPropertiesViaLua, this);
+        lua.set_function("NodesGetPropertiesByLinks", &Shard::NodesGetPropertiesByLinksViaLua, this);
 
         // Node Properties
         lua.set_function("NodePropertyGet", &Shard::NodePropertyGetViaLua, this);

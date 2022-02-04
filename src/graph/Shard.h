@@ -44,6 +44,9 @@
 
 namespace ragedb {
 
+  using property_type_t = std::variant<bool, int64_t, double, std::string,
+      std::vector<bool>, std::vector<int64_t>, std::vector<double>, std::vector<std::string> >;
+
     class Shard : public seastar::peering_sharded_service<Shard> {
 
     private:
@@ -132,11 +135,10 @@ namespace ragedb {
         std::pair <uint16_t ,uint64_t> RelationshipRemoveGetIncoming(uint64_t internal_id);
         bool RelationshipRemoveIncoming(uint16_t rel_type_id, uint64_t external_id, uint64_t node_id);
 
-        // Nodes
+        // Node
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
-        std::vector<Node> NodesGet(const std::vector<uint64_t>&);
         Node NodeGet(uint64_t id);
         Node NodeGet(const std::string& type, const std::string& key);
         static uint16_t NodeGetTypeId(uint64_t id);
@@ -144,6 +146,22 @@ namespace ragedb {
         std::string NodeGetKey(uint64_t id);
         bool NodeRemove(uint64_t id);
         bool NodeRemove(const std::string& type, const std::string& key);
+
+        // Nodes
+        std::vector<Node> NodesGet(const std::vector<uint64_t>&);
+        std::vector<Node> NodesGet(const std::vector<Link>& links);
+        std::vector<std::string> NodesGetKey(const std::vector<uint64_t>&);
+        std::vector<std::string> NodesGetKey(const std::vector<Link>& links);
+        std::vector<std::string> NodesGetType(const std::vector<uint64_t>&);
+        std::vector<std::string> NodesGetType(const std::vector<Link>& links);
+        std::vector<uint16_t> NodesGetTypeId(const std::vector<uint64_t>&);
+        std::vector<uint16_t> NodesGetTypeId(const std::vector<Link>& links);
+
+        std::vector<property_type_t> NodesGetProperty2(const std::vector<uint64_t> &ids, const std::string& property);
+        std::vector<std::any> NodesGetProperty(const std::vector<uint64_t> &ids, const std::string& property);
+        std::vector<std::any> NodesGetProperty(const std::vector<Link>& links, const std::string& property);
+        std::vector<std::map<std::string, std::any>> NodesGetProperties(const std::vector<uint64_t>&);
+        std::vector<std::map<std::string, std::any>> NodesGetProperties(const std::vector<Link>& links);
 
         // Node Property
         std::any NodePropertyGet(uint64_t id, const std::string& property);
@@ -165,7 +183,7 @@ namespace ragedb {
         bool NodePropertiesDelete(const std::string& type, const std::string& key);
         bool NodePropertiesDelete(uint64_t id);
 
-        // Relationships
+        // Relationship
         uint64_t RelationshipAddEmptySameShard(uint16_t rel_type_id, uint64_t id1, uint64_t id2);
         uint64_t RelationshipAddEmptySameShard(uint16_t rel_type, const std::string& type1, const std::string& key1,
                                                const std::string& type2, const std::string& key2);
@@ -176,13 +194,16 @@ namespace ragedb {
         uint64_t RelationshipAddSameShard(uint16_t rel_type, const std::string& type1, const std::string& key1,
                                           const std::string& type2, const std::string& key2, const std::string& properties);
         uint64_t RelationshipAddToOutgoing(uint16_t rel_type, uint64_t id1, uint64_t id2, const std::string& properties);
-        std::vector<Relationship> RelationshipsGet(const std::vector<Link>& links);
-        std::vector<Relationship> RelationshipsGet(const std::vector<uint64_t>&);
         Relationship RelationshipGet(uint64_t rel_id);
         std::string RelationshipGetType(uint64_t id);
         uint16_t RelationshipGetTypeId(uint64_t id);
         uint64_t RelationshipGetStartingNodeId(uint64_t id);
         uint64_t RelationshipGetEndingNodeId(uint64_t id);
+
+        // Relationships
+        std::vector<Relationship> RelationshipsGet(const std::vector<uint64_t>&);
+        std::vector<Relationship> RelationshipsGet(const std::vector<Link>& links);
+
 
         // Relationship Property
         std::any RelationshipPropertyGet(uint64_t id, const std::string& property);
@@ -385,14 +406,13 @@ namespace ragedb {
         seastar::future<uint16_t> RelationshipTypeInsertPeered(const std::string& type);
         seastar::future<bool> DeleteRelationshipTypePeered(const std::string& type);
 
-        // Nodes
+        // Node
         seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
         seastar::future<uint64_t> NodeAddPeered(const std::string& type, const std::string& key, const std::string& properties);
         seastar::future<uint64_t> NodeGetIDPeered(const std::string& type, const std::string& key);
 
         seastar::future<Node> NodeGetPeered(const std::string& type, const std::string& key);
         seastar::future<Node> NodeGetPeered(uint64_t id);
-        seastar::future<std::vector<Node>> NodesGetPeered(const std::vector<uint64_t> &ids);
         seastar::future<bool> NodeRemovePeered(const std::string& type, const std::string& key);
         seastar::future<bool> NodeRemovePeered(uint64_t id);
         seastar::future<bool> NodeRemovePeeredIncoming(uint16_t node_shard_id, uint64_t external_id);
@@ -400,6 +420,21 @@ namespace ragedb {
         seastar::future<uint16_t> NodeGetTypeIdPeered(uint64_t id);
         seastar::future<std::string> NodeGetTypePeered(uint64_t id);
         seastar::future<std::string> NodeGetKeyPeered(uint64_t id);
+
+        // Nodes
+        seastar::future<std::vector<Node>> NodesGetPeered(const std::vector<uint64_t> &ids);
+        seastar::future<std::vector<Node>> NodesGetPeered(const std::vector<Link>& links);
+        seastar::future<std::vector<std::string>> NodesGetKeyPeered(const std::vector<uint64_t>&);
+        seastar::future<std::vector<std::string>> NodesGetKeyPeered(const std::vector<Link>& links);
+        seastar::future<std::vector<std::string>> NodesGetTypePeered(const std::vector<uint64_t>&);
+        seastar::future<std::vector<std::string>> NodesGetTypePeered(const std::vector<Link>& links);
+        seastar::future<std::vector<uint16_t>> NodesGetTypeIdPeered(const std::vector<uint64_t>&);
+        seastar::future<std::vector<uint16_t>> NodesGetTypeIdPeered(const std::vector<Link>& links);
+        seastar::future<std::vector<property_type_t>> NodesGetPropertyPeered(const std::vector<uint64_t> &ids, const std::string& property);
+        seastar::future<std::vector<std::any>> NodesGetPropertyPeered(const std::vector<Link>& links, const std::string& property);
+        seastar::future<std::vector<std::map<std::string, std::any>>> NodesGetPropertiesPeered(const std::vector<uint64_t>&);
+        seastar::future<std::vector<std::map<std::string, std::any>>> NodesGetPropertiesPeered(const std::vector<Link>& links);
+
 
         // Property Types
         seastar::future<uint8_t> NodePropertyTypeInsertPeered(uint16_t type_id, const std::string& key, const std::string& type);
@@ -642,7 +677,11 @@ namespace ragedb {
         //                                                              Via Lua
         // *****************************************************************************************************************************
 
-        // Relationship Types
+        // Helpers
+        sol::object NodePropertyToSolObject(std::any value);
+        sol::object NodePropertyToSolObject2(property_type_t value);
+
+          // Relationship Types
         uint16_t RelationshipTypesGetCountViaLua();
         uint64_t RelationshipTypesGetCountByTypeViaLua(const std::string& type);
         uint64_t RelationshipTypesGetCountByIdViaLua(uint16_t type_id);
@@ -666,11 +705,11 @@ namespace ragedb {
         uint16_t NodeTypeGetTypeIdViaLua(const std::string& type);
         uint16_t NodeTypeInsertViaLua(const std::string& type);
 
-        //Nodes
+        //Node
         uint64_t NodeAddEmptyViaLua(const std::string& type, const std::string& key);
         uint64_t NodeAddViaLua(const std::string& type, const std::string& key, const std::string& properties);
         uint64_t NodeGetIdViaLua(const std::string& type, const std::string& key);
-        sol::as_table_t<std::vector<Node>> NodesGetViaLua(const std::vector<uint64_t>&);
+
         Node NodeGetViaLua(const std::string& type, const std::string& key);
         Node NodeGetByIdViaLua(uint64_t id);
         bool NodeRemoveViaLua(const std::string& type, const std::string& key);
@@ -679,9 +718,21 @@ namespace ragedb {
         std::string NodeGetTypeViaLua(uint64_t id);
         std::string NodeGetKeyViaLua(uint64_t id);
 
+        // Nodes
+        sol::as_table_t<std::vector<Node>> NodesGetViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<Node>> NodesGetByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<std::string>> NodesGetKeyViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<std::string>> NodesGetKeyByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<std::string>> NodesGetTypeViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<std::string>> NodesGetTypeByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<uint16_t>> NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<uint16_t>> NodesGetTypeIdByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertiesByLinksViaLua(const std::vector<Link>& links);
+
         // Property Types
-        uint8_t NodePropertyTypeInsertViaLua(uint16_t type_id, const std::string& key, const std::string& type);
-        uint8_t RelationshipPropertyTypeInsertViaLua(uint16_t type_id, const std::string& key, const std::string& type);
         uint8_t NodePropertyTypeAddViaLua(const std::string& node_type, const std::string& key, const std::string& type);
         uint8_t RelationshipPropertyTypeAddViaLua(const std::string& relationship_type, const std::string& key, const std::string& type);
         bool NodePropertyTypeDeleteViaLua(const std::string& type, const std::string& key);
@@ -859,6 +910,8 @@ namespace ragedb {
         sol::as_table_t<std::vector<Relationship>> FindRelationshipsViaLua(const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
 
         std::map<uint16_t, std::vector<Link>> PartitionLinksByNodeShardId(std::vector<Link> &links) const;
+        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByNodeShardId(const std::vector<uint64_t> &ids) const;
+        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByNodeShardId(const std::vector<Link> &links) const;
     };
 }
 

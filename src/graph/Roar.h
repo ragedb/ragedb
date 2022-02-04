@@ -20,6 +20,7 @@
 #include <roaring/roaring64map.hh>
 #include <vector>
 #include <cstdint>
+#include <sol/types.hpp>
 #include "Link.h"
 
 using namespace roaring;
@@ -35,8 +36,13 @@ namespace ragedb {
     void addNodeIds(std::vector<Link> links);
     void addRelationshipIds(std::vector<Link> links);
     std::vector<uint64_t> getIds();
+    sol::as_table_t<std::vector<uint64_t>> getIdsLua();
+
     std::vector<Link> getNodeHalfLinks();
+    sol::as_table_t<std::vector<Link>> getNodeHalfLinksLua();
+
     std::vector<Link> getRelationshipHalfLinks();
+    sol::as_table_t<std::vector<Link>> getRelationshipHalfLinksLua();
     void add(uint64_t x);
     void remove(uint64_t x);
     bool addChecked(uint64_t x);

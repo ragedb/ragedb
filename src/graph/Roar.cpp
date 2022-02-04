@@ -185,6 +185,10 @@ namespace ragedb {
     return ids;
   }
 
+  sol::as_table_t<std::vector<uint64_t>> Roar::getIdsLua() {
+    return sol::as_table(getIds());
+  }
+
   std::vector<Link> Roar::getNodeHalfLinks() {
     std::vector<Link> links;
     links.reserve(map.cardinality());
@@ -199,6 +203,10 @@ namespace ragedb {
     return links;
   }
 
+  sol::as_table_t<std::vector<Link>> Roar::getNodeHalfLinksLua() {
+    return sol::as_table(getNodeHalfLinks());
+  }
+
   std::vector<Link> Roar::getRelationshipHalfLinks() {
     std::vector<Link> links;
     links.reserve(map.cardinality());
@@ -211,6 +219,10 @@ namespace ragedb {
     }
 
     return links;
+  }
+
+  sol::as_table_t<std::vector<Link>> Roar::getRelationshipHalfLinksLua() {
+    return sol::as_table(getRelationshipHalfLinks());
   }
 
 }

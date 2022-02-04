@@ -18,82 +18,44 @@
 
 namespace ragedb {
 
-    seastar::future<uint64_t> Shard::NodeAddEmptyPeered(const std::string &type, const std::string &key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-        uint16_t type_id = node_types.getTypeId(type);
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByNodeShardId(const std::vector<uint64_t> &ids) const {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
+      for (int i = 0; i < cpus; i++) {
+        sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
+      }
+      for (auto id : ids) {
+        sharded_nodes_ids[CalculateShardId(id)].emplace_back(id);
+      }
 
-        // The node type exists, so continue on
-        if (type_id > 0) {
-            return container().invoke_on(node_shard_id, [type_id, key](Shard &local_shard) {
-                return local_shard.NodeAddEmpty(type_id, key);
-            });
+      for (int i = 0; i < cpus; i++) {
+        if (sharded_nodes_ids.at(i).empty()) {
+          sharded_nodes_ids.erase(i);
         }
-
-        // The node type needs to be set by Shard 0 and propagated
-        return container().invoke_on(0, [node_shard_id, type, key, this] (Shard &local_shard) {
-            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, type, key, this] (uint16_t node_type_id) {
-                return container().invoke_on(node_shard_id, [node_type_id, key](Shard &local_shard) {
-                    return local_shard.NodeAddEmpty(node_type_id, key);
-                });
-            });
-        });
+      }
+      return sharded_nodes_ids;
     }
 
-    seastar::future<uint64_t> Shard::NodeAddPeered(const std::string &type, const std::string &key, const std::string &properties) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-        uint16_t node_type_id = node_types.getTypeId(type);
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByNodeShardId(const std::vector<Link>& links) const {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
+      for (int i = 0; i < cpus; i++) {
+        sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
+      }
+      for (auto link : links) {
+        sharded_nodes_ids[CalculateShardId(link.node_id)].emplace_back(link.node_id);
+      }
 
-        // The node type exists, so continue on
-        if (node_type_id > 0) {
-            return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
-                return local_shard.NodeAdd(node_type_id, key, properties);
-            });
+      for (int i = 0; i < cpus; i++) {
+        if (sharded_nodes_ids.at(i).empty()) {
+          sharded_nodes_ids.erase(i);
         }
-
-        // The node type needs to be set by Shard 0 and propagated
-        return container().invoke_on(0, [node_shard_id, type, key, properties, this](Shard &local_shard) {
-            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, properties, this](uint16_t node_type_id) {
-                return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
-                    return local_shard.NodeAdd(node_type_id, key, properties);
-                });
-            });
-        });
-    }
-
-    seastar::future<uint64_t> Shard::NodeGetIDPeered(const std::string &type, const std::string &key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key] (Shard &local_shard) {
-            return local_shard.NodeGetID(type, key);
-        });
-    }
-
-    seastar::future<Node> Shard::NodeGetPeered(const std::string &type, const std::string &key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
-            return local_shard.NodeGet(type, key);
-        });
-    }
-
-    seastar::future<Node> Shard::NodeGetPeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
-            return local_shard.NodeGet(id);
-        });
+      }
+      return sharded_nodes_ids;
     }
 
     seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<uint64_t> &ids) {
-        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
-        for (int i = 0; i < cpus; i++) {
-            sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
-        }
-        for (auto id : ids) {
-            sharded_nodes_ids[CalculateShardId(id)].emplace_back(id);
-        }
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
 
-        std::vector<seastar::future<std::vector<Node>>> futures;
+      std::vector<seastar::future<std::vector<Node>>> futures;
         for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                 return local_shard.NodesGet(grouped_node_ids);
@@ -112,235 +74,246 @@ namespace ragedb {
         });
     }
 
-    seastar::future<bool> Shard::NodeRemovePeered(const std::string& type, const std::string& key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
+    seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<Link>& links) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
 
-        return container().invoke_on(node_shard_id, [type, key] (Shard &local_shard) {
-            return local_shard.NodeGetID(type, key);
-        }).then([this] (uint64_t external_id) {
-            return NodeRemovePeered(external_id);
+      std::vector<seastar::future<std::vector<Node>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGet(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<Node>>& results) {
+        std::vector<Node> combined;
+
+        for(const std::vector<Node>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<bool> Shard::NodeRemovePeeredIncoming(uint16_t node_shard_id, uint64_t external_id) {
-        return container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
-            return local_shard.NodeRemoveGetIncoming(external_id);
-        })
-        .then([external_id, this] (auto sharded_grouped_rels) mutable {
-            std::vector<seastar::future<bool>> futures;
-            for (auto const& [their_shard, grouped_rels] : sharded_grouped_rels ) {
-                auto future = container().invoke_on(their_shard, [external_id, grouped_rels = std::move(grouped_rels)] (Shard &local_shard) {
-                    return local_shard.NodeRemoveDeleteIncoming(external_id, grouped_rels);
-                });
-                futures.push_back(std::move(future));
-            }
+    seastar::future<std::vector<std::string>> Shard::NodesGetKeyPeered(const std::vector<uint64_t> &ids) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
 
-            auto p = make_shared(std::move(futures));
-            return seastar::when_all(p->begin(), p->end())
-            .then([p] (std::vector<seastar::future<bool>> results) {
-                if (std::any_of(results.begin(), results.end(), [] (auto& f) { return f.failed(); })) {
-                    return seastar::make_ready_future<bool>(false);
-                }
-                return seastar::make_ready_future<bool>(true);
-            });
+      std::vector<seastar::future<std::vector<std::string>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetKey(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::string>>& results) {
+        std::vector<std::string> combined;
+
+        for(const std::vector<std::string>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<bool> Shard::NodeRemovePeeredOutgoing(uint16_t node_shard_id, uint64_t external_id) {
-        return container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
-            return local_shard.NodeRemoveGetOutgoing(external_id);
-        }).then([external_id, this] (auto sharded_grouped_rels) {
-            std::vector<seastar::future<bool>> futures;
-            for (auto const& [their_shard, grouped_rels] : sharded_grouped_rels ) {
-                auto future = container().invoke_on(their_shard, [external_id, grouped_rels = grouped_rels] (Shard &local_shard) {
-                    return local_shard.NodeRemoveDeleteOutgoing(external_id, grouped_rels);
-                });
-                futures.push_back(std::move(future));
-            }
+    seastar::future<std::vector<std::string>> Shard::NodesGetKeyPeered(const std::vector<Link>& links) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
 
-            auto p = make_shared(std::move(futures));
-            return seastar::when_all(p->begin(), p->end())
-            .then([p] (std::vector<seastar::future<bool>> results) {
-                if (std::any_of(results.begin(), results.end(), [] (auto& f) { return f.failed(); })) {
-                    return seastar::make_ready_future<bool>(false);
-                }
-                return seastar::make_ready_future<bool>(true);
-            });
+      std::vector<seastar::future<std::vector<std::string>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetKey(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::string>>& results) {
+        std::vector<std::string> combined;
+
+        for(const std::vector<std::string>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<bool> Shard::NodeRemovePeered(uint64_t external_id) {
-        uint16_t node_shard_id = CalculateShardId(external_id);
+    seastar::future<std::vector<std::string>> Shard::NodesGetTypePeered(const std::vector<uint64_t> &ids) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
 
-        return container().invoke_on(node_shard_id, [external_id](Shard &local_shard) {
-            return local_shard.ValidNodeId(external_id);
-        }).then([node_shard_id, external_id, this] (bool valid) {
-            if (valid) {
-                return NodeRemovePeeredIncoming(node_shard_id, external_id)
-                .then([node_shard_id, external_id, this] (bool valid2) {
-                    if (valid2) {
-                        return NodeRemovePeeredOutgoing(node_shard_id, external_id);
-                    }
-                    return seastar::make_ready_future<bool>(false);
-                }).then([external_id, node_shard_id, this] (auto valid3) {
-                    if (valid3) {
-                        return container().invoke_on(node_shard_id, [external_id, node_shard_id] (Shard &local_shard) {
-                            return local_shard.NodeRemove(external_id);
-                        });
-                    }
-                    return seastar::make_ready_future<bool>(false);
-                });
-            }
-            return seastar::make_ready_future<bool>(false);
+      std::vector<seastar::future<std::vector<std::string>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetType(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::string>>& results) {
+        std::vector<std::string> combined;
+
+        for(const std::vector<std::string>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<uint16_t> Shard::NodeGetTypeIdPeered(uint64_t id) {
-        return seastar::make_ready_future<uint16_t>(NodeGetTypeId(id));
+    seastar::future<std::vector<std::string>> Shard::NodesGetTypePeered(const std::vector<Link>& links) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
+
+      std::vector<seastar::future<std::vector<std::string>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetType(grouped_node_ids);
+        });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::string>>& results) {
+        std::vector<std::string> combined;
+
+        for(const std::vector<std::string>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<std::string> Shard::NodeGetTypePeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
+    seastar::future<std::vector<uint16_t>> Shard::NodesGetTypeIdPeered(const std::vector<uint64_t> &ids) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
 
-        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
-            return local_shard.NodeGetType(id);
+      std::vector<seastar::future<std::vector<uint16_t>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetTypeId(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint16_t>>& results) {
+        std::vector<uint16_t> combined;
+
+        for(const std::vector<uint16_t>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<std::string> Shard::NodeGetKeyPeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
+    seastar::future<std::vector<uint16_t>> Shard::NodesGetTypeIdPeered(const std::vector<Link>& links) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
 
-        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
-            return local_shard.NodeGetKey(id);
+      std::vector<seastar::future<std::vector<uint16_t>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetTypeId(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint16_t>>& results) {
+        std::vector<uint16_t> combined;
+
+        for(const std::vector<uint16_t>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<std::any> Shard::NodePropertyGetPeered(const std::string &type, const std::string &key, const std::string &property) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
+    seastar::future<std::vector<property_type_t>> Shard::NodesGetPropertyPeered(const std::vector<uint64_t> &ids, const std::string& property) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
 
-        return container().invoke_on(node_shard_id, [type, key, property](Shard &local_shard) {
-            return local_shard.NodePropertyGet(type, key, property);
+      std::vector<seastar::future<std::vector<property_type_t>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, property] (Shard &local_shard) {
+          return local_shard.NodesGetProperty2(grouped_node_ids, property);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<property_type_t>>& results) {
+        std::vector<property_type_t> combined;
+
+        for(const std::vector<property_type_t>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<std::any> Shard::NodePropertyGetPeered(uint64_t id, const std::string &property) {
-        uint16_t node_shard_id = CalculateShardId(id);
+    seastar::future<std::vector<std::any>> Shard::NodesGetPropertyPeered(const std::vector<Link>& links, const std::string& property) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
 
-        return container().invoke_on(node_shard_id, [id, property](Shard &local_shard) {
-            return local_shard.NodePropertyGet(id, property);
+      std::vector<seastar::future<std::vector<std::any>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, property] (Shard &local_shard) {
+          return local_shard.NodesGetProperty(grouped_node_ids, property);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::any>>& results) {
+        std::vector<std::any> combined;
+
+        for(const std::vector<std::any>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<bool> Shard::NodePropertySetPeered(const std::string& type, const std::string& key, const std::string& property, const std::any& value) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
+    seastar::future<std::vector<std::map<std::string, std::any>>> Shard::NodesGetPropertiesPeered(const std::vector<uint64_t> &ids) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
 
-        return container().invoke_on(node_shard_id, [type, key, property, value](Shard &local_shard) {
-            return local_shard.NodePropertySet(type, key, property, value);
+      std::vector<seastar::future<std::vector<std::map<std::string, std::any>>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetProperties(grouped_node_ids);
         });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::map<std::string, std::any>>>& results) {
+        std::vector<std::map<std::string, std::any>> combined;
+
+        for(const std::vector<std::map<std::string, std::any>>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
-    seastar::future<bool> Shard::NodePropertySetPeered(uint64_t id, const std::string& property, const std::any& value) {
-        uint16_t node_shard_id = CalculateShardId(id);
+    seastar::future<std::vector<std::map<std::string, std::any>>> Shard::NodesGetPropertiesPeered(const std::vector<Link>& links) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
 
-        return container().invoke_on(node_shard_id, [id, property, value](Shard &local_shard) {
-            return local_shard.NodePropertySet(id, property, value);
+      std::vector<seastar::future<std::vector<std::map<std::string, std::any>>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+          return local_shard.NodesGetProperties(grouped_node_ids);
         });
-    }
+        futures.push_back(std::move(future));
+      }
 
-    seastar::future<bool> Shard::NodePropertySetFromJsonPeered(const std::string &type, const std::string &key, const std::string &property, const std::string &value) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<std::map<std::string, std::any>>>& results) {
+        std::vector<std::map<std::string, std::any>> combined;
 
-        return container().invoke_on(node_shard_id, [type, key, property, value](Shard &local_shard) {
-            return local_shard.NodePropertySetFromJson(type, key, property, value);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertySetFromJsonPeered(uint64_t id, const std::string &property, const std::string &value) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id, property, value](Shard &local_shard) {
-            return local_shard.NodePropertySetFromJson(id, property, value);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertyDeletePeered(const std::string &type, const std::string &key, const std::string &property) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key, property](Shard &local_shard) {
-            return local_shard.NodePropertyDelete(type, key, property);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertyDeletePeered(uint64_t id, const std::string &property) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id, property](Shard &local_shard) {
-            return local_shard.NodePropertyDelete(id, property);
-        });
-    }
-
-    seastar::future<std::map<std::string, std::any>> Shard::NodePropertiesGetPeered(const std::string& type, const std::string& key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
-            return local_shard.NodePropertiesGet(type, key);
-        });
-    }
-
-    seastar::future<std::map<std::string, std::any>> Shard::NodePropertiesGetPeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
-            return local_shard.NodePropertiesGet(id);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertiesSetFromJsonPeered(const std::string &type, const std::string &key, const std::string &value) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key, value](Shard &local_shard) {
-            return local_shard.NodePropertiesSetFromJson(type, key, value);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertiesSetFromJsonPeered(uint64_t id, const std::string &value) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id, value](Shard &local_shard) {
-            return local_shard.NodePropertiesSetFromJson(id, value);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertiesResetFromJsonPeered(const std::string &type, const std::string &key, const std::string &value) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key, value](Shard &local_shard) {
-            return local_shard.NodePropertiesResetFromJson(type, key, value);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertiesResetFromJsonPeered(uint64_t id, const std::string &value) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id, value](Shard &local_shard) {
-            return local_shard.NodePropertiesResetFromJson(id, value);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertiesDeletePeered(const std::string &type, const std::string &key) {
-        uint16_t node_shard_id = CalculateShardId(type, key);
-
-        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
-            return local_shard.NodePropertiesDelete(type, key);
-        });
-    }
-
-    seastar::future<bool> Shard::NodePropertiesDeletePeered(uint64_t id) {
-        uint16_t node_shard_id = CalculateShardId(id);
-
-        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
-            return local_shard.NodePropertiesDelete(id);
-        });
+        for(const std::vector<std::map<std::string, std::any>>& sharded : results) {
+          combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+        }
+        return combined;
+      });
     }
 
 }
