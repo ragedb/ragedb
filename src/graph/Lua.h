@@ -68,9 +68,9 @@ namespace ragedb {
                   end
                 end
                 if bArray then
-                  return '[' .. table.concat(rval,',') ..']'
+                  return '[' .. table.concat(rval,', ') ..']'
                 else
-                  return '{' .. table.concat(rval,',') .. '}'
+                  return '{' .. table.concat(rval,', ') .. '}'
                 end
               end
               -- Handle null values
