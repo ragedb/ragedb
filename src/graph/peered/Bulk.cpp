@@ -18,25 +18,6 @@
 
 namespace ragedb {
 
-    std::map<uint16_t, std::vector<Link>> Shard::PartitionLinksByNodeShardId(std::vector<Link> &links) const {
-      std::map<uint16_t, std::vector<Link>> sharded_links;
-      for (int i = 0; i < cpus; i++) {
-        sharded_links.insert({i, std::vector<Link>() });
-      }
-
-      for (Link link : links) {
-        uint16_t node_shard_id = CalculateShardId(link.node_id);
-        sharded_links.at(node_shard_id).push_back(link);
-      }
-
-      for (int i = 0; i < cpus; i++) {
-        if (sharded_links.at(i).empty()) {
-          sharded_links.erase(i);
-        }
-      }
-      return sharded_links;
-    }
-
     seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(std::vector<Link> links) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 

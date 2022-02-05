@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-  sol::object Shard::PropertyToSolObject(property_type_t value) {
+  sol::object Shard::PropertyToSolObject(const property_type_t value) {
 
     switch (value.index()) {
       case 0:
@@ -41,7 +41,14 @@ namespace ragedb {
         return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<std::string>>(value)));
       }
     return sol::lua_nil;
+  }
 
+  sol::table Shard::PropertiesToSolObject(const std::map<std::string, property_type_t> properties) {
+    sol::table property_map = lua.create_table();
+    for (auto [_key, value] : properties) {
+      property_map[_key] = PropertyToSolObject(value);
+    }
+    return property_map;
   }
 
 }

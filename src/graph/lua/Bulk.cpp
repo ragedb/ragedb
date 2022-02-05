@@ -104,7 +104,6 @@ namespace ragedb {
       return sol::as_table(LinksGetNeighborsPeered(links, direction, rel_types).get0());
     }
 
-
     sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
       return sol::as_table(LinksGetNeighborsPeered(links, rel_type).get0());
     }

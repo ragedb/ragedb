@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "../Shard.h"
 
 namespace ragedb {
@@ -40,102 +38,102 @@ namespace ragedb {
       return sharded_nodes;
     }
 
-    std::vector<std::string> Shard::NodesGetKey(const std::vector<uint64_t>& node_ids) {
-      std::vector<std::string> sharded_node_keys;
+    std::map<uint64_t, std::string> Shard::NodesGetKey(const std::vector<uint64_t>& node_ids) {
+      std::map<uint64_t, std::string> sharded_node_keys;
 
       for(uint64_t id : node_ids) {
-        sharded_node_keys.emplace_back(NodeGetKey(id));
+        sharded_node_keys[id] = NodeGetKey(id);
       }
 
       return sharded_node_keys;
     }
 
-    std::vector<std::string> Shard::NodesGetKey(const std::vector<Link>& links) {
-      std::vector<std::string> sharded_node_keys;
+    std::map<Link, std::string> Shard::NodesGetKey(const std::vector<Link>& links) {
+      std::map<Link, std::string> sharded_node_keys;
 
       for(Link link : links) {
-        sharded_node_keys.emplace_back(NodeGetKey(link.node_id));
+        sharded_node_keys[link] = NodeGetKey(link.node_id);
       }
 
       return sharded_node_keys;
     }
 
-    std::vector<std::string> Shard::NodesGetType(const std::vector<uint64_t>& node_ids) {
-      std::vector<std::string> sharded_node_types;
+    std::map<uint64_t, std::string> Shard::NodesGetType(const std::vector<uint64_t>& node_ids) {
+      std::map<uint64_t, std::string> sharded_node_types;
 
       for(uint64_t id : node_ids) {
-        sharded_node_types.emplace_back(NodeGetType(id));
+        sharded_node_types[id] = NodeGetType(id);
       }
 
       return sharded_node_types;
     }
 
-    std::vector<std::string> Shard::NodesGetType(const std::vector<Link>& links) {
-      std::vector<std::string> sharded_node_types;
+    std::map<Link, std::string> Shard::NodesGetType(const std::vector<Link>& links) {
+      std::map<Link, std::string> sharded_node_types;
 
       for(Link link : links) {
-        sharded_node_types.emplace_back(NodeGetType(link.node_id));
+        sharded_node_types[link] = NodeGetType(link.node_id);
       }
 
       return sharded_node_types;
     }
 
-    std::vector<uint16_t> Shard::NodesGetTypeId(const std::vector<uint64_t>& node_ids) {
-      std::vector<uint16_t> sharded_node_type_ids;
+    std::map<uint64_t, uint16_t> Shard::NodesGetTypeId(const std::vector<uint64_t>& node_ids) {
+      std::map<uint64_t, uint16_t> sharded_node_type_ids;
 
       for(uint64_t id : node_ids) {
-        sharded_node_type_ids.emplace_back(NodeGetTypeId(id));
+        sharded_node_type_ids[id] = NodeGetTypeId(id);
       }
 
       return sharded_node_type_ids;
     }
 
-    std::vector<uint16_t> Shard::NodesGetTypeId(const std::vector<Link>& links) {
-      std::vector<uint16_t> sharded_node_type_ids;
+    std::map<Link, uint16_t> Shard::NodesGetTypeId(const std::vector<Link>& links) {
+      std::map<Link, uint16_t> sharded_node_type_ids;
 
       for(Link link : links) {
-        sharded_node_type_ids.emplace_back(NodeGetTypeId(link.node_id));
+        sharded_node_type_ids[link] = NodeGetTypeId(link.node_id);
       }
 
       return sharded_node_type_ids;
     }
 
 
-    std::vector<property_type_t> Shard::NodesGetProperty(const std::vector<uint64_t> &node_ids, const std::string& property) {
-      std::vector<property_type_t> sharded_node_properties;
+    std::map<uint64_t, property_type_t> Shard::NodesGetProperty(const std::vector<uint64_t> &node_ids, const std::string& property) {
+      std::map<uint64_t, property_type_t> sharded_node_properties;
 
       for(uint64_t id : node_ids) {
-        sharded_node_properties.push_back(NodePropertyGet(id, property));
+        sharded_node_properties[id] = NodePropertyGet(id, property);
       }
       
       return sharded_node_properties;
     }
 
-    std::vector<property_type_t> Shard::NodesGetProperty(const std::vector<Link>& links, const std::string& property) {
-      std::vector<property_type_t> sharded_node_properties;
+    std::map<Link, property_type_t> Shard::NodesGetProperty(const std::vector<Link>& links, const std::string& property) {
+      std::map<Link, property_type_t> sharded_node_properties;
 
       for(Link link : links) {
-        sharded_node_properties.emplace_back(NodePropertyGet(link.node_id, property));
+        sharded_node_properties[link] = NodePropertyGet(link.node_id, property);
       }
 
       return sharded_node_properties;
     }
 
-    std::vector<std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<uint64_t> &node_ids) {
-      std::vector<std::map<std::string, property_type_t>> sharded_node_properties;
+    std::map<uint64_t, std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<uint64_t> &node_ids) {
+      std::map<uint64_t, std::map<std::string, property_type_t>> sharded_node_properties;
 
       for(uint64_t id : node_ids) {
-        sharded_node_properties.emplace_back(NodePropertiesGet(id));
+        sharded_node_properties[id]  = NodePropertiesGet(id);
       }
 
       return sharded_node_properties;
     }
 
-    std::vector<std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<Link>& links) {
-      std::vector<std::map<std::string, property_type_t>> sharded_node_properties;
+    std::map<Link, std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<Link>& links) {
+      std::map<Link, std::map<std::string, property_type_t>> sharded_node_properties;
 
       for(Link link : links) {
-        sharded_node_properties.emplace_back(NodePropertiesGet(link.node_id));
+        sharded_node_properties[link] = NodePropertiesGet(link.node_id);
       }
 
       return sharded_node_properties;
