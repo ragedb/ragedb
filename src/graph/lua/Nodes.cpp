@@ -19,44 +19,61 @@
 namespace ragedb {
 
     sol::as_table_t<std::vector<Node>> Shard::NodesGetViaLua(const std::vector<uint64_t> &ids) {
-        return sol::as_table(NodesGetPeered(ids).get0());
+      std::vector<Node> nodes = NodesGetPeered(ids).get0();
+
+      sort(nodes.begin(), nodes.end(), [](Node a, Node b) {
+        return a.getId() < b.getId();
+      });
+
+       return sol::as_table(nodes);
     }
 
     sol::as_table_t<std::vector<Node>> Shard::NodesGetByLinksViaLua(const std::vector<Link>& links) {
       return sol::as_table(NodesGetPeered(links).get0());
     }
 
-    sol::as_table_t<std::map<uint64_t, std::string>> Shard::NodesGetKeyViaLua(const std::vector<uint64_t>& ids) {
-      return sol::as_table(NodesGetKeyPeered(ids).get0());
+    sol::as_table_t<std::vector<std::string>> Shard::NodesGetKeyViaLua(const std::vector<uint64_t>& ids) {
+      std::vector<std::string> properties;
+      for (const auto &value : NodesGetKeyPeered(ids).get0()) {
+        properties.emplace_back(value.second);
+      }
+      return sol::as_table(properties);
     }
 
     sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetKeyByLinksViaLua(const std::vector<Link>& links) {
       return sol::as_table(NodesGetKeyPeered(links).get0());
     }
 
-    sol::as_table_t<std::map<uint64_t, std::string>> Shard::NodesGetTypeViaLua(const std::vector<uint64_t>& ids) {
-      return sol::as_table(NodesGetTypePeered(ids).get0());
+    sol::as_table_t<std::vector<std::string>> Shard::NodesGetTypeViaLua(const std::vector<uint64_t>& ids) {
+      std::vector<std::string> properties;
+      for (const auto &value : NodesGetTypePeered(ids).get0()) {
+        properties.emplace_back(value.second);
+      }
+      return sol::as_table(properties);
     }
 
     sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetTypeByLinksViaLua(const std::vector<Link>& links) {
       return sol::as_table(NodesGetTypePeered(links).get0());
     }
 
-    sol::as_table_t<std::map<uint64_t, uint16_t>> Shard::NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids) {
-      return sol::as_table(NodesGetTypeIdPeered(ids).get0());
+    sol::as_table_t<std::vector<uint16_t>> Shard::NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids) {
+      std::vector<uint16_t> properties;
+      for (const auto &value : NodesGetTypeIdPeered(ids).get0()) {
+        properties.emplace_back(value.second);
+      }
+      return sol::as_table(properties);
     }
 
     sol::as_table_t<std::map<Link, uint16_t>> Shard::NodesGetTypeIdByLinksViaLua(const std::vector<Link>& links) {
       return sol::as_table(NodesGetTypeIdPeered(links).get0());
     }
 
-    sol::as_table_t<std::map<uint64_t, sol::object>> Shard::NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property) {
-      std::map<uint64_t, sol::object> properties;
+    sol::as_table_t<std::vector<sol::object>> Shard::NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property) {
+      std::vector<sol::object> properties;
+      properties.reserve(ids.size());
 
-      std::map<uint64_t, property_type_t> values = NodesGetPropertyPeered(ids, property).get0();
-
-      for(auto value : values) {
-        properties[value.first] = PropertyToSolObject(value.second);
+      for (const auto &value : NodesGetPropertyPeered(ids, property).get0()) {
+        properties.emplace_back(PropertyToSolObject(value.second));
       }
       return sol::as_table(properties);
     }
@@ -70,11 +87,12 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<uint64_t, sol::object>> Shard::NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids) {
-      std::map<uint64_t, sol::object> properties;
+    sol::as_table_t<std::vector<sol::object>> Shard::NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids) {
+      std::vector<sol::object> properties;
+      properties.reserve(ids.size());
 
-      for(auto value : NodesGetPropertiesPeered(ids).get0()) {
-        properties[value.first] = PropertiesToSolObject(value.second);
+      for(const auto value : NodesGetPropertiesPeered(ids).get0()) {
+        properties.emplace_back(PropertiesToSolObject(value.second));
       }
       return sol::as_table(properties);
     }

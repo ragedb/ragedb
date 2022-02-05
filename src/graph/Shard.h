@@ -733,17 +733,25 @@ namespace ragedb {
         std::string NodeGetKeyViaLua(uint64_t id);
 
         // Nodes
+        /*
+         * Lua or LuaJit has a problem here with returning maps that have keys which are large numbers.
+         * Since the internal nodes and relationship ids are rather large, this is a problem.
+         * Options are: 1. Return values in order received.
+         *              2. Return values in ascending order (they come back this way already due to std::map being ordered).
+         *              3. Convert number to String (yuck).
+         * Since these will most likely be called from roaring bitmaps which will be in order anyway, I'm going with number 2 for now.
+         */
         sol::as_table_t<std::vector<Node>> NodesGetViaLua(const std::vector<uint64_t>& ids);
         sol::as_table_t<std::vector<Node>> NodesGetByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::map<uint64_t, std::string>> NodesGetKeyViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<std::string>> NodesGetKeyViaLua(const std::vector<uint64_t>& ids);
         sol::as_table_t<std::map<Link, std::string>> NodesGetKeyByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::map<uint64_t, std::string>> NodesGetTypeViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<std::string>> NodesGetTypeViaLua(const std::vector<uint64_t>& ids);
         sol::as_table_t<std::map<Link, std::string>> NodesGetTypeByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::map<uint64_t, uint16_t>> NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<uint16_t>> NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids);
         sol::as_table_t<std::map<Link, uint16_t>> NodesGetTypeIdByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::map<uint64_t, sol::object>> NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property);
         sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property);
-        sol::as_table_t<std::map<uint64_t, sol::object>> NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids);
         sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertiesByLinksViaLua(const std::vector<Link>& links);
 
         // Property Types
