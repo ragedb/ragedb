@@ -41,35 +41,35 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
         WHEN("a property is requested by label/key") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet("Node", "existing", "name");
-                REQUIRE("max" == std::any_cast<std::string>(value));
+                REQUIRE("max" == get<std::string>(value));
             }
         }
 
         WHEN("a string property is requested by label/key") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet("Node", "existing", "name");
-                REQUIRE("max" == std::any_cast<std::string>(value));
+                REQUIRE("max" == get<std::string>(value));
             }
         }
 
         WHEN("an integer property is requested by label/key") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet("Node", "existing", "age");
-                REQUIRE(99 == std::any_cast<int64_t>(value));
+                REQUIRE(99 == get<int64_t>(value));
             }
         }
 
         WHEN("a double property is requested by label/key") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet("Node", "existing", "weight");
-                REQUIRE(230.5 == std::any_cast<double>(value));
+                REQUIRE(230.5 == get<double>(value));
             }
         }
 
         WHEN("a boolean property is requested by label/key") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet("Node", "existing", "bald");
-                bool bald = std::any_cast<bool>(value);
+                bool bald = get<bool>(value);
                 REQUIRE(bald);
             }
         }
@@ -79,43 +79,43 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                auto value = shard.NodePropertyGetObject("Node", "existing", "nested");
 //                REQUIRE(!value.empty());
 //                REQUIRE(value.at("inside").has_value());
-//                REQUIRE("yes" == std::any_cast<std::string>(value.at("inside")));
+//                REQUIRE("yes" == get<std::string>(value.at("inside")));
 //            }
 //        }
 
         WHEN("a property is requested by id") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet(existing, "name");
-                REQUIRE(value.type() == typeid(std::string));
-                REQUIRE("max" == std::any_cast<std::string>(value));
+                REQUIRE(value.index() == 4);
+                REQUIRE("max" == get<std::string>(value));
             }
         }
 
         WHEN("a string property is requested by id") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet(existing, "name");
-                REQUIRE("max" == std::any_cast<std::string>(value));
+                REQUIRE("max" == get<std::string>(value));
             }
         }
 
         WHEN("an integer property is requested by id") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet(existing, "age");
-                REQUIRE(99 == std::any_cast<int64_t>(value));
+                REQUIRE(99 == get<int64_t>(value));
             }
         }
 
         WHEN("a double property is requested by id") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet(existing, "weight");
-                REQUIRE(230.5 == std::any_cast<double>(value));
+                REQUIRE(230.5 == get<double>(value));
             }
         }
 
         WHEN("a boolean property is requested by id") {
             THEN("the shard gets it") {
                 auto value = shard.NodePropertyGet("Node", "existing", "bald");
-                REQUIRE(std::any_cast<bool>(value));
+                REQUIRE(get<bool>(value));
             }
         }
 
@@ -124,7 +124,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "empty", "name", "\"alex\"");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "empty", "name");
-                REQUIRE("alex" == std::any_cast<std::string>(value));
+                REQUIRE("alex" == get<std::string>(value));
             }
         }
 
@@ -133,7 +133,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "existing", "name", "\"alex\"");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "name");
-                REQUIRE("alex" == std::any_cast<std::string>(value));
+                REQUIRE("alex" == get<std::string>(value));
             }
         }
 
@@ -142,7 +142,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "existing", "name", "\"alex\"");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "name");
-                REQUIRE("alex" == std::any_cast<std::string>(value));
+                REQUIRE("alex" == get<std::string>(value));
             }
         }
 
@@ -151,7 +151,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "existing", "age", "55");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "age");
-                REQUIRE(55 == std::any_cast<int64_t>(value));
+                REQUIRE(55 == get<int64_t>(value));
             }
         }
 
@@ -160,7 +160,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "existing", "weight", "190.0");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "weight");
-                REQUIRE(190.0 == std::any_cast<double>(value));
+                REQUIRE(190.0 == get<double>(value));
             }
         }
 
@@ -169,7 +169,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "existing", "active", "true");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "active");
-                REQUIRE(std::any_cast<bool>(value));
+                REQUIRE(get<bool>(value));
             }
         }
 
@@ -181,8 +181,8 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                auto value = shard.NodePropertyGetObject("Node", "existing", "properties");
 //                REQUIRE(value.at("first_property").has_value());
 //                REQUIRE(value.at("second_property").has_value());
-//                REQUIRE(std::any_cast<std::string>(value.at("first_property")) == "one");
-//                REQUIRE(std::any_cast<std::int64_t>(value.at("second_property")) == 9);
+//                REQUIRE(get<std::string>(value.at("first_property")) == "one");
+//                REQUIRE(get<std::int64_t>(value.at("second_property")) == 9);
 //            }
 //        }
 
@@ -194,8 +194,8 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                auto value = shard.NodePropertyGetObject("Node", "existing", "properties");
 //                REQUIRE(value.at("first_property").has_value());
 //                REQUIRE(value.at("second_property").has_value());
-//                REQUIRE(std::any_cast<std::string>(value.at("first_property")) == "one");
-//                REQUIRE(std::any_cast<std::int64_t>(value.at("second_property")) == 9);
+//                REQUIRE(get<std::string>(value.at("first_property")) == "one");
+//                REQUIRE(get<std::int64_t>(value.at("second_property")) == 9);
 //            }
 //        }
 
@@ -204,7 +204,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "name", "\"alex\"");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "name");
-                REQUIRE("alex" == std::any_cast<std::string>(value));
+                REQUIRE("alex" == get<std::string>(value));
             }
         }
 
@@ -213,7 +213,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "name", "\"alex\"");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "name");
-                REQUIRE("alex" == std::any_cast<std::string>(value));
+                REQUIRE("alex" == get<std::string>(value));
             }
         }
 
@@ -222,7 +222,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "age", "55");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "age");
-                REQUIRE(55 == std::any_cast<int64_t>(value));
+                REQUIRE(55 == get<int64_t>(value));
             }
         }
 
@@ -231,7 +231,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "weight", "190.0");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "weight");
-                REQUIRE(190.0 == std::any_cast<double>(value));
+                REQUIRE(190.0 == get<double>(value));
             }
         }
 
@@ -240,7 +240,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "active", "true");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "active");
-                REQUIRE(std::any_cast<bool>(value));
+                REQUIRE(get<bool>(value));
             }
         }
 
@@ -252,8 +252,8 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                auto value = shard.NodePropertyGetObject(existing, "properties");
 //                REQUIRE(value.at("first_property").has_value());
 //                REQUIRE(value.at("second_property").has_value());
-//                REQUIRE(std::any_cast<std::string>(value.at("first_property")) == "one");
-//                REQUIRE(std::any_cast<std::int64_t>(value.at("second_property")) == 9);
+//                REQUIRE(get<std::string>(value.at("first_property")) == "one");
+//                REQUIRE(get<std::int64_t>(value.at("second_property")) == 9);
 //            }
 //        }
 
@@ -265,8 +265,8 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                auto value = shard.NodePropertyGetObject(existing, "properties");
 //                REQUIRE(value.at("first_property").has_value());
 //                REQUIRE(value.at("second_property").has_value());
-//                REQUIRE(std::any_cast<std::string>(value.at("first_property")) == "one");
-//                REQUIRE(std::any_cast<std::int64_t>(value.at("second_property")) == 9);
+//                REQUIRE(get<std::string>(value.at("first_property")) == "one");
+//                REQUIRE(get<std::int64_t>(value.at("second_property")) == 9);
 //            }
 //        }
 
@@ -275,7 +275,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("NotThere", "existing", "name", "\"alex\"");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("NotThere", "existing", "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -284,7 +284,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("NotThere", "existing", "age", "55");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("NotThere", "existing", "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -293,7 +293,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("NotThere", "existing", "weight", "190.0");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("NotThere", "existing", "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -302,7 +302,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("NotThere", "existing", "active", "true");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("NotThere", "existing", "active");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -311,7 +311,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "not_existing", "name", "\"alex\"");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "not_existing", "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -320,7 +320,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "not_existing", "age", "55");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "not_existing", "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -329,7 +329,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "not_existing", "weight", "190.0");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "not_existing", "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -338,7 +338,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson("Node", "not_existing", "active", "true");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "not_existing", "active");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -347,7 +347,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(100 + existing, "name", "alex");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(100 + existing, "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -356,7 +356,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(100 + existing, "age", "55");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(100 + existing, "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -365,7 +365,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(100 + existing, "weight", "190.0");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(100 + existing, "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -374,7 +374,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(100 + existing, "active", "true");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(100 + existing, "active");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -383,7 +383,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "not_there_string", "\"alex\"");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(existing, "not_there_string");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -392,7 +392,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "not_there_int", "55");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(existing, "not_there_int");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -401,7 +401,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "not_there_double", "190.0");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(existing, "not_there_double");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -410,7 +410,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertySetFromJson(existing, "not_there_boolean", "true");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(existing, "not_there_boolean");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -419,7 +419,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "name");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -428,7 +428,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "age");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -437,7 +437,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "weight");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -446,7 +446,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "name");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -455,7 +455,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "age");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -464,7 +464,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "weight");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -473,7 +473,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "existing", "not_there");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "existing", "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -482,7 +482,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete(existing, "not_there");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet(existing, "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -491,7 +491,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("NotThere", "existing", "weight");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("NotThere", "existing", "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -500,7 +500,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertyDelete("Node", "not_existing", "name");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "not_existing", "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -509,7 +509,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertiesDelete("Node", "existing");
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet("Node", "existing", "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -518,7 +518,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertiesDelete(existing);
                 REQUIRE(set);
                 auto value = shard.NodePropertyGet(existing, "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -527,7 +527,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertiesDelete("NotThere", "existing");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("NotThere", "existing", "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -536,7 +536,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
                 bool set = shard.NodePropertiesDelete("Node", "not_existing");
                 REQUIRE(set == false);
                 auto value = shard.NodePropertyGet("Node", "not_existing", "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -549,7 +549,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                bool set = shard.NodePropertiesSet("Node", "existing", properties);
 //                REQUIRE(set);
 //                auto eyes = shard.NodePropertyGet("Node", "existing", "eyes");
-//                REQUIRE("brown" == std::any_cast<std::string>(eyes));
+//                REQUIRE("brown" == get<std::string>(eyes));
 //                auto height = shard.NodePropertyGetDouble("Node", "existing", "height");
 //                REQUIRE(5.11 == height);
 //            }
@@ -564,7 +564,7 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //                bool set = shard.NodePropertiesSet(existing, properties);
 //                REQUIRE(set);
 //                auto eyes = shard.NodePropertyGet("Node", "existing", "eyes");
-//                REQUIRE("brown" == std::any_cast<std::string>(eyes));
+//                REQUIRE("brown" == get<std::string>(eyes));
 //                auto height = shard.NodePropertyGetDouble("Node", "existing", "height");
 //                REQUIRE(5.11 == height);
 //

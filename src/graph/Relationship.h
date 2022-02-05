@@ -17,11 +17,11 @@
 #ifndef RAGEDB_RELATIONSHIP_H
 #define RAGEDB_RELATIONSHIP_H
 
-#include <any>
 #include <cstdint>
 #include <string>
 #include <map>
 #include <sol/sol.hpp>
+#include "PropertyType.h"
 
 namespace ragedb {
 
@@ -31,13 +31,13 @@ namespace ragedb {
         std::string type{};
         uint64_t starting_node_id{};
         uint64_t ending_node_id{};
-        std::map<std::string, std::any> properties{};
+        std::map<std::string, property_type_t> properties{};
 
     public:
         Relationship();
 
         Relationship(uint64_t id, std::string type, uint64_t startingNodeId, uint64_t endingNodeId);
-        Relationship(uint64_t id, std::string type, uint64_t startingNodeId, uint64_t endingNodeId, std::map<std::string, std::any> properties);
+        Relationship(uint64_t id, std::string type, uint64_t startingNodeId, uint64_t endingNodeId, std::map<std::string, property_type_t> properties);
 
         [[nodiscard]] uint64_t getId() const;
 
@@ -49,11 +49,11 @@ namespace ragedb {
 
         [[nodiscard]] uint64_t getEndingNodeId() const;
 
-        [[nodiscard]] std::map<std::string, std::any> getProperties() const;
+        [[nodiscard]] std::map<std::string, property_type_t> getProperties() const;
 
         [[nodiscard]] sol::table getPropertiesLua(sol::this_state ts) const;
 
-        [[nodiscard]] std::any getProperty(const std::string& property);
+        [[nodiscard]] property_type_t getProperty(const std::string& property);
 
         [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state ts);
 

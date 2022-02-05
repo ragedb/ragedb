@@ -35,7 +35,7 @@ namespace ragedb {
                                std::string type,
                                uint64_t startingNodeId,
                                uint64_t endingNodeId,
-                               std::map<std::string, std::any>  properties) : id(id),
+                               std::map<std::string, property_type_t>  properties) : id(id),
                                                         type(std::move(type)),
                                                         starting_node_id(startingNodeId),
                                                         ending_node_id(endingNodeId),
@@ -61,206 +61,183 @@ namespace ragedb {
         return ending_node_id;
     }
 
-    std::map<std::string, std::any> Relationship::getProperties() const {
+    std::map<std::string, property_type_t> Relationship::getProperties() const {
         return properties;
     }
 
     sol::object Relationship::getPropertyLua(const std::string& property, sol::this_state ts) {
-      std::any value = getProperty(property);
+      property_type_t value = getProperty(property);
       sol::state_view lua = ts;
-      const auto& value_type = value.type();
 
-      if(value_type == typeid(std::string)) {
-        return sol::make_object(lua, std::any_cast<std::string>(value));
+      switch (value.index()) {
+      case 0:
+        return sol::lua_nil;
+      case 1:
+        return sol::make_object(lua, get<bool>(value));
+      case 2:
+        return sol::make_object(lua, get<int64_t>(value));
+      case 3:
+        return sol::make_object(lua, get<double>(value));
+      case 4:
+        return sol::make_object(lua, get<std::string>(value));
+      case 5:
+        return sol::make_object(lua, sol::as_table(get<std::vector<bool>>(value)));
+      case 6:
+        return sol::make_object(lua, sol::as_table(get<std::vector<int64_t>>(value)));
+      case 7:
+        return sol::make_object(lua, sol::as_table(get<std::vector<double>>(value)));
+      case 8:
+        return sol::make_object(lua, sol::as_table(get<std::vector<std::string>>(value)));
       }
 
-      if(value_type == typeid(int64_t)) {
-        return sol::make_object(lua, std::any_cast<int64_t>(value));
-      }
-
-      if(value_type == typeid(double)) {
-        return sol::make_object(lua, std::any_cast<double>(value));
-      }
-
-      // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-      if(value_type == typeid(std::_Bit_reference)) {
-        if (std::any_cast<std::_Bit_reference>(value) ) {
-          return sol::make_object(lua, true);
-        } else {
-          return sol::make_object(lua, false);
-        }
-      }
-
-      if(value_type == typeid(std::vector<std::string>)) {
-        return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<std::string>>(value)));
-      }
-
-      if(value_type == typeid(std::vector<int64_t>)) {
-        return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<int64_t>>(value)));
-      }
-
-      if(value_type == typeid(std::vector<double>)) {
-        return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<double>>(value)));
-      }
-
-      if(value_type == typeid(std::vector<bool>)) {
-        return sol::make_object(lua, sol::as_table(std::any_cast<std::vector<bool>>(value)));
-      }
       return sol::lua_nil;
     }
 
     sol::table Relationship::getPropertiesLua(sol::this_state ts) const {
-        sol::state_view lua = ts;
-        sol::table property_map = lua.create_table();
-        for (auto [_key, value] : getProperties()) {
-          const auto& value_type = value.type();
-
-          if(value_type == typeid(std::string)) {
-            property_map[_key] = sol::make_object(lua, std::any_cast<std::string>(value));
-          }
-
-          if(value_type == typeid(int64_t)) {
-            property_map[_key] = sol::make_object(lua, std::any_cast<int64_t>(value));
-          }
-
-          if(value_type == typeid(double)) {
-            property_map[_key] = sol::make_object(lua, std::any_cast<double>(value));
-          }
-
-          // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-          if(value_type == typeid(std::_Bit_reference)) {
-            if (std::any_cast<std::_Bit_reference>(value) ) {
-              property_map[_key] = sol::make_object(lua, true);
-            } else {
-              property_map[_key] = sol::make_object(lua, false);
-            }
-            continue;
-          }
-
-          if(value_type == typeid(std::vector<std::string>)) {
-            property_map[_key] = sol::make_object(lua, sol::as_table(std::any_cast<std::vector<std::string>>(value)));
-          }
-
-          if(value_type == typeid(std::vector<int64_t>)) {
-            property_map[_key] = sol::make_object(lua, sol::as_table(std::any_cast<std::vector<int64_t>>(value)));
-          }
-
-          if(value_type == typeid(std::vector<double>)) {
-            property_map[_key] = sol::make_object(lua, sol::as_table(std::any_cast<std::vector<double>>(value)));
-          }
-
-          if(value_type == typeid(std::vector<bool>)) {
-            property_map[_key] = sol::make_object(lua, sol::as_table(std::any_cast<std::vector<bool>>(value)));
-          }
-
+      sol::state_view lua = ts;
+      sol::table property_map = lua.create_table();
+      for (auto [_key, value] : getProperties()) {
+        switch (value.index()) {
+        case 0:
+          property_map[_key] = sol::lua_nil;
+          break;
+        case 1:
+          property_map[_key] = sol::make_object(lua.lua_state(), get<bool>(value));
+          break;
+        case 2:
+          property_map[_key] = sol::make_object(lua.lua_state(), get<int64_t>(value));
+          break;
+        case 3:
+          property_map[_key] = sol::make_object(lua.lua_state(), get<double>(value));
+          break;
+        case 4:
+          property_map[_key] = sol::make_object(lua.lua_state(), get<std::string>(value));
+          break;
+        case 5:
+          property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<bool>>(value)));
+          break;
+        case 6:
+          property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<int64_t>>(value)));
+          break;
+        case 7:
+          property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<double>>(value)));
+          break;
+        case 8:
+          property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<std::string>>(value)));
+          break;
         }
-        return sol::as_table(property_map);
+      }
+
+      return sol::as_table(property_map);
     }
 
-    std::any Relationship::getProperty(const std::string& property) {
-        std::map<std::string, std::any>::iterator it;
-        it = properties.find(property);
+    property_type_t Relationship::getProperty(const std::string& property) {
+      std::map<std::string, property_type_t>::iterator it;
+      it = properties.find(property);
 
-        if (it != std::end(properties)) {
-            return it->second;
-        }
-        return std::any();
+      if (it != std::end(properties)) {
+        return it->second;
+      }
+      return {};
     }
 
     std::ostream &operator<<(std::ostream &os, const Relationship &relationship) {
         os << "{ \"id\": " << relationship.id << R"(, "type": ")" << relationship.type << R"(", "starting_node_id": )" << relationship.starting_node_id << ", \"ending_node_id\": " << relationship.ending_node_id << ", \"properties\": { ";
         bool initial = true;
         for (auto [key, value] : relationship.properties) {
-            if (!initial) {
+          if (!initial) {
+            os << ", ";
+          }
+          initial = false;
+          os << "\"" << key << "\": ";
+
+          if(value.index() == 1) {
+            if (get<bool>(value) ) {
+              os << "true" ;
+            } else {
+              os << "false";
+            }
+            continue;
+          }
+
+          if(value.index() == 2) {
+            os << get<int64_t>(value);
+            continue;
+          }
+
+          if(value.index() == 3) {
+            os << get<double>(value);
+            continue;
+          }
+
+          if(value.index() == 4) {
+            os << "\"" << get<std::string>(value) << "\"";
+            continue;
+          }
+
+          if(value.index() == 5) {
+            os << '[';
+            bool nested_initial = true;
+            for (const auto& item : get<std::vector<bool>>(value)) {
+              if (!nested_initial) {
                 os << ", ";
-            }
-            initial = false;
-            os << "\"" << key << "\": ";
+              }
 
-            if(value.type() == typeid(std::string)) {
-                os << "\"" << std::any_cast<std::string>(value) << "\"";
-                continue;
+              if (item) {
+                os << "true";
+              } else {
+                os << "false";
+              }
+              nested_initial = false;
             }
-            if(value.type() == typeid(int64_t)) {
-                os << std::any_cast<int64_t>(value);
-                continue;
-            }
-            if(value.type() == typeid(double)) {
-                os << std::any_cast<double>(value);
-                continue;
-            }
+            os << ']';
+            continue;
+          }
 
-            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-            if(value.type() == typeid(std::_Bit_reference)) {
-                if (std::any_cast<std::_Bit_reference>(value) ) {
-                    os << "true" ;
-                } else {
-                    os << "false";
-                }
-                continue;
+          if(value.index() == 6) {
+            os << '[';
+            bool nested_initial = true;
+            for (const auto& item : get<std::vector<int64_t>>(value)) {
+              if (!nested_initial) {
+                os << ", ";
+              }
+              os << item;
+              nested_initial = false;
             }
+            os << ']';
+            continue;
+          }
 
-            if(value.type() == typeid(std::vector<std::string>)) {
-                os << '[';
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<std::string>>(value)) {
-                    if (!nested_initial) {
-                        os << ", ";
-                    }
-                    os << "\"" << item << "\"";
-                    nested_initial = false;
-                }
-                os << ']';
-                continue;
+          if(value.index() == 7) {
+            os << '[';
+            bool nested_initial = true;
+            for (const auto& item : get<std::vector<double>>(value)) {
+              if (!nested_initial) {
+                os << ", ";
+              }
+              os << item;
+              nested_initial = false;
             }
+            os << ']';
+            continue;
+          }
 
-            if(value.type() == typeid(std::vector<int64_t>)) {
-                os << '[';
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<int64_t>>(value)) {
-                    if (!nested_initial) {
-                        os << ", ";
-                    }
-                    os << item;
-                    nested_initial = false;
-                }
-                os << ']';
-                continue;
+          if(value.index() == 8) {
+            os << '[';
+            bool nested_initial = true;
+            for (const auto& item : get<std::vector<std::string>>(value)) {
+              if (!nested_initial) {
+                os << ", ";
+              }
+              os << "\"" << item << "\"";
+              nested_initial = false;
             }
-
-            if(value.type() == typeid(std::vector<double>)) {
-                os << '[';
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<double>>(value)) {
-                    if (!nested_initial) {
-                        os << ", ";
-                    }
-                    os << item;
-                    nested_initial = false;
-                }
-                os << ']';
-                continue;
-            }
-
-            if(value.type() == typeid(std::vector<bool>)) {
-                os << '[';
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<bool>>(value)) {
-                    if (!nested_initial) {
-                        os << ", ";
-                    }
-                    if (item) {
-                        os << "true";
-                    } else {
-                        os << "false";
-                    }
-                    nested_initial = false;
-                }
-                os << ']';
-                continue;
-            }
+            os << ']';
+            continue;
+          }
 
         }
+
         os << " } }";
 
         return os;

@@ -389,9 +389,9 @@ namespace ragedb {
         return true;
     }
 
-    std::map<std::string, std::any> Properties::getProperties(uint64_t index) {
+    std::map<std::string, property_type_t> Properties::getProperties(uint64_t index) {
         // Build a temporary map of string, any
-        std::map<std::string, std::any> properties;
+        std::map<std::string, property_type_t> properties;
         // Go through all the property types this Node or Relationship type is supposed to have
         for (auto const&[key, type_id] : types) {
             // If the entry has been deleted, then skip adding it to the map (alternatively we could add an unset Any)
@@ -533,13 +533,13 @@ namespace ragedb {
         return strings_list[""];
     }
 
-    std::any Properties::getProperty(const std::string& key, uint64_t index) {
+    property_type_t Properties::getProperty(const std::string& key, uint64_t index) {
         if (types.find(key) != types.end()) {
             if (!deleted[key].contains(index)) {
                 switch (types[key]) {
                     case boolean_type: {
                         if (booleans[key].size() > index) {
-                            // std::any and vector<bool> don't play nice together due to how vector<bool> is optimized
+                            // property_type_t and vector<bool> don't play nice together due to how vector<bool> is optimized
                             // so this cast makes sure we return the value typed correctly
                             return static_cast<bool>(booleans[key][index]);
                         }
@@ -593,7 +593,7 @@ namespace ragedb {
                 }
             }
         }
-        return tombstone_any;
+        return std::monostate();
     }
 
     bool Properties::getBooleanProperty(const std::string& key, uint64_t index) {
@@ -699,35 +699,35 @@ namespace ragedb {
         return false;
     }
 
-    bool Properties::isBooleanProperty(std::any value) {
-        return value.type() == typeid(bool);
+    bool Properties::isBooleanProperty(property_type_t value) {
+        return value.index() == 1;
     }
 
-    bool Properties::isIntegerProperty(std::any value) {
-        return value.type() == typeid(int64_t);
+    bool Properties::isIntegerProperty(property_type_t value) {
+        return value.index() == 2;
     }
 
-    bool Properties::isDoubleProperty(std::any value) {
-        return value.type() == typeid(double);
+    bool Properties::isDoubleProperty(property_type_t value) {
+        return value.index() == 3;
     }
 
-    bool Properties::isStringProperty(std::any value) {
-        return value.type() == typeid(std::string);
+    bool Properties::isStringProperty(property_type_t value) {
+        return value.index() == 4;
     }
 
-    bool Properties::isBooleanListProperty(std::any value) {
-        return value.type() == typeid(std::vector<bool>);
+    bool Properties::isBooleanListProperty(property_type_t value) {
+        return value.index() == 5;
     }
 
-    bool Properties::isIntegerListProperty(std::any value) {
-        return value.type() == typeid(std::vector<int64_t>);
+    bool Properties::isIntegerListProperty(property_type_t value) {
+        return value.index() == 6;
     }
 
-    bool Properties::isDoubleListProperty(std::any value) {
-        return value.type() == typeid(std::vector<double>);
+    bool Properties::isDoubleListProperty(property_type_t value) {
+        return value.index() == 7;
     }
 
-    bool Properties::isStringListProperty(std::any value) {
-        return value.type() == typeid(std::vector<std::string>);
+    bool Properties::isStringListProperty(property_type_t value) {
+        return value.index() == 8;
     }
 }

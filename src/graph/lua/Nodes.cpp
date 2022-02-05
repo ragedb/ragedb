@@ -57,7 +57,7 @@ namespace ragedb {
       std::vector<property_type_t> values = NodesGetPropertyPeered(ids, property).get0();
 
       for(auto value : values) {
-        properties.emplace_back(NodePropertyToSolObject2(value));
+        properties.emplace_back(PropertyToSolObject(value));
       }
       return sol::as_table(properties);
     }
@@ -66,8 +66,8 @@ namespace ragedb {
       std::vector<sol::object> properties;
       properties.reserve(links.size());
 
-      for(auto value : NodesGetPropertyPeered(links, property).get0()) {
-        properties.emplace_back(NodePropertyToSolObject(value));
+      for(property_type_t value : NodesGetPropertyPeered(links, property).get0()) {
+        properties.emplace_back(PropertyToSolObject(value));
       }
       return sol::as_table(properties);
     }

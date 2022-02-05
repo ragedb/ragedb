@@ -17,12 +17,12 @@
 #ifndef RAGEDB_PROPERTIES_H
 #define RAGEDB_PROPERTIES_H
 
-#include <any>
 #include <cstdint>
 #include <map>
 #include <tsl/sparse_map.h>
 #include <seastar/core/rwlock.hh>
 #include <roaring/roaring64map.hh>
+#include "PropertyType.h"
 
 namespace ragedb {
     class Properties {
@@ -41,8 +41,6 @@ namespace ragedb {
         tsl::sparse_map<std::string, std::vector<std::vector<double>>> doubles_list;
         tsl::sparse_map<std::string, std::vector<std::vector<std::string>>> strings_list;
         // TODO: Supported Nested Objects
-
-        const std::any tombstone_any = std::any();
 
         const bool tombstone_boolean = false;
         const int64_t tombstone_int = std::numeric_limits<int64_t>::min();
@@ -78,8 +76,8 @@ namespace ragedb {
         bool setListOfDoubleProperty(const std::string&, uint64_t, const std::vector<double>&);
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
 
-        std::map<std::string, std::any> getProperties(uint64_t);
-        std::any getProperty(const std::string&, uint64_t);
+        std::map<std::string, property_type_t> getProperties(uint64_t);
+        property_type_t getProperty(const std::string&, uint64_t);
         bool isDeleted(const std::string&, uint64_t);
         uint64_t getDeletedCount(const std::string&);
         roaring::Roaring64Map& getDeletedMap(const std::string&);
@@ -106,14 +104,14 @@ namespace ragedb {
         bool deleteProperty(const std::string&, uint64_t);
         bool deleteProperties(uint64_t);
 
-        bool static isBooleanProperty(std::any value);
-        bool static isIntegerProperty(std::any value);
-        bool static isDoubleProperty(std::any value);
-        bool static isStringProperty(std::any value);
-        bool static isBooleanListProperty(std::any value);
-        bool static isIntegerListProperty(std::any value);
-        bool static isDoubleListProperty(std::any value);
-        bool static isStringListProperty(std::any value);
+        bool static isBooleanProperty(property_type_t value);
+        bool static isIntegerProperty(property_type_t value);
+        bool static isDoubleProperty(property_type_t value);
+        bool static isStringProperty(property_type_t value);
+        bool static isBooleanListProperty(property_type_t value);
+        bool static isIntegerListProperty(property_type_t value);
+        bool static isDoubleListProperty(property_type_t value);
+        bool static isStringListProperty(property_type_t value);
 
         constexpr static uint16_t getBooleanPropertyType() {
             return 1;

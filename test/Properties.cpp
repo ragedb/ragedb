@@ -26,29 +26,29 @@ SCENARIO( "Properties can be added", "[properties]" ) {
         WHEN("a boolean property is set") {
             THEN("we set true to item 1") {
                 properties.setBooleanProperty("valid", 1, true);
-                REQUIRE(properties.getProperty("valid", 1).has_value());
+                REQUIRE(get<bool>(properties.getProperty("valid", 1)) == true);
             }
             THEN("we set true to item 5") {
                 properties.setBooleanProperty("valid", 5, true);
-                REQUIRE(properties.getProperty("valid", 5).has_value());
+                REQUIRE(get<bool>(properties.getProperty("valid", 5)) == true);
             }
             THEN("we set false to item 3") {
                 properties.setBooleanProperty("valid", 3, false);
-                REQUIRE(properties.getProperty("valid", 3).has_value());
+                REQUIRE(get<bool>(properties.getProperty("valid", 3)) == false);
             }
         }
         WHEN("an integer property is set") {
             THEN("we set 123 to item 1") {
                 properties.setIntegerProperty("number", 1, 123);
-                REQUIRE(properties.getProperty("number", 1).has_value());
+                REQUIRE(get<int64_t>(properties.getProperty("number", 1)) == 123);
             }
             THEN("we set 456 to item 5") {
                 properties.setIntegerProperty("number", 5, 456);
-                REQUIRE(properties.getProperty("number", 5).has_value());
+                REQUIRE(get<int64_t>(properties.getProperty("number", 5)) == 456);
             }
             THEN("we set -789 to item 3") {
-                properties.setIntegerProperty("number", 3, 789);
-                REQUIRE(properties.getProperty("number", 3).has_value());
+                properties.setIntegerProperty("number", 3, -789);
+                REQUIRE(get<int64_t>(properties.getProperty("number", 3)) == -789);
             }
         }
     }

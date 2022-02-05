@@ -66,9 +66,9 @@ namespace ragedb {
         std::vector<Node> getNodes(uint64_t skip, uint64_t limit);
         std::vector<Node> getNodes(uint16_t type_id, uint64_t skip, uint64_t limit);
 
-        uint64_t findCount(uint16_t type_id, const std::string &property, Operation operation, std::any value);
-        std::vector<uint64_t> findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit);
-        std::vector<Node> findNodes(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit);
+        uint64_t findCount(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        std::vector<uint64_t> findIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
 
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);
@@ -90,14 +90,14 @@ namespace ragedb {
         uint64_t getNodeId(uint16_t type_id, const std::string &key);
         uint64_t getNodeId(const std::string &type, const std::string &key);
         std::string getNodeKey(uint16_t type_id, uint64_t internal_id);
-        std::map<std::string, std::any> getNodeProperties(uint16_t type_id, uint64_t internal_id);
+        std::map<std::string, property_type_t> getNodeProperties(uint16_t type_id, uint64_t internal_id);
         Node getNode(uint64_t external_id);
         Node getNode(uint16_t type_id, uint64_t internal_id);
         Node getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
-        std::any getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
-        std::any getNodeProperty(uint64_t external_id, const std::string &property);
-        bool setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::any& value);
-        bool setNodeProperty(uint64_t external_id, const std::string &property, const std::any& value);
+        property_type_t getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
+        property_type_t getNodeProperty(uint64_t external_id, const std::string &property);
+        bool setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const property_type_t& value);
+        bool setNodeProperty(uint64_t external_id, const std::string &property, const property_type_t& value);
         bool setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string& value);
         bool setNodePropertyFromJson(uint64_t external_id, const std::string &property, const std::string& value);
         bool deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);

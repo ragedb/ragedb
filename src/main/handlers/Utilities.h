@@ -28,6 +28,7 @@
 
 using namespace seastar;
 using namespace httpd;
+using namespace ragedb;
 
 class Utilities {
 
@@ -56,10 +57,10 @@ public:
     static uint64_t validate_skip(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static ragedb::Operation validate_operation(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
     static bool validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
-    static std::any validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
-    static bool validate_combination(const ragedb::Operation& operation, const std::any &property);
+    static property_type_t validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
+    static bool validate_combination(const ragedb::Operation& operation, const property_type_t &property);
     static bool validate_allowed_data_type(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep);
-    static void convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property);
+    static void convert_property_to_json(std::unique_ptr<reply> &rep, const property_type_t &property);
 
 };
 

@@ -68,110 +68,14 @@ namespace ragedb {
         return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
     }
 
-//  using property_type_t = std::variant<bool, int64_t, double, std::string,
-    //      std::vector<bool>, std::vector<int64_t>, std::vector<double>, std::vector<std::string> >;
-
-    sol::object Shard::NodePropertyToSolObject2(property_type_t value) {
-
-      switch (value.index()) {
-      case 0:
-        return sol::make_object(lua.lua_state(), get<bool>(value));
-        break;
-      case 1:
-        return sol::make_object(lua.lua_state(), get<int64_t>(value));
-        break;
-      case 2:
-        return sol::make_object(lua.lua_state(), get<double>(value));
-        break;
-      case 3:
-        return sol::make_object(lua.lua_state(), get<std::string>(value));
-        break;
-      case 4:
-        return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<bool>>(value)));
-        break;
-      case 5:
-        return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<int64_t>>(value)));
-        break;
-      case 6:
-        return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<double>>(value)));
-        break;
-      case 7:
-        return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<std::string>>(value)));
-        break;
-      }
-      return sol::lua_nil;
-    }
-
-    sol::object Shard::NodePropertyToSolObject(std::any value) {
-      if (!value.has_value()) {
-        return sol::lua_nil;
-      }
-
-      const auto& value_type = value.type();
-
-      if(value_type == typeid(std::string)) {
-        return sol::make_object(lua.lua_state(), std::any_cast<std::string>(value));
-      }
-
-      if(value_type == typeid(int64_t)) {
-        return sol::make_object(lua.lua_state(), std::any_cast<int64_t>(value));
-      }
-
-      if(value_type == typeid(double)) {
-        return sol::make_object(lua.lua_state(), std::any_cast<double>(value));
-      }
-
-      if(value_type == typeid(bool)) {
-        return sol::make_object(lua.lua_state(), std::any_cast<bool>(value));
-      }
-
-      if(value_type == typeid(std::vector<std::string>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<std::string>>(value)));
-      }
-
-      if(value_type == typeid(std::vector<int64_t>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<int64_t>>(value)));
-      }
-
-      if(value_type == typeid(std::vector<double>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<double>>(value)));
-      }
-
-      if(value_type == typeid(std::vector<bool>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<bool>>(value)));
-      }
-
-      if(value_type == typeid(std::map<std::string, std::string>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, std::string>>(value)));
-      }
-
-      if(value_type == typeid(std::map<std::string, int64_t>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, int64_t>>(value)));
-      }
-
-      if(value_type == typeid(std::map<std::string, double>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, double>>(value)));
-      }
-
-      if(value_type == typeid(std::map<std::string, bool>)) {
-        return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, bool>>(value)));
-      }
-
-      return sol::make_object(lua.lua_state(), sol::lua_nil);
-    }
-
-
     sol::object Shard::NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property) {
-        std::any value = NodePropertyGetPeered(type, key, property).get0();
-
-        return NodePropertyToSolObject(value);
-
+        property_type_t value = NodePropertyGetPeered(type, key, property).get0();
+        return PropertyToSolObject(value);
     }
 
     sol::object Shard::NodePropertyGetByIdViaLua(uint64_t id, const std::string& property) {
-        std::any value = NodePropertyGetPeered(id, property).get0();
-
-        return NodePropertyToSolObject(value);
+        property_type_t value = NodePropertyGetPeered(id, property).get0();
+        return PropertyToSolObject(value);
     }
 
     bool Shard::NodePropertySetViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value) {

@@ -71,7 +71,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::GetRelationshipPropertyBy
 
     if (id > 0) {
         return parent.graph.shard.local().RelationshipPropertyGetPeered(id, req->param[Utilities::PROPERTY])
-        .then([req = std::move(req), rep = std::move(rep)] (const std::any& property) mutable {
+        .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
                     json_properties_builder json;
                     json.add_property(req->param[Utilities::PROPERTY], property);
                     rep->write_body("json", sstring(json.as_json()));
@@ -127,7 +127,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::GetRelationshipProperties
 
     if (id > 0) {
         return parent.graph.shard.local().RelationshipPropertiesGetPeered(id)
-                .then([rep = std::move(rep)] (const std::map<std::string, std::any>& properties) mutable {
+                .then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
                     json_properties_builder json;
                     json.add_properties(properties);
                     rep->write_body("json", sstring(json.as_json()));

@@ -17,11 +17,11 @@
 #ifndef RAGEDB_NODE_H
 #define RAGEDB_NODE_H
 
-#include <any>
 #include <cstdint>
 #include <string>
 #include <map>
 #include <sol/sol.hpp>
+#include "PropertyType.h"
 
 namespace ragedb {
 
@@ -30,14 +30,14 @@ namespace ragedb {
         uint64_t id{};
         std::string type{};
         std::string key{};
-        std::map<std::string, std::any> properties{};
+        std::map<std::string, property_type_t> properties{};
 
     public:
         Node();
 
         Node(uint64_t id, std::string type, std::string key);
 
-        Node(uint64_t id, std::string type, std::string key, std::map<std::string, std::any> );
+        Node(uint64_t id, std::string type, std::string key, std::map<std::string, property_type_t> );
 
         [[nodiscard]] uint64_t getId() const;
 
@@ -47,11 +47,11 @@ namespace ragedb {
 
         [[nodiscard]] std::string getKey() const;
 
-        [[nodiscard]] std::map<std::string, std::any> getProperties() const;
+        [[nodiscard]] std::map<std::string, property_type_t> getProperties() const;
 
         [[nodiscard]] sol::table getPropertiesLua(sol::this_state);
 
-        [[nodiscard]] std::any getProperty(const std::string& property);
+        [[nodiscard]] property_type_t getProperty(const std::string& property);
 
         [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state);
 

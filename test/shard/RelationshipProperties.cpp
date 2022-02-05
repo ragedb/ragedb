@@ -53,7 +53,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE( "college" == std::any_cast<std::string>(shard.RelationshipPropertyGet(added, "tag")));
+                REQUIRE( "college" == get<std::string>(shard.RelationshipPropertyGet(added, "tag")));
                 REQUIRE(!added_relationship.getProperties().empty());
             }
         }
@@ -80,7 +80,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE( "college" == std::any_cast<std::string>(shard.RelationshipPropertyGet(added, "tag")));
+                REQUIRE( "college" == get<std::string>(shard.RelationshipPropertyGet(added, "tag")));
                 REQUIRE(!added_relationship.getProperties().empty());
             }
         }
@@ -96,7 +96,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE( 3 == std::any_cast<int64_t>(shard.RelationshipPropertyGet(added, "number")));
+                REQUIRE( 3 == get<int64_t>(shard.RelationshipPropertyGet(added, "number")));
                 REQUIRE(!added_relationship.getProperties().empty());
             }
 
@@ -113,7 +113,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE( 1.0 == std::any_cast<double>(shard.RelationshipPropertyGet(added, "weight")));
+                REQUIRE( 1.0 == get<double>(shard.RelationshipPropertyGet(added, "weight")));
                 REQUIRE(!added_relationship.getProperties().empty());
             }
         }
@@ -129,7 +129,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE(std::any_cast<bool>(shard.RelationshipPropertyGet(added, "active")));
+                REQUIRE(get<bool>(shard.RelationshipPropertyGet(added, "active")));
                 REQUIRE(!added_relationship.getProperties().empty());
             }
         }
@@ -141,7 +141,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
             THEN("the shard sets it") {
                 bool set = shard.RelationshipPropertySetFromJson(added, "name", "\"alex\"");
                 REQUIRE(set);
-                auto value =  std::any_cast<std::string>(shard.RelationshipPropertyGet(added, "name"));
+                auto value =  get<std::string>(shard.RelationshipPropertyGet(added, "name"));
                 REQUIRE("alex" == value);
             }
         }
@@ -153,7 +153,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
             THEN("the shard sets it") {
                 bool set = shard.RelationshipPropertySetFromJson(added, "name", "\"alex\"");
                 REQUIRE(set);
-                auto value = std::any_cast<std::string>(shard.RelationshipPropertyGet(added, "name"));
+                auto value = get<std::string>(shard.RelationshipPropertyGet(added, "name"));
                 REQUIRE("alex" == value);
             }
         }
@@ -165,7 +165,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
             THEN("the shard sets it") {
                 bool set = shard.RelationshipPropertySetFromJson(added, "age", "55");
                 REQUIRE(set);
-                auto value = std::any_cast<int64_t>(shard.RelationshipPropertyGet(added, "age"));
+                auto value = get<int64_t>(shard.RelationshipPropertyGet(added, "age"));
                 REQUIRE(55 == value);
             }
         }
@@ -177,7 +177,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
             THEN("the shard sets it") {
                 bool set = shard.RelationshipPropertySetFromJson(added, "weight", "190.0");
                 REQUIRE(set);
-                auto value = std::any_cast<double>(shard.RelationshipPropertyGet(added, "weight"));
+                auto value = get<double>(shard.RelationshipPropertyGet(added, "weight"));
                 REQUIRE(190.0 == value);
             }
         }
@@ -189,7 +189,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
             THEN("the shard sets it") {
                 bool set = shard.RelationshipPropertySetFromJson(added, "new", "true");
                 REQUIRE(set);
-                auto value = std::any_cast<bool>(shard.RelationshipPropertyGet(added, "new"));
+                auto value = get<bool>(shard.RelationshipPropertyGet(added, "new"));
                 REQUIRE(value);
             }
         }
@@ -202,7 +202,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(100 + added, "name", "\"alex\"");
                 REQUIRE(set == false);
                 auto value = shard.RelationshipPropertyGet(100 + added, "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -214,7 +214,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(100 + added, "name", "\"alex\"");
                 REQUIRE(set == false);
                 auto value = shard.RelationshipPropertyGet(100 + added, "name");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -226,7 +226,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(100 + added, "age", "55");
                 REQUIRE(set == false);
                 auto value = shard.RelationshipPropertyGet(100 + added, "age");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -238,7 +238,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(100 + added, "weight", "190.0");
                 REQUIRE(set == false);
                 auto value = shard.RelationshipPropertyGet(100 + added, "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -250,7 +250,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(100 + added, "new", "true");
                 REQUIRE(set == false);
                 auto value = shard.RelationshipPropertyGet(100 + added, "new");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -262,7 +262,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(added, "not_there", "\"alex\"");
                 REQUIRE(!set);
                 auto value = shard.RelationshipPropertyGet(added, "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -274,7 +274,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(added, "not_there", "55");
                 REQUIRE(!set);
                 auto value = shard.RelationshipPropertyGet(added, "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -286,7 +286,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(added, "not_there", "190.0");
                 REQUIRE(!set);
                 auto value = shard.RelationshipPropertyGet(added, "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -298,7 +298,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertySetFromJson(added, "not_there", "true");
                 REQUIRE(!set);
                 auto value = shard.RelationshipPropertyGet(added, "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -310,7 +310,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "tag");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "tag");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -322,7 +322,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "number");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "number");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -334,7 +334,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "weight");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "weight");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -346,7 +346,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "active");
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "active");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -358,7 +358,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 bool set = shard.RelationshipPropertyDelete(added, "not_there");
                 REQUIRE(set == false);
                 auto value = shard.RelationshipPropertyGet(added, "not_there");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 
@@ -372,7 +372,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                 set = shard.RelationshipPropertiesDelete(added);
                 REQUIRE(set);
                 auto value = shard.RelationshipPropertyGet(added, "number");
-                REQUIRE(!value.has_value());
+                REQUIRE(value.index() == 0);
             }
         }
 

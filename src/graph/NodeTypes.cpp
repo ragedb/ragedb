@@ -27,7 +27,7 @@ namespace ragedb {
     static const unsigned int TYPE_BITS = 16U;
     static const unsigned int TYPE_MASK = 0x0000000003FFFFFFU;
 
-    static const std::any tombstone_any = std::any();
+    static const property_type_t tombstone_any = property_type_t();
 
     NodeTypes::NodeTypes() : type_to_id(), id_to_type(), shard_id(seastar::this_shard_id()) {
         // start with empty blank type 0
@@ -312,7 +312,7 @@ namespace ragedb {
         return allNodes;
     }
 
-    uint64_t NodeTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, std::any value) {
+    uint64_t NodeTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
         uint64_t count = 0;
         if (ValidTypeId(type_id)) {
             const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
@@ -337,7 +337,7 @@ namespace ragedb {
             switch (property_type_id) {
                 case Properties::getBooleanPropertyType(): {
                     if (Properties::isBooleanProperty(value)) {
-                        const bool typedValue = std::any_cast<bool>(value);
+                        const bool typedValue = get<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -354,7 +354,7 @@ namespace ragedb {
                 }
                 case Properties::getIntegerPropertyType(): {
                     if (Properties::isIntegerProperty(value)) {
-                        const int64_t typedValue = std::any_cast<int64_t>(value);
+                        const int64_t typedValue = get<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -372,7 +372,7 @@ namespace ragedb {
                 }
                 case Properties::getDoublePropertyType(): {
                     if (Properties::isDoubleProperty(value)) {
-                        const double typedValue = std::any_cast<double>(value);
+                        const double typedValue = get<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -390,7 +390,7 @@ namespace ragedb {
                 }
                 case Properties::getStringPropertyType(): {
                     if (Properties::isStringProperty(value)) {
-                        const std::string typedValue = std::any_cast<std::string>(value);
+                        const std::string typedValue = get<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -408,7 +408,7 @@ namespace ragedb {
                 }
                 case Properties::getBooleanListPropertyType(): {
                     if (Properties::isBooleanListProperty(value)) {
-                        const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
+                        const std::vector<bool> typedValue = get<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -426,7 +426,7 @@ namespace ragedb {
                 }
                 case Properties::getIntegerListPropertyType(): {
                     if (Properties::isIntegerListProperty(value)) {
-                        const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
+                        const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -444,7 +444,7 @@ namespace ragedb {
                 }
                 case Properties::getDoubleListPropertyType(): {
                     if (Properties::isDoubleListProperty(value)) {
-                        const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
+                        const std::vector<double> typedValue = get<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -462,7 +462,7 @@ namespace ragedb {
                 }
                 case Properties::getStringListPropertyType(): {
                     if (Properties::isStringListProperty(value)) {
-                        const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
+                        const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If the node or property has been deleted, ignore it
@@ -487,7 +487,7 @@ namespace ragedb {
         return count;
     }
 
-    std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
         std::vector<uint64_t> ids;
         if (ValidTypeId(type_id)) {
             const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
@@ -535,7 +535,7 @@ namespace ragedb {
             switch (property_type_id) {
                 case Properties::getBooleanPropertyType(): {
                     if (Properties::isBooleanProperty(value)) {
-                        const bool typedValue = std::any_cast<bool>(value);
+                        const bool typedValue = get<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -561,7 +561,7 @@ namespace ragedb {
                 }
                 case Properties::getIntegerPropertyType(): {
                     if (Properties::isIntegerProperty(value)) {
-                        const int64_t typedValue = std::any_cast<int64_t>(value);
+                        const int64_t typedValue = get<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
                         std::vector<std::uint64_t> idxs;
 
@@ -611,7 +611,7 @@ namespace ragedb {
 
                     // Handle values that are parsed as Integers (230 vs 230.0)
                     if (Properties::isIntegerProperty(value)) {
-                        const double typedValue = static_cast<double>(std::any_cast<int64_t>(value));
+                        const double typedValue = static_cast<double>(get<int64_t>(value));
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         std::vector<std::uint64_t> idxs;
 
@@ -658,7 +658,7 @@ namespace ragedb {
                     }
 
                     if (Properties::isDoubleProperty(value)) {
-                        const double typedValue = std::any_cast<double>(value);
+                        const double typedValue = get<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         std::vector<std::uint64_t> idxs;
 
@@ -706,7 +706,7 @@ namespace ragedb {
                 }
                 case Properties::getStringPropertyType(): {
                     if (Properties::isStringProperty(value)) {
-                        const std::string typedValue = std::any_cast<std::string>(value);
+                        const std::string typedValue = get<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -732,7 +732,7 @@ namespace ragedb {
                 }
                 case Properties::getBooleanListPropertyType(): {
                     if (Properties::isBooleanListProperty(value)) {
-                        const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
+                        const std::vector<bool> typedValue = get<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -758,7 +758,7 @@ namespace ragedb {
                 }
                 case Properties::getIntegerListPropertyType(): {
                     if (Properties::isIntegerListProperty(value)) {
-                        const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
+                        const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -784,7 +784,7 @@ namespace ragedb {
                 }
                 case Properties::getDoubleListPropertyType(): {
                     if (Properties::isIntegerListProperty(value)) {
-                        std::vector<int64_t> integerTypedValue = std::any_cast<std::vector<int64_t>>(value);
+                        std::vector<int64_t> integerTypedValue = get<std::vector<int64_t>>(value);
                         const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
@@ -810,7 +810,7 @@ namespace ragedb {
                     }
 
                     if (Properties::isDoubleListProperty(value)) {
-                        const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
+                        const std::vector<double> typedValue = get<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -836,7 +836,7 @@ namespace ragedb {
                 }
                 case Properties::getStringListPropertyType(): {
                     if (Properties::isStringListProperty(value)) {
-                        const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
+                        const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -868,7 +868,7 @@ namespace ragedb {
         return ids;
     }
 
-    std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, std::any value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
         std::vector<Node> nodes;
         if (ValidTypeId(type_id)) {
             const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
@@ -916,7 +916,7 @@ namespace ragedb {
             switch (property_type_id) {
                 case Properties::getBooleanPropertyType(): {
                     if (Properties::isBooleanProperty(value)) {
-                        const bool typedValue = std::any_cast<bool>(value);
+                        const bool typedValue = get<bool>(value);
                         const std::vector<bool> &vec = properties[type_id].getBooleans(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -942,7 +942,7 @@ namespace ragedb {
                 }
                 case Properties::getIntegerPropertyType(): {
                     if (Properties::isIntegerProperty(value)) {
-                        const int64_t typedValue = std::any_cast<int64_t>(value);
+                        const int64_t typedValue = get<int64_t>(value);
                         const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
                         std::vector<std::uint64_t> idxs;
 
@@ -991,7 +991,7 @@ namespace ragedb {
                 case Properties::getDoublePropertyType(): {
                     // Handle values that are parsed as Integers (230 vs 230.0)
                     if (Properties::isIntegerProperty(value)) {
-                        const double typedValue = static_cast<double>(std::any_cast<int64_t>(value));
+                        const double typedValue = static_cast<double>(get<int64_t>(value));
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         std::vector<std::uint64_t> idxs;
 
@@ -1038,7 +1038,7 @@ namespace ragedb {
                     }
 
                     if (Properties::isDoubleProperty(value)) {
-                        const double typedValue = std::any_cast<double>(value);
+                        const double typedValue = get<double>(value);
                         const std::vector<double> &vec = properties[type_id].getDoubles(property);
                         std::vector<std::uint64_t> idxs;
 
@@ -1086,7 +1086,7 @@ namespace ragedb {
                 }
                 case Properties::getStringPropertyType(): {
                     if (Properties::isStringProperty(value)) {
-                        const std::string typedValue = std::any_cast<std::string>(value);
+                        const std::string typedValue = get<std::string>(value);
                         const std::vector<std::string> &vec = properties[type_id].getStrings(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -1112,7 +1112,7 @@ namespace ragedb {
                 }
                 case Properties::getBooleanListPropertyType(): {
                     if (Properties::isBooleanListProperty(value)) {
-                        const std::vector<bool> typedValue = std::any_cast<std::vector<bool>>(value);
+                        const std::vector<bool> typedValue = get<std::vector<bool>>(value);
                         const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -1138,7 +1138,7 @@ namespace ragedb {
                 }
                 case Properties::getIntegerListPropertyType(): {
                     if (Properties::isIntegerListProperty(value)) {
-                        const std::vector<int64_t> typedValue = std::any_cast<std::vector<int64_t>>(value);
+                        const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
                         const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -1164,7 +1164,7 @@ namespace ragedb {
                 }
                 case Properties::getDoubleListPropertyType(): {
                     if (Properties::isIntegerListProperty(value)) {
-                        std::vector<int64_t> integerTypedValue = std::any_cast<std::vector<int64_t>>(value);
+                        std::vector<int64_t> integerTypedValue = get<std::vector<int64_t>>(value);
                         const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
@@ -1189,7 +1189,7 @@ namespace ragedb {
                         return nodes;
                     }
                     if (Properties::isDoubleListProperty(value)) {
-                        const std::vector<double> typedValue = std::any_cast<std::vector<double>>(value);
+                        const std::vector<double> typedValue = get<std::vector<double>>(value);
                         const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -1215,7 +1215,7 @@ namespace ragedb {
                 }
                 case Properties::getStringListPropertyType(): {
                     if (Properties::isStringListProperty(value)) {
-                        const std::vector<std::string> typedValue = std::any_cast<std::vector<std::string>>(value);
+                        const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
                         const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
                         for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
                             // If we reached our limit, return
@@ -1375,11 +1375,11 @@ namespace ragedb {
         return id_to_type[0];
     }
 
-    std::map<std::string, std::any> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
+    std::map<std::string, property_type_t> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
         if(ValidTypeId(type_id)) {
             return properties[type_id].getProperties(internal_id);
         }
-        return std::map<std::string, std::any>();
+        return std::map<std::string, property_type_t>();
     }
 
     Node NodeTypes::getNode(uint64_t external_id) {
@@ -1394,7 +1394,7 @@ namespace ragedb {
         return Node( external_id, getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
     }
 
-    std::any NodeTypes::getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
+    property_type_t NodeTypes::getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
         if(ValidTypeId(type_id)) {
             if (ValidNodeId(type_id, internal_id)) {
                 return properties[type_id].getProperty(property, internal_id);
@@ -1403,7 +1403,7 @@ namespace ragedb {
         return tombstone_any;
     }
 
-    std::any NodeTypes::getNodeProperty(uint64_t external_id, const std::string &property) {
+    property_type_t NodeTypes::getNodeProperty(uint64_t external_id, const std::string &property) {
         return getNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property);
     }
 
@@ -1411,42 +1411,39 @@ namespace ragedb {
         return properties[type_id];
     }
 
-    bool NodeTypes::setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::any& value) {
+    bool NodeTypes::setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const property_type_t& value) {
         // find out what data_type property is supposed to be, cast value to that.
 
         switch (properties[type_id].getPropertyTypeId(property)) {
             case Properties::getBooleanPropertyType(): {
-                return properties[type_id].setBooleanProperty(property, internal_id, std::any_cast<bool>(value));
+                return properties[type_id].setBooleanProperty(property, internal_id, get<bool>(value));
             }
             case Properties::getIntegerPropertyType(): {
-                return properties[type_id].setIntegerProperty(property, internal_id, std::any_cast<int64_t>(value));
+                return properties[type_id].setIntegerProperty(property, internal_id, get<int64_t>(value));
             }
             case Properties::getDoublePropertyType(): {
-                return properties[type_id].setDoubleProperty(property, internal_id, std::any_cast<double>(value));
+                return properties[type_id].setDoubleProperty(property, internal_id, get<double>(value));
             }
             case Properties::getStringPropertyType(): {
-                if (value.type() != typeid(std::string)) {
-                    return properties[type_id].setStringProperty(property, internal_id, std::string(std::any_cast<const char*>(value)));
-                }
-                return properties[type_id].setStringProperty(property, internal_id, std::any_cast<std::string>(value));
+                return properties[type_id].setStringProperty(property, internal_id, get<std::string>(value));
             }
             case Properties::getBooleanListPropertyType(): {
-                return properties[type_id].setListOfBooleanProperty(property, internal_id, std::any_cast<std::vector<bool>>(value));
+                return properties[type_id].setListOfBooleanProperty(property, internal_id, get<std::vector<bool>>(value));
             }
             case Properties::getIntegerListPropertyType(): {
-                return properties[type_id].setListOfIntegerProperty(property, internal_id, std::any_cast<std::vector<int64_t>>(value));
+                return properties[type_id].setListOfIntegerProperty(property, internal_id, get<std::vector<int64_t>>(value));
             }
             case Properties::getDoubleListPropertyType(): {
-                return properties[type_id].setListOfDoubleProperty(property, internal_id, std::any_cast<std::vector<double>>(value));
+                return properties[type_id].setListOfDoubleProperty(property, internal_id, get<std::vector<double>>(value));
             }
             case Properties::getStringListPropertyType(): {
-                return properties[type_id].setListOfStringProperty(property, internal_id, std::any_cast<std::vector<std::string>>(value));
+                return properties[type_id].setListOfStringProperty(property, internal_id, get<std::vector<std::string>>(value));
             }
         }
         return false;
     }
 
-    bool NodeTypes::setNodeProperty(uint64_t external_id, const std::string &property, const std::any& value) {
+    bool NodeTypes::setNodeProperty(uint64_t external_id, const std::string &property, const property_type_t& value) {
         return setNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
     }
 

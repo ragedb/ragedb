@@ -17,6 +17,7 @@
 #ifndef RAGEDB_JSON_H
 #define RAGEDB_JSON_H
 
+#include <any>
 #include <Graph.h>
 #include <Node.h>
 #include <seastar/core/print.hh>
@@ -29,112 +30,112 @@ using namespace ragedb;
 
 class json_values_builder {
 public:
-    json_values_builder() {
-        result << OPEN_ARRAY;
+  json_values_builder() {
+    result << OPEN_ARRAY;
+  }
+
+  void add_values(const std::vector<std::any>& values) {
+    for(const auto& value : values) {
+      add_value(value);
+    }
+  }
+
+  void add_value(std::any const & value) {
+    if(value.type() == typeid(std::string)) {
+      add(seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
+      return;
     }
 
-    void add_values(const std::vector<std::any>& values) {
-        for(const auto& value : values) {
-            add_value(value);
-        }
+    if(value.type() == typeid(int64_t)) {
+      add(seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
+      return;
     }
 
-    void add_value(std::any const & value) {
-        if(value.type() == typeid(std::string)) {
-            add(seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
-            return;
-        }
-
-        if(value.type() == typeid(int64_t)) {
-            add(seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
-            return;
-        }
-
-        if(value.type() == typeid(double)) {
-            add(seastar::json::formatter::to_json(std::any_cast<double>(value)));
-            return;
-        }
-
-        // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-        if(value.type() == typeid(std::_Bit_reference)) {
-            if (std::any_cast<std::_Bit_reference>(value) ) {
-                add(seastar::json::formatter::to_json(true));
-            } else {
-                add(seastar::json::formatter::to_json(false));
-            }
-            return;
-        }
-
-        if(value.type() == typeid(std::map<std::string, std::any>)) {
-            add_properties(std::any_cast<std::map<std::string, std::any>>(value));
-            return;
-        }
+    if(value.type() == typeid(double)) {
+      add(seastar::json::formatter::to_json(std::any_cast<double>(value)));
+      return;
     }
 
-    void add_properties(std::map<std::string, std::any> const & props) {
-        bool initial = true;
-        for (auto[key, value] : props) {
-            std::string property = static_cast<std::string>(key);
-
-            if(value.type() == typeid(std::string)) {
-                add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
-                continue;
-            }
-
-            if(value.type() == typeid(int64_t)) {
-                add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
-                continue;
-            }
-
-            if(value.type() == typeid(double)) {
-                add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<double>(value)));
-                continue;
-            }
-
-            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-            if(value.type() == typeid(std::_Bit_reference)) {
-                if (std::any_cast<std::_Bit_reference>(value) ) {
-                    add_object(initial, property, seastar::json::formatter::to_json(true));
-                } else {
-                    add_object(initial, property, seastar::json::formatter::to_json(false));
-                }
-                continue;
-            }
-
-            if(value.type() == typeid(std::map<std::string, std::any>)) {
-                add_properties(std::any_cast<std::map<std::string, std::any>>(value));
-                continue;
-            }
-            initial = false;
-        }
+    // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+    if(value.type() == typeid(std::_Bit_reference)) {
+      if (std::any_cast<std::_Bit_reference>(value) ) {
+        add(seastar::json::formatter::to_json(true));
+      } else {
+        add(seastar::json::formatter::to_json(false));
+      }
+      return;
     }
 
-    void add_object(bool initial, const std::string& name, const std::string& str) {
-        if (!initial) {
-            result << ", ";
-        }
-        result << '"' << name << "\": " << str;
+    if(value.type() == typeid(std::map<std::string, std::any>)) {
+      add_properties(std::any_cast<std::map<std::string, std::any>>(value));
+      return;
     }
+  }
 
-    void add(const std::string& str) {
-        if (first) {
-            first = false;
+  void add_properties(std::map<std::string, std::any> const & props) {
+    bool initial = true;
+    for (auto[key, value] : props) {
+      std::string property = static_cast<std::string>(key);
+
+      if(value.type() == typeid(std::string)) {
+        add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
+        continue;
+      }
+
+      if(value.type() == typeid(int64_t)) {
+        add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
+        continue;
+      }
+
+      if(value.type() == typeid(double)) {
+        add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<double>(value)));
+        continue;
+      }
+
+      // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
+      if(value.type() == typeid(std::_Bit_reference)) {
+        if (std::any_cast<std::_Bit_reference>(value) ) {
+          add_object(initial, property, seastar::json::formatter::to_json(true));
         } else {
-            result << ", ";
+          add_object(initial, property, seastar::json::formatter::to_json(false));
         }
-        result << str;
-    }
+        continue;
+      }
 
-    std::string as_json() {
-        result << CLOSE_ARRAY;
-        return result.str();
+      if(value.type() == typeid(std::map<std::string, std::any>)) {
+        add_properties(std::any_cast<std::map<std::string, std::any>>(value));
+        continue;
+      }
+      initial = false;
     }
+  }
+
+  void add_object(bool initial, const std::string& name, const std::string& str) {
+    if (!initial) {
+      result << ", ";
+    }
+    result << '"' << name << "\": " << str;
+  }
+
+  void add(const std::string& str) {
+    if (first) {
+      first = false;
+    } else {
+      result << ", ";
+    }
+    result << str;
+  }
+
+  std::string as_json() {
+    result << CLOSE_ARRAY;
+    return result.str();
+  }
 
 private:
-    static const char OPEN_ARRAY = '[';
-    static const char CLOSE_ARRAY = ']';
-    std::stringstream result;
-    bool first{true};
+  static const char OPEN_ARRAY = '[';
+  static const char CLOSE_ARRAY = ']';
+  std::stringstream result;
+  bool first{true};
 };
 
 class json_properties_builder {
@@ -143,206 +144,171 @@ public:
         result << OPEN << SPACE;
     }
 
-    void add_property(std::string property, std::any value) {
-        if(value.type() == typeid(std::string)) {
-            add(property, seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
-            return;
+    void add_property(std::string property, property_type_t value) {
+      bool nested_initial;
+
+      switch (value.index()) {
+      case 0:
+        add(property, seastar::json::formatter::to_json("null"));
+        break;
+      case 1:
+        add(property, seastar::json::formatter::to_json(get<bool>(value)));
+        break;
+      case 2:
+        add(property, seastar::json::formatter::to_json(get<int64_t>(value)));
+        break;
+      case 3:
+        add(property, seastar::json::formatter::to_json(get<double>(value)));
+        break;
+      case 4:
+        add(property, seastar::json::formatter::to_json(get<std::string>(value)));
+        break;
+      case 5:
+        add_key(property);
+        result << OPEN_ARRAY;
+
+        nested_initial = true;
+        for (const auto& item : get<std::vector<bool>>(value)) {
+          if (!nested_initial) {
+            result << ", ";
+          }
+          result << item;
+          nested_initial = false;
         }
 
-        if(value.type() == typeid(int64_t)) {
-            add(property, seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
-            return;
+        result << CLOSE_ARRAY;
+        break;
+      case 6:
+        add_key(property);
+        result << OPEN_ARRAY;
+
+        nested_initial = true;
+        for (const auto& item : get<std::vector<int64_t>>(value)) {
+          if (!nested_initial) {
+            result << ", ";
+          }
+          result << item;
+          nested_initial = false;
         }
 
-        if(value.type() == typeid(double)) {
-            add(property, seastar::json::formatter::to_json(std::any_cast<double>(value)));
-            return;
+        result << CLOSE_ARRAY;
+        break;
+      case 7:
+        add(property, seastar::json::formatter::to_json(get<std::vector<double>>(value)));
+        add_key(property);
+        result << OPEN_ARRAY;
+
+        nested_initial = true;
+        for (const auto& item : get<std::vector<double>>(value)) {
+          if (!nested_initial) {
+            result << ", ";
+          }
+          result << item;
+          nested_initial = false;
         }
 
-        // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-        if(value.type() == typeid(std::_Bit_reference)) {
-            if (std::any_cast<std::_Bit_reference>(value) ) {
-                add(property, seastar::json::formatter::to_json(true));
-            } else {
-                add(property, seastar::json::formatter::to_json(false));
-            }
-            return;
+        result << CLOSE_ARRAY;
+        break;
+      case 8:
+        add_key(property);
+        result << OPEN_ARRAY;
+
+        nested_initial = true;
+        for (const auto& item : get<std::vector<std::string>>(value)) {
+          if (!nested_initial) {
+            result << ", ";
+          }
+          result << '"' << item << "\"";
+          nested_initial = false;
         }
 
-        if(value.type() == typeid(std::vector<std::string>)) {
-            add_key(property);
-            result << OPEN_ARRAY;
+        result << CLOSE_ARRAY;
+        break;
+      }
+    }
 
-            bool nested_initial = true;
-            for (const auto& item : std::any_cast<std::vector<std::string>>(value)) {
+    void add_properties(std::map<std::string, property_type_t> const & props) {
+        for (auto[key, value] : props) {
+            std::string property = static_cast<std::string>(key);
+            bool nested_initial;
+
+            switch (value.index()) {
+            case 0:
+              add(property, seastar::json::formatter::to_json("null"));
+              break;
+            case 1:
+              add(property, seastar::json::formatter::to_json(get<bool>(value)));
+              break;
+            case 2:
+              add(property, seastar::json::formatter::to_json(get<int64_t>(value)));
+              break;
+            case 3:
+              add(property, seastar::json::formatter::to_json(get<double>(value)));
+              break;
+            case 4:
+              add(property, seastar::json::formatter::to_json(get<std::string>(value)));
+              break;
+            case 5:
+              add_key(property);
+              result << OPEN_ARRAY;
+
+              nested_initial = true;
+              for (const auto& item : get<std::vector<bool>>(value)) {
                 if (!nested_initial) {
-                    result << ", ";
+                  result << ", ";
+                }
+                result << item;
+                nested_initial = false;
+              }
+
+              result << CLOSE_ARRAY;
+              break;
+            case 6:
+              add_key(property);
+              result << OPEN_ARRAY;
+
+              nested_initial = true;
+              for (const auto& item : get<std::vector<int64_t>>(value)) {
+                if (!nested_initial) {
+                  result << ", ";
+                }
+                result << item;
+                nested_initial = false;
+              }
+
+              result << CLOSE_ARRAY;
+              break;
+            case 7:
+              add(property, seastar::json::formatter::to_json(get<std::vector<double>>(value)));
+              add_key(property);
+              result << OPEN_ARRAY;
+
+              nested_initial = true;
+              for (const auto& item : get<std::vector<double>>(value)) {
+                if (!nested_initial) {
+                  result << ", ";
+                }
+                result << item;
+                nested_initial = false;
+              }
+
+              result << CLOSE_ARRAY;
+              break;
+            case 8:
+              add_key(property);
+              result << OPEN_ARRAY;
+
+              nested_initial = true;
+              for (const auto& item : get<std::vector<std::string>>(value)) {
+                if (!nested_initial) {
+                  result << ", ";
                 }
                 result << '"' << item << "\"";
                 nested_initial = false;
-            }
+              }
 
-            result << CLOSE_ARRAY;
-            return;
-        }
-
-        if(value.type() == typeid(std::vector<int64_t>)) {
-            add_key(property);
-            result << OPEN_ARRAY;
-
-            bool nested_initial = true;
-            for (const auto& item : std::any_cast<std::vector<int64_t>>(value)) {
-                if (!nested_initial) {
-                    result << ", ";
-                }
-                result << item;
-                nested_initial = false;
-            }
-
-            result << CLOSE_ARRAY;
-            return;
-        }
-
-        if(value.type() == typeid(std::vector<double>)) {
-            add_key(property);
-            result << OPEN_ARRAY;
-
-            bool nested_initial = true;
-            for (const auto& item : std::any_cast<std::vector<double>>(value)) {
-                if (!nested_initial) {
-                    result << ", ";
-                }
-                result << item;
-                nested_initial = false;
-            }
-
-            result << CLOSE_ARRAY;
-            return;
-        }
-
-        if(value.type() == typeid(std::vector<bool>)) {
-            add_key(property);
-            result << OPEN_ARRAY;
-
-            bool nested_initial = true;
-            for (const auto& item : std::any_cast<std::vector<bool>>(value)) {
-                if (!nested_initial) {
-                    result << ", ";
-                }
-                result << item;
-                nested_initial = false;
-            }
-
-            result << CLOSE_ARRAY;
-            return;
-        }
-
-        if(value.type() == typeid(std::map<std::string, std::any>)) {
-            add_properties(std::any_cast<std::map<std::string, std::any>>(value));
-            return;
-        }
-    }
-
-    void add_properties(std::map<std::string, std::any> const & props) {
-        for (auto[key, value] : props) {
-            std::string property = static_cast<std::string>(key);
-
-            if(value.type() == typeid(std::string)) {
-                add(property, seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
-                continue;
-            }
-
-            if(value.type() == typeid(int64_t)) {
-                add(property, seastar::json::formatter::to_json(std::any_cast<int64_t>(value)));
-                continue;
-            }
-
-            if(value.type() == typeid(double)) {
-                add(property, seastar::json::formatter::to_json(std::any_cast<double>(value)));
-                continue;
-            }
-
-            // Booleans are stored in std::any as a bit reference so we can't use if(value.type() == typeid(bool)) {
-            if(value.type() == typeid(std::_Bit_reference)) {
-                if (std::any_cast<std::_Bit_reference>(value) ) {
-                    add(property, seastar::json::formatter::to_json(true));
-                } else {
-                    add(property, seastar::json::formatter::to_json(false));
-                }
-                continue;
-            }
-
-            if(value.type() == typeid(std::vector<std::string>)) {
-                add_key(property);
-                result << OPEN_ARRAY;
-
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<std::string>>(value)) {
-                    if (!nested_initial) {
-                        result << ", ";
-                    }
-                    result << '"' << item << "\"";
-                    nested_initial = false;
-                }
-
-                result << CLOSE_ARRAY;
-                continue;
-            }
-
-            if(value.type() == typeid(std::vector<int64_t>)) {
-                add_key(property);
-                result << OPEN_ARRAY;
-
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<int64_t>>(value)) {
-                    if (!nested_initial) {
-                        result << ", ";
-                    }
-                    result << item;
-                    nested_initial = false;
-                }
-
-                result << CLOSE_ARRAY;
-                continue;
-            }
-
-            if(value.type() == typeid(std::vector<double>)) {
-                add_key(property);
-                result << OPEN_ARRAY;
-
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<double>>(value)) {
-                    if (!nested_initial) {
-                        result << ", ";
-                    }
-                    result << item;
-                    nested_initial = false;
-                }
-
-                result << CLOSE_ARRAY;
-                continue;
-            }
-
-            if(value.type() == typeid(std::vector<bool>)) {
-                add_key(property);
-                result << OPEN_ARRAY;
-
-                bool nested_initial = true;
-                for (const auto& item : std::any_cast<std::vector<bool>>(value)) {
-                    if (!nested_initial) {
-                        result << ", ";
-                    }
-                    result << item;
-                    nested_initial = false;
-                }
-
-                result << CLOSE_ARRAY;
-                continue;
-            }
-
-            if(value.type() == typeid(std::map<std::string, std::any>)) {
-                add_properties(std::any_cast<std::map<std::string, std::any>>(value));
-                continue;
+              result << CLOSE_ARRAY;
+              break;
             }
         }
     }
@@ -403,7 +369,7 @@ private:
 
 struct properties_json : public json::jsonable {
 private:
-    std::map<std::string, std::any> properties;
+    std::map<std::string, property_type_t> properties;
 
 public:
     properties_json(const std::map<std::string, std::string> &_properties) {
@@ -411,7 +377,7 @@ public:
             properties.emplace(key, value);
         }
     }
-    properties_json(const std::map<std::string, std::any> &_properties) : properties(_properties) {}
+    properties_json(const std::map<std::string, property_type_t> &_properties) : properties(_properties) {}
     properties_json() = default;
     ~properties_json() {
         properties.clear();

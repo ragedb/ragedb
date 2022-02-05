@@ -78,63 +78,8 @@ namespace ragedb {
     }
 
     sol::object Shard::RelationshipPropertyGetViaLua(uint64_t id, const std::string& property) {
-        std::any value = RelationshipPropertyGetPeered(id, property).get0();
-
-        if (!value.has_value()) {
-            return sol::lua_nil;
-        }
-
-        const auto& value_type = value.type();
-
-        if(value_type == typeid(std::string)) {
-            return sol::make_object(lua.lua_state(), std::any_cast<std::string>(value));
-        }
-
-        if(value_type == typeid(int64_t)) {
-            return sol::make_object(lua.lua_state(), std::any_cast<int64_t>(value));
-        }
-
-        if(value_type == typeid(double)) {
-            return sol::make_object(lua.lua_state(), std::any_cast<double>(value));
-        }
-
-        if(value_type == typeid(bool)) {
-            return sol::make_object(lua.lua_state(), std::any_cast<bool>(value));
-        }
-        
-        if(value_type == typeid(std::vector<std::string>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<std::string>>(value)));
-        }
-
-        if(value_type == typeid(std::vector<int64_t>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<int64_t>>(value)));
-        }
-
-        if(value_type == typeid(std::vector<double>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<double>>(value)));
-        }
-
-        if(value_type == typeid(std::vector<bool>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::vector<bool>>(value)));
-        }
-
-        if(value_type == typeid(std::map<std::string, std::string>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, std::string>>(value)));
-        }
-
-        if(value_type == typeid(std::map<std::string, int64_t>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, int64_t>>(value)));
-        }
-
-        if(value_type == typeid(std::map<std::string, double>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, double>>(value)));
-        }
-
-        if(value_type == typeid(std::map<std::string, bool>)) {
-            return sol::make_object(lua.lua_state(), sol::as_table(std::any_cast<std::map<std::string, bool>>(value)));
-        }
-
-        return sol::make_object(lua.lua_state(), sol::lua_nil);
+      property_type_t value = RelationshipPropertyGetPeered(id, property).get0();
+      return PropertyToSolObject(value);
     }
 
     bool Shard::RelationshipPropertySetViaLua(uint64_t id, const std::string& property, const sol::object& value) {

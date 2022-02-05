@@ -585,7 +585,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::any> Shard::RelationshipPropertyGetPeered(uint64_t id, const std::string &property) {
+    seastar::future<property_type_t> Shard::RelationshipPropertyGetPeered(uint64_t id, const std::string &property) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, property](Shard &local_shard) {
@@ -593,7 +593,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertySetPeered(uint64_t id, const std::string& property, const std::any& value) {
+    seastar::future<bool> Shard::RelationshipPropertySetPeered(uint64_t id, const std::string& property, const property_type_t& value) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, property, value](Shard &local_shard) {
@@ -617,7 +617,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::map<std::string, std::any>> Shard::RelationshipPropertiesGetPeered(uint64_t id) {
+    seastar::future<std::map<std::string, property_type_t>> Shard::RelationshipPropertiesGetPeered(uint64_t id) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id](Shard &local_shard) {

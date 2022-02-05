@@ -17,12 +17,12 @@
 #include "../Shard.h"
 
 namespace ragedb {
-    seastar::future<uint64_t> Shard::FindNodeCountPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value) {
+    seastar::future<uint64_t> Shard::FindNodeCountPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value) {
         uint16_t type_id = node_types.getTypeId(type);
         return FindNodeCountPeered(type_id, property, operation, value);
     }
 
-    seastar::future<uint64_t> Shard::FindNodeCountPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value) {
+    seastar::future<uint64_t> Shard::FindNodeCountPeered(uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value) {
         seastar::future<std::vector<uint64_t>> v = container().map([type_id, property, operation, value] (Shard &local) {
             return local.FindNodeCount(type_id, property, operation, value);
         });
@@ -32,12 +32,12 @@ namespace ragedb {
         });
     }
 
-    seastar::future<uint64_t> Shard::FindRelationshipCountPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value) {
+    seastar::future<uint64_t> Shard::FindRelationshipCountPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value) {
         uint16_t type_id = relationship_types.getTypeId(type);
         return FindRelationshipCountPeered(type_id, property, operation, value);
     }
 
-    seastar::future<uint64_t> Shard::FindRelationshipCountPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value) {
+    seastar::future<uint64_t> Shard::FindRelationshipCountPeered(uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value) {
         seastar::future<std::vector<uint64_t>> v = container().map([type_id, property, operation, value] (Shard &local) {
             return local.FindRelationshipCount(type_id, property, operation, value);
         });
@@ -47,12 +47,12 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::vector<uint64_t>> Shard::FindNodeIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<uint64_t>> Shard::FindNodeIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint16_t type_id = node_types.getTypeId(type);
         return FindNodeIdsPeered(type_id, property, operation, value, skip, limit);
     }
 
-    seastar::future<std::vector<uint64_t>> Shard::FindNodeIdsPeered(uint16_t node_type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<uint64_t>> Shard::FindNodeIdsPeered(uint16_t node_type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -65,7 +65,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, node_type_id, property, operation, value, skip, limit, max, this] (const std::vector<std::vector<uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<uint64_t>>& results) {
             uint64_t current = 0;
 
             std::vector<uint64_t> ids;
@@ -85,12 +85,12 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::vector<uint64_t>> Shard::FindRelationshipIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<uint64_t>> Shard::FindRelationshipIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint16_t type_id = relationship_types.getTypeId(type);
         return FindRelationshipIdsPeered(type_id, property, operation, value, skip, limit);
     }
 
-    seastar::future<std::vector<uint64_t>> Shard::FindRelationshipIdsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<uint64_t>> Shard::FindRelationshipIdsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -103,7 +103,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, type_id, property, operation, value, skip, limit, max, this] (const std::vector<std::vector<uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<uint64_t>>& results) {
             uint64_t current = 0;
 
             std::vector<uint64_t> ids;
@@ -123,12 +123,12 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::vector<Node>> Shard::FindNodesPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<Node>> Shard::FindNodesPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint16_t type_id = node_types.getTypeId(type);
         return FindNodesPeered(type_id, property, operation, value, skip, limit);
     }
 
-    seastar::future<std::vector<Node>> Shard::FindNodesPeered(uint16_t node_type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<Node>> Shard::FindNodesPeered(uint16_t node_type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<Node>>> futures;
@@ -140,7 +140,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, node_type_id, property, operation, value, skip, limit, max, this] (const std::vector<std::vector<Node>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<Node>>& results) {
             uint64_t current = 0;
 
             std::vector<Node> nodes;
@@ -160,12 +160,12 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::vector<Relationship>> Shard::FindRelationshipsPeered(const std::string& type, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<Relationship>> Shard::FindRelationshipsPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint16_t type_id = relationship_types.getTypeId(type);
         return FindRelationshipsPeered(type_id, property, operation, value, skip, limit);
     }
 
-    seastar::future<std::vector<Relationship>> Shard::FindRelationshipsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const std::any& value, uint64_t skip, uint64_t limit) {
+    seastar::future<std::vector<Relationship>> Shard::FindRelationshipsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -177,7 +177,7 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, type_id, property, operation, value, skip, limit, max, this] (const std::vector<std::vector<Relationship>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<Relationship>>& results) {
             uint64_t current = 0;
 
             std::vector<Relationship> relationships;

@@ -215,14 +215,14 @@ namespace ragedb {
     }
 
 
-    std::any Shard::NodePropertyGet(uint64_t id, const std::string& property) {
+    property_type_t Shard::NodePropertyGet(uint64_t id, const std::string& property) {
         if (ValidNodeId(id)) {
             return node_types.getNodeProperty(id, property);
         }
-        return std::any();
+        return property_type_t();
     }
 
-    bool Shard::NodePropertySet(uint64_t id, const std::string& property, std::any value) {
+    bool Shard::NodePropertySet(uint64_t id, const std::string& property, property_type_t value) {
         if (ValidNodeId(id)) {
             return node_types.setNodeProperty(id, property, std::move(value));
         }
@@ -236,7 +236,7 @@ namespace ragedb {
         return false;
     }
 
-    std::any Shard::NodePropertyGet(const std::string& type, const std::string& key, const std::string& property) {
+    property_type_t Shard::NodePropertyGet(const std::string& type, const std::string& key, const std::string& property) {
         uint64_t id = NodeGetID(type, key);
         return NodePropertyGet(id, property);
     }
@@ -246,7 +246,7 @@ namespace ragedb {
         return NodePropertySetFromJson(id, property, value);
     }
 
-    bool Shard::NodePropertySet(const std::string& type, const std::string& key, const std::string& property, std::any value) {
+    bool Shard::NodePropertySet(const std::string& type, const std::string& key, const std::string& property, property_type_t value) {
         uint64_t id = NodeGetID(type, key);
         return NodePropertySet(id, property, std::move(value));
     }
@@ -263,17 +263,17 @@ namespace ragedb {
         return false;
     }
 
-    std::map<std::string, std::any> Shard::NodePropertiesGet(const std::string &type, const std::string &key) {
+    std::map<std::string, property_type_t> Shard::NodePropertiesGet(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
         return NodePropertiesGet(id);
     }
 
-    std::map<std::string, std::any> Shard::NodePropertiesGet(uint64_t id) {
+    std::map<std::string, property_type_t> Shard::NodePropertiesGet(uint64_t id) {
         // If the node is valid
         if (ValidNodeId(id)) {
             return node_types.getNodeProperties(externalToTypeId(id), externalToInternal(id));
         }
-        return std::map<std::string, std::any>();
+        return std::map<std::string, property_type_t>();
     }
 
     bool Shard::NodePropertiesSetFromJson(const std::string& type, const std::string& key, const std::string& value) {

@@ -277,14 +277,14 @@ namespace ragedb {
         return 0;
     }
 
-    std::any Shard::RelationshipPropertyGet(uint64_t id, const std::string& property) {
+    property_type_t Shard::RelationshipPropertyGet(uint64_t id, const std::string& property) {
         if (ValidRelationshipId(id)) {
             return relationship_types.getRelationshipProperty(id, property);
         }
         return {};
     }
 
-    bool Shard::RelationshipPropertySet(uint64_t id, const std::string& property, const std::any& value) {
+    bool Shard::RelationshipPropertySet(uint64_t id, const std::string& property, const property_type_t& value) {
         if (ValidRelationshipId(id)) {
             return relationship_types.setRelationshipProperty(id, property, value);
         }
@@ -305,7 +305,7 @@ namespace ragedb {
         return false;
     }
 
-    std::map<std::string, std::any> Shard::RelationshipPropertiesGet(uint64_t id) {
+    std::map<std::string, property_type_t> Shard::RelationshipPropertiesGet(uint64_t id) {
         if (ValidRelationshipId(id)) {
             return relationship_types.getRelationshipProperties(externalToTypeId(id), externalToInternal(id));
         }

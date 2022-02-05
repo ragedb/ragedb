@@ -96,7 +96,7 @@ namespace ragedb {
                                  sol::constructors<
                                          Node(),
                                          Node(uint64_t, std::string, std::string),
-                                         Node(uint64_t, std::string, std::string, std::map<std::string, std::any>)>(),
+                                         Node(uint64_t, std::string, std::string, std::map<std::string, property_type_t>)>(),
                                  "getId", &Node::getId,
                                  "getTypeId", &Node::getTypeId,
                                  "getType", &Node::getType,
@@ -109,7 +109,7 @@ namespace ragedb {
                                          sol::constructors<
                                                  Relationship(),
                                                  Relationship(uint64_t, std::string, uint64_t, uint16_t),
-                                                 Relationship(uint64_t, std::string, uint64_t, uint16_t, std::map<std::string, std::any>)>(),
+                                                 Relationship(uint64_t, std::string, uint64_t, uint16_t, std::map<std::string, property_type_t>)>(),
                                          "getId", &Relationship::getId,
                                          "getTypeId", &Relationship::getTypeId,
                                          "getType", &Relationship::getType,

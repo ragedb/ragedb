@@ -19,8 +19,8 @@
 
 namespace ragedb {
 
-  std::any from_sol_object(const sol::object& o) {
-    if (o == sol::lua_nil) return std::any();
+property_type_t from_sol_object(const sol::object& o) {
+    if (o == sol::lua_nil) return std::monostate();
     if (o.is<bool>()) return o.as<bool>();
     if (o.is<int>()) return o.as<int64_t>();
     if (o.is<double>()) return o.as<double>();
@@ -37,7 +37,7 @@ namespace ragedb {
     if (o.is<unsigned long long>()) return o.as<int64_t>();
     if (o.is<float>()) return o.as<double>();
     // TODO: Any missing? What about arrays?
-    return std::any();
+    return std::monostate();
   }
 
 

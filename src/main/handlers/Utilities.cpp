@@ -124,32 +124,56 @@ ragedb::Operation Utilities::validate_operation(std::unique_ptr<request> &req, s
     }
 }
 
-bool Utilities::validate_combination(const ragedb::Operation& operation, const std::any &property) {
+bool Utilities::validate_combination(const ragedb::Operation& operation, const property_type_t &property) {
     if (operation == ragedb::Operation::UNKNOWN) {
         return false;
     }
     if (operation == ragedb::Operation::IS_NULL || operation == ragedb::Operation::NOT_IS_NULL) {
         return true;
     }
-    return property.has_value();
+    return property.index() > 0;
 }
 
-void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const std::any &property) {
-    if(property.type() == typeid(std::string)) {
-        rep->write_body("json", json::stream_object(std::any_cast<std::string>(property)));
-    }
+std::vector<std::string> vector_bool_to_string(std::vector<bool> source) {
+  std::vector<std::string> return_vector;
+  for(bool value : source) {
+    return_vector.push_back(value ? "true" : "false");
+  }
+  return return_vector;
+}
 
-    if(property.type() == typeid(int64_t)) {
-        rep->write_body("json", json::stream_object(std::any_cast<int64_t>(property)));
-    }
+void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const property_type_t &property) {
 
-    if(property.type() == typeid(double)) {
-        rep->write_body("json", json::stream_object(std::any_cast<double>(property)));
-    }
+  switch (property.index()) {
+    case 0:
+      rep->write_body("json", json::stream_object("null"));
+      break;
+    case 1:
+      rep->write_body("json", json::stream_object(get<bool>(property)));
+      break;
+    case 2:
+      rep->write_body("json", json::stream_object(get<int64_t>(property)));
+      break;
+    case 3:
+      rep->write_body("json", json::stream_object(get<double>(property)));
+      break;
+    case 4:
+      rep->write_body("json", json::stream_object(get<std::string>(property)));
+      break;
+    case 5:
+      rep->write_body("json", json::stream_object(vector_bool_to_string(get<std::vector<bool>>(property))));
+      break;
+    case 6:
+      rep->write_body("json", json::stream_object(get<std::vector<int64_t>>(property)));
+      break;
+    case 7:
+      rep->write_body("json", json::stream_object(get<std::vector<double>>(property)));
+      break;
+    case 8:
+      rep->write_body("json", json::stream_object(get<std::vector<std::string>>(property)));
+      break;
+  }
 
-    if(property.type() == typeid(bool)) {
-        rep->write_body("json", json::stream_object(std::any_cast<bool>(property)));
-    }
 }
 
 std::vector<simdjson::dom::parser> Utilities::parsers;
@@ -164,7 +188,7 @@ bool Utilities::validate_json(const std::unique_ptr<request> &req, std::unique_p
     return !error;
 }
 
-std::any Utilities::validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+property_type_t Utilities::validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
         simdjson::dom::element value;
 
         simdjson::error_code error = parsers[seastar::this_shard_id()].parse(req->content).get(value);
@@ -172,32 +196,32 @@ std::any Utilities::validate_json_property(const std::unique_ptr<request> &req, 
 
             switch (value.type()) {
                 case simdjson::dom::element_type::INT64: {
-                    return std::any(int64_t(value));
+                    return int64_t(value);
                 }
                 case simdjson::dom::element_type::UINT64: {
                     // Unsigned Integer Values are not allowed, convert to signed
-                    return std::any(static_cast<std::make_signed_t<uint64_t>>(value));
+                    return static_cast<std::make_signed_t<uint64_t>>(value);
                 }
                 case simdjson::dom::element_type::DOUBLE: {
-                    return std::any(double(value));
+                    return double(value);
                 }
                 case simdjson::dom::element_type::STRING: {
-                    return std::any(std::string(value));
+                    return std::string(value);
                 }
                 case simdjson::dom::element_type::BOOL: {
-                    return std::any(bool(value));
+                    return bool(value);
                 }
                 case simdjson::dom::element_type::NULL_VALUE: {
                     // Null Values are not allowed, just ignore them
                     rep->write_body("json", json::stream_object("Invalid JSON"));
                     rep->set_status(reply::status_type::bad_request);
-                    return std::any();
+                    return std::monostate();
                 }
                 case simdjson::dom::element_type::OBJECT: {
                     // TODO: Add support for nested properties
                     rep->write_body("json", json::stream_object("Invalid JSON"));
                     rep->set_status(reply::status_type::bad_request);
-                    return std::any();
+                    return std::monostate();
                 }
                 case simdjson::dom::element_type::ARRAY: {
                     auto array = simdjson::dom::array(value);
@@ -212,56 +236,56 @@ std::any Utilities::validate_json_property(const std::unique_ptr<request> &req, 
                                 // TODO: Add support for nested properties
                                 rep->write_body("json", json::stream_object("Invalid JSON"));
                                 rep->set_status(reply::status_type::bad_request);
-                                return std::any();
+                                return std::monostate();
                             }
                             case simdjson::dom::element_type::OBJECT: {
                                 // TODO: Add support for nested properties
                                 rep->write_body("json", json::stream_object("Invalid JSON"));
                                 rep->set_status(reply::status_type::bad_request);
-                                return std::any();
+                                return std::monostate();
                             }
                             case simdjson::dom::element_type::INT64: {
                                 for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                     int_vector.emplace_back(int64_t(child));
                                 }
-                                return std::any(int_vector);
+                                return int_vector;
                             }
                             case simdjson::dom::element_type::UINT64: {
                                 for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                     int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
                                 }
-                                return std::any(int_vector);
+                                return int_vector;
                             }
                             case simdjson::dom::element_type::DOUBLE: {
                                 for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                     double_vector.emplace_back(double(child));
                                 }
-                                return std::any(double_vector);
+                                return double_vector;
                             }
                             case simdjson::dom::element_type::STRING: {
                                 for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                     string_vector.emplace_back(child);
                                 }
-                                return std::any(string_vector);
+                                return string_vector;
                             }
                             case simdjson::dom::element_type::BOOL: {
                                 for (simdjson::dom::element child : simdjson::dom::array(value)) {
                                     bool_vector.emplace_back(bool(child));
                                 }
-                                return std::any(bool_vector);
+                                return bool_vector;
                             }
                             case simdjson::dom::element_type::NULL_VALUE: {
                                 // Null Values are not allowed, just ignore them
                                 rep->write_body("json", json::stream_object("Invalid JSON"));
                                 rep->set_status(reply::status_type::bad_request);
-                                return std::any();
+                                return std::monostate();
                             }
                         }
                     }
                 }
             }
         }
-    return std::any();
+    return std::monostate();
 }
 
 bool Utilities::validate_allowed_data_type(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {

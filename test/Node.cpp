@@ -22,7 +22,7 @@ SCENARIO( "Node can be created", "[node]" ) {
     GIVEN("Given Nothing") {
         ragedb::Node nothing;
         ragedb::Node empty(1, "User", "Helene");
-        std::map<std::string, std::any>  properties;
+        std::map<std::string, ragedb::property_type_t>  properties;
         properties.emplace("name", std::string("max"));
         properties.emplace("age", int64_t(42));
         std::vector<bool> valid {true, true, false, true};
@@ -71,12 +71,12 @@ SCENARIO( "Node can be created", "[node]" ) {
                 REQUIRE(with_properties.getKey() == "Max");
                 REQUIRE(!with_properties.getProperties().empty());
                 REQUIRE(!with_properties.getPropertiesLua(lua.lua_state()).empty());
-                REQUIRE(std::any_cast<std::string>(with_properties.getProperty("name")) == "max");
-                REQUIRE(std::any_cast<int64_t>(with_properties.getProperty("age")) == 42);
-                REQUIRE(std::any_cast<double>(with_properties.getProperty("weight")) == 239.5);
-                REQUIRE(std::any_cast<std::_Bit_reference>(with_properties.getProperty("valid")));
-                REQUIRE(std::any_cast<std::vector<std::string>>(with_properties.getProperty("nicknames")) == nicknames);
-                REQUIRE(!with_properties.getProperty("not_there").has_value());
+                REQUIRE(get<std::string>(with_properties.getProperty("name")) == "max");
+                REQUIRE(get<int64_t>(with_properties.getProperty("age")) == 42);
+                REQUIRE(get<double>(with_properties.getProperty("weight")) == 239.5);
+                REQUIRE(get<bool>(with_properties.getProperty("valid")));
+                REQUIRE(get<std::vector<std::string>>(with_properties.getProperty("nicknames")) == nicknames);
+                REQUIRE(with_properties.getProperty("not_there").index() == 0);
             }
         }
         WHEN("we print a nothing node") {

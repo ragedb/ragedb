@@ -167,7 +167,7 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
             shard.NodeAdd(2, "four", R"({ "name":"alex", "age":55, "weight":199, "active":false, "vector":[3,4] })");
 
             THEN("find the count of the nodes") {
-                std::any value = int64_t(55);
+                ragedb::property_type_t value = int64_t(55);
                 uint64_t find_eq_integer = shard.FindNodeCount(2, "age", ragedb::Operation::EQ, value);
                 REQUIRE(find_eq_integer == 2);
 
