@@ -26,8 +26,8 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
         uint64_t empty = shard.NodeAddEmpty(1, "empty");
         uint64_t existing = shard.NodeAdd(1, "existing", R"({ "name":"max", "email":"maxdemarzi@example.com" })");
 
-        REQUIRE( empty == 1024 );
-        REQUIRE( existing == 67109888 );
+        REQUIRE( empty == 8 );
+        REQUIRE( existing == 524296 );
 
         shard.RelationshipTypeInsert("KNOWS", 1);
         shard.RelationshipTypeInsert("LIKES", 2);

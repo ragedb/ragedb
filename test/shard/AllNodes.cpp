@@ -32,12 +32,12 @@ SCENARIO( "Shard can handle All Nodes", "[node]" ) {
         uint64_t five = shard.NodeAddEmpty(1,  "five");
         uint64_t six = shard.NodeAddEmpty(1,  "six");
 
-        REQUIRE( empty == 1024 );
-        REQUIRE( existing == 67109888 );
-        REQUIRE( three == 134218752 );
-        REQUIRE( four == 201327616 );
-        REQUIRE( five == 268436480 );
-        REQUIRE( six == 335545344 );
+        REQUIRE( empty == 8 );
+        REQUIRE( existing == 524296 );
+        REQUIRE( three == 1048584 );
+        REQUIRE( four == 1572872 );
+        REQUIRE( five == 2097160 );
+        REQUIRE( six == 2621448 );
 
         WHEN( "more nodes are added" ) {
             shard.NodeAddEmpty(2, "one");

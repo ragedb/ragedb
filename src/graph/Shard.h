@@ -83,7 +83,9 @@ namespace ragedb {
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
         uint16_t CalculateShardId(const std::string &type, const std::string &key, const property_type_t &value) const;
         bool ValidNodeId(uint64_t id);
+        bool ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id);
         bool ValidRelationshipId(uint64_t id);
+        bool ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id);
 
         // *****************************************************************************************************************************
         //                                               Single Shard

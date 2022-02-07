@@ -35,8 +35,8 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
         shard.RelationshipPropertyTypeAdd(1, "expired", 1);
         shard.RelationshipPropertyTypeAdd(1, "size", 2);
 
-        REQUIRE(empty == 1024);
-        REQUIRE(existing == 67109888);
+        REQUIRE(empty == 8);
+        REQUIRE(existing == 524296);
         REQUIRE(shard.RelationshipGetStartingNodeId(1) == 0);
         REQUIRE(shard.RelationshipGetEndingNodeId(1) == 0);
 
@@ -47,7 +47,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             std::stringstream out;
             out << shard.RelationshipGet(added);
             THEN("we get the correct output") {
-                REQUIRE(out.str() == "{ \"id\": 1024, \"type\": \"KNOWS\", \"starting_node_id\": 1024, \"ending_node_id\": 67109888, \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
+                REQUIRE(out.str() == "{ \"id\": 8, \"type\": \"KNOWS\", \"starting_node_id\": 8, \"ending_node_id\": 524296, \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
             }
         }
 
@@ -55,7 +55,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             uint64_t added = shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");
 
             THEN("the shard keeps it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -77,7 +77,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             uint64_t added = shard.RelationshipAddSameShard(1, "Node", "empty", "Node", "existing", R"({ "active":true, "weight":1.0, "tag":"college" })");
 
             THEN("the shard keeps it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -92,12 +92,12 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             uint64_t added = shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");
 
             THEN("the shard keeps it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 std::pair <uint16_t, uint64_t> rel_type_incoming_node_id = shard.RelationshipRemoveGetIncoming(added);
                 bool deleted = shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, added, rel_type_incoming_node_id.second);
                 REQUIRE (deleted);
                 added = shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -110,12 +110,12 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             uint64_t added = shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");
 
             THEN("the shard keeps it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 std::pair <uint16_t, uint64_t> rel_type_incoming_node_id = shard.RelationshipRemoveGetIncoming(added);
                 bool deleted = shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, added, rel_type_incoming_node_id.second);
                 REQUIRE (deleted);
                 added = shard.RelationshipAddSameShard(1, "Node", "empty", "Node", "existing", R"({ "active":true, "weight":1.0, "tag":"college" })");
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -160,14 +160,14 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             uint64_t added2 = shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");
 
             THEN("the shard keeps them") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
 
-                REQUIRE(added2 == 67109888);
+                REQUIRE(added2 == 524296);
                 ragedb::Relationship added_relationship2 = shard.RelationshipGet(added2);
                 REQUIRE(added_relationship2.getId() == added2);
                 REQUIRE(added_relationship2.getTypeId() == 1);
@@ -181,7 +181,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
             uint64_t added2 = shard.RelationshipAddSameShard(1, "Node", "empty", "Node", "existing", R"({ "active":true, "weight":2.0, "tag":"college" })");
 
             THEN("the shard keeps them") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -189,7 +189,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
                 REQUIRE(get<double>(shard.RelationshipPropertyGet(added, "weight")) == 1.0);
 
-                REQUIRE(added2 == 67109888);
+                REQUIRE(added2 == 524296);
                 ragedb::Relationship added_relationship2 = shard.RelationshipGet(added2);
                 REQUIRE(added_relationship2.getId() == added2);
                 REQUIRE(added_relationship2.getTypeId() == 1);

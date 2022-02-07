@@ -35,8 +35,8 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
         uint64_t empty = shard.NodeAddEmpty(1, "empty");
         uint64_t existing = shard.NodeAdd(1, "existing", R"({ "name":"max", "age":99, "weight":230.5, "bald":true, "nested":{ "inside":"yes" }, "vector":[1,2,3,4] })");
 
-        REQUIRE( empty == 1024 );
-        REQUIRE( existing == 67109888 );
+        REQUIRE( empty == 8 );
+        REQUIRE( existing == 524296 );
 
         WHEN("a property is requested by label/key") {
             THEN("the shard gets it") {

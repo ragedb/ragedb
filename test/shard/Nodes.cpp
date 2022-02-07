@@ -38,15 +38,15 @@ SCENARIO("Shard can handle Nodes", "[node]") {
         uint64_t empty = shard.NodeAddEmpty(1, "empty");
         uint64_t existing = shard.NodeAdd(1, "existing", R"({ "name":"max", "email":"maxdemarzi@example.com" })");
 
-        REQUIRE(empty == 1024);
-        REQUIRE(existing == 67109888);
+        REQUIRE(empty == 8);
+        REQUIRE(existing == 524296);
 
         WHEN("we print a new node") {
             uint64_t added = shard.NodeAdd(1, "new", R"({ "strength": 0.8, "color": "blue", "expired": false, "size": 9 })");
             std::stringstream out;
             out << shard.NodeGet(added);
             THEN("we get the correct output") {
-                REQUIRE(out.str() == "{ \"id\": 134218752, \"type\": \"Node\", \"key\": \"new\", \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
+                REQUIRE(out.str() == "{ \"id\": 1048584, \"type\": \"Node\", \"key\": \"new\", \"properties\": { \"color\": \"blue\", \"expired\": false, \"size\": 9, \"strength\": 0.8 } }");
             }
         }
 

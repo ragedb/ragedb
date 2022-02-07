@@ -24,8 +24,7 @@ namespace ragedb {
         uint16_t id1_type_id = externalToTypeId(id1);
         uint16_t id2_type_id = externalToTypeId(id2);
         uint64_t external_id = 0;
-
-        if (ValidNodeId(id1) && ValidNodeId(id2)) {
+        if (ValidNodeId(id1, id1_type_id, internal_id1) && ValidNodeId(id2, id2_type_id, internal_id2)) {
             uint64_t internal_id = relationship_types.getCount(rel_type_id);
             if(relationship_types.hasDeleted(rel_type_id)) {
                 // If we have deleted relationships, fill in the space by reusing the new relationship
@@ -75,7 +74,7 @@ namespace ragedb {
         uint16_t id2_type_id = externalToTypeId(id2);
         uint64_t external_id = 0;
 
-        if (ValidNodeId(id1) && ValidNodeId(id2)) {
+        if (ValidNodeId(id1, id1_type_id, internal_id1) && ValidNodeId(id2, id2_type_id, internal_id2)) {
             uint64_t internal_id = relationship_types.getCount(rel_type_id);
             if(relationship_types.hasDeleted(rel_type_id)) {
                 // If we have deleted relationships, fill in the space by reusing the new relationship
@@ -202,7 +201,6 @@ namespace ragedb {
 
     uint64_t Shard::RelationshipAddToIncoming(uint16_t rel_type_id, uint64_t rel_id, uint64_t id1, uint64_t id2) {
         uint64_t internal_id2 = externalToInternal(id2);
-        uint16_t id1_type_id = externalToTypeId(id1);
         uint16_t id2_type_id = externalToTypeId(id2);
         // Add the relationship to the incoming node
         auto group = find_if(std::begin(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)), std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),

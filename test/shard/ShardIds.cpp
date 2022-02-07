@@ -24,7 +24,7 @@ SCENARIO( "Shard can calculate shard ids", "[ids]" ) {
         WHEN("we calculate shard ids on 4 cores") {
 
             THEN("calculate shard id 0 for an invalid number") {
-                REQUIRE(shard.CalculateShardId(99) == 0);
+                REQUIRE(shard.CalculateShardId(1) == 0);
             }
             THEN("calculate shard id 0 for 1024") {
                 REQUIRE(shard.CalculateShardId(1024) == 0);

@@ -27,7 +27,7 @@ namespace ragedb {
     Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
         // Set the Shard Bits and Mask
         SHARD_BITS = std::bit_width(_cpus);
-        SHARD_MASK = (1 << _cpus) - 1;
+        SHARD_MASK = (1 << SHARD_BITS) - 1;
 
         lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io, sol::lib::os);
         lua.require_script("json", Lua::json_script);

@@ -36,8 +36,8 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
         shard.RelationshipPropertyTypeAdd(1, "name", 4);
 
 
-        REQUIRE( empty == 1024 );
-        REQUIRE( existing == 67109888 );
+        REQUIRE( empty == 8 );
+        REQUIRE( existing == 524296 );
 
         shard.RelationshipTypeInsert("KNOWS", 1);
 
@@ -47,7 +47,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "number":3 })");
 
             THEN("the shard keeps it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -64,7 +64,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "invalid:3 })");
 
             THEN("the shard does not keep it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 // TODO: So we should not allow it, HTTP check is done.  and Check in Lua
             }
         }
@@ -74,7 +74,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "number":3 })");
 
             THEN("the shard gets it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -90,7 +90,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "number":3 })");
 
             THEN("the shard gets it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -107,7 +107,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "number":3 })");
 
             THEN("the shard gets it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
@@ -123,7 +123,7 @@ SCENARIO( "Shard can handle Relationship Properties", "[relationship,properties]
                                                            R"({ "active":true, "weight":1.0, "tag":"college", "number":3 })");
 
             THEN("the shard gets it") {
-                REQUIRE(added == 1024);
+                REQUIRE(added == 8);
                 ragedb::Relationship added_relationship = shard.RelationshipGet(added);
                 REQUIRE(added_relationship.getId() == added);
                 REQUIRE(added_relationship.getTypeId() == 1);
