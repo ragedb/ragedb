@@ -17,15 +17,14 @@
 
 namespace ragedb {
 
-    static const unsigned int SHARD_BITS = 10U;
-    static const unsigned int SHARD_MASK = 0x00000000000003FFU;
     static const unsigned int TYPE_BITS = 16U;
     static const unsigned int TYPE_MASK = 0x0000000003FFFFFFU;
     static const unsigned int SIXTY_FOUR = 64U;
 
-    // 64 bits:  10 bits for core id (1024) 16 bits for the type (65536) 38 bits for the id (274877906944)
-    uint64_t Shard::internalToExternal(uint16_t type_id, uint64_t internal_id) const {
-        return (((internal_id << TYPE_BITS) + type_id) << SHARD_BITS) + shard_id;
+    // 64 bits:  Up to 10 bits for core id (1024), 16 bits for the type (65536) 38 bits for the id (274877906944)
+
+    uint64_t Shard::internalToExternal(uint16_t type_id, uint64_t internal_id) {
+        return (((internal_id << TYPE_BITS) + type_id) << SHARD_BITS) + seastar::this_shard_id();
     }
 
     uint64_t Shard::externalToInternal(uint64_t id) {

@@ -41,14 +41,16 @@
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
 
+extern unsigned int SHARD_BITS;
+extern unsigned int SHARD_MASK;
+
 namespace ragedb {
 
-    class Shard : public seastar::peering_sharded_service<Shard> {
+  class Shard : public seastar::peering_sharded_service<Shard> {
 
     private:
         uint cpus;
         uint shard_id;
-        
 
         seastar::rwlock rel_type_lock;                  // Global lock to keep Relationship Type ids in sync
         seastar::rwlock node_type_lock;                 // Global lock to keep Node Type ids in sync
@@ -74,7 +76,7 @@ namespace ragedb {
         seastar::future<std::string> RunLua(const std::string &script);
 
         // Ids
-        uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id) const;
+        static uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id);
         static uint64_t externalToInternal(uint64_t id);
         static uint16_t externalToTypeId(uint64_t id);
         static uint16_t CalculateShardId(uint64_t id);

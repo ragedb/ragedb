@@ -17,10 +17,17 @@
 #include "Shard.h"
 #include "Roar.h"
 #include "Lua.h"
+
+unsigned int SHARD_BITS;
+unsigned int SHARD_MASK;
+
 using namespace roaring;
 namespace ragedb {
 
     Shard::Shard(uint _cpus) : cpus(_cpus), shard_id(seastar::this_shard_id()) {
+        // Set the Shard Bits and Mask
+        SHARD_BITS = std::bit_width(_cpus);
+        SHARD_MASK = (1 << _cpus) - 1;
 
         lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io, sol::lib::os);
         lua.require_script("json", Lua::json_script);

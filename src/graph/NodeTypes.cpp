@@ -22,13 +22,6 @@
 
 namespace ragedb {
 
-    static const unsigned int SHARD_BITS = 10U;
-    static const unsigned int SHARD_MASK = 0x00000000000003FFU;
-    static const unsigned int TYPE_BITS = 16U;
-    static const unsigned int TYPE_MASK = 0x0000000003FFFFFFU;
-
-    static const property_type_t tombstone_any = property_type_t();
-
     NodeTypes::NodeTypes() : type_to_id(), id_to_type(), shard_id(seastar::this_shard_id()) {
         // start with empty blank type 0
         type_to_id.emplace("", 0);
@@ -67,18 +60,6 @@ namespace ragedb {
         outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
         incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
         deleted_ids.emplace_back(roaring::Roaring64Map());
-    }
-
-    uint64_t NodeTypes::internalToExternal(uint16_t type_id, uint64_t internal_id) const {
-        return (((internal_id << TYPE_BITS) + type_id) << SHARD_BITS) + shard_id;
-    }
-
-    uint64_t NodeTypes::externalToInternal(uint64_t id) {
-        return (id >> (TYPE_BITS + SHARD_BITS));
-    }
-
-    uint16_t NodeTypes::externalToTypeId(uint64_t id) {
-        return (id & TYPE_MASK ) >> SHARD_BITS;
     }
 
     bool NodeTypes::addTypeId(const std::string& type, uint16_t type_id) {
@@ -205,7 +186,7 @@ namespace ragedb {
                         return allIds;
                     }
                     if (current > skip) {
-                        allIds.emplace_back(internalToExternal(type_id, internal_id));
+                        allIds.emplace_back(Shard::internalToExternal(type_id, internal_id));
                     }
                     current++;
                 }
@@ -216,7 +197,7 @@ namespace ragedb {
                     }
                     if (current > skip) {
                         if (!deleted_ids[type_id].contains(internal_id)) {
-                            allIds.emplace_back(internalToExternal(type_id, internal_id));
+                            allIds.emplace_back(Shard::internalToExternal(type_id, internal_id));
                         }
                     }
                     current++;
@@ -238,7 +219,7 @@ namespace ragedb {
                 }
                 if (current > skip) {
                     if (!deleted_ids[type_id].contains(internal_id)) {
-                        allIds.emplace_back(internalToExternal(type_id, internal_id));
+                        allIds.emplace_back(Shard::internalToExternal(type_id, internal_id));
                     }
                 }
                 current++;
@@ -504,7 +485,7 @@ namespace ragedb {
                         break;
                     }
                     if (current++ > skip ) {
-                        ids.emplace_back(internalToExternal(type_id, *iterator));
+                        ids.emplace_back(Shard::internalToExternal(type_id, *iterator));
                     }
                 }
                 return ids;
@@ -522,7 +503,7 @@ namespace ragedb {
                         break;
                     }
                     if (current++ > skip ) {
-                        ids.emplace_back(internalToExternal(type_id, *iterator));
+                        ids.emplace_back(Shard::internalToExternal(type_id, *iterator));
                     }
                 }
                 return ids;
@@ -551,7 +532,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -598,7 +579,7 @@ namespace ragedb {
 
                         for(auto idx : idxs) {
                             if(current++ > skip) {
-                                ids.emplace_back(internalToExternal(type_id, idx));
+                                ids.emplace_back(Shard::internalToExternal(type_id, idx));
                             }
                             if (current > (skip + limit)) {
                                 return ids;
@@ -648,7 +629,7 @@ namespace ragedb {
 
                         for(auto idx : idxs) {
                             if(current++ > skip) {
-                                ids.emplace_back(internalToExternal(type_id, idx));
+                                ids.emplace_back(Shard::internalToExternal(type_id, idx));
                             }
                             if (current > (skip + limit)) {
                                 return ids;
@@ -695,7 +676,7 @@ namespace ragedb {
 
                         for(auto idx : idxs) {
                             if(current++ > skip) {
-                                ids.emplace_back(internalToExternal(type_id, idx));
+                                ids.emplace_back(Shard::internalToExternal(type_id, idx));
                             }
                             if (current > (skip + limit)) {
                                 return ids;
@@ -722,7 +703,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -748,7 +729,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -774,7 +755,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -801,7 +782,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -826,7 +807,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -852,7 +833,7 @@ namespace ragedb {
                             }
                             // If it is true add it if we are over the skip, otherwise ignore it
                             if (current > skip) {
-                                ids.emplace_back(internalToExternal(type_id, internal_id));
+                                ids.emplace_back(Shard::internalToExternal(type_id, internal_id));
                             }
 
                             current++;
@@ -1252,7 +1233,7 @@ namespace ragedb {
         // links are internal links, we need to switch to external links
         for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
             for (roaring::Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
-                allIds.emplace_back(internalToExternal(type_id, *iterator));
+                allIds.emplace_back(Shard::internalToExternal(type_id, *iterator));
             }
         }
 
@@ -1383,11 +1364,11 @@ namespace ragedb {
     }
 
     Node NodeTypes::getNode(uint64_t external_id) {
-        return getNode(externalToTypeId(external_id), externalToInternal(external_id), external_id);
+        return getNode(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), external_id);
     }
 
     Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id) {
-        return Node( internalToExternal(type_id, internal_id), getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
+        return Node( Shard::internalToExternal(type_id, internal_id), getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
     }
 
     Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
@@ -1400,11 +1381,11 @@ namespace ragedb {
                 return properties[type_id].getProperty(property, internal_id);
             }
         }
-        return tombstone_any;
+        return property_type_t();
     }
 
     property_type_t NodeTypes::getNodeProperty(uint64_t external_id, const std::string &property) {
-        return getNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property);
+        return getNodeProperty(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), property);
     }
 
     Properties &NodeTypes::getNodeTypeProperties(uint16_t type_id) {
@@ -1444,7 +1425,7 @@ namespace ragedb {
     }
 
     bool NodeTypes::setNodeProperty(uint64_t external_id, const std::string &property, const property_type_t& value) {
-        return setNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property, value);
+        return setNodeProperty(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), property, value);
     }
 
     bool NodeTypes::setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &json) {
@@ -1505,7 +1486,7 @@ namespace ragedb {
     }
 
     bool NodeTypes::setNodePropertyFromJson(uint64_t external_id, const std::string &property, const std::string &value) {
-        return setNodePropertyFromJson(externalToTypeId(external_id), externalToInternal(external_id), property, value);
+        return setNodePropertyFromJson(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), property, value);
     }
 
     bool NodeTypes::setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
@@ -1666,7 +1647,7 @@ namespace ragedb {
     }
 
     bool NodeTypes::deleteNodeProperty(uint64_t external_id, const std::string &property) {
-        return deleteNodeProperty(externalToTypeId(external_id), externalToInternal(external_id), property);
+        return deleteNodeProperty(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), property);
     }
 
     bool NodeTypes::deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {

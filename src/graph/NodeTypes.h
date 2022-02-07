@@ -42,10 +42,6 @@ namespace ragedb {
         simdjson::dom::parser parser;
         uint shard_id;
 
-        uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id) const;
-        static uint64_t externalToInternal(uint64_t id);
-        static uint16_t externalToTypeId(uint64_t id);
-
     public:
         NodeTypes();
         void Clear();
