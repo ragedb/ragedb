@@ -200,16 +200,16 @@ namespace ragedb {
         uint64_t RelationshipGetEndingNodeId(uint64_t id);
 
         // Relationships
-        std::vector<Relationship> RelationshipsGet(const std::vector<uint64_t>&);
+        std::vector<Relationship> RelationshipsGet(const std::vector<uint64_t>& ids);
         std::vector<Relationship> RelationshipsGet(const std::vector<Link>& links);
-        std::map<uint64_t, std::string> RelationshipsGetType(const std::vector<uint64_t>&);
+        std::map<uint64_t, std::string> RelationshipsGetType(const std::vector<uint64_t>& ids);
         std::map<Link, std::string> RelationshipsGetType(const std::vector<Link>& links);
-        std::map<uint64_t, uint16_t> RelationshipsGetTypeId(const std::vector<uint64_t>&);
+        std::map<uint64_t, uint16_t> RelationshipsGetTypeId(const std::vector<uint64_t>& ids);
         std::map<Link, uint16_t> RelationshipsGetTypeId(const std::vector<Link>& links);
 
         std::map<uint64_t, property_type_t> RelationshipsGetProperty(const std::vector<uint64_t> &ids, const std::string& property);
         std::map<Link, property_type_t> RelationshipsGetProperty(const std::vector<Link>& links, const std::string& property);
-        std::map<uint64_t, std::map<std::string, property_type_t>> RelationshipsGetProperties(const std::vector<uint64_t>&);
+        std::map<uint64_t, std::map<std::string, property_type_t>> RelationshipsGetProperties(const std::vector<uint64_t>& ids);
         std::map<Link, std::map<std::string, property_type_t>> RelationshipsGetProperties(const std::vector<Link>& links);
 
         // Relationship Property
@@ -489,14 +489,14 @@ namespace ragedb {
         // Relationships
         seastar::future<std::vector<Relationship>> RelationshipsGetPeered(const std::vector<uint64_t> &ids);
         seastar::future<std::vector<Relationship>> RelationshipsGetPeered(const std::vector<Link> &links);
-        seastar::future<std::map<uint64_t, std::string>> RelationshipsGetTypePeered(const std::vector<uint64_t>&);
+        seastar::future<std::map<uint64_t, std::string>> RelationshipsGetTypePeered(const std::vector<uint64_t>& ids);
         seastar::future<std::map<Link, std::string>> RelationshipsGetTypePeered(const std::vector<Link>& links);
-        seastar::future<std::map<uint64_t, uint16_t>> RelationshipsGetTypeIdPeered(const std::vector<uint64_t>&);
+        seastar::future<std::map<uint64_t, uint16_t>> RelationshipsGetTypeIdPeered(const std::vector<uint64_t>& ids);
         seastar::future<std::map<Link, uint16_t>> RelationshipsGetTypeIdPeered(const std::vector<Link>& links);
 
         seastar::future<std::map<uint64_t, property_type_t>> RelationshipsGetPropertyPeered(const std::vector<uint64_t> &ids, const std::string& property);
         seastar::future<std::map<Link, property_type_t>> RelationshipsGetPropertyPeered(const std::vector<Link>& links, const std::string& property);
-        seastar::future<std::map<uint64_t, std::map<std::string, property_type_t>>> RelationshipsGetPropertiesPeered(const std::vector<uint64_t>&);
+        seastar::future<std::map<uint64_t, std::map<std::string, property_type_t>>> RelationshipsGetPropertiesPeered(const std::vector<uint64_t>& ids);
         seastar::future<std::map<Link, std::map<std::string, property_type_t>>> RelationshipsGetPropertiesPeered(const std::vector<Link>& links);
 
         // Relationship Properties
@@ -744,6 +744,7 @@ namespace ragedb {
          *              2. Return values in ascending order (they come back this way already due to std::map being ordered).
          *              3. Convert number to String (yuck).
          * Since these will most likely be called from roaring bitmaps which will be in order anyway, I'm going with number 2 for now.
+         * Same deal with relationships
          */
         sol::as_table_t<std::vector<Node>> NodesGetViaLua(const std::vector<uint64_t>& ids);
         sol::as_table_t<std::vector<Node>> NodesGetByLinksViaLua(const std::vector<Link>& links);
@@ -780,7 +781,7 @@ namespace ragedb {
         bool NodePropertiesDeleteViaLua(const std::string& type, const std::string& key);
         bool NodePropertiesDeleteByIdViaLua(uint64_t id);
 
-        // Relationships
+        // Relationship
         uint64_t RelationshipAddEmptyViaLua(const std::string& rel_type, const std::string& type1, const std::string& key1,
                                             const std::string& type2, const std::string& key2);
         uint64_t RelationshipAddEmptyByTypeIdByIdsViaLua(uint16_t rel_type_id, uint64_t id1, uint64_t id2);
@@ -789,13 +790,24 @@ namespace ragedb {
                                        const std::string& type2, const std::string& key2, const std::string& properties);
         uint64_t RelationshipAddByTypeIdByIdsViaLua(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties);
         uint64_t RelationshipAddByIdsViaLua(const std::string& rel_type, uint64_t id1, uint64_t id2, const std::string& properties);
-        sol::as_table_t<std::vector<Relationship>> RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
         Relationship RelationshipGetViaLua(uint64_t id);
         bool RelationshipRemoveViaLua(uint64_t id);
         std::string RelationshipGetTypeViaLua(uint64_t id);
         uint16_t RelationshipGetTypeIdViaLua(uint64_t id);
         uint64_t RelationshipGetStartingNodeIdViaLua(uint64_t id);
         uint64_t RelationshipGetEndingNodeIdViaLua(uint64_t id);
+
+        // Relationships
+        sol::as_table_t<std::vector<Relationship>> RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
+        sol::as_table_t<std::vector<Relationship>> RelationshipsGetByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<std::string>> RelationshipsGetTypeViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::map<Link, std::string>> RelationshipsGetTypeByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<uint16_t>> RelationshipsGetTypeIdViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::map<Link, uint16_t>> RelationshipsGetTypeIdByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property);
+        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property);
+        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertiesViaLua(const std::vector<uint64_t>& ids);
+        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertiesByLinksViaLua(const std::vector<Link>& links);
 
         // Relationship Properties
         sol::object RelationshipPropertyGetViaLua(uint64_t id, const std::string& property);
@@ -935,9 +947,12 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> FindRelationshipIdsViaLua(const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<Relationship>> FindRelationshipsViaLua(const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
 
+        std::map<uint16_t, std::vector<uint64_t>> PartitionIdsByShardId(const std::vector<uint64_t> &ids) const;
+        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByShardId(const std::vector<Link> &links) const;
+        std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinksByNodeShardId(const std::vector<Link> &links) const;
-        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByNodeShardId(const std::vector<uint64_t> &ids) const;
-        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByNodeShardId(const std::vector<Link> &links) const;
+        std::map<uint16_t, std::vector<Link>> PartitionLinksByRelationshipShardId(const std::vector<Link> &links) const;
+
     };
 }
 

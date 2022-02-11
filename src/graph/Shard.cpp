@@ -204,7 +204,7 @@ namespace ragedb {
         lua.set_function("NodePropertiesDelete", &Shard::NodePropertiesDeleteViaLua, this);
         lua.set_function("NodePropertiesDeleteById", &Shard::NodePropertiesDeleteByIdViaLua, this);
 
-        // Relationships
+        // Relationship
         lua.set_function("RelationshipAddEmpty", &Shard::RelationshipAddEmptyViaLua, this);
         lua.set_function("RelationshipAddEmptyByTypeIdByIds", &Shard::RelationshipAddEmptyByTypeIdByIdsViaLua, this);
         lua.set_function("RelationshipAddEmptyByIds", &Shard::RelationshipAddEmptyByIdsViaLua, this);
@@ -212,12 +212,23 @@ namespace ragedb {
         lua.set_function("RelationshipAddByTypeIdByIds", &Shard::RelationshipAddByTypeIdByIdsViaLua, this);
         lua.set_function("RelationshipAddByIds", &Shard::RelationshipAddByIdsViaLua, this);
         lua.set_function("RelationshipGet", &Shard::RelationshipGetViaLua, this);
-        lua.set_function("RelationshipsGet", &Shard::RelationshipsGetViaLua, this);
         lua.set_function("RelationshipRemove", &Shard::RelationshipRemoveViaLua, this);
         lua.set_function("RelationshipGetType", &Shard::RelationshipGetTypeViaLua, this);
         lua.set_function("RelationshipGetTypeId", &Shard::RelationshipGetTypeIdViaLua, this);
         lua.set_function("RelationshipGetStartingNodeId", &Shard::RelationshipGetStartingNodeIdViaLua, this);
         lua.set_function("RelationshipGetEndingNodeId", &Shard::RelationshipGetEndingNodeIdViaLua, this);
+
+        // Relationships
+        lua.set_function("RelationshipsGet", &Shard::RelationshipsGetViaLua, this);
+        lua.set_function("RelationshipsGetByLinks", &Shard::RelationshipsGetByLinksViaLua, this);
+        lua.set_function("RelationshipsGetType", &Shard::RelationshipsGetTypeViaLua, this);
+        lua.set_function("RelationshipsGetTypeByLinks", &Shard::RelationshipsGetTypeByLinksViaLua, this);
+        lua.set_function("RelationshipsGetTypeId", &Shard::RelationshipsGetTypeIdViaLua, this);
+        lua.set_function("RelationshipsGetTypeIdByLinks", &Shard::RelationshipsGetTypeIdByLinksViaLua, this);
+        lua.set_function("RelationshipsGetProperty", &Shard::RelationshipsGetPropertyViaLua, this);
+        lua.set_function("RelationshipsGetPropertyByLinks", &Shard::RelationshipsGetPropertyByLinksViaLua, this);
+        lua.set_function("RelationshipsGetProperties", &Shard::RelationshipsGetPropertiesViaLua, this);
+        lua.set_function("RelationshipsGetPropertiesByLinks", &Shard::RelationshipsGetPropertiesByLinksViaLua, this);
 
         // Relationship Properties
         lua.set_function("RelationshipPropertyGet", &Shard::RelationshipPropertyGetViaLua, this);

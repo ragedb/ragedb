@@ -18,24 +18,24 @@
 
 namespace ragedb {
 
-    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByNodeShardId(const std::vector<uint64_t> &ids) const {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionIdsByShardId(const std::vector<uint64_t> &ids) const {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_ids;
       for (int i = 0; i < cpus; i++) {
-        sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
+        sharded_ids.insert({i, std::vector<uint64_t>() });
       }
       for (auto id : ids) {
-        sharded_nodes_ids[CalculateShardId(id)].emplace_back(id);
+        sharded_ids[CalculateShardId(id)].emplace_back(id);
       }
 
       for (int i = 0; i < cpus; i++) {
-        if (sharded_nodes_ids.at(i).empty()) {
-          sharded_nodes_ids.erase(i);
+        if (sharded_ids.at(i).empty()) {
+          sharded_ids.erase(i);
         }
       }
-      return sharded_nodes_ids;
+      return sharded_ids;
     }
 
-    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByNodeShardId(const std::vector<Link>& links) const {
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByShardId(const std::vector<Link>& links) const {
       std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
       for (int i = 0; i < cpus; i++) {
         sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
@@ -71,4 +71,40 @@ namespace ragedb {
       return sharded_links;
     }
 
+
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionRelationshipIdsByShardId(const std::vector<Link>& links) const {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_ids;
+      for (int i = 0; i < cpus; i++) {
+        sharded_ids.insert({i, std::vector<uint64_t>() });
+      }
+      for (auto link : links) {
+        sharded_ids[CalculateShardId(link.rel_id)].emplace_back(link.rel_id);
+      }
+
+      for (int i = 0; i < cpus; i++) {
+        if (sharded_ids.at(i).empty()) {
+          sharded_ids.erase(i);
+        }
+      }
+      return sharded_ids;
+    }
+
+    std::map<uint16_t, std::vector<Link>> Shard::PartitionLinksByRelationshipShardId(const std::vector<Link> &links) const {
+      std::map<uint16_t, std::vector<Link>> sharded_links;
+      for (int i = 0; i < cpus; i++) {
+        sharded_links.insert({i, std::vector<Link>() });
+      }
+
+      for (Link link : links) {
+        uint16_t rel_shard_id = CalculateShardId(link.rel_id);
+        sharded_links.at(rel_shard_id).push_back(link);
+      }
+
+      for (int i = 0; i < cpus; i++) {
+        if (sharded_links.at(i).empty()) {
+          sharded_links.erase(i);
+        }
+      }
+      return sharded_links;
+    }
 }

@@ -19,7 +19,7 @@
 namespace ragedb {
 
     seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<uint64_t> &ids) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<std::vector<Node>>> futures;
         for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -41,7 +41,7 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<Link>& links) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(links);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByShardId(links);
 
       std::vector<seastar::future<std::vector<Node>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -63,7 +63,7 @@ namespace ragedb {
     }
 
     seastar::future<std::map<uint64_t, std::string>> Shard::NodesGetKeyPeered(const std::vector<uint64_t> &ids) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<std::map<uint64_t, std::string>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -107,7 +107,7 @@ namespace ragedb {
     }
 
     seastar::future<std::map<uint64_t, std::string>> Shard::NodesGetTypePeered(const std::vector<uint64_t> &ids) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<std::map<uint64_t, std::string>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -151,7 +151,7 @@ namespace ragedb {
     }
 
     seastar::future<std::map<uint64_t, uint16_t>> Shard::NodesGetTypeIdPeered(const std::vector<uint64_t> &ids) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<std::map<uint64_t, uint16_t>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -195,7 +195,7 @@ namespace ragedb {
     }
 
     seastar::future<std::map<uint64_t, property_type_t>> Shard::NodesGetPropertyPeered(const std::vector<uint64_t> &ids, const std::string& property) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<std::map<uint64_t, property_type_t>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -239,7 +239,7 @@ namespace ragedb {
     }
 
     seastar::future<std::map<uint64_t, std::map<std::string, property_type_t>>> Shard::NodesGetPropertiesPeered(const std::vector<uint64_t> &ids) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionNodeIdsByNodeShardId(ids);
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<std::map<uint64_t, std::map<std::string, property_type_t>>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
