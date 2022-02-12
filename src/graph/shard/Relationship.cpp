@@ -255,49 +255,49 @@ namespace ragedb {
         return 0;
     }
 
-    property_type_t Shard::RelationshipPropertyGet(uint64_t id, const std::string& property) {
+    property_type_t Shard::RelationshipGetProperty(uint64_t id, const std::string& property) {
         if (ValidRelationshipId(id)) {
             return relationship_types.getRelationshipProperty(id, property);
         }
         return {};
     }
 
-    bool Shard::RelationshipPropertySet(uint64_t id, const std::string& property, const property_type_t& value) {
+    bool Shard::RelationshipSetProperty(uint64_t id, const std::string& property, const property_type_t& value) {
         if (ValidRelationshipId(id)) {
             return relationship_types.setRelationshipProperty(id, property, value);
         }
         return false;
     }
 
-    bool Shard::RelationshipPropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {
+    bool Shard::RelationshipSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value) {
         if (ValidRelationshipId(id)) {
             return relationship_types.setRelationshipPropertyFromJson(id, property, value);
         }
         return false;
     }
 
-    bool Shard::RelationshipPropertyDelete(uint64_t id, const std::string& property) {
+    bool Shard::RelationshipDeleteProperty(uint64_t id, const std::string& property) {
         if (ValidRelationshipId(id)) {
             return relationship_types.deleteRelationshipProperty(id, property);
         }
         return false;
     }
 
-    std::map<std::string, property_type_t> Shard::RelationshipPropertiesGet(uint64_t id) {
+    std::map<std::string, property_type_t> Shard::RelationshipGetProperties(uint64_t id) {
         if (ValidRelationshipId(id)) {
             return relationship_types.getRelationshipProperties(externalToTypeId(id), externalToInternal(id));
         }
         return {};
     }
 
-    bool Shard::RelationshipPropertiesSetFromJson(uint64_t id, const std::string& value) {
+    bool Shard::RelationshipSetPropertiesFromJson(uint64_t id, const std::string& value) {
         if (ValidRelationshipId(id)) {
             return relationship_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
         }
         return false;
     }
 
-    bool Shard::RelationshipPropertiesResetFromJson(uint64_t id, const std::string& value) {
+    bool Shard::RelationshipResetPropertiesFromJson(uint64_t id, const std::string& value) {
         if (ValidRelationshipId(id)) {
             relationship_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
             return relationship_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
@@ -305,7 +305,7 @@ namespace ragedb {
         return false;
     }
 
-    bool Shard::RelationshipPropertiesDelete(uint64_t id) {
+    bool Shard::RelationshipDeleteProperties(uint64_t id) {
         if (ValidRelationshipId(id)) {
             return relationship_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
         }

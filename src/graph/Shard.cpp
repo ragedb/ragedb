@@ -189,20 +189,20 @@ namespace ragedb {
         lua.set_function("NodesGetPropertiesByLinks", &Shard::NodesGetPropertiesByLinksViaLua, this);
 
         // Node Properties
-        lua.set_function("NodePropertyGet", &Shard::NodePropertyGetViaLua, this);
-        lua.set_function("NodePropertyGetById", &Shard::NodePropertyGetByIdViaLua, this);
-        lua.set_function("NodePropertiesGet", &Shard::NodePropertiesGetViaLua, this);
-        lua.set_function("NodePropertiesGetById", &Shard::NodePropertiesGetByIdViaLua, this);
-        lua.set_function("NodePropertySet", &Shard::NodePropertySetViaLua, this);
-        lua.set_function("NodePropertySetById", &Shard::NodePropertySetByIdViaLua, this);
-        lua.set_function("NodePropertiesSetFromJson", &Shard::NodePropertiesSetFromJsonViaLua, this);
-        lua.set_function("NodePropertiesSetFromJsonById", &Shard::NodePropertiesSetFromJsonByIdViaLua, this);
-        lua.set_function("NodePropertiesResetFromJson", &Shard::NodePropertiesResetFromJsonViaLua, this);
-        lua.set_function("NodePropertiesResetFromJsonById", &Shard::NodePropertiesResetFromJsonByIdViaLua, this);
-        lua.set_function("NodePropertyDelete", &Shard::NodePropertyDeleteViaLua, this);
-        lua.set_function("NodePropertyDeleteById", &Shard::NodePropertyDeleteByIdViaLua, this);
-        lua.set_function("NodePropertiesDelete", &Shard::NodePropertiesDeleteViaLua, this);
-        lua.set_function("NodePropertiesDeleteById", &Shard::NodePropertiesDeleteByIdViaLua, this);
+        lua.set_function("NodeGetProperty", &Shard::NodeGetPropertyViaLua, this);
+        lua.set_function("NodePropertyGetById", &Shard::NodeGetPropertyByIdViaLua, this);
+        lua.set_function("NodeGetProperties", &Shard::NodeGetPropertiesViaLua, this);
+        lua.set_function("NodePropertiesGetById", &Shard::NodeGetPropertiesByIdViaLua, this);
+        lua.set_function("NodeSetProperty", &Shard::NodeSetPropertyViaLua, this);
+        lua.set_function("NodePropertySetById", &Shard::NodeSetPropertyByIdViaLua, this);
+        lua.set_function("NodeSetPropertiesFromJson", &Shard::NodeSetPropertiesFromJsonViaLua, this);
+        lua.set_function("NodePropertiesSetFromJsonById", &Shard::NodeSetPropertiesFromJsonByIdViaLua, this);
+        lua.set_function("NodeResetPropertiesFromJson", &Shard::NodeResetPropertiesFromJsonViaLua, this);
+        lua.set_function("NodePropertiesResetFromJsonById", &Shard::NodeResetPropertiesFromJsonByIdViaLua, this);
+        lua.set_function("NodeDeleteProperty", &Shard::NodeDeletePropertyViaLua, this);
+        lua.set_function("NodePropertyDeleteById", &Shard::NodeDeletePropertyByIdViaLua, this);
+        lua.set_function("NodeDeleteProperties", &Shard::NodeDeletePropertiesViaLua, this);
+        lua.set_function("NodePropertiesDeleteById", &Shard::NodeDeletePropertiesByIdViaLua, this);
 
         // Relationship
         lua.set_function("RelationshipAddEmpty", &Shard::RelationshipAddEmptyViaLua, this);
@@ -231,14 +231,14 @@ namespace ragedb {
         lua.set_function("RelationshipsGetPropertiesByLinks", &Shard::RelationshipsGetPropertiesByLinksViaLua, this);
 
         // Relationship Properties
-        lua.set_function("RelationshipPropertyGet", &Shard::RelationshipPropertyGetViaLua, this);
-        lua.set_function("RelationshipPropertiesGet", &Shard::RelationshipPropertiesGetViaLua, this);
-        lua.set_function("RelationshipPropertySet", &Shard::RelationshipPropertySetViaLua, this);
-        lua.set_function("RelationshipPropertySetFromJson", &Shard::RelationshipPropertySetFromJsonViaLua, this);
-        lua.set_function("RelationshipPropertyDelete", &Shard::RelationshipPropertyDeleteViaLua, this);
-        lua.set_function("RelationshipPropertiesSetFromJson", &Shard::RelationshipPropertiesSetFromJsonViaLua, this);
-        lua.set_function("RelationshipPropertiesResetFromJson", &Shard::RelationshipPropertiesResetFromJsonViaLua, this);
-        lua.set_function("RelationshipPropertiesDelete", &Shard::RelationshipPropertiesDeleteViaLua, this);
+        lua.set_function("RelationshipGetProperty", &Shard::RelationshipGetPropertyViaLua, this);
+        lua.set_function("RelationshipGetProperties", &Shard::RelationshipGetPropertiesViaLua, this);
+        lua.set_function("RelationshipSetProperty", &Shard::RelationshipSetPropertyViaLua, this);
+        lua.set_function("RelationshipSetPropertyFromJson", &Shard::RelationshipSetPropertyFromJsonViaLua, this);
+        lua.set_function("RelationshipDeleteProperty", &Shard::RelationshipDeletePropertyViaLua, this);
+        lua.set_function("RelationshipSetPropertiesFromJson", &Shard::RelationshipSetPropertiesFromJsonViaLua, this);
+        lua.set_function("RelationshipResetPropertiesFromJson", &Shard::RelationshipResetPropertiesFromJsonViaLua, this);
+        lua.set_function("RelationshipDeleteProperties", &Shard::RelationshipDeletePropertiesViaLua, this);
 
         // Node Degree
         lua.set_function("NodeGetDegree", &Shard::NodeGetDegreeViaLua, this);

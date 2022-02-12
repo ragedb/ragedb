@@ -529,67 +529,67 @@ namespace ragedb {
         });
     }
 
-    seastar::future<property_type_t> Shard::RelationshipPropertyGetPeered(uint64_t id, const std::string &property) {
+    seastar::future<property_type_t> Shard::RelationshipGetPropertyPeered(uint64_t id, const std::string &property) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, property](Shard &local_shard) {
-            return local_shard.RelationshipPropertyGet(id, property);
+            return local_shard.RelationshipGetProperty(id, property);
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertySetPeered(uint64_t id, const std::string& property, const property_type_t& value) {
+    seastar::future<bool> Shard::RelationshipSetPropertyPeered(uint64_t id, const std::string& property, const property_type_t& value) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, property, value](Shard &local_shard) {
-            return local_shard.RelationshipPropertySet(id, property, value);
+            return local_shard.RelationshipSetProperty(id, property, value);
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertySetFromJsonPeered(uint64_t id, const std::string &property, const std::string &value) {
+    seastar::future<bool> Shard::RelationshipSetPropertyFromJsonPeered(uint64_t id, const std::string &property, const std::string &value) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, property, value](Shard &local_shard) {
-            return local_shard.RelationshipPropertySetFromJson(id, property, value);
+            return local_shard.RelationshipSetPropertyFromJson(id, property, value);
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertyDeletePeered(uint64_t id, const std::string &property) {
+    seastar::future<bool> Shard::RelationshipDeletePropertyPeered(uint64_t id, const std::string &property) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, property](Shard &local_shard) {
-            return local_shard.RelationshipPropertyDelete(id, property);
+            return local_shard.RelationshipDeleteProperty(id, property);
         });
     }
 
-    seastar::future<std::map<std::string, property_type_t>> Shard::RelationshipPropertiesGetPeered(uint64_t id) {
+    seastar::future<std::map<std::string, property_type_t>> Shard::RelationshipGetPropertiesPeered(uint64_t id) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id](Shard &local_shard) {
-            return local_shard.RelationshipPropertiesGet(id);
+            return local_shard.RelationshipGetProperties(id);
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertiesSetFromJsonPeered(uint64_t id, const std::string &value) {
+    seastar::future<bool> Shard::RelationshipSetPropertiesFromJsonPeered(uint64_t id, const std::string &value) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, value](Shard &local_shard) {
-            return local_shard.RelationshipPropertiesSetFromJson(id, value);
+            return local_shard.RelationshipSetPropertiesFromJson(id, value);
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertiesResetFromJsonPeered(uint64_t id, const std::string &value) {
+    seastar::future<bool> Shard::RelationshipResetPropertiesFromJsonPeered(uint64_t id, const std::string &value) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id, value](Shard &local_shard) {
-            return local_shard.RelationshipPropertiesResetFromJson(id, value);
+            return local_shard.RelationshipResetPropertiesFromJson(id, value);
         });
     }
 
-    seastar::future<bool> Shard::RelationshipPropertiesDeletePeered(uint64_t id) {
+    seastar::future<bool> Shard::RelationshipDeletePropertiesPeered(uint64_t id) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id](Shard &local_shard) {
-            return local_shard.RelationshipPropertiesDelete(id);
+            return local_shard.RelationshipDeleteProperties(id);
         });
     }
 

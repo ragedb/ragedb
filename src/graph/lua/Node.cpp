@@ -58,110 +58,110 @@ namespace ragedb {
         return NodeGetKeyPeered(id).get0();
     }
 
-    sol::object Shard::NodePropertiesGetViaLua(const std::string& type, const std::string& key) {
+    sol::object Shard::NodeGetPropertiesViaLua(const std::string& type, const std::string& key) {
         Node node = NodeGetPeered(type, key).get0();
         return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
     }
 
-    sol::object Shard::NodePropertiesGetByIdViaLua(uint64_t id) {
+    sol::object Shard::NodeGetPropertiesByIdViaLua(uint64_t id) {
         Node node = NodeGetPeered(id).get0();
         return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
     }
 
-    sol::object Shard::NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property) {
-        property_type_t value = NodePropertyGetPeered(type, key, property).get0();
+    sol::object Shard::NodeGetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property) {
+        property_type_t value = NodeGetPropertyPeered(type, key, property).get0();
         return PropertyToSolObject(value);
     }
 
-    sol::object Shard::NodePropertyGetByIdViaLua(uint64_t id, const std::string& property) {
-        property_type_t value = NodePropertyGetPeered(id, property).get0();
+    sol::object Shard::NodeGetPropertyByIdViaLua(uint64_t id, const std::string& property) {
+        property_type_t value = NodeGetPropertyPeered(id, property).get0();
         return PropertyToSolObject(value);
     }
 
-    bool Shard::NodePropertySetViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value) {
+    bool Shard::NodeSetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value) {
         if (value == sol::lua_nil) {
             return false;
         }
 
         if (value.is<std::string>()) {
-            return NodePropertySetPeered(type, key, property, value.as<std::string>()).get0();
+            return NodeSetPropertyPeered(type, key, property, value.as<std::string>()).get0();
         }
         if (value.is<int64_t>()) {
-            return NodePropertySetPeered(type, key, property, value.as<int64_t>()).get0();
+            return NodeSetPropertyPeered(type, key, property, value.as<int64_t>()).get0();
         }
         if (value.is<double>()) {
-            return NodePropertySetPeered(type, key, property, value.as<double>()).get0();
+            return NodeSetPropertyPeered(type, key, property, value.as<double>()).get0();
         }
         if (value.is<bool>()) {
-            return NodePropertySetPeered(type, key, property, value.as<bool>()).get0();
+            return NodeSetPropertyPeered(type, key, property, value.as<bool>()).get0();
         }
         if (value.is<std::vector<std::string>>()) {
-          return NodePropertySetPeered(type, key, property, value.as<std::vector<std::string>>()).get0();
+          return NodeSetPropertyPeered(type, key, property, value.as<std::vector<std::string>>()).get0();
         }
         if (value.is<std::vector<double>>()) {
-          return NodePropertySetPeered(type, key, property, value.as<std::vector<double>>()).get0();
+          return NodeSetPropertyPeered(type, key, property, value.as<std::vector<double>>()).get0();
         }
         if (value.is<std::vector<int64_t>>()) {
-          return NodePropertySetPeered(type, key, property, value.as<std::vector<int64_t>>()).get0();
+          return NodeSetPropertyPeered(type, key, property, value.as<std::vector<int64_t>>()).get0();
         }
         if (value.is<std::vector<bool>>()) {
-          return NodePropertySetPeered(type, key, property, value.as<std::vector<bool>>()).get0();
+          return NodeSetPropertyPeered(type, key, property, value.as<std::vector<bool>>()).get0();
         }
 
         return false;
     }
 
-    bool Shard::NodePropertySetByIdViaLua(uint64_t id, const std::string& property, const sol::object& value) {
+    bool Shard::NodeSetPropertyByIdViaLua(uint64_t id, const std::string& property, const sol::object& value) {
         if (value == sol::lua_nil) {
             return false;
         }
 
         if (value.is<std::string>()) {
-            return NodePropertySetPeered(id, property, value.as<std::string>()).get0();
+            return NodeSetPropertyPeered(id, property, value.as<std::string>()).get0();
         }
         if (value.is<int64_t>()) {
-            return NodePropertySetPeered(id, property, value.as<int64_t>()).get0();
+            return NodeSetPropertyPeered(id, property, value.as<int64_t>()).get0();
         }
         if (value.is<double>()) {
-            return NodePropertySetPeered(id, property, value.as<double>()).get0();
+            return NodeSetPropertyPeered(id, property, value.as<double>()).get0();
         }
         if (value.is<bool>()) {
-            return NodePropertySetPeered(id, property, value.as<bool>()).get0();
+            return NodeSetPropertyPeered(id, property, value.as<bool>()).get0();
         }
 
         return false;
     }
 
-    bool Shard::NodePropertiesSetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value) {
-        return NodePropertiesSetFromJsonPeered(type, key, value).get0();
+    bool Shard::NodeSetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value) {
+        return NodeSetPropertiesFromJsonPeered(type, key, value).get0();
     }
 
-    bool Shard::NodePropertiesSetFromJsonByIdViaLua(uint64_t id, const std::string& value) {
-        return NodePropertiesSetFromJsonPeered(id, value).get0();
+    bool Shard::NodeSetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value) {
+        return NodeSetPropertiesFromJsonPeered(id, value).get0();
     }
 
-    bool Shard::NodePropertiesResetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value) {
-        return NodePropertiesResetFromJsonPeered(type, key, value).get0();
+    bool Shard::NodeResetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value) {
+        return NodeResetPropertiesFromJsonPeered(type, key, value).get0();
     }
 
-    bool Shard::NodePropertiesResetFromJsonByIdViaLua(uint64_t id, const std::string& value) {
-        return NodePropertiesResetFromJsonPeered(id, value).get0();
+    bool Shard::NodeResetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value) {
+        return NodeResetPropertiesFromJsonPeered(id, value).get0();
     }
 
-    bool Shard::NodePropertyDeleteViaLua(const std::string& type, const std::string& key, const std::string& property) {
-        return NodePropertyDeletePeered(type, key, property).get0();
+    bool Shard::NodeDeletePropertyViaLua(const std::string& type, const std::string& key, const std::string& property) {
+        return NodeDeletePropertyPeered(type, key, property).get0();
     }
 
-    bool Shard::NodePropertyDeleteByIdViaLua(uint64_t id, const std::string& property) {
-        return NodePropertyDeletePeered(id, property).get0();
+    bool Shard::NodeDeletePropertyByIdViaLua(uint64_t id, const std::string& property) {
+        return NodeDeletePropertyPeered(id, property).get0();
     }
 
-    bool Shard::NodePropertiesDeleteViaLua(const std::string& type, const std::string& key) {
-        return NodePropertiesDeletePeered(type, key).get0();
+    bool Shard::NodeDeletePropertiesViaLua(const std::string& type, const std::string& key) {
+        return NodeDeletePropertiesPeered(type, key).get0();
     }
 
-    bool Shard::NodePropertiesDeleteByIdViaLua(uint64_t id) {
-        return NodePropertiesDeletePeered(id).get0();
+    bool Shard::NodeDeletePropertiesByIdViaLua(uint64_t id) {
+        return NodeDeletePropertiesPeered(id).get0();
     }
 
 }

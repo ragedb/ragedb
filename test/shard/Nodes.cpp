@@ -75,8 +75,8 @@ SCENARIO("Shard can handle Nodes", "[node]") {
                 REQUIRE(addedNode.getTypeId() > 0);
                 REQUIRE("Node" == shard.NodeGetType(added));
                 REQUIRE("withProperties" == shard.NodeGetKey(added));
-                REQUIRE("max de marzi" == get<std::string>(shard.NodePropertyGet(added, "name")));
-                REQUIRE("maxdemarzi@gmail.com" == get<std::string>(shard.NodePropertyGet(added, "email")));
+                REQUIRE("max de marzi" == get<std::string>(shard.NodeGetProperty(added, "name")));
+                REQUIRE("maxdemarzi@gmail.com" == get<std::string>(shard.NodeGetProperty(added, "email")));
             }
         }
 
@@ -94,8 +94,8 @@ SCENARIO("Shard can handle Nodes", "[node]") {
                 REQUIRE(addedNode.getTypeId() > 0);
                 REQUIRE("Node" == shard.NodeGetType(added));
                 REQUIRE("withProperties" == shard.NodeGetKey(added));
-                REQUIRE("max de marzi" == get<std::string>(shard.NodePropertyGet(added, "name")));
-                REQUIRE("maxdemarzi@gmail.com" == get<std::string>(shard.NodePropertyGet(added, "email")));
+                REQUIRE("max de marzi" == get<std::string>(shard.NodeGetProperty(added, "name")));
+                REQUIRE("maxdemarzi@gmail.com" == get<std::string>(shard.NodeGetProperty(added, "email")));
             }
         }
 

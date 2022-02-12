@@ -348,7 +348,7 @@ Within the script the user can access to graph functions. For example:
     a = NodeGetId("Node","Max")
     b = NodeTypesGetCount()
     c = NodeTypesGetCountByType("Node")
-    d = NodePropertyGet("Node", "Max", "name")
+    d = NodeGetProperty("Node", "Max", "name")
     e = NodePropertyGetById(a, "name")
     a, b, c, d, e
 

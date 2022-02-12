@@ -68,65 +68,65 @@ namespace ragedb {
         return RelationshipGetEndingNodeIdPeered(id).get0();
     }
 
-    sol::object Shard::RelationshipPropertiesGetViaLua(uint64_t id) {
+    sol::object Shard::RelationshipGetPropertiesViaLua(uint64_t id) {
         Relationship relationship = RelationshipGetPeered(id).get0();
         return sol::make_object(lua.lua_state(), relationship.getPropertiesLua(lua.lua_state()));
     }
 
-    sol::object Shard::RelationshipPropertyGetViaLua(uint64_t id, const std::string& property) {
-      property_type_t value = RelationshipPropertyGetPeered(id, property).get0();
+    sol::object Shard::RelationshipGetPropertyViaLua(uint64_t id, const std::string& property) {
+      property_type_t value = RelationshipGetPropertyPeered(id, property).get0();
       return PropertyToSolObject(value);
     }
 
-    bool Shard::RelationshipPropertySetViaLua(uint64_t id, const std::string& property, const sol::object& value) {
+    bool Shard::RelationshipSetPropertyViaLua(uint64_t id, const std::string& property, const sol::object& value) {
         if (value == sol::lua_nil) {
             return false;
         }
 
         if (value.is<std::string>()) {
-            return RelationshipPropertySetPeered(id, property, value.as<std::string>()).get0();
+            return RelationshipSetPropertyPeered(id, property, value.as<std::string>()).get0();
         }
         if (value.is<int64_t>()) {
-            return RelationshipPropertySetPeered(id, property, value.as<int64_t>()).get0();
+            return RelationshipSetPropertyPeered(id, property, value.as<int64_t>()).get0();
         }
         if (value.is<double>()) {
-            return RelationshipPropertySetPeered(id, property, value.as<double>()).get0();
+            return RelationshipSetPropertyPeered(id, property, value.as<double>()).get0();
         }
         if (value.is<bool>()) {
-            return RelationshipPropertySetPeered(id, property, value.as<bool>()).get0();
+            return RelationshipSetPropertyPeered(id, property, value.as<bool>()).get0();
         }
         if (value.is<std::vector<std::string>>()) {
-          return RelationshipPropertySetPeered(id, property, value.as<std::vector<std::string>>()).get0();
+          return RelationshipSetPropertyPeered(id, property, value.as<std::vector<std::string>>()).get0();
         }
         if (value.is<std::vector<double>>()) {
-          return RelationshipPropertySetPeered(id, property, value.as<std::vector<double>>()).get0();
+          return RelationshipSetPropertyPeered(id, property, value.as<std::vector<double>>()).get0();
         }
         if (value.is<std::vector<int64_t>>()) {
-          return RelationshipPropertySetPeered(id, property, value.as<std::vector<int64_t>>()).get0();
+          return RelationshipSetPropertyPeered(id, property, value.as<std::vector<int64_t>>()).get0();
         }
         if (value.is<std::vector<bool>>()) {
-          return RelationshipPropertySetPeered(id, property, value.as<std::vector<bool>>()).get0();
+          return RelationshipSetPropertyPeered(id, property, value.as<std::vector<bool>>()).get0();
         }
         return false;
     }
 
-    bool Shard::RelationshipPropertySetFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value) {
-        return RelationshipPropertySetFromJsonPeered(id, property, value).get0();
+    bool Shard::RelationshipSetPropertyFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value) {
+        return RelationshipSetPropertyFromJsonPeered(id, property, value).get0();
     }
 
-    bool Shard::RelationshipPropertyDeleteViaLua(uint64_t id, const std::string& property) {
-        return RelationshipPropertyDeletePeered(id, property).get0();
+    bool Shard::RelationshipDeletePropertyViaLua(uint64_t id, const std::string& property) {
+        return RelationshipDeletePropertyPeered(id, property).get0();
     }
 
-    bool Shard::RelationshipPropertiesSetFromJsonViaLua(uint64_t id, const std::string &value) {
-        return RelationshipPropertiesSetFromJsonPeered(id, value).get0();
+    bool Shard::RelationshipSetPropertiesFromJsonViaLua(uint64_t id, const std::string &value) {
+        return RelationshipSetPropertiesFromJsonPeered(id, value).get0();
     }
 
-    bool Shard::RelationshipPropertiesResetFromJsonViaLua(uint64_t id, const std::string &value) {
-        return RelationshipPropertiesResetFromJsonPeered(id, value).get0();
+    bool Shard::RelationshipResetPropertiesFromJsonViaLua(uint64_t id, const std::string &value) {
+        return RelationshipResetPropertiesFromJsonPeered(id, value).get0();
     }
 
-    bool Shard::RelationshipPropertiesDeleteViaLua(uint64_t id) {
-        return RelationshipPropertiesDeletePeered(id).get0();
+    bool Shard::RelationshipDeletePropertiesViaLua(uint64_t id) {
+        return RelationshipDeletePropertiesPeered(id).get0();
     }
 }

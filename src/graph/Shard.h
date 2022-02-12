@@ -163,24 +163,24 @@ namespace ragedb {
         std::map<Link, std::map<std::string, property_type_t>> NodesGetProperties(const std::vector<Link>& links);
 
         // Node Property
-        property_type_t NodePropertyGet(uint64_t id, const std::string& property);
-        bool NodePropertySet(uint64_t id, const std::string& property, property_type_t value);
-        bool NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value);
-        property_type_t NodePropertyGet(const std::string& type, const std::string& key, const std::string& property);
-        bool NodePropertySet(const std::string& type, const std::string& key, const std::string& property, property_type_t value);
-        bool NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property,const std::string& value);
-        bool NodePropertyDelete(const std::string& type, const std::string& key, const std::string& property);
-        bool NodePropertyDelete(uint64_t id, const std::string& property);
+        property_type_t NodeGetProperty(uint64_t id, const std::string& property);
+        bool NodeSetProperty(uint64_t id, const std::string& property, property_type_t value);
+        bool NodeSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value);
+        property_type_t NodeGetProperty(const std::string& type, const std::string& key, const std::string& property);
+        bool NodeGetProperty(const std::string& type, const std::string& key, const std::string& property, property_type_t value);
+        bool NodeSetPropertyFromJson(const std::string& type, const std::string& key, const std::string& property,const std::string& value);
+        bool NodeDeleteProperty(const std::string& type, const std::string& key, const std::string& property);
+        bool NodeDeleteProperty(uint64_t id, const std::string& property);
 
         // Node Properties
-        std::map<std::string, property_type_t> NodePropertiesGet(const std::string& type, const std::string& key);
-        std::map<std::string, property_type_t> NodePropertiesGet(uint64_t id);
-        bool NodePropertiesSetFromJson(const std::string& type, const std::string& key, const std::string& value);
-        bool NodePropertiesSetFromJson(uint64_t id, const std::string& value);
-        bool NodePropertiesResetFromJson(const std::string& type, const std::string& key, const std::string& value);
-        bool NodePropertiesResetFromJson(uint64_t id, const std::string& value);
-        bool NodePropertiesDelete(const std::string& type, const std::string& key);
-        bool NodePropertiesDelete(uint64_t id);
+        std::map<std::string, property_type_t> NodeGetProperties(const std::string& type, const std::string& key);
+        std::map<std::string, property_type_t> NodeGetProperties(uint64_t id);
+        bool NodeSetPropertiesFromJson(const std::string& type, const std::string& key, const std::string& value);
+        bool NodeSetPropertiesFromJson(uint64_t id, const std::string& value);
+        bool NodeResetPropertiesFromJson(const std::string& type, const std::string& key, const std::string& value);
+        bool NodeResetPropertiesFromJson(uint64_t id, const std::string& value);
+        bool NodeDeleteProperties(const std::string& type, const std::string& key);
+        bool NodeDeleteProperties(uint64_t id);
 
         // Relationship
         uint64_t RelationshipAddEmptySameShard(uint16_t rel_type_id, uint64_t id1, uint64_t id2);
@@ -213,16 +213,16 @@ namespace ragedb {
         std::map<Link, std::map<std::string, property_type_t>> RelationshipsGetProperties(const std::vector<Link>& links);
 
         // Relationship Property
-        property_type_t RelationshipPropertyGet(uint64_t id, const std::string& property);
-        bool RelationshipPropertySet(uint64_t id, const std::string& property, const property_type_t& value);
-        bool RelationshipPropertySetFromJson(uint64_t id, const std::string& property, const std::string& value);
-        bool RelationshipPropertyDelete(uint64_t id, const std::string& property);
+        property_type_t RelationshipGetProperty(uint64_t id, const std::string& property);
+        bool RelationshipSetProperty(uint64_t id, const std::string& property, const property_type_t& value);
+        bool RelationshipSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value);
+        bool RelationshipDeleteProperty(uint64_t id, const std::string& property);
 
         // Relationship Properties
-        std::map<std::string, property_type_t> RelationshipPropertiesGet(uint64_t id);
-        bool RelationshipPropertiesSetFromJson(uint64_t id, const std::string& value);
-        bool RelationshipPropertiesResetFromJson(uint64_t id, const std::string& value);
-        bool RelationshipPropertiesDelete(uint64_t id);
+        std::map<std::string, property_type_t> RelationshipGetProperties(uint64_t id);
+        bool RelationshipSetPropertiesFromJson(uint64_t id, const std::string& value);
+        bool RelationshipResetPropertiesFromJson(uint64_t id, const std::string& value);
+        bool RelationshipDeleteProperties(uint64_t id);
 
         // Node Degree
         uint64_t NodeGetDegree(const std::string& type, const std::string& key);
@@ -451,23 +451,23 @@ namespace ragedb {
         seastar::future<bool> RelationshipPropertyTypeDeletePeered(const std::string& type, const std::string& key);
 
         // Node Properties
-        seastar::future<property_type_t> NodePropertyGetPeered(const std::string& type, const std::string& key, const std::string& property);
-        seastar::future<property_type_t> NodePropertyGetPeered(uint64_t id, const std::string& property);
-        seastar::future<bool> NodePropertySetPeered(const std::string& type, const std::string& key, const std::string& property, const property_type_t& value);
-        seastar::future<bool> NodePropertySetPeered(uint64_t id, const std::string& property, const property_type_t& value);
-        seastar::future<bool> NodePropertySetFromJsonPeered(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
-        seastar::future<bool> NodePropertySetFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
-        seastar::future<bool> NodePropertyDeletePeered(const std::string& type, const std::string& key, const std::string& property);
-        seastar::future<bool> NodePropertyDeletePeered(uint64_t id, const std::string& property);
+        seastar::future<property_type_t> NodeGetPropertyPeered(const std::string& type, const std::string& key, const std::string& property);
+        seastar::future<property_type_t> NodeGetPropertyPeered(uint64_t id, const std::string& property);
+        seastar::future<bool> NodeSetPropertyPeered(const std::string& type, const std::string& key, const std::string& property, const property_type_t& value);
+        seastar::future<bool> NodeSetPropertyPeered(uint64_t id, const std::string& property, const property_type_t& value);
+        seastar::future<bool> NodeSetPropertyFromJsonPeered(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
+        seastar::future<bool> NodeSetPropertyFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
+        seastar::future<bool> NodeDeletePropertyPeered(const std::string& type, const std::string& key, const std::string& property);
+        seastar::future<bool> NodeDeletePropertyPeered(uint64_t id, const std::string& property);
 
-        seastar::future<std::map<std::string, property_type_t>> NodePropertiesGetPeered(const std::string& type, const std::string& key);
-        seastar::future<std::map<std::string, property_type_t>> NodePropertiesGetPeered(uint64_t id);
-        seastar::future<bool> NodePropertiesSetFromJsonPeered(const std::string& type, const std::string& key, const std::string& value);
-        seastar::future<bool> NodePropertiesSetFromJsonPeered(uint64_t id, const std::string& value);
-        seastar::future<bool> NodePropertiesResetFromJsonPeered(const std::string& type, const std::string& key, const std::string& value);
-        seastar::future<bool> NodePropertiesResetFromJsonPeered(uint64_t id, const std::string& value);
-        seastar::future<bool> NodePropertiesDeletePeered(const std::string& type, const std::string& key);
-        seastar::future<bool> NodePropertiesDeletePeered(uint64_t id);
+        seastar::future<std::map<std::string, property_type_t>> NodeGetPropertiesPeered(const std::string& type, const std::string& key);
+        seastar::future<std::map<std::string, property_type_t>> NodeGetPropertiesPeered(uint64_t id);
+        seastar::future<bool> NodeSetPropertiesFromJsonPeered(const std::string& type, const std::string& key, const std::string& value);
+        seastar::future<bool> NodeSetPropertiesFromJsonPeered(uint64_t id, const std::string& value);
+        seastar::future<bool> NodeResetPropertiesFromJsonPeered(const std::string& type, const std::string& key, const std::string& value);
+        seastar::future<bool> NodeResetPropertiesFromJsonPeered(uint64_t id, const std::string& value);
+        seastar::future<bool> NodeDeletePropertiesPeered(const std::string& type, const std::string& key);
+        seastar::future<bool> NodeDeletePropertiesPeered(uint64_t id);
 
         // Relationship
         seastar::future<uint64_t> RelationshipAddEmptyPeered(const std::string& rel_type, const std::string& type1, const std::string& key1,
@@ -500,15 +500,15 @@ namespace ragedb {
         seastar::future<std::map<Link, std::map<std::string, property_type_t>>> RelationshipsGetPropertiesPeered(const std::vector<Link>& links);
 
         // Relationship Properties
-        seastar::future<property_type_t> RelationshipPropertyGetPeered(uint64_t id, const std::string& property);
-        seastar::future<bool> RelationshipPropertySetPeered(uint64_t id, const std::string& property, const property_type_t& value);
-        seastar::future<bool> RelationshipPropertySetFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
-        seastar::future<bool> RelationshipPropertyDeletePeered(uint64_t id, const std::string& property);
+        seastar::future<property_type_t> RelationshipGetPropertyPeered(uint64_t id, const std::string& property);
+        seastar::future<bool> RelationshipSetPropertyPeered(uint64_t id, const std::string& property, const property_type_t& value);
+        seastar::future<bool> RelationshipSetPropertyFromJsonPeered(uint64_t id, const std::string& property, const std::string& value);
+        seastar::future<bool> RelationshipDeletePropertyPeered(uint64_t id, const std::string& property);
 
-        seastar::future<std::map<std::string, property_type_t>> RelationshipPropertiesGetPeered(uint64_t id);
-        seastar::future<bool> RelationshipPropertiesSetFromJsonPeered(uint64_t id, const std::string& value);
-        seastar::future<bool> RelationshipPropertiesResetFromJsonPeered(uint64_t id, const std::string& value);
-        seastar::future<bool> RelationshipPropertiesDeletePeered(uint64_t id);
+        seastar::future<std::map<std::string, property_type_t>> RelationshipGetPropertiesPeered(uint64_t id);
+        seastar::future<bool> RelationshipSetPropertiesFromJsonPeered(uint64_t id, const std::string& value);
+        seastar::future<bool> RelationshipResetPropertiesFromJsonPeered(uint64_t id, const std::string& value);
+        seastar::future<bool> RelationshipDeletePropertiesPeered(uint64_t id);
 
         // Node Degree
         seastar::future<uint64_t> NodeGetDegreePeered(const std::string& type, const std::string& key);
@@ -766,20 +766,20 @@ namespace ragedb {
         bool RelationshipPropertyTypeDeleteViaLua(const std::string& type, const std::string& key);
 
         // Node Properties
-        sol::object NodePropertyGetViaLua(const std::string& type, const std::string& key, const std::string& property);
-        sol::object NodePropertyGetByIdViaLua(uint64_t id, const std::string& property);
-        sol::object NodePropertiesGetViaLua(const std::string& type, const std::string& key);
-        sol::object NodePropertiesGetByIdViaLua(uint64_t id);
-        bool NodePropertySetViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value);
-        bool NodePropertySetByIdViaLua(uint64_t id, const std::string& property, const sol::object& value);
-        bool NodePropertiesSetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
-        bool NodePropertiesSetFromJsonByIdViaLua(uint64_t id, const std::string& value);
-        bool NodePropertiesResetFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
-        bool NodePropertiesResetFromJsonByIdViaLua(uint64_t id, const std::string& value);
-        bool NodePropertyDeleteViaLua(const std::string& type, const std::string& key, const std::string& property);
-        bool NodePropertyDeleteByIdViaLua(uint64_t id, const std::string& property);
-        bool NodePropertiesDeleteViaLua(const std::string& type, const std::string& key);
-        bool NodePropertiesDeleteByIdViaLua(uint64_t id);
+        sol::object NodeGetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property);
+        sol::object NodeGetPropertyByIdViaLua(uint64_t id, const std::string& property);
+        sol::object NodeGetPropertiesViaLua(const std::string& type, const std::string& key);
+        sol::object NodeGetPropertiesByIdViaLua(uint64_t id);
+        bool NodeSetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value);
+        bool NodeSetPropertyByIdViaLua(uint64_t id, const std::string& property, const sol::object& value);
+        bool NodeSetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
+        bool NodeSetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value);
+        bool NodeResetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
+        bool NodeResetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value);
+        bool NodeDeletePropertyViaLua(const std::string& type, const std::string& key, const std::string& property);
+        bool NodeDeletePropertyByIdViaLua(uint64_t id, const std::string& property);
+        bool NodeDeletePropertiesViaLua(const std::string& type, const std::string& key);
+        bool NodeDeletePropertiesByIdViaLua(uint64_t id);
 
         // Relationship
         uint64_t RelationshipAddEmptyViaLua(const std::string& rel_type, const std::string& type1, const std::string& key1,
@@ -810,14 +810,14 @@ namespace ragedb {
         sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertiesByLinksViaLua(const std::vector<Link>& links);
 
         // Relationship Properties
-        sol::object RelationshipPropertyGetViaLua(uint64_t id, const std::string& property);
-        sol::object RelationshipPropertiesGetViaLua(uint64_t id);
-        bool RelationshipPropertySetViaLua(uint64_t id, const std::string& property, const sol::object& value);
-        bool RelationshipPropertySetFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value);
-        bool RelationshipPropertyDeleteViaLua(uint64_t id, const std::string& property);
-        bool RelationshipPropertiesSetFromJsonViaLua(uint64_t id, const std::string &value);
-        bool RelationshipPropertiesResetFromJsonViaLua(uint64_t id, const std::string &value);
-        bool RelationshipPropertiesDeleteViaLua(uint64_t id);
+        sol::object RelationshipGetPropertyViaLua(uint64_t id, const std::string& property);
+        sol::object RelationshipGetPropertiesViaLua(uint64_t id);
+        bool RelationshipSetPropertyViaLua(uint64_t id, const std::string& property, const sol::object& value);
+        bool RelationshipSetPropertyFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value);
+        bool RelationshipDeletePropertyViaLua(uint64_t id, const std::string& property);
+        bool RelationshipSetPropertiesFromJsonViaLua(uint64_t id, const std::string &value);
+        bool RelationshipResetPropertiesFromJsonViaLua(uint64_t id, const std::string &value);
+        bool RelationshipDeletePropertiesViaLua(uint64_t id);
 
         // Node Degree
         uint64_t NodeGetDegreeViaLua(const std::string& type, const std::string& key);

@@ -83,7 +83,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE( "college" == get<std::string>(shard.RelationshipPropertyGet(added, "tag")));
+                REQUIRE( "college" == get<std::string>(shard.RelationshipGetProperty(added, "tag")));
                 REQUIRE(!added_relationship.getProperties().empty());
             }
         }
@@ -121,7 +121,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE( "college" == get<std::string>(shard.RelationshipPropertyGet(added, "tag")));
+                REQUIRE( "college" == get<std::string>(shard.RelationshipGetProperty(added, "tag")));
                 REQUIRE(!added_relationship.getProperties().empty());
 
             }
@@ -150,7 +150,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
                 REQUIRE(added_relationship.getTypeId() == 0);
                 REQUIRE(added_relationship.getStartingNodeId() == 0);
                 REQUIRE(added_relationship.getEndingNodeId() == 0);
-                REQUIRE(shard.RelationshipPropertyGet(added, "tag").index() == 0);
+                REQUIRE(shard.RelationshipGetProperty(added, "tag").index() == 0);
                 REQUIRE(added_relationship.getProperties().empty());
             }
         }
@@ -187,7 +187,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
                 REQUIRE(added_relationship.getTypeId() == 1);
                 REQUIRE(added_relationship.getStartingNodeId() == empty);
                 REQUIRE(added_relationship.getEndingNodeId() == existing);
-                REQUIRE(get<double>(shard.RelationshipPropertyGet(added, "weight")) == 1.0);
+                REQUIRE(get<double>(shard.RelationshipGetProperty(added, "weight")) == 1.0);
 
                 REQUIRE(added2 == 524296);
                 ragedb::Relationship added_relationship2 = shard.RelationshipGet(added2);
@@ -195,7 +195,7 @@ SCENARIO( "Shard can handle Relationships", "[relationship]" ) {
                 REQUIRE(added_relationship2.getTypeId() == 1);
                 REQUIRE(added_relationship2.getStartingNodeId() == empty);
                 REQUIRE(added_relationship2.getEndingNodeId() == existing);
-                REQUIRE(get<double>(shard.RelationshipPropertyGet(added2, "weight")) == 2.0);
+                REQUIRE(get<double>(shard.RelationshipGetProperty(added2, "weight")) == 2.0);
             }
         }
     }

@@ -70,7 +70,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::GetRelationshipPropertyBy
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        return parent.graph.shard.local().RelationshipPropertyGetPeered(id, req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().RelationshipGetPropertyPeered(id, req->param[Utilities::PROPERTY])
         .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
                     json_properties_builder json;
                     json.add_property(req->param[Utilities::PROPERTY], property);
@@ -88,7 +88,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::PutRelationshipPropertyBy
 
     if (id > 0 && valid_property) {
         parent.graph.Log(req->_method, req->get_url(), req->content);
-        return parent.graph.shard.local().RelationshipPropertySetFromJsonPeered(id, req->param[Utilities::PROPERTY], req->content.c_str())
+        return parent.graph.shard.local().RelationshipSetPropertyFromJsonPeered(id, req->param[Utilities::PROPERTY], req->content.c_str())
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {
                         rep->set_status(reply::status_type::no_content);
@@ -108,7 +108,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::DeleteRelationshipPropert
 
     if (id > 0 && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().RelationshipPropertyDeletePeered(id, req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().RelationshipDeletePropertyPeered(id, req->param[Utilities::PROPERTY])
                 .then([rep = std::move(rep)] (bool success) mutable {
                    if(success) {
                        rep->set_status(reply::status_type::no_content);
@@ -126,7 +126,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::GetRelationshipProperties
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        return parent.graph.shard.local().RelationshipPropertiesGetPeered(id)
+        return parent.graph.shard.local().RelationshipGetPropertiesPeered(id)
                 .then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
                     json_properties_builder json;
                     json.add_properties(properties);
@@ -144,7 +144,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::PostRelationshipPropertie
     if (id > 0) {
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
-            return parent.graph.shard.local().RelationshipPropertiesResetFromJsonPeered(id, req->content.c_str())
+            return parent.graph.shard.local().RelationshipResetPropertiesFromJsonPeered(id, req->content.c_str())
                     .then([rep = std::move(rep)] (bool success) mutable {
                         if(success) {
                             rep->set_status(reply::status_type::no_content);
@@ -165,7 +165,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::PutRelationshipProperties
     if (id > 0) {
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
-            return parent.graph.shard.local().RelationshipPropertiesSetFromJsonPeered(id, req->content.c_str())
+            return parent.graph.shard.local().RelationshipSetPropertiesFromJsonPeered(id, req->content.c_str())
                     .then([rep = std::move(rep)](bool success) mutable {
                         if (success) {
                             rep->set_status(reply::status_type::no_content);
@@ -185,7 +185,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::DeleteRelationshipPropert
 
     if (id > 0) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().RelationshipPropertiesDeletePeered(id)
+        return parent.graph.shard.local().RelationshipDeletePropertiesPeered(id)
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {
                         rep->set_status(reply::status_type::no_content);

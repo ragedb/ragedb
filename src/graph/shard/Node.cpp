@@ -215,60 +215,60 @@ namespace ragedb {
     }
 
 
-    property_type_t Shard::NodePropertyGet(uint64_t id, const std::string& property) {
+    property_type_t Shard::NodeGetProperty(uint64_t id, const std::string& property) {
         if (ValidNodeId(id)) {
             return node_types.getNodeProperty(id, property);
         }
         return property_type_t();
     }
 
-    bool Shard::NodePropertySet(uint64_t id, const std::string& property, property_type_t value) {
+    bool Shard::NodeSetProperty(uint64_t id, const std::string& property, property_type_t value) {
         if (ValidNodeId(id)) {
             return node_types.setNodeProperty(id, property, std::move(value));
         }
         return false;
     }
 
-    bool Shard::NodePropertySetFromJson(uint64_t id, const std::string& property, const std::string& value) {
+    bool Shard::NodeSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value) {
         if (ValidNodeId(id)) {
             return node_types.setNodePropertyFromJson(id, property, value);
         }
         return false;
     }
 
-    property_type_t Shard::NodePropertyGet(const std::string& type, const std::string& key, const std::string& property) {
+    property_type_t Shard::NodeGetProperty(const std::string& type, const std::string& key, const std::string& property) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertyGet(id, property);
+        return NodeGetProperty(id, property);
     }
 
-    bool Shard::NodePropertySetFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value) {
+    bool Shard::NodeSetPropertyFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertySetFromJson(id, property, value);
+        return NodeSetPropertyFromJson(id, property, value);
     }
 
-    bool Shard::NodePropertySet(const std::string& type, const std::string& key, const std::string& property, property_type_t value) {
+    bool Shard::NodeGetProperty(const std::string& type, const std::string& key, const std::string& property, property_type_t value) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertySet(id, property, std::move(value));
+        return NodeSetProperty(id, property, std::move(value));
     }
 
-    bool Shard::NodePropertyDelete(const std::string& type, const std::string& key, const std::string& property) {
+    bool Shard::NodeDeleteProperty(const std::string& type, const std::string& key, const std::string& property) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertyDelete(id, property);
+        return NodeDeleteProperty(id, property);
     }
 
-    bool Shard::NodePropertyDelete(uint64_t id, const std::string& property) {
+    bool Shard::NodeDeleteProperty(uint64_t id, const std::string& property) {
         if (ValidNodeId(id)) {
             return node_types.deleteNodeProperty(id, property);
         }
         return false;
     }
 
-    std::map<std::string, property_type_t> Shard::NodePropertiesGet(const std::string &type, const std::string &key) {
+    std::map<std::string, property_type_t> Shard::NodeGetProperties(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertiesGet(id);
+        return NodeGetProperties(id);
     }
 
-    std::map<std::string, property_type_t> Shard::NodePropertiesGet(uint64_t id) {
+    std::map<std::string, property_type_t> Shard::NodeGetProperties(uint64_t id) {
         // If the node is valid
         if (ValidNodeId(id)) {
             return node_types.getNodeProperties(externalToTypeId(id), externalToInternal(id));
@@ -276,12 +276,12 @@ namespace ragedb {
         return std::map<std::string, property_type_t>();
     }
 
-    bool Shard::NodePropertiesSetFromJson(const std::string& type, const std::string& key, const std::string& value) {
+    bool Shard::NodeSetPropertiesFromJson(const std::string& type, const std::string& key, const std::string& value) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertiesSetFromJson(id, value);
+        return NodeSetPropertiesFromJson(id, value);
     }
 
-    bool Shard::NodePropertiesSetFromJson(uint64_t id, const std::string& value) {
+    bool Shard::NodeSetPropertiesFromJson(uint64_t id, const std::string& value) {
         // If the node is valid
         if (ValidNodeId(id)) {
             return node_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
@@ -289,12 +289,12 @@ namespace ragedb {
         return false;
     }
 
-    bool Shard::NodePropertiesResetFromJson(const std::string& type, const std::string& key, const std::string& value) {
+    bool Shard::NodeResetPropertiesFromJson(const std::string& type, const std::string& key, const std::string& value) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertiesResetFromJson(id, value);
+        return NodeResetPropertiesFromJson(id, value);
     }
 
-    bool Shard::NodePropertiesResetFromJson(uint64_t id, const std::string& value) {
+    bool Shard::NodeResetPropertiesFromJson(uint64_t id, const std::string& value) {
         // If the node is valid
         if (ValidNodeId(id)) {
             node_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
@@ -303,12 +303,12 @@ namespace ragedb {
         return false;
     }
 
-    bool Shard::NodePropertiesDelete(const std::string& type, const std::string& key) {
+    bool Shard::NodeDeleteProperties(const std::string& type, const std::string& key) {
         uint64_t id = NodeGetID(type, key);
-        return NodePropertiesDelete(id);
+        return NodeDeleteProperties(id);
     }
 
-    bool Shard::NodePropertiesDelete(uint64_t id) {
+    bool Shard::NodeDeleteProperties(uint64_t id) {
         // If the node is valid
         if (ValidNodeId(id)) {
             return node_types.deleteProperties(externalToTypeId(id), externalToInternal(id));

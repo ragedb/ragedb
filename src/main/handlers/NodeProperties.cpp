@@ -123,7 +123,7 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertyHandler::handle([[
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_key && valid_property) {
-        return parent.graph.shard.local().NodePropertyGetPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().NodeGetPropertyPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY])
         .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
             json_properties_builder json;
             json.add_property(req->param[Utilities::PROPERTY], property);
@@ -141,7 +141,7 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertyByIdHandler::handl
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
-        return parent.graph.shard.local().NodePropertyGetPeered(id, req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().NodeGetPropertyPeered(id, req->param[Utilities::PROPERTY])
         .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
             json_properties_builder json;
             json.add_property(req->param[Utilities::PROPERTY], property);
@@ -161,7 +161,7 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertyHandler::handle([[
     if(valid_type && valid_key && valid_property) {
         parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertySetFromJsonPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY], req->content.c_str());
+            return local_shard.NodeSetPropertyFromJsonPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY], req->content.c_str());
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
@@ -183,7 +183,7 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertyByIdHandler::handl
         parent.graph.Log(req->_method, req->get_url(), req->content);
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertySetFromJson(id, req->param[Utilities::PROPERTY], req->content.c_str());
+            return local_shard.NodeSetPropertyFromJson(id, req->param[Utilities::PROPERTY], req->content.c_str());
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
@@ -205,7 +205,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertyHandler::handle
     if(valid_type && valid_key && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertyDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY]);
+            return local_shard.NodeDeletePropertyPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY]);
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
@@ -227,7 +227,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertyByIdHandler::ha
         parent.graph.Log(req->_method, req->get_url());
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertyDelete(id, req->param[Utilities::PROPERTY]);
+            return local_shard.NodeDeleteProperty(id, req->param[Utilities::PROPERTY]);
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
@@ -247,7 +247,7 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertiesHandler::handle(
 
     if(valid_type && valid_key) {
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertiesGetPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
+            return local_shard.NodeGetPropertiesPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
         }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
             json_properties_builder json;
             json.add_properties(properties);
@@ -265,7 +265,7 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertiesByIdHandler::han
     if (id > 0) {
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id] (Shard &local_shard) {
-            return local_shard.NodePropertiesGet(id);
+            return local_shard.NodeGetProperties(id);
         }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
             json_properties_builder json;
             json.add_properties(properties);
@@ -285,8 +285,9 @@ future<std::unique_ptr<reply>> NodeProperties::PostNodePropertiesHandler::handle
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)](Shard &local_shard) {
-                return local_shard.NodePropertiesResetFromJsonPeered(req->param[Utilities::TYPE],
-                                                                     req->param[Utilities::KEY], req->content.c_str());
+                return local_shard.NodeResetPropertiesFromJsonPeered(req->param[Utilities::TYPE],
+                                         req->param[Utilities::KEY],
+                                         req->content.c_str());
             }).then([rep = std::move(rep)](bool success) mutable {
                 if (success) {
                     rep->set_status(reply::status_type::no_content);
@@ -309,7 +310,7 @@ future<std::unique_ptr<reply>> NodeProperties::PostNodePropertiesByIdHandler::ha
             parent.graph.Log(req->_method, req->get_url(), req->content);
             uint16_t node_shard_id = Shard::CalculateShardId(id);
             return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)](Shard &local_shard) {
-                return local_shard.NodePropertiesResetFromJson(id, req->content.c_str());
+                return local_shard.NodeResetPropertiesFromJson(id, req->content.c_str());
             }).then([rep = std::move(rep)](bool success) mutable {
                 if (success) {
                     rep->set_status(reply::status_type::no_content);
@@ -332,8 +333,9 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertiesHandler::handle(
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)](Shard &local_shard) {
-                return local_shard.NodePropertiesSetFromJsonPeered(req->param[Utilities::TYPE],
-                                                                   req->param[Utilities::KEY], req->content.c_str());
+                return local_shard.NodeSetPropertiesFromJsonPeered(req->param[Utilities::TYPE],
+                                         req->param[Utilities::KEY],
+                                         req->content.c_str());
             }).then([rep = std::move(rep)](bool success) mutable {
                 if (success) {
                     rep->set_status(reply::status_type::no_content);
@@ -356,7 +358,7 @@ future<std::unique_ptr<reply>> NodeProperties::PutNodePropertiesByIdHandler::han
             parent.graph.Log(req->_method, req->get_url(), req->content);
             uint16_t node_shard_id = Shard::CalculateShardId(id);
             return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)](Shard &local_shard) {
-                return local_shard.NodePropertiesSetFromJson(id, req->content.c_str());
+                return local_shard.NodeSetPropertiesFromJson(id, req->content.c_str());
             }).then([rep = std::move(rep)](bool success) mutable {
                 if (success) {
                     rep->set_status(reply::status_type::no_content);
@@ -378,7 +380,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesHandler::hand
     if(valid_type && valid_key) {
         parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
-            return local_shard.NodePropertiesDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
+            return local_shard.NodeDeletePropertiesPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
@@ -399,7 +401,7 @@ future<std::unique_ptr<reply>> NodeProperties::DeleteNodePropertiesByIdHandler::
         parent.graph.Log(req->_method, req->get_url(), req->content);
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id] (Shard &local_shard) {
-            return local_shard.NodePropertiesDelete(id);
+            return local_shard.NodeDeleteProperties(id);
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(reply::status_type::no_content);
