@@ -62,9 +62,36 @@ namespace ragedb {
         std::vector<Node> getNodes(uint64_t skip, uint64_t limit);
         std::vector<Node> getNodes(uint16_t type_id, uint64_t skip, uint64_t limit);
 
+
+        // Find Helpers
+        roaring::Roaring64Map getBlanks(uint16_t type_id, const std::string &property);
+        uint64_t countBooleans(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countIntegers(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countDoubles(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countStrings(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countBooleanLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countIntegerLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countDoubleLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t countStringLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+
+        std::vector<uint64_t> findNullIds(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findNotNullIds(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findBooleanIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findIntegerIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findDoubleIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findStringIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findBooleanListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findIntegerListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findDoubleListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> findStringListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+
         uint64_t findCount(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
         std::vector<uint64_t> findIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
         std::vector<Node> findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+
+        uint64_t filterCount(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        std::vector<uint64_t> filterIds(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterNodes(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
 
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);

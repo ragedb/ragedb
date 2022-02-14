@@ -108,7 +108,7 @@ namespace ragedb {
                 // ----------------------------------------------------------------
                 eve::algo::unroll<1>,            // This means, that we will not do any unrolling.
                 // compress_store is a complex operation by itself and
-                // unrolling is not benefitial here
+                // unrolling is not beneficial here
                 // ---------------------------------------------------------------
                 eve::algo::force_cardinal<N{}()> // Use the step that we computed earlier
         };
@@ -120,7 +120,7 @@ namespace ragedb {
         // Create our callback
         collect_indexes_delegate<N, P> delegate{p, res.data()};
 
-        // Convert from `std::vector` to smth that eve library can work with
+        // Convert from `std::vector` to something that the eve library can work with
         // And invoke the iteration
         auto processed = eve::algo::preprocess_range(iteration_traits, f, l);
         auto iteration = eve::algo::for_each_iteration(
