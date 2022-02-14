@@ -525,7 +525,7 @@ namespace ragedb {
     }
     return ids;
   }
-  
+
   std::vector<uint64_t> NodeTypes::findIntegerListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
@@ -686,391 +686,450 @@ namespace ragedb {
     }
   }
 
-  std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  // Start blank, union with deleted properties, remove deleted nodes
+  std::vector<Node> NodeTypes::findNullNodes(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
-    if (ValidTypeId(type_id)) {
-      const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
-      int current = 1;
-      const uint64_t max_id = key_to_node_id[type_id].size();
+    int current = 1;
 
-      // Start blank, union with deleted properties, remove deleted nodes
-      if(operation == Operation::IS_NULL) {
-        roaring::Roaring64Map blank;
-        blank |= properties[type_id].getDeletedMap(property);
-        blank -= getDeletedMap(type_id);
-        for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
-          if (current > (skip + limit)) {
-            break;
-          }
-          if (current++ > skip ) {
-            nodes.emplace_back(getNode(type_id, *iterator));
-          }
-        }
-        return nodes;
+    roaring::Roaring64Map blank;
+    blank |= properties[type_id].getDeletedMap(property);
+    blank -= getDeletedMap(type_id);
+    for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+      if (current > (skip + limit)) {
+        break;
       }
-
-      // Start blank, fill from 0 to max_id, remove deleted nodes, remove deleted properties
-      if(operation == Operation::NOT_IS_NULL) {
-        roaring::Roaring64Map blank;
-        blank.flip(0, max_id);
-        blank -= getDeletedMap(type_id);
-        blank -= properties[type_id].getDeletedMap(property);
-
-        for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
-          if (current > (skip + limit)) {
-            break;
-          }
-          if (current++ > skip ) {
-            nodes.emplace_back(getNode(type_id, *iterator));
-          }
-        }
-        return nodes;
+      if (current++ > skip ) {
+        nodes.emplace_back(getNode(type_id, *iterator));
       }
+    }
 
-      roaring::Roaring64Map blank;
-      blank |= properties[type_id].getDeletedMap(property);
-      blank |= getDeletedMap(type_id);
+    return nodes;
+  }
 
-      switch (property_type_id) {
-      case Properties::getBooleanPropertyType(): {
-        if (Properties::isBooleanProperty(value)) {
-          const bool typedValue = get<bool>(value);
-          const std::vector<bool> &vec = properties[type_id].getBooleans(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::Evaluate<bool>(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
+  // Start blank, fill from 0 to max_id, remove deleted nodes, remove deleted properties
+  std::vector<Node> NodeTypes::findNotNullNodes(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    const uint64_t max_id = key_to_node_id[type_id].size();
+    roaring::Roaring64Map blank;
+    blank.flip(0, max_id);
+    blank -= getDeletedMap(type_id);
+    blank -= properties[type_id].getDeletedMap(property);
 
-            current++;
-          }
-          return nodes;
-        }
+    for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+      if (current > (skip + limit)) {
+        break;
       }
-      case Properties::getIntegerPropertyType(): {
-        if (Properties::isIntegerProperty(value)) {
-          const int64_t typedValue = get<int64_t>(value);
-          const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
-          std::vector<std::uint64_t> indexes;
-
-          switch(operation) {
-            case Operation::EQ: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
-              break;
-            }
-            case Operation::NEQ: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
-              break;
-            }
-            case Operation::GT: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
-              break;
-            }
-            case Operation::GTE: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
-              break;
-            }
-            case Operation::LT: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
-              break;
-            }
-            case Operation::LTE: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
-              break;
-            }
-            default:
-              break;
-          }
-
-          auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-          indexes.erase(it, indexes.end());
-
-          for(auto idx : indexes) {
-            if(current++ > skip) {
-              nodes.emplace_back(getNode(type_id, idx));
-            }
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-          }
-          return nodes;
-        }
-      }
-      case Properties::getDoublePropertyType(): {
-        // Handle values that are parsed as Integers (230 vs 230.0)
-        if (Properties::isIntegerProperty(value)) {
-          const double typedValue = static_cast<double>(get<int64_t>(value));
-          const std::vector<double> &vec = properties[type_id].getDoubles(property);
-          std::vector<std::uint64_t> indexes;
-
-          switch(operation) {
-            case Operation::EQ: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
-              break;
-            }
-            case Operation::NEQ: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
-              break;
-            }
-            case Operation::GT: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
-              break;
-            }
-            case Operation::GTE: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
-              break;
-            }
-            case Operation::LT: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
-              break;
-            }
-            case Operation::LTE: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
-              break;
-            }
-            default:
-              break;
-          }
-
-          auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-          indexes.erase(it, indexes.end());
-
-          for(auto idx : indexes) {
-            if(current++ > skip) {
-              nodes.emplace_back(getNode(type_id, idx));
-            }
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-          }
-          return nodes;
-        }
-
-        if (Properties::isDoubleProperty(value)) {
-          const double typedValue = get<double>(value);
-          const std::vector<double> &vec = properties[type_id].getDoubles(property);
-          std::vector<std::uint64_t> indexes;
-
-          switch(operation) {
-            case Operation::EQ: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
-              break;
-            }
-            case Operation::NEQ: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
-              break;
-            }
-            case Operation::GT: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
-              break;
-            }
-            case Operation::GTE: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
-              break;
-            }
-            case Operation::LT: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
-              break;
-            }
-            case Operation::LTE: {
-              indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
-              break;
-            }
-            default:
-              break;
-          }
-
-          auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-          indexes.erase(it, indexes.end());
-
-          for(auto idx : indexes) {
-            if(current++ > skip) {
-              nodes.emplace_back(getNode(type_id, idx));
-            }
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-          }
-          return nodes;
-        }
-      }
-      case Properties::getStringPropertyType(): {
-        if (Properties::isStringProperty(value)) {
-          const std::string typedValue = get<std::string>(value);
-          const std::vector<std::string> &vec = properties[type_id].getStrings(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::EvaluateString(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
-
-            current++;
-          }
-          return nodes;
-        }
-      }
-      case Properties::getBooleanListPropertyType(): {
-        if (Properties::isBooleanListProperty(value)) {
-          const std::vector<bool> typedValue = get<std::vector<bool>>(value);
-          const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::EvaluateVector<bool>(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
-
-            current++;
-          }
-          return nodes;
-        }
-      }
-      case Properties::getIntegerListPropertyType(): {
-        if (Properties::isIntegerListProperty(value)) {
-          const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
-          const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::EvaluateVector<int64_t>(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
-
-            current++;
-          }
-          return nodes;
-        }
-      }
-      case Properties::getDoubleListPropertyType(): {
-        if (Properties::isIntegerListProperty(value)) {
-          std::vector<int64_t> integerTypedValue = get<std::vector<int64_t>>(value);
-          const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
-          const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::EvaluateVector<double>(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
-
-            current++;
-          }
-          return nodes;
-        }
-        if (Properties::isDoubleListProperty(value)) {
-          const std::vector<double> typedValue = get<std::vector<double>>(value);
-          const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::EvaluateVector<double>(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
-
-            current++;
-          }
-          return nodes;
-        }
-      }
-      case Properties::getStringListPropertyType(): {
-        if (Properties::isStringListProperty(value)) {
-          const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
-          const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
-          for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
-            // If we reached our limit, return
-            if (current > (skip + limit)) {
-              return nodes;
-            }
-            // If the node or property has been deleted, ignore it
-            if (blank.contains(internal_id)) {
-              continue;
-            }
-            if (!Expression::EvaluateVector<std::string>(operation, vec[internal_id], typedValue)) {
-              continue;
-            }
-            // If it is true add it if we are over the skip, otherwise ignore it
-            if (current > skip) {
-              nodes.emplace_back(getNode(type_id, internal_id));
-            }
-
-            current++;
-          }
-          return nodes;
-        }
-      }
-      default: {
-        return nodes;
-      }
+      if (current++ > skip ) {
+        nodes.emplace_back(getNode(type_id, *iterator));
       }
     }
     return nodes;
   }
 
+  std::vector<Node> NodeTypes::findBooleanNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    if (Properties::isBooleanProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const bool typedValue = get<bool>(value);
+      const std::vector<bool> &vec = properties[type_id].getBooleans(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::Evaluate<bool>(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+        current++;
+      }
+    }
+    return nodes;
+  }
 
+  std::vector<Node> NodeTypes::findIntegerNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    if (Properties::isIntegerProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const int64_t typedValue = get<int64_t>(value);
+      const std::vector<int64_t> &vec = properties[type_id].getIntegers(property);
+      std::vector<std::uint64_t> indexes;
+
+      switch(operation) {
+      case Operation::EQ: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        break;
+      }
+      case Operation::NEQ: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        break;
+      }
+      case Operation::GT: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        break;
+      }
+      case Operation::GTE: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        break;
+      }
+      case Operation::LT: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        break;
+      }
+      case Operation::LTE: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        break;
+      }
+      default:
+        break;
+      }
+
+      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+      indexes.erase(it, indexes.end());
+
+      for(auto idx : indexes) {
+        if(current++ > skip) {
+          nodes.emplace_back(getNode(type_id, idx));
+        }
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findDoubleNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    // Handle values that are parsed as Integers (230 vs 230.0)
+    if (Properties::isIntegerProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const double typedValue = static_cast<double>(get<int64_t>(value));
+      const std::vector<double> &vec = properties[type_id].getDoubles(property);
+      std::vector<std::uint64_t> indexes;
+
+      switch(operation) {
+      case Operation::EQ: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        break;
+      }
+      case Operation::NEQ: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        break;
+      }
+      case Operation::GT: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        break;
+      }
+      case Operation::GTE: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        break;
+      }
+      case Operation::LT: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        break;
+      }
+      case Operation::LTE: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        break;
+      }
+      default:
+        break;
+      }
+
+      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+      indexes.erase(it, indexes.end());
+
+      for(auto idx : indexes) {
+        if(current++ > skip) {
+          nodes.emplace_back(getNode(type_id, idx));
+        }
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+      }
+      return nodes;
+    }
+
+    if (Properties::isDoubleProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const double typedValue = get<double>(value);
+      const std::vector<double> &vec = properties[type_id].getDoubles(property);
+      std::vector<std::uint64_t> indexes;
+
+      switch(operation) {
+      case Operation::EQ: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        break;
+      }
+      case Operation::NEQ: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        break;
+      }
+      case Operation::GT: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        break;
+      }
+      case Operation::GTE: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        break;
+      }
+      case Operation::LT: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        break;
+      }
+      case Operation::LTE: {
+        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        break;
+      }
+      default:
+        break;
+      }
+
+      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
+
+      indexes.erase(it, indexes.end());
+
+      for(auto idx : indexes) {
+        if(current++ > skip) {
+          nodes.emplace_back(getNode(type_id, idx));
+        }
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findStringNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    if (Properties::isStringProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const std::string typedValue = get<std::string>(value);
+      const std::vector<std::string> &vec = properties[type_id].getStrings(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::EvaluateString(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+        current++;
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findBooleanListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    if (Properties::isBooleanListProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const std::vector<bool> typedValue = get<std::vector<bool>>(value);
+      const std::vector<std::vector<bool>> &vec = properties[type_id].getBooleansList(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::EvaluateVector<bool>(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+        current++;
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findIntegerListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    if (Properties::isIntegerListProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
+      const std::vector<std::vector<int64_t>> &vec = properties[type_id].getIntegersList(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::EvaluateVector<int64_t>(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+        current++;
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findDoubleListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+
+    if (Properties::isIntegerListProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      std::vector<int64_t> integerTypedValue = get<std::vector<int64_t>>(value);
+      const std::vector<double> typedValue(integerTypedValue.begin(), integerTypedValue.end());
+      const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::EvaluateVector<double>(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+
+        current++;
+      }
+      return nodes;
+    }
+    if (Properties::isDoubleListProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const std::vector<double> typedValue = get<std::vector<double>>(value);
+      const std::vector<std::vector<double>> &vec = properties[type_id].getDoublesList(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::EvaluateVector<double>(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+        current++;
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findStringListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    std::vector<Node> nodes;
+    int current = 1;
+    if (Properties::isStringListProperty(value)) {
+      const roaring::Roaring64Map blank = getBlanks(type_id, property);
+      const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
+      const std::vector<std::vector<std::string>> &vec = properties[type_id].getStringsList(property);
+      for(unsigned internal_id = 0; internal_id < vec.size(); ++internal_id) {
+        // If we reached our limit, return
+        if (current > (skip + limit)) {
+          return nodes;
+        }
+        // If the node or property has been deleted, ignore it
+        if (blank.contains(internal_id)) {
+          continue;
+        }
+        if (!Expression::EvaluateVector<std::string>(operation, vec[internal_id], typedValue)) {
+          continue;
+        }
+        // If it is true add it if we are over the skip, otherwise ignore it
+        if (current > skip) {
+          nodes.emplace_back(getNode(type_id, internal_id));
+        }
+        current++;
+      }
+    }
+    return nodes;
+  }
+
+  std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+    // If the type is invalid, we can't find any so return an empty array
+    if (!ValidTypeId(type_id)) return std::vector<Node>();
+
+    if(operation == Operation::IS_NULL) {
+      return findNullNodes(type_id, property, skip, limit);
+    }
+
+    if(operation == Operation::NOT_IS_NULL) {
+      return findNotNullNodes(type_id, property, skip, limit);
+    }
+
+    const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+
+    switch (property_type_id) {
+      case Properties::getBooleanPropertyType(): {
+        return findBooleanNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getIntegerPropertyType(): {
+        return findIntegerNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getDoublePropertyType(): {
+        return findDoubleNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getStringPropertyType(): {
+        return findStringNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getBooleanListPropertyType(): {
+        return findBooleanListNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getIntegerListPropertyType(): {
+        return findIntegerListNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getDoubleListPropertyType(): {
+        return findDoubleListNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::getStringListPropertyType(): {
+        return findStringListNodes(type_id, property, operation, value, skip, limit);
+      }
+      default: {
+        return std::vector<Node>();
+      }
+    }
+  }
 
 }

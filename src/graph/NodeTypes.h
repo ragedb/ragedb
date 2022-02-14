@@ -85,6 +85,18 @@ namespace ragedb {
         std::vector<uint64_t> findDoubleListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
         std::vector<uint64_t> findStringListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
 
+        std::vector<Node> findNullNodes(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<Node> findNotNullNodes(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<Node> findBooleanNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findIntegerNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findDoubleNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findStringNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findBooleanListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findIntegerListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findDoubleListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> findStringListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+
+
         uint64_t findCount(uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
         std::vector<uint64_t> findIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
         std::vector<Node> findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
