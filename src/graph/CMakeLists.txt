@@ -27,7 +27,7 @@ set(SOURCE_FILES
         RelationshipTypes.cpp
         Properties.cpp
         Roar.cpp
-        node/Find.cpp
+        node/Find.cpp relationship/Find.cpp
         shard/Ids.cpp shard/Types.cpp shard/Node.cpp shard/Nodes.cpp shard/Relationship.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Find.cpp shard/Helpers.cpp shard/Bulk.cpp
         peered/Types.cpp peered/Node.cpp peered/Nodes.cpp peered/Relationship.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp peered/Find.cpp peered/Bulk.cpp peered/Restore.cpp peered/Connected.cpp peered/Helpers.cpp
         lua/Types.cpp lua/Node.cpp lua/Nodes.cpp lua/Relationship.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp lua/Find.cpp lua/Bulk.cpp lua/Helpers.cpp

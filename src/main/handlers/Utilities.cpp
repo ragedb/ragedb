@@ -29,7 +29,7 @@ bool Utilities::validate_parameter(const sstring &parameter, std::unique_ptr<req
 
 uint64_t Utilities::validate_id(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
     // Validate id is unsigned long long
-    uint64_t id = 0;
+    uint64_t id;
 
     try {
         id = std::stoull(req->param["id"]);
@@ -44,7 +44,7 @@ uint64_t Utilities::validate_id(const std::unique_ptr<request> &req, std::unique
 
 uint64_t Utilities::validate_id2(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
     // Validate id is unsigned long long
-    uint64_t id = 0;
+    uint64_t id;
 
     try {
         id = std::stoull(req->param["id2"]);
