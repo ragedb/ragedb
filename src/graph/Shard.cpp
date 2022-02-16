@@ -190,19 +190,19 @@ namespace ragedb {
 
         // Node Properties
         lua.set_function("NodeGetProperty", &Shard::NodeGetPropertyViaLua, this);
-        lua.set_function("NodePropertyGetById", &Shard::NodeGetPropertyByIdViaLua, this);
+        lua.set_function("NodeGetPropertyById", &Shard::NodeGetPropertyByIdViaLua, this);
         lua.set_function("NodeGetProperties", &Shard::NodeGetPropertiesViaLua, this);
-        lua.set_function("NodePropertiesGetById", &Shard::NodeGetPropertiesByIdViaLua, this);
+        lua.set_function("NodeGetPropertiesById", &Shard::NodeGetPropertiesByIdViaLua, this);
         lua.set_function("NodeSetProperty", &Shard::NodeSetPropertyViaLua, this);
-        lua.set_function("NodePropertySetById", &Shard::NodeSetPropertyByIdViaLua, this);
+        lua.set_function("NodeSetPropertyById", &Shard::NodeSetPropertyByIdViaLua, this);
         lua.set_function("NodeSetPropertiesFromJson", &Shard::NodeSetPropertiesFromJsonViaLua, this);
-        lua.set_function("NodePropertiesSetFromJsonById", &Shard::NodeSetPropertiesFromJsonByIdViaLua, this);
+        lua.set_function("NodeSetPropertiesFromJsonById", &Shard::NodeSetPropertiesFromJsonByIdViaLua, this);
         lua.set_function("NodeResetPropertiesFromJson", &Shard::NodeResetPropertiesFromJsonViaLua, this);
-        lua.set_function("NodePropertiesResetFromJsonById", &Shard::NodeResetPropertiesFromJsonByIdViaLua, this);
+        lua.set_function("NodeResetPropertiesFromJsonById", &Shard::NodeResetPropertiesFromJsonByIdViaLua, this);
         lua.set_function("NodeDeleteProperty", &Shard::NodeDeletePropertyViaLua, this);
-        lua.set_function("NodePropertyDeleteById", &Shard::NodeDeletePropertyByIdViaLua, this);
+        lua.set_function("NodeDeletePropertyById", &Shard::NodeDeletePropertyByIdViaLua, this);
         lua.set_function("NodeDeleteProperties", &Shard::NodeDeletePropertiesViaLua, this);
-        lua.set_function("NodePropertiesDeleteById", &Shard::NodeDeletePropertiesByIdViaLua, this);
+        lua.set_function("NodeDeletePropertiesById", &Shard::NodeDeletePropertiesByIdViaLua, this);
 
         // Relationship
         lua.set_function("RelationshipAddEmpty", &Shard::RelationshipAddEmptyViaLua, this);
