@@ -46,6 +46,20 @@ function timeUnits( ms ) {
     return str;
 }
 
+// create PerformanceObserver
+const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+        if (entry.initiatorType === "fetch" && entry.name.endsWith("lua")) {
+            document.getElementById('timer').innerHTML = timeUnits(entry.responseEnd - entry.startTime);
+        }
+    }
+});
+
+// make it a resource observer
+observer.observe({
+    entryTypes: ["resource"]
+});
+
 async function sendscript() {
     let query = editor.getValue();
 
@@ -61,7 +75,6 @@ async function sendscript() {
         clock.classList.add("rotate");
         timer.innerHTML = timeUnits(0);
         ele.innerHTML = '';
-        let sentTime = performance.now();
         let res = await fetch(url, {
             method: 'POST',
             headers: {
@@ -70,9 +83,7 @@ async function sendscript() {
             body: query
         });
         ele.innerHTML = await res.text();
-        let responseTime = performance.now();
         clock.classList.remove("rotate");
-		timer.innerHTML = timeUnits(responseTime - sentTime);
     } catch (error) {
         console.log(error);
     }
