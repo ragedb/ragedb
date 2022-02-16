@@ -69,7 +69,6 @@ namespace ragedb {
             uint64_t current = 0;
 
             std::vector<uint64_t> ids;
-            ids.reserve(limit);
 
             for (auto result : results) {
                 for( auto id : result) {
@@ -107,7 +106,6 @@ namespace ragedb {
             uint64_t current = 0;
 
             std::vector<uint64_t> ids;
-            ids.reserve(limit);
 
             for (auto result : results) {
                 for( auto id : result) {
@@ -144,7 +142,6 @@ namespace ragedb {
             uint64_t current = 0;
 
             std::vector<Node> nodes;
-            nodes.reserve(limit);
 
             for (auto result : results) {
                 for( auto node : result) {
@@ -181,7 +178,6 @@ namespace ragedb {
             uint64_t current = 0;
 
             std::vector<Relationship> relationships;
-            relationships.reserve(limit);
 
             for (auto result : results) {
                 for( auto relationship : result) {

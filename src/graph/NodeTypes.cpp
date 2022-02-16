@@ -355,7 +355,7 @@ namespace ragedb {
         return deleted_ids[0];
     }
 
-    uint16_t NodeTypes::getSize() const {
+     uint16_t NodeTypes::getSize() const {
         return id_to_type.size() - 1;
     }
 

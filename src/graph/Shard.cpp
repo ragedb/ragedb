@@ -352,6 +352,14 @@ namespace ragedb {
         lua.set_function("FindRelationshipIds", &Shard::FindRelationshipIdsViaLua, this);
         lua.set_function("FindRelationships", &Shard::FindRelationshipsViaLua, this);
 
+        // Filter
+        lua.set_function("FilterNodeCount", &Shard::FilterNodeCountViaLua, this);
+        lua.set_function("FilterNodeIds", &Shard::FilterNodeIdsViaLua, this);
+        lua.set_function("FilterNodes", &Shard::FilterNodesViaLua, this);
+        lua.set_function("FilterRelationshipCount", &Shard::FilterRelationshipCountViaLua, this);
+        lua.set_function("FilterRelationshipIds", &Shard::FilterRelationshipIdsViaLua, this);
+        lua.set_function("FilterRelationships", &Shard::FilterRelationshipsViaLua, this);
+
     }
 
 

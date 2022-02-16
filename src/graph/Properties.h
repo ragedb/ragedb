@@ -66,6 +66,8 @@ namespace ragedb {
         uint8_t setPropertyType(const std::string& key, const std::string& type);
         bool removePropertyType(const std::string& key);
 
+        std::string getPropertyKey(uint8_t);
+
         bool setBooleanProperty(const std::string&, uint64_t, bool);
         bool setIntegerProperty(const std::string&, uint64_t, int64_t);
         bool setDoubleProperty(const std::string&, uint64_t, double);

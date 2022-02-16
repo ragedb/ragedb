@@ -67,6 +67,16 @@ namespace ragedb {
         strings_list.emplace("", std::vector<std::vector<std::string>>());
     }
 
+
+    std::string Properties::getPropertyKey(uint8_t id) {
+      for (auto [type, type_id]: types) {
+        if (id == type_id) {
+          return type;
+        }
+      }
+      return "";
+    }
+
     std::map<std::string, std::string> Properties::getPropertyTypes() {
         std::map<std::string, std::string> map;
         for (auto [type, type_id]: types) {

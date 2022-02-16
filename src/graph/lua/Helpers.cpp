@@ -18,6 +18,32 @@
 
 namespace ragedb {
 
+  property_type_t Shard::SolObjectToProperty(const sol::object& o) {
+    if (o == sol::lua_nil) return std::monostate();
+    if (o.is<bool>()) return o.as<bool>();
+    if (o.is<int>()) return o.as<int64_t>();
+    if (o.is<double>()) return o.as<double>();
+    if (o.is<std::string>()) return o.as<std::string>();
+
+    if (o.is<char>()) return std::string(1, o.as<char>());
+    if (o.is<unsigned char>()) return std::string(1, o.as<unsigned char >());
+    if (o.is<short>()) return o.as<int64_t>();
+    if (o.is<unsigned short>()) return o.as<int64_t>();
+    if (o.is<unsigned int>()) return o.as<int64_t>();
+    if (o.is<long>()) return o.as<int64_t>();
+    if (o.is<unsigned long>()) return o.as<int64_t>();
+    if (o.is<long long>()) return o.as<int64_t>();
+    if (o.is<unsigned long long>()) return o.as<int64_t>();
+    if (o.is<float>()) return o.as<double>();
+
+    // TODO: Any missing? What about arrays? Can't I just use this for everything?
+    if (o.is<sol::table>()) {
+      return o.as<property_type_t>();
+    }
+
+    return std::monostate();
+  }
+
   sol::object Shard::PropertyToSolObject(const property_type_t value) {
 
     switch (value.index()) {
