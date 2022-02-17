@@ -255,6 +255,7 @@ namespace ragedb {
         lua.set_function("NodeGetDegreeByIdForTypes", &Shard::NodeGetDegreeByIdForTypesViaLua, this);
 
         // Traversing
+        //TODO: Node Get Neighbor Ids
         lua.set_function("NodeGetLinks", &Shard::NodeGetLinksViaLua, this);
         lua.set_function("NodeGetLinksForDirection", &Shard::NodeGetLinksForDirectionViaLua, this);
         lua.set_function("NodeGetLinksForDirectionForType", &Shard::NodeGetLinksForDirectionForTypeViaLua, this);
@@ -307,6 +308,7 @@ namespace ragedb {
         lua.set_function("NodeGetNeighborsByIdForDirectionForTypes", &Shard::NodeGetNeighborsByIdForDirectionForTypesViaLua, this);
 
         //Bulk
+        // TODO: Nodes Get Links
         lua.set_function("LinksGetLinks", &Shard::LinksGetLinksViaLua, this);
         lua.set_function("LinksGetLinksForDirection", &Shard::LinksGetLinksForDirectionViaLua, this);
         lua.set_function("LinksGetLinksForDirectionForType", &Shard::LinksGetLinksForDirectionForTypeViaLua, this);
@@ -420,7 +422,7 @@ namespace ragedb {
             // We only have one Lua VM for each Core, so lock it during use.
             this->lua_lock.for_write().lock().get();
             try {
-                script_result = lua.script(executable, [] (lua_State *, sol::protected_function_result pfr) {
+                script_result = lua.safe_script(executable, [] (lua_State *, sol::protected_function_result pfr) {
                     return pfr;
                 });
                 this->lua_lock.for_write().unlock();

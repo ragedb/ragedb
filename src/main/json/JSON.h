@@ -228,8 +228,7 @@ public:
     }
 
     void add_properties(std::map<std::string, property_type_t> const & props) {
-        for (auto[key, value] : props) {
-            std::string property = static_cast<std::string>(key);
+        for (auto[property, value] : props) {
             bool nested_initial;
 
             switch (value.index()) {

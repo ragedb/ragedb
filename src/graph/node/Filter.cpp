@@ -733,6 +733,7 @@ namespace ragedb {
   }
 
   std::vector<Node> NodeTypes::filterNodes(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+
     // If the type is invalid, we can't filter any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<Node>();
 

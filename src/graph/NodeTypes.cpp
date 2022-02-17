@@ -587,8 +587,8 @@ namespace ragedb {
                                 if (value.type() == simdjson::dom::element_type::UINT64) {
                                     // Unsigned Integer Values are not allowed, convert to signed
                                     properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
-                                    break;
                                 }
+                                break;
                             }
 
                             case Properties::getDoublePropertyType(): {
@@ -602,8 +602,8 @@ namespace ragedb {
                                         break;
                                     case simdjson::dom::element_type::DOUBLE:
                                         properties[type_id].setDoubleProperty(property, internal_id, double(value));
-                                        break;
                                 }
+                                break;
                             }
 
                             case Properties::getStringPropertyType(): {
