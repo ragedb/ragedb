@@ -405,7 +405,6 @@ namespace ragedb {
     seastar::future<std::string> Shard::RunLua(const std::string &script) {
 
         return seastar::async([script, this] () {
-
             // Inject json encoding
             std::stringstream ss(script);
             std::string line;

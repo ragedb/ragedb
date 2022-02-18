@@ -17,6 +17,8 @@
 #ifndef RAGEDB_SHARD_H
 #define RAGEDB_SHARD_H
 
+#define SOL_ALL_SAFETIES_ON 1
+
 #include <coroutine>
 #include <iostream>
 #include <fstream>

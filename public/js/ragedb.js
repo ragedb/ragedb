@@ -82,7 +82,13 @@ async function sendscript() {
             },
             body: query
         });
-        ele.innerHTML = await res.text();
+        const text = await res.text();
+        if (text.startsWith("An exception has occurred:")) {
+            ele.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
+        } else {
+            ele.innerHTML = text;
+        }
+
         clock.classList.remove("rotate");
     } catch (error) {
         console.log(error);

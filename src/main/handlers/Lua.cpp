@@ -38,7 +38,7 @@ future<std::unique_ptr<reply>> Lua::PostLuaHandler::handle([[maybe_unused]] cons
             return local_shard.RunLua(body);
         }).then([rep = std::move(rep)] (const std::string& result) mutable {
             if(result.rfind(EXCEPTION,0) == 0) {
-                rep->write_body("json", sstring(result));
+                rep->write_body("html", sstring(result));
                 rep->set_status(reply::status_type::bad_request);
                 return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
             }
