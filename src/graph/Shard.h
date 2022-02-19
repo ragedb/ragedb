@@ -632,6 +632,8 @@ namespace ragedb {
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetOutgoingNeighborsPeered(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         // Bulk
+
+
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(std::vector<Link> links);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(std::vector<Link> links, Direction direction);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(std::vector<Link> links, Direction direction, const std::string& rel_type);

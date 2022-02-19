@@ -52,7 +52,7 @@ namespace ragedb {
             }
         }
 
-        //TODO: Look into case insensitivevity https://www.boost.org/doc/libs/1_77_0/doc/html/string_algo/reference.html#header.boost.algorithm.string.predicate_hpp
+        //TODO: Look into case insensitivity https://www.boost.org/doc/libs/1_77_0/doc/html/string_algo/reference.html#header.boost.algorithm.string.predicate_hpp
         static bool EvaluateString(Operation operation, std::string a, std::string b) {
             switch(operation) {
                 case Operation::EQ: {
