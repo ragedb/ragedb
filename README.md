@@ -12,7 +12,7 @@ The Relationship Object (and properties) belong to the Outgoing Node (and shard)
 Each Node must have a singular Type and unique Key on creation which the server stores in a map for retrieval.
 External and Internal Ids are assigned upon creation for both Nodes and Relationships.
 
-Along side an HTTP API, RageDB also has a Lua http endpoint that allows users to send complex queries.
+Alongside an HTTP API, RageDB also has a Lua http endpoint that allows users to send complex queries.
 These queries are interpreted by LuaJIT, compiled and executed within a Seastar Thread that allows blocking.
 By not having a "query language" we avoid parsing, query planning, query execution and a host of [problems](https://maxdemarzi.com/2020/05/25/declarative-query-languages-are-the-iraq-war-of-computer-science/).
 
@@ -347,19 +347,19 @@ Within the script the user can access to graph functions. For example:
     -- Get some things about a node
     a = NodeGetId("Node","Max")
     b = NodeTypesGetCount()
-    c = NodeTypesGetCountByType("Node")
+    c = NodeTypesGetCount("Node")
     d = NodeGetProperty("Node", "Max", "name")
-    e = NodePropertyGetById(a, "name")
+    e = NodeGetProperty(a, "name")
     a, b, c, d, e
 
 A second example:
 
     -- get the names of nodes I have relationships with
     names = {}
-    ids = NodeGetRelationshipsIds("Node", "Max")
+    ids = NodeGetLinks("Node", "Max")
     for k=1,#ids do
         v = ids[k]
-        table.insert(names, NodePropertyGetById(v.node_id, "name"))
+        table.insert(names, NodeGetProperty(v:getNodeId(), "name"))
     end
     names
 
