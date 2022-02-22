@@ -50,7 +50,7 @@ function timeUnits( ms ) {
 const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
         if (entry.initiatorType === "fetch" && entry.name.endsWith("lua")) {
-            document.getElementById('timer').innerHTML = timeUnits(entry.responseEnd - entry.startTime);
+            document.getElementById('timer').innerHTML = timeUnits(entry.duration);
         }
     }
 });
