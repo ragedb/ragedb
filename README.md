@@ -1,20 +1,24 @@
 # RageDB
 
+[![Documentation](https://img.shields.io/badge/documentation-black)](https://ragedb.com)
+[![Slack](https://img.shields.io/badge/slack-purple)](https://ragedb.slack.com)
+[![Twitter](https://img.shields.io/twitter/follow/rage_database.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=rage_database)
+![C++](https://github.com/ragedb/ragedb/workflows/Coverage/badge.svg)
+
+[<p align="center"><img src="https://raw.githubusercontent.com/ragedb/ragedb.github.io/main/images/mascot-logo.webp" alt="ragedb mascot" width="660"/></p>](https://ragedb.com)
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=53459147-2981-4e5a-97bd-d40d0faa0954" />
+
 In Memory Property Graph Server using the Shared Nothing design from [Seastar](https://seastar.io).
 
-The [RageDB](https://ragedb.com) server can host multiple Graphs. The graphs are accessible via a REST API (see below).
-Each Graph is split into multiple Shards. One Shard per Core of the server.
-Shards communicate by explicit message passing. Nodes and Relationships have internal and external ids.
-The external ids embed the type as well as which Shard they belong to.
-The internal ids are pointers into vectors that hold the data of each Node and Relationship.
-The Relationship ids are replicated to both incoming and outgoing Nodes.
-The Relationship Object (and properties) belong to the Outgoing Node (and shard).
-Each Node must have a singular Type and unique Key on creation which the server stores in a map for retrieval.
-External and Internal Ids are assigned upon creation for both Nodes and Relationships.
+[RageDB](https://ragedb.com):
 
-Alongside an HTTP API, RageDB also has a Lua http endpoint that allows users to send complex queries.
-These queries are interpreted by LuaJIT, compiled and executed within a Seastar Thread that allows blocking.
-By not having a "query language" we avoid parsing, query planning, query execution and a host of [problems](https://maxdemarzi.com/2020/05/25/declarative-query-languages-are-the-iraq-war-of-computer-science/).
+- Faster than a speeding bullet train
+- Connect from anywhere via HTTP
+- Use the Lua programming language to query
+- Apache License, version 2.0
+
+Bring up the main website and documentation [ragedb.com](https://ragedb.com) while you spin up an instance on docker right now:
+
 
 ## Docker
 
