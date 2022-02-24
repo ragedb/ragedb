@@ -27,3 +27,32 @@ div.code {
         transform: rotate(359deg);
     }
 }
+
+
+*, ::after, ::before {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #d2d6dc;
+}
+
+.overflow-x-auto {
+    overflow-x: auto;
+}
+
+[data-results] {
+    display: none;
+}
+
+[data-results]:target {
+    display: block;
+}
+
+#response-json pre {outline: 1px solid #ccc; padding: 3px; }
+#response-json .json-string { color: green; }
+#response-json .json-number { color: royalblue; }
+#response-json .json-boolean { color: darkred; }
+#response-json .json-null { color: magenta; }
+#response-json .json-key { color: rebeccapurple; }
+
+

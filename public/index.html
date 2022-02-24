@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/ragedb_styles.css">
     <link rel="stylesheet" href="/css/bulma-tooltip.min.css">
     <link rel="stylesheet" href="/css/bulma-collapsible.min.css">
+    <link rel="stylesheet" href="/css/mermaid.min.css">
     <link rel="stylesheet" href="/css/custom.css">
     <script src="/js/index-min.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
@@ -281,7 +282,7 @@
                 </div>
             </div>
     </div>
-    <div class="column">
+    <div class="column overflow-x-auto">
             <div class="tile is-vertical">
                 <div class="tile is-child box">
                     <p class="title">Script
@@ -315,7 +316,23 @@
                 </div>
                 <div class="tile is-child box">
                     <p class="title">Response</p>
-                    <div id="response"></div>
+                    <div id="response">
+                        <div class="tabs">
+                            <ul>
+                                <li data-tab="raw" ><a href="#response-raw">Raw</a></li>
+                                <li data-tab="grid"><a href="#response-grid">Grid</a></li>
+                                <li data-tab="json"><a href="#response-json">JSON</a></li>
+                                <li data-tab="viz"><a href="#response-viz">Visualization</a></li>
+                                <li data-tab="error"><a href="#response-error">Error</a></li>
+                            </ul>
+                        </div>
+                        <div id="response-raw" class="results-data" data-results></div>
+                        <div id="response-grid" class="results-data" data-results></div>
+                        <div id="response-json" class="results-data" data-results></div>
+                        <div id="response-viz" class="results-data" data-results></div>
+                        <div id="response-error" class="results-data" data-results></div>
+
+                    </div>
                 </div>
 
             </div>
@@ -337,6 +354,7 @@
     </div>
 
 </footer>
+<script src="/js/gridjs52.umd.js"></script>
 <script src="/js/ragedb.js"></script>
 </body>
 </html>

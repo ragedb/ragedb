@@ -206,7 +206,7 @@ namespace ragedb {
            [this](uint64_t id, std::string property) { return this->NodeGetPropertyByIdViaLua(id, property); }
            ));
         lua.set_function("NodeGetProperties", sol::overload(
-           [this](std::string type, std::string key) { return this->NodeGetProperties(type, key); },
+           [this](std::string type, std::string key) { return this->NodeGetPropertiesViaLua(type, key); },
            [this](uint64_t id) { return this->NodeGetPropertiesByIdViaLua(id); }
            ));
         lua.set_function("NodeSetProperty", sol::overload(

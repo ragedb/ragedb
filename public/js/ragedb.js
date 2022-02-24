@@ -60,6 +60,37 @@ observer.observe({
     entryTypes: ["resource"]
 });
 
+
+
+
+const Tabs = document.querySelectorAll("[data-tab]");
+const FirstLocation = "response-raw";
+
+window.location.hash = FirstLocation;
+
+Tabs.forEach((element) => {
+    element.addEventListener("click", (event) => {
+        let selectedTab = event.currentTarget;
+        updateActiveTab(selectedTab);
+    });
+});
+
+let responseRaw = document.getElementById('response-raw');
+let responseGrid = document.getElementById('response-grid');
+let responseJson = document.getElementById('response-json');
+let responseError = document.getElementById('response-error');
+let responseViz = document.getElementById('response-viz');
+
+let grid = new gridjs.Grid({data: []}).render(responseGrid);
+
+let updateActiveTab = (newActiveTab) => {
+    Tabs.forEach((tab) => {
+        tab.classList.remove("is-active");
+    });
+
+    newActiveTab.classList.add("is-active");
+};
+
 async function sendscript() {
     let query = editor.getValue();
 
@@ -74,7 +105,14 @@ async function sendscript() {
         let clock = document.getElementById('clock');
         clock.classList.add("rotate");
         timer.innerHTML = timeUnits(0);
-        ele.innerHTML = '';
+        // clean results
+        const collection = document.getElementsByClassName("results-data");
+        for (let i = 0; i < collection.length; i++) {
+            while ( collection[i].firstChild) {
+                collection[i].removeChild(collection[i].firstChild);
+            }
+        }
+
         let res = await fetch(url, {
             method: 'POST',
             headers: {
@@ -82,11 +120,39 @@ async function sendscript() {
             },
             body: query
         });
-        const text = await res.text();
+        let text = await res.text();
         if (text.startsWith("An exception has occurred:")) {
-            ele.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
+            responseError.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
+            Tabs[4].click();
+            window.location.hash = "response-error";
+     
         } else {
-            ele.innerHTML = text;
+            responseRaw.innerHTML = text;
+            Tabs[0].classList.add("is-active");
+            let json = JSON.parse(text);
+            responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(json,null, 2));
+            responseError.innerHTML = "<div class=\"notification is-danger\">No Errors</div>";
+            if (json.length === 1) {
+                json = json[0];
+            }
+            if (!Array.isArray(json)) {
+                json = [json];
+            }
+            grid.updateConfig({
+                data: json,
+                search: true,
+                sort: {
+                    multiColumn: false
+                },
+                pagination: {
+                    enabled: true,
+                    limit: 10,
+                    summary: true
+                },
+                resizable: true
+            })
+
+            grid.forceRender();
         }
 
         clock.classList.remove("rotate");
@@ -101,6 +167,27 @@ function clearEditor() {
 
 function setEditor(query) {
     editor.setValue(query);
+}
+
+// JSON Highlight
+
+function syntaxHighlight(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'json-number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'json-key';
+            } else {
+                cls = 'json-string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+            cls = 'json-null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
 }
 
 
@@ -310,5 +397,5 @@ async function addQueryToHistory(query) {
 }
 
 window.addEventListener('unhandledrejection', event => {
-    console.log("Error: " + event.reason.message);
+    console.log("Unhandled Error: " + event.reason.message);
 });
