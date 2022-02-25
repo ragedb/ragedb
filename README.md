@@ -22,7 +22,8 @@ Bring up the main website and documentation [ragedb.com](https://ragedb.com) whi
 
 ## Docker
 
-    docker run -u 0 -p 127.0.0.1:7243:7243 --name ragedb -t ragedb/ragedb:latest --cap-add=sys_nice
+    docker pull dockerhub.ragedb.com/ragedb/ragedb
+    docker run -u 0 -p 127.0.0.1:7243:7243 --name ragedb -t dockerhub.ragedb.com/ragedb/ragedb:latest --cap-add=sys_nice
 
 If you are running Docker on a Mac or Windows Host, you may see this error message:
 
