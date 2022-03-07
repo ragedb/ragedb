@@ -44,6 +44,10 @@ div.code {
     display: none;
 }
 
+.is-active {
+    display: initial;
+}
+
 [data-results]:target {
     display: block;
 }

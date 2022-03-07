@@ -51,10 +51,7 @@
             <a href="#collapsible-favorites" data-action="collapse" onclick="listFavorites()">
                 <img src="images/icons/star-dynamic-color.png" height="100" width="100" alt="Favorites" />
             </a>
-            <a href="#collapsible-documentation" data-action="collapse">
-                <img src="images/icons/notebook-dynamic-color.png" height="100" width="100" alt="Documentation" />
-            </a>
-            <a href="#collapsible-recipes" data-action="collapse">
+             <a href="#collapsible-recipes" data-action="collapse">
                 <img src="images/icons/lab-dynamic-color.png" height="100" width="100" alt="Recipes" />
             </a>
             <a href="#collapsible-settings" data-action="collapse">
@@ -96,160 +93,6 @@
                         <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
                     </p>
                     <div id="favorites"></div>
-                </div>
-                <div id="collapsible-documentation" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Documentation
-                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
-                    </p>
-                    <div class="dropdown is-hoverable">
-                        <div class="dropdown-trigger">
-                            <button class="button" aria-haspopup="true" aria-controls="dropdown-node">
-                                <span>Node</span>
-                                <span class="icon is-small">
-                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                            </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-node" role="menu">
-                            <div class="dropdown-content">
-                                <a href="#" class="dropdown-item" onClick="addtext(':getId()');">
-                                    getId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getTypeId()');">
-                                    getTypeId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getType()');">
-                                    getType
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getKey()');">
-                                    getKey
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getProperties()');">
-                                    getProperties
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getProperty(&quot;&quot;)');">
-                                    getProperty
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="dropdown is-hoverable">
-                        <div class="dropdown-trigger">
-                            <button class="button" aria-haspopup="true" aria-controls="dropdown-relationship">
-                                <span>Relationship</span>
-                                <span class="icon is-small">
-                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                            </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-relationship" role="menu">
-                            <div class="dropdown-content">
-                                <a href="#" class="dropdown-item" onClick="addtext(':getId()');">
-                                    getId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getTypeId()');">
-                                    getTypeId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getType()');">
-                                    getType
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getStartingNodeId()');">
-                                    getStartingNodeId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getEndingNodeId()');">
-                                    getEndingNodeId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getProperties()');">
-                                    getProperties
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getProperty(&quot;&quot;)');">
-                                    getProperty
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="dropdown is-hoverable">
-                        <div class="dropdown-trigger">
-                            <button class="button" aria-haspopup="true" aria-controls="dropdown-link">
-                                <span>Link</span>
-                                <span class="icon is-small">
-                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                            </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-link" role="menu">
-                            <div class="dropdown-content">
-                                <a href="#" class="dropdown-item" onClick="addtext(':getNodeId()');">
-                                    getNodeId
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext(':getRelationshipId()');">
-                                    getRelationshipId
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="dropdown is-hoverable">
-                        <div class="dropdown-trigger">
-                            <button class="button" aria-haspopup="true" aria-controls="dropdown-all">
-                                <span>All</span>
-                                <span class="icon is-small">
-                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                            </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-all" role="menu">
-                            <div class="dropdown-content">
-                                <a href="#" class="dropdown-item" onClick="addtext('AllNodeIds()');">
-                                    AllNodeIds
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllNodeIdsForType(&quot;&quot;)');">
-                                    AllNodeIdsForType
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIds()');">
-                                    AllRelationshipIds
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipIdsForType(&quot;&quot;)');">
-                                    AllRelationshipIdsForType
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllNodes()');">
-                                    AllNodes
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllNodesForType(&quot;&quot;)');">
-                                    AllNodesForType
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationships()');">
-                                    AllRelationships
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('AllRelationshipsForType(&quot;&quot;)');">
-                                    AllRelationshipsForType
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="dropdown is-hoverable">
-                        <div class="dropdown-trigger">
-                            <button class="button" aria-haspopup="true" aria-controls="dropdown-node-degrees">
-                                <span>Node Degrees</span>
-                                <span class="icon is-small">
-                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                            </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-node-degrees" role="menu">
-                            <div class="dropdown-content">
-                                <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegree(&quot;type&quot;,&quot;key&quot;)');">
-                                    NodeGetDegree
-                                </a>
-                                <a href="#" class="dropdown-item" onClick="addtext('NodeGetDegreeForDirection(&quot;type&quot;,&quot;key&quot;)');">
-                                    NodeGetDegree
-                                </a>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div id="collapsible-recipes" class="is-collapsible" data-parent="only_one">
                     <p class="title">Recipes
@@ -334,11 +177,12 @@
                     <div id="response">
                         <div class="tabs">
                             <ul>
-                                <li data-tab="raw" ><a href="#response-raw">Raw</a></li>
-                                <li data-tab="grid"><a href="#response-grid">Grid</a></li>
-                                <li data-tab="json"><a href="#response-json">JSON</a></li>
-                                <li data-tab="viz"><a href="#response-viz">Visualization</a></li>
-                                <li data-tab="error"><a href="#response-error">Error</a></li>
+                                <li data-tab="raw"><a>Raw</a></li>
+                                <li data-tab="grid"><a>Grid</a></li>
+                                <li data-tab="json"><a>JSON</a></li>
+                                <li data-tab="viz"><a>Visualization</a></li>
+                                <li data-tab="error"><a>Error</a></li>
+                                <li data-tab="documentation" id="docs-tab"><a>Documentation</a></li>
                             </ul>
                         </div>
                         <div id="response-raw" class="results-data" data-results></div>
@@ -346,6 +190,340 @@
                         <div id="response-json" class="results-data" data-results></div>
                         <div id="response-viz" class="results-data" data-results></div>
                         <div id="response-error" class="results-data" data-results></div>
+                        <div id="response-documentation" class="results-data" data-results>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Relationship Types</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Retrieve the count of Relationship Types</p>
+                                    <pre><code class="language-lua">Number RelationshipTypesGetCount()</code></pre>
+                                    <p>Retrieve the count of a Relationship Type</p>
+                                    <pre><code class="language-lua">Number RelationshipTypesGetCount(String type)</code></pre>
+                                    <p>Retrieve the Relationship Types in an Array</p>
+                                    <pre><code class="language-lua">String[] RelationshipTypesGet()</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Relationship Type</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Retrieve the Type of a Relationship Type Id</p>
+                                    <pre><code class="language-lua">String RelationshipTypeGetType(Number type_id)</code></pre>
+                                    <p>Insert a Relationship Type and return its Type Id</p>
+                                    <pre><code class="language-lua">Number RelationshipTypeInsert(String type)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Node Types</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Retrieve the count of Node Types</p>
+                                    <pre><code class="language-lua">Number NodeTypesGetCount()</code></pre>
+                                    <p>Retrieve the count of a Node Type</p>
+                                    <pre><code class="language-lua">Number NodeTypesGetCount(String type)</code></pre>
+                                    <p>Retrieve the Node Types in an Array</p>
+                                    <pre><code class="language-lua">String[] NodeTypesGet()</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Node Type</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Retrieve the Type of a Node Type Id</p>
+                                    <pre><code class="language-lua">String NodeTypeGetType(Number type_id)</code></pre>
+                                    <p>Insert a Node Type and return its Type Id</p>
+                                    <pre><code class="language-lua">Number NodeTypeInsert(String type)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-warning">
+                                <h4 class="message-header">Data Types</h4>
+                                <div class="message-body">
+                                    <div class="content">
+                                        <p>
+                                            RageDB currently supports booleans, 64-bit integers, 64-bit doubles, strings and lists of the preceding data types:
+                                        </p>
+                                        <pre><code class="language-html">boolean, integer, double, string, boolean_list, integer_list, double_list, string_list</code></pre>
+                                    </div>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Property Types</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Add a property to a Node Type</p>
+                                    <pre><code class="language-lua">Number NodePropertyTypeAdd(String node_type, String property, String data_type)</code></pre>
+                                    <p>Add a property to a Relationship Type</p>
+                                    <pre><code class="language-lua">Number RelationshipPropertyTypeAdd(String relationship_type, String property, String data_type)</code></pre>
+                                    <p>Remove a property from a Node Type</p>
+                                    <pre><code class="language-lua">Boolean NodePropertyTypeDelete(String node_type, String property)</code></pre>
+                                    <p>Remove a property from a Relationship Type</p>
+                                    <pre><code class="language-lua">Boolean RelationshipPropertyTypeDelete(String relationship_type, String property)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Nodes</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Add a Node with properties</p>
+                                    <pre><code class="language-lua">Number NodeAdd(String type, String key, String json)</code></pre>
+                                    <p>Add an empty Node</p>
+                                    <pre><code class="language-lua">Number NodeAddEmpty(String type, String key)</code></pre>
+                                    <p>Get a Node by Type and Key</p>
+                                    <pre><code class="language-lua">Node NodeGet(String type, String key)</code></pre>
+                                    <p>Get a Node by Id</p>
+                                    <pre><code class="language-lua">Node NodeGet(Number id)</code></pre>
+                                    <p>Get a Node Id by Type and Key</p>
+                                    <pre><code class="language-lua">Number NodeGetId(String type, String key)</code></pre>
+                                    <p>Get the Key of a Node by Id</p>
+                                    <pre><code class="language-lua">String NodeGetKey(Number id)</code></pre>
+                                    <p>Get the Type of a Node by Id</p>
+                                    <pre><code class="language-lua">String NodeGetType(Number id)</code></pre>
+                                    <p>Remove a Node by Type and Key</p>
+                                    <pre><code class="language-lua">Boolean NodeRemove(String type, String key)</code></pre>
+                                    <p>Remove a Node by Id</p>
+                                    <pre><code class="language-lua">Boolean NodeRemove(Number id)</code></pre>
+                                    <p>Return a list of Nodes by their Node Ids</p>
+                                    <pre><code class="language-lua">Node[] NodesGet(Number[] ids)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Node Properties</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Delete a Node Property</p>
+                                    <pre><code class="language-lua">Boolean NodePropertyDelete(String type, String key, String property)</code></pre>
+                                    <p>Delete a Node Property By Id</p>
+                                    <pre><code class="language-lua">Boolean NodePropertyDelete(Number id, String property)</code></pre>
+                                    <p>Get a Node Property</p>
+                                    <pre><code class="language-lua">sol::object NodePropertyGet(String type, String key, String property)</code></pre>
+                                    <p>Get a Node Property By Id</p>
+                                    <pre><code class="language-lua">sol::object NodePropertyGet(Number id, String property)</code></pre>
+                                    <p>Set a Node Property</p>
+                                    <pre><code class="language-lua">Boolean NodePropertySet(String type, String key, String property, sol::object value)</code></pre>
+                                    <p>Set a Node Property By Id</p>
+                                    <pre><code class="language-lua">Boolean NodePropertySet(Number id, String property, sol::object value)</code></pre>
+                                    <p>Delete all Node Properties</p>
+                                    <pre><code class="language-lua">Boolean NodePropertiesDelete(String type, String key)</code></pre>
+                                    <p>Delete all Node Properties By Id</p>
+                                    <pre><code class="language-lua">Boolean NodePropertiesDelete(Number id)</code></pre>
+                                    <p>Get a Node Properties</p>
+                                    <pre><code class="language-lua">sol::object NodePropertiesGet(String type, String key)</code></pre>
+                                    <p>Get a Node Properties By Id</p>
+                                    <pre><code class="language-lua">sol::object NodePropertiesGet(Number id)</code></pre>
+                                    <p>Reset a Node Properties</p>
+                                    <pre><code class="language-lua">Boolean NodePropertiesResetFromJson(String type, String key, String json)</code></pre>
+                                    <p>Reset a Node Properties By Id</p>
+                                    <pre><code class="language-lua">Boolean NodePropertiesResetFromJson(Number id, String json)</code></pre>
+                                    <p>Set some Node Properties</p>
+                                    <pre><code class="language-lua">Boolean NodePropertiesSetFromJson(String type, String key, String json)</code></pre>
+                                    <p>Set some Node Properties By Id</p>
+                                    <pre><code class="language-lua">Boolean NodePropertiesSetFromJson(Number id, String json)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Relationship Properties</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Delete a Relationship Property</p>
+                                    <pre><code class="language-lua">Boolean RelationshipPropertyDelete(Number id, String property)</code></pre>
+                                    <p>Get a Relationship Property</p>
+                                    <pre><code class="language-lua">sol::object RelationshipPropertyGet(Number id, String property)</code></pre>
+                                    <p>Set a Relationship Property</p>
+                                    <pre><code class="language-lua">Boolean RelationshipPropertySet(Number id, String property, sol::object value)</code></pre>
+                                    <p>Delete all Relationship Properties</p>
+                                    <pre><code class="language-lua">Boolean RelationshipPropertiesDelete(Number id)</code></pre>
+                                    <p>Get a Relationship Properties</p>
+                                    <pre><code class="language-lua">sol::object RelationshipPropertiesGet(Number id)</code></pre>
+                                    <p>Reset a Relationship Properties</p>
+                                    <pre><code class="language-lua">Boolean RelationshipPropertiesResetFromJson(Number id, String json)</code></pre>
+                                    <p>Set some Relationship Properties</p>
+                                    <pre><code class="language-lua">Boolean RelationshipPropertiesSetFromJson(Number id, String json)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Relationships</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Add an empty Relationship</p>
+                                    <pre><code class="language-lua">Number RelationshipAddEmpty(String rel_type, String type1, String key1, String type2, String key2)</code></pre>
+                                    <p>Add an empty Relationship by Node Ids</p>
+                                    <pre><code class="language-lua">Number RelationshipAddEmptys(String rel_type, Number id1, Number id1)</code></pre>
+                                    <p>Add a Relationship with properties</p>
+                                    <pre><code class="language-lua">Number RelationshipAdd(String rel_type, String type1, String key1, String type2, String key2, String json)</code></pre>
+                                    <p>Add a Relationship with properties By Node Ids</p>
+                                    <pre><code class="language-lua">Number RelationshipAdds(String rel_type, Number id1, Number id1, String json)</code></pre>
+                                    <p>Get a Relationship</p>
+                                    <pre><code class="language-lua">Relationship RelationshipGet(Number id)</code></pre>
+                                    <p>Return a list of Relationships by their Relationship Ids</p>
+                                    <pre><code class="language-lua">Relationship[] RelationshipsGet(Number[] ids)</code></pre>
+                                    <p>Remove a Relationship</p>
+                                    <pre><code class="language-lua">Boolean RelationshipRemove(Number id)</code></pre>
+                                    <p>Get the Type of a Relationship</p>
+                                    <pre><code class="language-lua">String RelationshipGetType(Number id)</code></pre>
+                                    <p>Get the Starting Node Id of a Relationship</p>
+                                    <pre><code class="language-lua">Number RelationshipGetStartingNodeId(Number id)</code></pre>
+                                    <p>Get the Ending Node Id of a Relationship</p>
+                                    <pre><code class="language-lua">Number RelationshipGetEndingNodeId(Number id)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Node Degree</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Get the count of Relationships for a Node</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(String type, String key)</code></pre>
+                                    <p>Get the count of Relationships of a Direction for a Node</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(String type, String key, Direction direction)</code></pre>
+                                    <p>Get the count of Relationships of a Direction and Type for a Node</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(String type, String key, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the count of Relationships of a Type for a Node</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(String type, String key, String rel_type)</code></pre>
+                                    <p>Get the count of Relationships of a Direction and Types for a Node</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(String type, String key, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the count of Relationships of Types for a Node</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(String type, String key, String[] rel_types)</code></pre>
+                                    <p>Get the count of Relationships for a Node by Id</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(Number id)</code></pre>
+                                    <p>Get the count of Relationships of a Direction for a Node by Id</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(Number id, Direction direction)</code></pre>
+                                    <p>Get the count of Relationships of a Direction and Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(Number id, Direction direction, String rel_type)</code></pre>
+                                    <p>>Get the count of Relationships of a Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(Number id, String rel_type)</code></pre>
+                                    <p>Get the count of Relationships of a Direction and Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(Number id, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the count of Relationships of Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Number NodeGetDegree(Number id, String[] rel_types)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Traversing - Node Links</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Get the Links for a Node</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(String type, String key)</code></pre>
+                                    <p>Get the Links of a Direction for a Node</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(String type, String key, Direction direction)</code></pre>
+                                    <p>Get the Links of a Direction and Type for a Node</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(String type, String key, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the Links of a Direction and Types for a Node</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(String type, String key, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Links of a Type for a Node</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(String type, String key, String rel_type)</code></pre>
+                                    <p>Get the Links of Types for a Node</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(String type, String key, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Links for a Node by Id</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(Number id)</code></pre>
+                                    <p>Get the Links of a Direction for a Node by Id</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(Number id, Direction direction)</code></pre>
+                                    <p>Get the Links of a Direction and Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(Number id, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the Links of a Direction and Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(Number id, String[] rel_types)</code></pre>
+                                    <p>Get the Links of a Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(Number id, String rel_type)</code></pre>
+                                    <p>Get the Links of Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Link[] NodeGetLinks(Number id, String[] rel_types)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Traversing - Relationships</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Get the Relationships for a Node</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(String type, String key)</code></pre>
+                                    <p>Get the Relationships of a Direction for a Node</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(String type, String key, Direction direction)</code></pre>
+                                    <p>Get the Relationships of a Direction and Type for a Node</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(String type, String key, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the Relationships of a Direction and Types for a Node</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(String type, String key, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Relationships of a Type for a Node</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(String type, String key, String rel_type)</code></pre>
+                                    <p>Get the Relationships of Types for a Node</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(String type, String key, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Relationships for a Node by Id</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(Number id)</code></pre>
+                                    <p>Get the Relationships of a Direction for a Node by Id</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(Number id, Direction direction)</code></pre>
+                                    <p>Get the Relationships of a Direction and Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(Number id, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the Relationships of a Direction and Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(Number id, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Relationships of a Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(Number id, String rel_type)</code></pre>
+                                    <p>Get the Relationships of Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Relationship[] NodeGetRelationships(Number id, String[] rel_types)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Traversing - Neighbors</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Get the Neighbors for a Node</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(String type, String key)</code></pre>
+                                    <p>Get the Neighbors of a Direction for a Node</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(String type, String key, Direction direction)</code></pre>
+                                    <p>Get the Neighbors of a Direction and Type for a Node</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(String type, String key, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the Neighbors of a Direction and Types for a Node</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(String type, String key, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Neighbors of a Type for a Node</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(String type, String key, String rel_type)</code></pre>
+                                    <p>Get the Neighbors of Types for a Node</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(String type, String key, String[] rel_types)</code></pre>
+                                    <p>Get the Neighbors for a Node by Id</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(Number id)</code></pre>
+                                    <p>Get the Neighbors of a Direction for a Node by Id</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(Number id, Direction direction)</code></pre>
+                                    <p>Get the Neighbors of a Direction and Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(Number id, Direction direction, String rel_type)</code></pre>
+                                    <p>Get the Neighbors of a Direction and Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(Number id, Direction direction, String[] rel_types)</code></pre>
+                                    <p>Get the Neighbors of a Type for a Node by Id</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(Number id, String rel_type)</code></pre>
+                                    <p>Get the Neighbors of Types for a Node by Id</p>
+                                    <pre><code class="language-lua">Node[] NodeGetNeighbors(Number id, String[] rel_types)</code></pre>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>All</p>
+                                </div>
+                                <div class="message-body is-dark">
+                                    <p>Get all the Node Ids</p>
+                                    <pre><code class="language-lua">Number[] AllNodeIds()</code></pre>
+                                    <p>Get all the Nodes Ids of a Type</p>
+                                    <pre><code class="language-lua">Number[] AllNodeIds(String type)</code></pre>
+                                    <p>Get all the Relationship Ids</p>
+                                    <pre><code class="language-lua">Number[] AllRelationshipIds()</code></pre>
+                                    <p>Get all the Relationship Ids of a Type</p>
+                                    <pre><code class="language-lua">Number[] AllRelationshipIds(String type)</code></pre>
+                                    <p>Get all the Nodes</p>
+                                    <pre><code class="language-lua">Node[] AllNodes()</code></pre>
+                                    <p>Get all the Nodes of a Type</p>
+                                    <pre><code class="language-lua">Node[] AllNodes(String type)</code></pre>
+                                    <p>Get all the Relationships</p>
+                                    <pre><code class="language-lua">Relationship[] AllRelationships()</code></pre>
+                                    <p>Get all the Relationships of a Type</p>
+                                    <pre><code class="language-lua">Relationship[] AllRelationships(String type)</code></pre>
+                                </div>
+                            </article>
+
+                        </div>
 
                     </div>
                 </div>

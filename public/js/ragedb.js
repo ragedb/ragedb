@@ -70,9 +70,6 @@ observer.observe({
 
 
 const Tabs = document.querySelectorAll("[data-tab]");
-const FirstLocation = "response-raw";
-
-window.location.hash = FirstLocation;
 
 Tabs.forEach((element) => {
     element.addEventListener("click", (event) => {
@@ -92,9 +89,11 @@ let grid = new gridjs.Grid({data: []}).render(responseGrid);
 let updateActiveTab = (newActiveTab) => {
     Tabs.forEach((tab) => {
         tab.classList.remove("is-active");
+        document.querySelector("#response-"+ tab.dataset.tab).classList.remove("is-active");
     });
 
     newActiveTab.classList.add("is-active");
+    document.querySelector("#response-"+ newActiveTab.dataset.tab).classList.add("is-active");
 };
 
 async function sendscript() {
@@ -113,8 +112,9 @@ async function sendscript() {
         timer.innerHTML = timeUnits(0);
         // clean results
         const collection = document.getElementsByClassName("results-data");
-        for (let i = 0; i < collection.length; i++) {
-            while ( collection[i].firstChild) {
+        // leave documentation alone
+        for (let i = 0; i < (collection.length - 1); i++) {
+            while (collection[i].firstChild) {
                 collection[i].removeChild(collection[i].firstChild);
             }
         }
@@ -134,10 +134,11 @@ async function sendscript() {
      
         } else {
             responseRaw.innerHTML = text;
-            Tabs[0].classList.add("is-active");
+            updateActiveTab(Tabs[0]);
+
             let json = JSON.parse(text);
             responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(json,null, 2));
-            responseError.innerHTML = "<div class=\"notification is-danger\">No Errors</div>";
+            responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
             if (json.length === 1) {
                 json = json[0];
             }
