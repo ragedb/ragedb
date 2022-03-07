@@ -11,6 +11,12 @@ function addtext(newtext) {
     editor.insert(newtext);
 }
 
+function closeSecondColumn() {
+    document.getElementById("only_one").classList.add("is-hidden");
+    const collection = document.getElementsByClassName("is-active");
+    collection[1].bulmaCollapsible('close');
+}
+
 /**
  * Converts milliseconds into greater time units as possible
  * @param {int} ms - Amount of time measured in milliseconds

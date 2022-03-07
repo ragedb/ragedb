@@ -517,6 +517,7 @@
                                 {
                                     key: "expand",
                                     value: function expand() {
+                                        document.getElementById("only_one").classList.remove("is-hidden");
                                         var e = this;
                                         (void 0 === this._collapsed || this._collapsed) &&
                                         (this.emit("before:expand", this),

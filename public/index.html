@@ -68,11 +68,15 @@
     <div class="column is-one-fifth" id="only_one">
               <div id="second-column" class="box">
                 <div id="collapsible-inbox" class="is-collapsible is-active" data-parent="only_one">
-                    <p class="title">Inbox</p>
+                    <p class="title">Inbox
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                     <div id="inbox"></div>
                 </div>
                 <div id="collapsible-schema" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Schema</p>
+                    <p class="title">Schema
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                     <div id="schema"></div>
                 </div>
                 <div id="collapsible-history" class="is-collapsible" data-parent="only_one">
@@ -83,15 +87,20 @@
                                 </span>
                             <span>Clear</span>
                         </button>
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
                     </p>
                     <div id="history"></div>
                 </div>
                 <div id="collapsible-favorites" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Favorites</p>
+                    <p class="title">Favorites
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                     <div id="favorites"></div>
                 </div>
                 <div id="collapsible-documentation" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Documentation</p>
+                    <p class="title">Documentation
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                     <div class="dropdown is-hoverable">
                         <div class="dropdown-trigger">
                             <button class="button" aria-haspopup="true" aria-controls="dropdown-node">
@@ -243,13 +252,19 @@
                     </div>
                 </div>
                 <div id="collapsible-recipes" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Recipes</p>
+                    <p class="title">Recipes
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                 </div>
                 <div id="collapsible-settings" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Settings</p>
+                    <p class="title">Settings
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                 </div>
                 <div id="collapsible-community" class="is-collapsible" data-parent="only_one">
-                    <p class="title">Community</p>
+                    <p class="title">Community
+                        <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
+                    </p>
                     <p>Let's build something <a target="_blank" href="https://maxdemarzi.com/2021/07/08/lets-build-something-outrageous/">outrageous</a>!</p>
                     <br>
                     <p>Follow RageDB on
