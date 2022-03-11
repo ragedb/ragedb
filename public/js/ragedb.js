@@ -1,5 +1,12 @@
+// Side Menu
 bulmaCollapsible.attach();
+function closeSecondColumn() {
+    document.getElementById("only_one").classList.add("is-hidden");
+    const collection = document.getElementsByClassName("is-active");
+    collection[1].bulmaCollapsible('close');
+}
 
+// Editor
 var editor = ace.edit("code");
 editor.setTheme("ace/theme/dracula");
 editor.setShowPrintMargin(false);
@@ -11,11 +18,14 @@ function addtext(newtext) {
     editor.insert(newtext);
 }
 
-function closeSecondColumn() {
-    document.getElementById("only_one").classList.add("is-hidden");
-    const collection = document.getElementsByClassName("is-active");
-    collection[1].bulmaCollapsible('close');
+function clearEditor() {
+    editor.setValue("");
 }
+
+function setEditor(query) {
+    editor.setValue(query);
+}
+
 
 /**
  * Converts milliseconds into greater time units as possible
@@ -52,7 +62,7 @@ function timeUnits( ms ) {
     return str;
 }
 
-// create PerformanceObserver
+// Performance
 const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
         if (entry.initiatorType === "fetch" && entry.name.endsWith("lua")) {
@@ -61,12 +71,9 @@ const observer = new PerformanceObserver((list) => {
     }
 });
 
-// make it a resource observer
 observer.observe({
     entryTypes: ["resource"]
 });
-
-
 
 
 const Tabs = document.querySelectorAll("[data-tab]");
@@ -96,6 +103,43 @@ let updateActiveTab = (newActiveTab) => {
     document.querySelector("#response-"+ newActiveTab.dataset.tab).classList.add("is-active");
 };
 
+// JSON converters
+const flattenJSON = (obj = {}, res = {}, extraKey = '') => {
+    for(let key in obj){
+        if(typeof obj[key] !== 'object'){
+            res[extraKey + key] = obj[key];
+        }else{
+            let nextKey = `${extraKey}${key}.`;
+            if(nextKey === 'properties.') {
+                nextKey = '.';
+            }
+            flattenJSON(obj[key], res, nextKey);
+        }
+    }
+    return res;
+};
+
+const graphJSON = (obj = {}, res = {}) => {
+    if(Array.isArray(obj)) {
+        for (let index = 0, len = obj.length; index < len; ++index) {
+            res = graphJSON(obj[index], res);
+        }
+    }
+    if(typeof obj == 'object') {
+        if(["starting_node_id", "ending_node_id", "type"].every(item => obj.hasOwnProperty(item))) {
+            res.links.push(obj);
+        } else if(["key", "id", "type"].every(item => obj.hasOwnProperty(item))) {
+            res.nodes.push(obj);
+        }
+    }
+
+    return res;
+};
+
+function getViz(json) {
+    return graphJSON(json, { nodes: [], links: [] });
+}
+
 async function sendscript() {
     let query = editor.getValue();
 
@@ -105,7 +149,6 @@ async function sendscript() {
 
     let url = '/db/rage/lua';
     try {
-        let ele = document.getElementById('response');
 		let timer = document.getElementById('timer');
         let clock = document.getElementById('clock');
         clock.classList.add("rotate");
@@ -135,16 +178,109 @@ async function sendscript() {
         } else {
             responseRaw.innerHTML = text;
             updateActiveTab(Tabs[0]);
+            responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
 
             let json = JSON.parse(text);
             responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(json,null, 2));
-            responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
+
+            // If we have a single result then grab it but make sure it is wrapped in an array regardless
             if (json.length === 1) {
                 json = json[0];
             }
             if (!Array.isArray(json)) {
                 json = [json];
             }
+
+            // Viz
+            let data = getViz(json);
+            let vizWidth = responseViz.parentNode.parentElement.clientWidth - 50; // for padding
+            const vizGraph = ForceGraph()(responseViz)
+                .width(vizWidth)
+                .height(600)
+                .graphData(data)
+                .centerAt(-200, -50)
+                .zoom(4)
+                .nodeId('id')
+                .nodeLabel(node => JSON.stringify(node.properties, null, '\n'))
+                .nodeAutoColorBy(node => node.id % 24)
+                .linkLabel(rel => JSON.stringify(rel.properties, null, '\n'))
+                .linkSource('starting_node_id')
+                .linkTarget('ending_node_id')
+                .linkDirectionalArrowLength(6)
+                .linkDirectionalArrowRelPos(1)
+                .nodeCanvasObjectMode(() => 'after')
+                .nodeCanvasObject((node, ctx) => {
+                    // calculate key positioning
+                    const textPos = Object.assign(...['x', 'y'].map(c => ({
+                        [c]: node[c]
+                    })));
+
+                    // draw text key
+                    ctx.save();
+                    ctx.font = `4px Sans-Serif`;
+                    ctx.translate(textPos.x, textPos.y + 7);
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = 'darkgrey';
+                    ctx.fillText(node.key, 0, 0);
+                    ctx.restore();
+                })
+                .linkCanvasObjectMode(() => 'after')
+                .linkCanvasObject((link, ctx) => {
+                    const MAX_FONT_SIZE = 4;
+                    const LABEL_NODE_MARGIN = vizGraph.nodeRelSize() * 1.5;
+
+                    const start = link.source;
+                    const end = link.target;
+
+                    // ignore unbound links
+                    if (typeof start !== 'object' || typeof end !== 'object') return;
+
+                    // calculate label positioning
+                    const textPos = Object.assign(...['x', 'y'].map(c => ({
+                        [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+                    })));
+
+                    const relLink = { x: end.x - start.x, y: end.y - start.y };
+
+                    const maxTextLength = Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) - LABEL_NODE_MARGIN * 2;
+
+                    let textAngle = Math.atan2(relLink.y, relLink.x);
+                    // maintain label vertical orientation for legibility
+                    if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
+                    if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
+
+                    const label = link.type;
+
+                    // estimate fontSize to fit in link length
+                    ctx.font = '1px Sans-Serif';
+                    const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
+                    ctx.font = `${fontSize}px Sans-Serif`;
+                    const textWidth = ctx.measureText(label).width;
+                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+                    // draw text label (with background rect)
+                    ctx.save();
+                    ctx.translate(textPos.x, textPos.y);
+                    ctx.rotate(textAngle);
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
+
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = 'darkgrey';
+                    ctx.fillText(label, 0, 0);
+                    ctx.restore();
+                });
+
+
+
+            // We need to flatten the result for the Grid
+            for (let index = 0, len = json.length; index < len; ++index) {
+                json[index] = flattenJSON(json[index]);
+            }
+
             grid.updateConfig({
                 data: json,
                 search: true,
@@ -160,6 +296,7 @@ async function sendscript() {
             })
 
             grid.forceRender();
+
         }
 
         clock.classList.remove("rotate");
@@ -168,16 +305,8 @@ async function sendscript() {
     }
 }
 
-function clearEditor() {
-	editor.setValue("");
-}
-
-function setEditor(query) {
-    editor.setValue(query);
-}
 
 // JSON Highlight
-
 function syntaxHighlight(json) {
     json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
@@ -403,6 +532,7 @@ async function addQueryToHistory(query) {
     })
 }
 
+// Exceptions
 window.addEventListener('unhandledrejection', event => {
     console.log("Unhandled Error: " + event.reason.message);
 });
