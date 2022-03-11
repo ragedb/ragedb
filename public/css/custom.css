@@ -59,4 +59,10 @@ div.code {
 #response-json .json-null { color: magenta; }
 #response-json .json-key { color: rebeccapurple; }
 
+th.gridjs-th-sort .gridjs-th-content {
+    padding-right: 25px;
+}
 
+th.gridjs-th .gridjs-th-content {
+    text-overflow: unset;
+}
