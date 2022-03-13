@@ -176,28 +176,18 @@ async function sendscript() {
             window.location.hash = "response-error";
      
         } else {
-            responseRaw.innerHTML = text;
-            updateActiveTab(Tabs[0]);
             responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
-
-            let json = JSON.parse(text);
-            responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(json,null, 2));
-
-            // If we have a single result then grab it but make sure it is wrapped in an array regardless
-            if (json.length === 1) {
-                json = json[0];
-            }
-            if (!Array.isArray(json)) {
-                json = [json];
-            }
+            responseRaw.innerHTML = text;
+            let data = JSON.parse(text);
+            updateActiveTab(Tabs[0]);
+            responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(data,null, 2));
 
             // Viz
-            let data = getViz(json);
             let vizWidth = responseViz.parentNode.parentElement.clientWidth - 50; // for padding
             const vizGraph = ForceGraph()(responseViz)
                 .width(vizWidth)
                 .height(600)
-                .graphData(data)
+                .graphData(getViz(data))
                 .centerAt(-200, -50)
                 .zoom(4)
                 .nodeId('id')
@@ -274,31 +264,39 @@ async function sendscript() {
                     ctx.restore();
                 });
 
+            let json = JSON.parse(text);
+             for (let index = 0, len = json.length; index < len; ++index) {
+                 let table = json[index];
+                 if (!Array.isArray(table)) {
+                    table = [table];
+                 }
 
+                let elemDiv = document.createElement('div');
+                responseGrid.appendChild(elemDiv);
 
-            // We need to flatten the result for the Grid
-            for (let index = 0, len = json.length; index < len; ++index) {
-                json[index] = flattenJSON(json[index]);
+                // We need to flatten the result for the Grid
+                for (let index = 0, len = table.length; index < len; ++index) {
+                    table[index] = flattenJSON(table[index]);
+                }
+
+                let grid = new gridjs.Grid({data: []}).render(elemDiv);
+                grid.updateConfig({
+                    data: table,
+                    search: true,
+                    sort: {
+                        multiColumn: false
+                    },
+                    pagination: {
+                        enabled: true,
+                        limit: 10,
+                        summary: true
+                    },
+                    resizable: true
+                });
+
+                grid.forceRender();
             }
-
-            grid.updateConfig({
-                data: json,
-                search: true,
-                sort: {
-                    multiColumn: false
-                },
-                pagination: {
-                    enabled: true,
-                    limit: 10,
-                    summary: true
-                },
-                resizable: true
-            })
-
-            grid.forceRender();
-
         }
-
         clock.classList.remove("rotate");
     } catch (error) {
         console.log(error);
