@@ -59,6 +59,7 @@ namespace ragedb {
         seastar::rwlock lua_lock;                       // Per Shard lock to run a single Lua script each
 
         sol::state lua;                                 // Lua State
+        sol::environment env;                           // Lua Sandboxed Environment
 
         NodeTypes node_types;                           // Store string and id of node types
         RelationshipTypes relationship_types;           // Store string and id of relationship types
@@ -812,6 +813,8 @@ namespace ragedb {
         sol::object NodeGetPropertiesByIdViaLua(uint64_t id);
         bool NodeSetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property, const sol::object& value);
         bool NodeSetPropertyByIdViaLua(uint64_t id, const std::string& property, const sol::object& value);
+        bool NodeSetPropertyFromJsonViaLua(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
+        bool NodeSetPropertyFromJsonByIdViaLua(uint64_t id, const std::string& property, const std::string& value);
         bool NodeSetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);
         bool NodeSetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value);
         bool NodeResetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value);

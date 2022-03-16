@@ -14,6 +14,9 @@ set(HEADER_FILES
         Expression.h
         Lua.h
         Roar.h
+        Sandbox.h
+        Order.h
+        Uniqueness.h
         eve/CollectIndexes.h)
 
 set(SOURCE_FILES
@@ -27,11 +30,12 @@ set(SOURCE_FILES
         RelationshipTypes.cpp
         Properties.cpp
         Roar.cpp
+        Sandbox.cpp
         node/Find.cpp relationship/Find.cpp shard/Find.cpp peered/Find.cpp lua/Find.cpp
         node/Filter.cpp relationship/Filter.cpp shard/Filter.cpp peered/Filter.cpp lua/Filter.cpp
         shard/Ids.cpp shard/Types.cpp shard/Node.cpp shard/Nodes.cpp shard/Relationship.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Helpers.cpp shard/Bulk.cpp
         peered/Types.cpp peered/Node.cpp peered/Nodes.cpp peered/Relationship.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp peered/Bulk.cpp peered/Restore.cpp peered/Connected.cpp peered/Helpers.cpp
         lua/Types.cpp lua/Node.cpp lua/Nodes.cpp lua/Relationship.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp lua/Bulk.cpp lua/Helpers.cpp
-        Order.h Uniqueness.h)
+        )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

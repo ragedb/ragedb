@@ -17,6 +17,7 @@
 #include "Shard.h"
 #include "Roar.h"
 #include "Lua.h"
+#include "Sandbox.h"
 
 unsigned int SHARD_BITS;
 unsigned int SHARD_MASK;
@@ -29,12 +30,10 @@ namespace ragedb {
         SHARD_BITS = std::bit_width(_cpus);
         SHARD_MASK = (1 << SHARD_BITS) - 1;
 
-        lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io, sol::lib::os);
+        lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io, sol::lib::os, sol::lib::coroutine);
         lua.require_script("json", Lua::json_script);
         lua.require_script("ftcsv", Lua::ftcsv_script);
         lua.require_script("date", Lua::date_script);
-
-        // TODO: Create a sanitized environment to sandbox the user's Lua code, and put these user types there.
 
         lua.new_enum("Direction",
           "BOTH", Direction::BOTH,
@@ -217,6 +216,10 @@ namespace ragedb {
            [this](std::string type, std::string key, std::string properties) { return this->NodeSetPropertiesFromJsonViaLua(type, key, properties); },
            [this](uint64_t id, std::string properties) { return this->NodeSetPropertiesFromJsonByIdViaLua(id, properties); }
            ));
+        lua.set_function("NodeSetPropertyFromJson", sol::overload(
+           [this](std::string type, std::string key, std::string property, std::string value) { return this->NodeSetPropertyFromJsonViaLua(type, key, property, value); },
+           [this](uint64_t id, std::string property, std::string value) { return this->NodeSetPropertyFromJsonByIdViaLua(id, property, value); }
+           ));
         lua.set_function("NodeResetPropertiesFromJson", sol::overload(
            [this](std::string type, std::string key, std::string properties) { return this->NodeResetPropertiesFromJsonViaLua(type, key, properties); },
            [this](uint64_t id, std::string properties) { return this->NodeResetPropertiesFromJsonByIdViaLua(id, properties); }
@@ -336,7 +339,7 @@ namespace ragedb {
 
         //Bulk
         // TODO: Nodes Get Links
-        lua.set_function("LinksGetLinks",sol::overload(
+        lua.set_function("LinksGetLinks", sol::overload(
             [this](std::vector<Link> links) { return this->LinksGetLinksViaLua(links); },
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetLinksForDirectionViaLua(links, direction); },
             [this](std::vector<Link> links, Direction direction, std::string rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, direction, rel_type); },
@@ -345,7 +348,7 @@ namespace ragedb {
             [this](std::vector<Link> links, std::vector<std::string> rel_types) { return this->LinksGetLinksForTypesViaLua(links, rel_types); }
             ));
 
-        lua.set_function("LinksGetRelationships",sol::overload(
+        lua.set_function("LinksGetRelationships", sol::overload(
             [this](std::vector<Link> links) { return this->LinksGetRelationshipsViaLua(links); },
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetRelationshipsForDirectionViaLua(links, direction); },
             [this](std::vector<Link> links, Direction direction, std::string rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, direction, rel_type); },
@@ -354,7 +357,7 @@ namespace ragedb {
             [this](std::vector<Link> links, std::vector<std::string> rel_types) { return this->LinksGetRelationshipsForTypesViaLua(links, rel_types); }
             ));
 
-        lua.set_function("LinksGetNeighbors",sol::overload(
+        lua.set_function("LinksGetNeighbors", sol::overload(
             [this](std::vector<Link> links) { return this->LinksGetNeighborsViaLua(links); },
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetNeighborsForDirectionViaLua(links, direction); },
             [this](std::vector<Link> links, Direction direction, std::string rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, direction, rel_type); },
@@ -397,6 +400,9 @@ namespace ragedb {
         lua.set_function("FilterRelationshipIds", &Shard::FilterRelationshipIdsViaLua, this);
         lua.set_function("FilterRelationships", &Shard::FilterRelationshipsViaLua, this);
 
+        // Create a sanitized environment to sandbox the user's Lua code
+        auto sandbox = Sandbox(lua);
+        env = sandbox.getEnvironment();
     }
 
 
@@ -448,15 +454,14 @@ namespace ragedb {
                 lines.emplace_back(line);
             }
 
-            std::string json_function = "local json = require('json')";
             lines.back() = "return json.encode({" + lines.back() + "})";
 
-            std::string executable = json_function + join(lines, " ");
+            std::string executable = join(lines, "\n");
             sol::protected_function_result script_result;
             // We only have one Lua VM for each Core, so lock it during use.
             this->lua_lock.for_write().lock().get();
             try {
-                script_result = lua.safe_script(executable, [] (lua_State *, sol::protected_function_result pfr) {
+                script_result = lua.safe_script(executable, env,[] (lua_State *, sol::protected_function_result pfr) {
                     return pfr;
                 });
                 this->lua_lock.for_write().unlock();

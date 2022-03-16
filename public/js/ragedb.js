@@ -105,10 +105,10 @@ let updateActiveTab = (newActiveTab) => {
 
 // JSON converters
 const flattenJSON = (obj = {}, res = {}, extraKey = '') => {
-    for(let key in obj){
-        if(typeof obj[key] !== 'object'){
+    for(let key in obj) {
+        if(typeof obj[key] !== 'object') {
             res[extraKey + key] = obj[key];
-        }else{
+        } else {
             let nextKey = `${extraKey}${key}.`;
             if(nextKey === 'properties.') {
                 nextKey = '.';
@@ -173,7 +173,6 @@ async function sendscript() {
         if (text.startsWith("An exception has occurred:")) {
             responseError.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
             Tabs[4].click();
-            window.location.hash = "response-error";
      
         } else {
             responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
@@ -268,21 +267,39 @@ async function sendscript() {
              for (let index = 0, len = json.length; index < len; ++index) {
                  let table = json[index];
                  if (!Array.isArray(table)) {
-                    table = [table];
+                     table = [table];
                  }
 
-                let elemDiv = document.createElement('div');
-                responseGrid.appendChild(elemDiv);
+                 let elemDiv = document.createElement('div');
+                 responseGrid.appendChild(elemDiv);
 
-                // We need to flatten the result for the Grid
-                for (let index = 0, len = table.length; index < len; ++index) {
-                    table[index] = flattenJSON(table[index]);
-                }
+                 let grid = new gridjs.Grid({data: []}).render(elemDiv);
 
-                let grid = new gridjs.Grid({data: []}).render(elemDiv);
+                 let searchable = true;
+                 // We need to flatten the result for the Grid if it's make up of objects
+                 if (typeof table[0] === 'object' && table[0] !== null) {
+                     if (table.length > 1) {
+                         for (let index = 0, len = table.length; index < len; ++index) {
+                             table[index] = flattenJSON(table[index]);
+                         }
+                    } else {
+                         table = flattenJSON(table[0]);
+                         grid.updateConfig({ columns: Object.keys(table) });
+                         table = [Object.values(table)];
+                         searchable = false;
+                    }
+                } else {
+                     grid.updateConfig({ columns: ["Response"] });
+                     let arrayOfArrays = [];
+                     for (let index = 0, len = table.length; index < len; ++index) {
+                         arrayOfArrays[index] = [table[index]];
+                     }
+                     table = arrayOfArrays;
+                 }
+
                 grid.updateConfig({
                     data: table,
-                    search: true,
+                    search: searchable,
                     sort: {
                         multiColumn: false
                     },

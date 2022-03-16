@@ -132,6 +132,14 @@ namespace ragedb {
         return false;
     }
 
+    bool Shard::NodeSetPropertyFromJsonViaLua(const std::string& type, const std::string& key, const std::string& property, const std::string& value) {
+      return NodeSetPropertyFromJsonPeered(type, key, property, value).get0();
+    }
+
+    bool Shard::NodeSetPropertyFromJsonByIdViaLua(uint64_t id, const std::string& property, const std::string& value) {
+      return NodeSetPropertyFromJsonPeered(id, property, value).get0();
+    }
+
     bool Shard::NodeSetPropertiesFromJsonViaLua(const std::string& type, const std::string& key, const std::string& value) {
         return NodeSetPropertiesFromJsonPeered(type, key, value).get0();
     }
