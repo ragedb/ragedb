@@ -30,38 +30,19 @@ namespace ragedb {
 
     sol::environment &getEnvironment() { return env; }
 
-    // Checks whether path is allowed
-    bool checkPath(const std::string &path, bool write);
-
-    // No path is valid
-    inline static std::string basePath = "";
-
   private:
     void buildEnvironment();
-
-    /// Secure loadstring. Prohibits bytecode, applies environment.
-    ///
-    /// @param str Source code
-    /// @param chunkname Chunk name
-    /// @return Either (func, nil) or (nil, error-str)
-    std::tuple<sol::object, sol::object> loadstring(const std::string &str,
-      const std::string &chunkname = sol::detail::default_chunk_name());
-
-    /// Secure loadfile. Checks path, then calls secure loadstring.
-    ///
-    /// @param path Path to file
-    /// @return Either (func, nil) or (nil, error-str)
-    std::tuple<sol::object, sol::object> loadfile(const std::string &path);
-
-    /// Secure dofile
-    /// @param path Path to file
-    /// @return Return value of function
-    sol::object dofile(const std::string &path);
 
     inline static const std::vector<std::string> ALLOWED_LUA_LIBRARIES = {
       "string",
       "table",
       "math"
+    };
+
+    inline static const std::vector<std::string> RESTRICTED_LUA_FUNCTIONS = {
+      "loadstring",
+      "loadfile",
+      "dofile"
     };
 
     // http://lua-users.org/wiki/SandBoxes
@@ -184,10 +165,10 @@ namespace ragedb {
 
       // These functions are unsafe as they can bypass or change metatables,
       // but they are required to implement classes.
-      "rawequal",
-      "rawget",
-      "rawset",
-      "setmetatable",
+      //"rawequal",
+      //"rawget",
+      //"rawset",
+      //"setmetatable"
     };
 
   };

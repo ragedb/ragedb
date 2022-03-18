@@ -31,6 +31,7 @@ set(SOURCE_FILES
         Properties.cpp
         Roar.cpp
         Sandbox.cpp
+        Load.cpp
         node/Find.cpp relationship/Find.cpp shard/Find.cpp peered/Find.cpp lua/Find.cpp
         node/Filter.cpp relationship/Filter.cpp shard/Filter.cpp peered/Filter.cpp lua/Filter.cpp
         shard/Ids.cpp shard/Types.cpp shard/Node.cpp shard/Nodes.cpp shard/Relationship.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Helpers.cpp shard/Bulk.cpp

@@ -72,13 +72,21 @@ namespace ragedb {
 
         inline static const uint64_t SKIP = 0;
         inline static const uint64_t LIMIT = 100;
+        inline static const std::vector<std::string> READ_PATHS = {};   // No read path is valid for now
+        inline static const std::vector<std::string> WRITE_PATHS = {};  // No write path is valid for now
 
         static seastar::future<> stop();
         void Clear();
 
         seastar::future<std::string> RunLua(const std::string &script);
 
-        // Ids
+        // Sandboxed
+        std::tuple<sol::object, sol::object> loadstring(const std::string &str, const sol::optional<std::string> &chunkname = sol::detail::default_chunk_name());
+        std::tuple<sol::object, sol::object> loadfile(const std::string &path);
+        sol::object dofile(const std::string &path);
+        bool checkPath(const std::string &filepath, bool write);
+
+          // Ids
         static uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id);
         static uint64_t externalToInternal(uint64_t id);
         static uint16_t externalToTypeId(uint64_t id);
@@ -940,15 +948,15 @@ namespace ragedb {
         sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Bulk
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksViaLua(std::vector<Link> links);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionViaLua(std::vector<Link> links, Direction direction);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksViaLua(std::vector<Link> links);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionViaLua(std::vector<Link> links, Direction direction);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
-        sol::as_table_t<std::map<Link, std::vector<Link>>> LinksGetLinksForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsViaLua(std::vector<Link> links);
         sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction);

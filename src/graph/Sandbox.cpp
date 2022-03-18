@@ -15,7 +15,6 @@
  */
 
 #include <fstream>
-#include <filesystem>
 #include "Sandbox.h"
 
 namespace ragedb {
@@ -49,11 +48,7 @@ namespace ragedb {
     copyAll(env, lua.globals(), ALLOWED_CUSTOM_FUNCTIONS);
     copyAll(env, lua.globals(), ALLOWED_GRAPH_OBJECTS);
     copyAll(env, lua.globals(), ALLOWED_GRAPH_FUNCTIONS);
-
-    // Allow users to store and load custom Lua
-    env.set_function("loadstring", &Sandbox::loadstring, this);
-    env.set_function("loadfile", &Sandbox::loadfile, this);
-    env.set_function("dofile", &Sandbox::dofile, this);
+    copyAll(env, lua.globals(), RESTRICTED_LUA_FUNCTIONS);
 
     // Individual Functions from Libraries
     sol::table os(lua, sol::create);
@@ -68,63 +63,28 @@ namespace ragedb {
     io["type"] = lua["io"]["type"];
     env["io"] = io;
 
+#if LUA_VERSION_NUM >= 502
+    // Get environment registry index
     lua_rawgeti(lua, LUA_REGISTRYINDEX, env.registry_index());
+
+    // Set the global environment
     lua_rawseti(lua, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
-  }
+#else
+    // Get main thread
+    int is_main = lua_pushthread(lua);
+    assert(is_main);
+    int thread = lua_gettop(lua);
 
-  std::tuple<sol::object, sol::object> Sandbox::loadstring(const std::string &str, const std::string &chunkname) {
-    if (!str.empty() && str[0] == LUA_SIGNATURE[0]) {
-      return std::make_tuple(sol::nil,
-        sol::make_object(lua, "Bytecode prohibited by Lua sandbox"));
-    }
+    // Get environment registry index
+    lua_rawgeti(lua, LUA_REGISTRYINDEX, env.registry_index());
 
-    sol::load_result result = lua.load(str, chunkname, sol::load_mode::text);
-    if (result.valid()) {
-      sol::function func = result;
-      env.set_on(func);
-      return std::make_tuple(func, sol::nil);
-    } else {
-      return std::make_tuple(
-        sol::nil, sol::make_object(lua, ((sol::error)result).what()));
-    }
-  }
-
-  std::tuple<sol::object, sol::object> Sandbox::loadfile(const std::string &path) {
-    if (!checkPath(path, false)) {
-      return std::make_tuple(sol::nil,
-        sol::make_object(
-          lua, "Path is not allowed by the Lua sandbox"));
-    }
-
-    std::ifstream t(path);
-    std::string str((std::istreambuf_iterator<char>(t)),
-      std::istreambuf_iterator<char>());
-    return loadstring(str, "@" + path);
-  }
-
-  sol::object Sandbox::dofile(const std::string &path) {
-    std::tuple<sol::object, sol::object> ret = loadfile(path);
-    if (std::get<0>(ret) == sol::nil) {
-      throw sol::error(std::get<1>(ret).as<std::string>());
-    }
-
-    sol::unsafe_function func = std::get<0>(ret);
-    return func();
-  }
-
-  bool Sandbox::checkPath(const std::string &filepath, bool write) {
-    // TODO: Split between allowed reads and writes
-    if (basePath.empty()) {
-      return false;
-    }
-
-    auto base = std::filesystem::absolute(basePath).lexically_normal();
-    auto path = std::filesystem::absolute(filepath).lexically_normal();
-
-    auto [rootEnd, nothing] =
-      std::mismatch(base.begin(), base.end(), path.begin());
-
-    return rootEnd == base.end();
+    // Set the global environment
+    if (!lua_setfenv(lua, thread)) {
+      // "Security: Unable to set environment of the main Lua thread!");
+      throw std::exception();
+    };
+    lua_pop(lua, 1); // Pop thread
+#endif
   }
 
 }

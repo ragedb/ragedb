@@ -125,7 +125,7 @@ const graphJSON = (obj = {}, res = {}) => {
             res = graphJSON(obj[index], res);
         }
     }
-    if(typeof obj == 'object') {
+    if(typeof obj == 'object' && obj != null) {
         if(["starting_node_id", "ending_node_id", "type"].every(item => obj.hasOwnProperty(item))) {
             res.links.push(obj);
         } else if(["key", "id", "type"].every(item => obj.hasOwnProperty(item))) {

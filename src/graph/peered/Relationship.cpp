@@ -18,6 +18,63 @@
 
 namespace ragedb {
 
+    // Helpers
+    std::pair <uint16_t, uint64_t> Shard::RelationshipRemoveGetIncoming(uint64_t external_id) {
+
+      uint16_t rel_type_id = externalToTypeId(external_id);
+      uint64_t internal_id = externalToInternal(external_id);
+
+      uint64_t id1 = relationship_types.getStartingNodeId(rel_type_id, internal_id);
+      uint64_t id2 = relationship_types.getEndingNodeId(rel_type_id, internal_id);
+      uint16_t id1_type_id = externalToTypeId(id1);
+
+      // Add to deleted relationships bitmap
+      relationship_types.removeId(rel_type_id, internal_id);
+
+      uint64_t internal_id1 = externalToInternal(id1);
+
+      // Remove relationship from Node 1
+      auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
+        std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
+        [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+
+      if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
+        auto rel_to_delete = find_if(std::begin(group->links), std::end(group->links), [external_id](Link entry) {
+          return entry.rel_id == external_id;
+        });
+        if (rel_to_delete != std::end(group->links)) {
+          group->links.erase(rel_to_delete);
+        }
+      }
+
+      // Clear the relationship
+      relationship_types.setStartingNodeId(rel_type_id, internal_id, 0);
+      relationship_types.setEndingNodeId(rel_type_id, internal_id, 0);
+      relationship_types.deleteProperties(rel_type_id, internal_id);
+
+      // Return the rel_type and other node Id
+      return std::pair <uint16_t ,uint64_t> (rel_type_id, id2);
+    }
+
+    bool Shard::RelationshipRemoveIncoming(uint16_t rel_type_id, uint64_t external_id, uint64_t node_id) {
+      // Remove relationship from Node 2
+      uint64_t internal_id2 = externalToInternal(node_id);
+      uint16_t id2_type_id = externalToTypeId(node_id);
+
+      auto group = find_if(std::begin(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
+        std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
+        [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+
+      auto rel_to_delete = find_if(std::begin(group->links), std::end(group->links), [external_id](Link entry) {
+        return entry.rel_id == external_id;
+      });
+      if (rel_to_delete != std::end(group->links)) {
+        group->links.erase(rel_to_delete);
+      }
+
+      return true;
+    }
+
     seastar::future<uint64_t> Shard::RelationshipAddEmptyPeered(const std::string &rel_type, const std::string &type1, const std::string &key1, const std::string &type2, const std::string &key2) {
         uint16_t shard_id1 = CalculateShardId(type1, key1);
         uint16_t shard_id2 = CalculateShardId(type2, key2);
