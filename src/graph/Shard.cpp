@@ -162,7 +162,8 @@ namespace ragedb {
         //Node
         lua.set_function("NodeAdd", sol::overload(
             [this](std::string type, std::string key) { return this->NodeAddEmptyViaLua(type, key); },
-            [this](std::string type, std::string key, std::string properties) { return this->NodeAddViaLua(type, key, properties); }
+            [this](std::string type, std::string key, std::string properties) { return this->NodeAddViaLua(type, key, properties); },
+            [this](std::string type, std::vector<std::string> keys, std::vector<std::string> properties) { return this->NodeAddManyPeeredViaLua(type, keys, properties); }
            ));
 
         lua.set_function("NodeGetId", &Shard::NodeGetIdViaLua, this);

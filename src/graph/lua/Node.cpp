@@ -26,6 +26,10 @@ namespace ragedb {
         return NodeAddPeered(type, key, properties).get0();
     }
 
+    std::vector<uint64_t> Shard::NodeAddManyPeeredViaLua(const std::string &type, const std::vector<std::string> keys, const std::vector<std::string> properties) {
+      return NodeAddManyPeered(type, keys, properties).get0();
+    }
+
     uint64_t Shard::NodeGetIdViaLua(const std::string& type, const std::string& key) {
         return NodeGetIDPeered(type, key).get0();
     }

@@ -18,6 +18,24 @@
 
 namespace ragedb {
 
+    std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> Shard::PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) {
+      std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> sharded_nodes;
+      for (int i = 0; i < cpus; i++) {
+        sharded_nodes.insert({i, std::vector<std::tuple<std::string, std::string>>() });
+      }
+
+      for (int i = 0; i < keys.size(); i++) {
+        sharded_nodes[CalculateShardId(type, keys[i])].emplace_back(std::tuple(keys[i], properties[i]));
+      }
+
+      for (int i = 0; i < cpus; i++) {
+        if (sharded_nodes.at(i).empty()) {
+          sharded_nodes.erase(i);
+        }
+      }
+      return sharded_nodes;
+    }
+
     std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionIdsByShardId(const std::vector<uint64_t> &ids) const {
       std::map<uint16_t, std::vector<uint64_t>> sharded_ids;
       for (int i = 0; i < cpus; i++) {

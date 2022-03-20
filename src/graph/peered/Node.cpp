@@ -60,6 +60,58 @@ namespace ragedb {
         });
     }
 
+    seastar::future<std::vector<uint64_t>> Shard::NodeAddManyPeered(const std::string &type, const std::vector<std::string> keys, const std::vector<std::string> properties) {
+      std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> sharded_nodes = PartitionNodesByNodeTypeKeys(type, keys, properties);
+      uint16_t type_id = node_types.getTypeId(type);
+
+      // The node type exists, so continue on
+      if (type_id > 0) {
+        std::vector<seastar::future<std::vector<uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
+          auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id] (Shard &local_shard) {
+            return local_shard.NodeAddMany(type_id, grouped_nodes);
+          });
+          futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+          std::vector<uint64_t> ids;
+
+          for(auto sharded : results) {
+            ids.insert(std::end(ids), std::begin(sharded), std::end(sharded));
+          }
+          return ids;
+        });
+      }
+
+      // The node type needs to be set by Shard 0 and propagated
+      return container().invoke_on(0, [type, sharded_nodes, this](Shard &local_shard) {
+        return local_shard.NodeTypeInsertPeered(type).then([sharded_nodes, this](uint16_t type_id) {
+          std::vector<seastar::future<std::vector<uint64_t>>> futures;
+          for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
+            auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id] (Shard &local_shard) {
+              return local_shard.NodeAddMany(type_id, grouped_nodes);
+            });
+            futures.push_back(std::move(future));
+          }
+
+          auto p = make_shared(std::move(futures));
+
+          return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+            std::vector<uint64_t> ids;
+
+            for(auto sharded : results) {
+              ids.insert(std::end(ids), std::begin(sharded), std::end(sharded));
+            }
+            return ids;
+          });
+        });
+      });
+
+    }
+
     seastar::future<uint64_t> Shard::NodeGetIDPeered(const std::string &type, const std::string &key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 

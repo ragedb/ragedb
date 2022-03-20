@@ -149,6 +149,7 @@ namespace ragedb {
         // Node
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
+        std::vector<uint64_t> NodeAddMany(uint16_t type_id, const std::vector<std::tuple<std::string, std::string>> nodes);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
         Node NodeGet(uint64_t id);
         Node NodeGet(const std::string& type, const std::string& key);
@@ -448,6 +449,7 @@ namespace ragedb {
         // Node
         seastar::future<uint64_t> NodeAddEmptyPeered(const std::string& type, const std::string& key);
         seastar::future<uint64_t> NodeAddPeered(const std::string& type, const std::string& key, const std::string& properties);
+        seastar::future<std::vector<uint64_t>> NodeAddManyPeered(const std::string &type, const std::vector<std::string> keys, const std::vector<std::string> properties);
         seastar::future<uint64_t> NodeGetIDPeered(const std::string& type, const std::string& key);
 
         seastar::future<Node> NodeGetPeered(const std::string& type, const std::string& key);
@@ -775,6 +777,7 @@ namespace ragedb {
         //Node
         uint64_t NodeAddEmptyViaLua(const std::string& type, const std::string& key);
         uint64_t NodeAddViaLua(const std::string& type, const std::string& key, const std::string& properties);
+        std::vector<uint64_t> NodeAddManyPeeredViaLua(const std::string &type, const std::vector<std::string> keys, const std::vector<std::string> properties);
         uint64_t NodeGetIdViaLua(const std::string& type, const std::string& key);
 
         Node NodeGetViaLua(const std::string& type, const std::string& key);
@@ -1008,6 +1011,7 @@ namespace ragedb {
 
 
         // Partition by Shards
+        std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties);
         std::map<uint16_t, std::vector<uint64_t>> PartitionIdsByShardId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByShardId(const std::vector<Link> &links) const;

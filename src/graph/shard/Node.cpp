@@ -80,6 +80,41 @@ namespace ragedb {
         return external_id;
     }
 
+    std::vector<uint64_t> Shard::NodeAddMany(uint16_t type_id, const std::vector<std::tuple<std::string, std::string>> nodes) {
+      std::vector<uint64_t> ids;
+
+      for (auto [key, properties] : nodes ) {
+        // Check if the key exists
+        auto key_search = node_types.getKeysToNodeId(type_id).find(key);
+        if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
+          uint64_t internal_id = node_types.getCount(type_id);
+          uint64_t external_id = 0;
+          // If we have deleted nodes, fill in the space by adding the new node here
+          if (node_types.hasDeleted(type_id)) {
+            internal_id = node_types.getDeletedIdsMinimum(type_id);
+            external_id = internalToExternal(type_id, internal_id);
+
+            // Replace the deleted node and remove it from the list
+            node_types.getKeys(type_id).at(internal_id) = key;
+            node_types.addId(type_id, internal_id);
+            node_types.setPropertiesFromJSON(type_id, internal_id, properties);
+          } else {
+            external_id = internalToExternal(type_id, internal_id);
+            // Add the node to the end and prepare a place for its relationships
+            node_types.getKeys(type_id).emplace_back(key);
+            node_types.getOutgoingRelationships(type_id).emplace_back();
+            node_types.getIncomingRelationships(type_id).emplace_back();
+            node_types.addId(type_id, internal_id);
+            node_types.setPropertiesFromJSON(type_id, internal_id, properties);
+          }
+          node_types.getKeysToNodeId(type_id).insert({key, external_id });
+          ids.push_back(external_id);
+        }
+
+      }
+      return ids;
+    }
+
     uint64_t Shard::NodeGetID(const std::string &type, const std::string &key) {
         // Check if the Type exists
         uint16_t type_id = node_types.getTypeId(type);

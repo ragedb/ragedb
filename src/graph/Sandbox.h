@@ -148,6 +148,7 @@ namespace ragedb {
     };
 
     inline static const std::vector<std::string> ALLOWED_LUA_FUNCTIONS = {
+      // A sort of "hard" sandbox preset
       "assert",
       "error",
       "ipairs",
@@ -163,11 +164,12 @@ namespace ragedb {
       "_VERSION",
       "xpcall",
 
+      // A softer sandbox preset
       // These functions are unsafe as they can bypass or change metatables,
       // but they are required to implement classes.
       //"rawequal",
       //"rawget",
-      //"rawset",
+      "rawset", // Used by ftcsv
       //"setmetatable"
     };
 

@@ -26,7 +26,7 @@ namespace ragedb {
           sol::make_object(lua, "Bytecode prohibited by Lua sandbox"));
       }
 
-      sol::load_result result = lua.load(str, chunkname.value(), sol::load_mode::text);
+      sol::load_result result = lua.load(str, chunkname.value_or(sol::detail::default_chunk_name()), sol::load_mode::text);
       if (result.valid()) {
         sol::function func = result;
         env.set_on(func);
