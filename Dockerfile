@@ -15,6 +15,12 @@ WORKDIR /data/seastar
 RUN ./configure.py --mode=release --prefix=/usr/local --c++-dialect=gnu++20 --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
+RUN git clone https://github.com/ragedb/luajit-recipe.git /data/luajit
+WORKDIR /data/luajit
+RUN conan create . 2.1.0-beta3-2022-3-20@
+RUN git clone https://github.com/ragedb/sol2-recipe.git /data/sol2
+WORKDIR /data/sol2
+RUN conan create . 3.2.3-luajit@
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
 RUN mkdir /data/rage/build
 WORKDIR /data/rage/build

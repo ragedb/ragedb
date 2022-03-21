@@ -11,7 +11,7 @@ macro(run_conan)
     NAME
     bincrafters
     URL
-    https://api.bintray.com/conan/bincrafters/public-conan)
+    https://bincrafters.jfrog.io/artifactory/api/conan/public-conan)
 
   conan_cmake_run(
     REQUIRES
@@ -20,8 +20,8 @@ macro(run_conan)
     docopt.cpp/0.6.3
     fmt/8.0.1
     spdlog/1.9.2
-    luajit/2.0.5
-    sol2/3.2.3
+    luajit/2.1.0-beta3-2022-3-20
+    sol2/3.2.3-luajit
     tsl-sparse-map/0.6.2
     simdjson/1.0.2
     roaring/0.4.0
