@@ -67,14 +67,19 @@ jobs:
         with:
           repository: ragedb/luajit-recipe
           path: luajit
-        run: conan create . 2.1.0-beta3-2022-3-20@
 
       - name: sol recipe
         uses: actions/checkout@main
         with:
           repository: ragedb/sol2-recipe
           path: sol2
-        run: conan create . 3.2.3-luajit@
+
+      - name: install custom conan recipes
+        run: |
+          cd luajit
+          conan create . 2.1.0-beta3-2022-3-20@
+          cd sol2
+          conan create . 3.2.3-luajit@
 
       - name: build with cmake
         uses: lukka/run-cmake@v3
