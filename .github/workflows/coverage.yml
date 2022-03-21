@@ -78,7 +78,7 @@ jobs:
         run: |
           cd luajit
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 2.1.0-beta3-2022-3-20@
-          cd sol2
+          cd ../sol2
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 3.2.3-luajit@
 
       - name: build with cmake
