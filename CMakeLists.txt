@@ -82,13 +82,9 @@ function(conan_config_set)
   set(oneValueArgs NAME VALUE)
   cmake_parse_arguments(CONAN "" "${oneValueArgs}" "" ${ARGN})
 
-  if(DEFINED CONAN_COMMAND)
-    set(CONAN_CMD ${CONAN_COMMAND})
-  endif()
-
   message(STATUS "Conan: Setting ${CONAN_NAME} to ${CONAN_VALUE}")
 
-  execute_process(COMMAND ${CONAN_CMD} config set ${CONAN_NAME}=${CONAN_VALUE}
+  execute_process(COMMAND conan config set ${CONAN_NAME}=${CONAN_VALUE}
           RESULT_VARIABLE return_code)
   if(NOT "${return_code}" STREQUAL "0")
     message(FATAL_ERROR "Conan config set failed='${return_code}'")
