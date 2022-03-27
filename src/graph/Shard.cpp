@@ -406,8 +406,14 @@ namespace ragedb {
         lua.set_function("loadfile", &Shard::loadfile, this);
         lua.set_function("dofile", &Shard::dofile, this);
 
-        auto sandbox = Sandbox(lua);
+        auto sandbox = Sandbox(lua, Permission::ADMIN);
         env = sandbox.getEnvironment();
+
+        auto rw_sandbox = Sandbox(lua, Permission::WRITE);
+        read_write_env = rw_sandbox.getEnvironment();
+
+        auto ro_sandbox = Sandbox(lua, Permission::READ);
+        read_only_env = ro_sandbox.getEnvironment();
     }
 
     template <typename Range, typename Value = typename Range::value_type>
@@ -447,46 +453,57 @@ namespace ragedb {
         relationship_types.Clear();
     }
 
-    seastar::future<std::string> Shard::RunLua(const std::string &script) {
+    seastar::future<std::string> Shard::RunLua(const std::string &script, sol::environment& environment) {
 
-        return seastar::async([script, this] () {
-            // Inject json encoding
-            std::stringstream ss(script);
-            std::string line;
-            std::vector<std::string> lines;
-            while(std::getline(ss,line,'\n')){
-                lines.emplace_back(line);
-            }
+      return seastar::async([script, environment, this] () {
+        // Inject json encoding
+        std::stringstream ss(script);
+        std::string line;
+        std::vector<std::string> lines;
+        while(std::getline(ss,line,'\n')){
+          lines.emplace_back(line);
+        }
 
-            lines.back() = "return json.encode({" + lines.back() + "})";
+        lines.back() = "return json.encode({" + lines.back() + "})";
 
-            std::string executable = join(lines, "\n");
-            sol::protected_function_result script_result;
-            // We only have one Lua VM for each Core, so lock it during use.
-            this->lua_lock.for_write().lock().get();
-            try {
-                script_result = lua.safe_script(executable, env,[] (lua_State *, sol::protected_function_result pfr) {
-                    return pfr;
-                });
-                this->lua_lock.for_write().unlock();
-                if (script_result.valid()) {
-                    return script_result.get<std::string>();
-                }
+        std::string executable = join(lines, "\n");
+        sol::protected_function_result script_result;
+        // We only have one Lua VM for each Core, so lock it during use.
+        this->lua_lock.for_write().lock().get();
+        try {
+          script_result = lua.safe_script(executable, environment,[] (lua_State *, sol::protected_function_result pfr) {
+            return pfr;
+          });
+          this->lua_lock.for_write().unlock();
+          if (script_result.valid()) {
+            return script_result.get<std::string>();
+          }
 
-                sol::error err = script_result;
-                std::string what = err.what();
+          sol::error err = script_result;
+          std::string what = err.what();
 
-                return EXCEPTION + what;
-            } catch (...) {
-                sol::error err = script_result;
-                std::string what = err.what();
-                // Unlock if we get an exception.
-                this->lua_lock.for_write().unlock();
-                return EXCEPTION + what;
-            }
-        });
+          return EXCEPTION + what;
+        } catch (...) {
+          sol::error err = script_result;
+          std::string what = err.what();
+          // Unlock if we get an exception.
+          this->lua_lock.for_write().unlock();
+          return EXCEPTION + what;
+        }
+      });
     }
 
+    seastar::future<std::string> Shard::RunAdminLua(const std::string &script){
+      return RunLua(script, env);
+    }
+
+    seastar::future<std::string> Shard::RunRWLua(const std::string &script) {
+      return RunLua(script, read_write_env);
+    }
+
+    seastar::future<std::string> Shard::RunROLua(const std::string &script) {
+      return RunLua(script, read_only_env);
+    }
 
     seastar::future<std::string> Shard::HealthCheck() {
         std::stringstream message;

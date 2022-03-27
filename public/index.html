@@ -103,6 +103,17 @@
                     <p class="title">Settings
                         <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
                     </p>
+                    <p>Select your permissions:</p>
+                    <div>
+                        <input type="radio" id="admin" name="permissions" value="db" checked="checked">
+                        <label for="admin">Administrator</label>
+                        </br>
+                        <input type="radio" id="rw" name="permissions" value="rw">
+                        <label for="rw">Read Write</label>
+                        </br>
+                        <input type="radio" id="ro" name="permissions" value="ro">
+                        <label for="ro">Read</label>
+                    </div>
                 </div>
                 <div id="collapsible-community" class="is-collapsible" data-parent="only_one">
                     <p class="title">Community

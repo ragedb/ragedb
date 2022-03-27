@@ -39,7 +39,7 @@ namespace ragedb {
     }
   }
 
-  void Sandbox::buildEnvironment() {
+  void Sandbox::buildEnvironment(Permission permission) {
     env = sol::environment(lua, sol::create);
     env["_G"] = env;
 
@@ -47,7 +47,19 @@ namespace ragedb {
     copyTables(env, lua.globals(), lua, ALLOWED_LUA_LIBRARIES);
     copyAll(env, lua.globals(), ALLOWED_CUSTOM_FUNCTIONS);
     copyAll(env, lua.globals(), ALLOWED_GRAPH_OBJECTS);
-    copyAll(env, lua.globals(), ALLOWED_GRAPH_FUNCTIONS);
+
+    switch (permission) {
+      case Permission::ADMIN: {
+        copyAll(env, lua.globals(), ALLOWED_GRAPH_ADMIN_FUNCTIONS);
+      }
+      case Permission::WRITE: {
+        copyAll(env, lua.globals(), ALLOWED_GRAPH_WRITE_FUNCTIONS);
+      }
+      default: {
+        copyAll(env, lua.globals(), ALLOWED_GRAPH_READ_FUNCTIONS);
+      }
+    }
+
     copyAll(env, lua.globals(), RESTRICTED_LUA_FUNCTIONS);
 
     // Individual Functions from Libraries

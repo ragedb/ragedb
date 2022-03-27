@@ -27,7 +27,7 @@ macro(run_conan)
     roaring/0.4.0
     jfalcou-eve/v2021.10.0
     cppcodec/0.2
-    cpr/1.6.2
+    cpr/1.7.2
     reckless/3.0.3
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}

@@ -68,31 +68,9 @@ endif()
 # Set up some extra Conan dependencies based on our needs before loading Conan
 set(CONAN_EXTRA_REQUIRES "")
 set(CONAN_EXTRA_OPTIONS "")
+set(ENV{CONAN_REVISIONS_ENABLED} 1)
 
 include(cmake/Conan.cmake)
-function(conan_config_set)
-  # Set a config value.
-  # Arguments NAME and VALUE are required
-  # Example usage:
-  #    conan_config_set(NAME general.revision_enabled
-  #                     VALUE 1)
-  #
-  # See: https://docs.conan.io/en/latest/reference/commands/consumer/config.html
-
-  set(oneValueArgs NAME VALUE)
-  cmake_parse_arguments(CONAN "" "${oneValueArgs}" "" ${ARGN})
-
-  message(STATUS "Conan: Setting ${CONAN_NAME} to ${CONAN_VALUE}")
-
-  execute_process(COMMAND conan config set ${CONAN_NAME}=${CONAN_VALUE}
-          RESULT_VARIABLE return_code)
-  if(NOT "${return_code}" STREQUAL "0")
-    message(FATAL_ERROR "Conan config set failed='${return_code}'")
-  endif()
-endfunction()
-
-# Enable revisions support on the client.
-conan_config_set(NAME general.revisions_enabled VALUE 1)
 
 run_conan()
 

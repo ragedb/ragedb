@@ -60,6 +60,8 @@ namespace ragedb {
 
         sol::state lua;                                 // Lua State
         sol::environment env;                           // Lua Sandboxed Environment
+        sol::environment read_write_env;                // Lua Read Write Sandboxed Environment
+        sol::environment read_only_env;                 // Lua Read Only Sandboxed Environment
 
         NodeTypes node_types;                           // Store string and id of node types
         RelationshipTypes relationship_types;           // Store string and id of relationship types
@@ -78,7 +80,10 @@ namespace ragedb {
         static seastar::future<> stop();
         void Clear();
 
-        seastar::future<std::string> RunLua(const std::string &script);
+        seastar::future<std::string> RunLua(const std::string &script, sol::environment& environment);
+        seastar::future<std::string> RunAdminLua(const std::string &script);
+        seastar::future<std::string> RunRWLua(const std::string &script);
+        seastar::future<std::string> RunROLua(const std::string &script);
 
         // Sandboxed
         std::tuple<sol::object, sol::object> loadstring(const std::string &str, const sol::optional<std::string> &chunkname = sol::detail::default_chunk_name());

@@ -18,6 +18,7 @@
 #define RAGEDB_SANDBOX_H
 
 #include <sol/sol.hpp>
+#include "Permission.h"
 
 namespace ragedb {
 
@@ -26,12 +27,12 @@ namespace ragedb {
     sol::environment env;
 
   public:
-    explicit Sandbox(sol::state &lua) : lua(lua) { buildEnvironment(); }
+    Sandbox(sol::state &lua, Permission permission) : lua(lua) { buildEnvironment(permission); }
 
     sol::environment &getEnvironment() { return env; }
 
   private:
-    void buildEnvironment();
+    void buildEnvironment(Permission permission);
 
     inline static const std::vector<std::string> ALLOWED_LUA_LIBRARIES = {
       "string",
@@ -62,7 +63,38 @@ namespace ragedb {
       "Roar"
     };
 
-    inline static const std::vector<std::string> ALLOWED_GRAPH_FUNCTIONS = {
+
+    inline static const std::vector<std::string> ALLOWED_GRAPH_ADMIN_FUNCTIONS = {
+      "NodePropertyTypeAdd",
+      "NodePropertyTypeDelete",
+      "NodeTypeInsert",
+
+      "RelationshipPropertyTypeAdd",
+      "RelationshipPropertyTypeDelete",
+      "RelationshipTypeInsert",
+    };
+
+    inline static const std::vector<std::string> ALLOWED_GRAPH_WRITE_FUNCTIONS = {
+      "NodeAdd",
+      "NodeDeleteProperties",
+      "NodeDeleteProperty",
+      "NodeRemove",
+      "NodeResetPropertiesFromJson",
+      "NodeSetPropertiesFromJson",
+      "NodeSetProperty",
+      "NodeSetPropertyFromJson",
+
+      "RelationshipAdd",
+      "RelationshipDeleteProperties",
+      "RelationshipDeleteProperty",
+      "RelationshipRemove",
+      "RelationshipResetPropertiesFromJson",
+      "RelationshipSetPropertiesFromJson",
+      "RelationshipSetProperty",
+      "RelationshipSetPropertyFromJson"
+    };
+
+    inline static const std::vector<std::string> ALLOWED_GRAPH_READ_FUNCTIONS = {
       "AllNodes",
       "AllNodeIds",
       "AllRelationships",
@@ -86,9 +118,6 @@ namespace ragedb {
       "LinksGetNeighbors",
       "LinksGetRelationships",
 
-      "NodeAdd",
-      "NodeDeleteProperties",
-      "NodeDeleteProperty",
       "NodeGet",
       "NodeGetDegree",
       "NodeGetId",
@@ -99,45 +128,25 @@ namespace ragedb {
       "NodeGetProperty",
       "NodeGetRelationships",
       "NodeGetType",
-      "NodePropertyTypeAdd",
-      "NodePropertyTypeDelete",
-      "NodeRemove",
-      "NodeResetPropertiesFromJson",
-      "NodeSetPropertiesFromJson",
-      "NodeSetProperty",
-      "NodeSetPropertyFromJson",
       "NodeTypeGet",
       "NodeTypeGetType",
-      "NodeTypeInsert",
       "NodeTypesGet",
       "NodeTypesGetCount",
 
       "NodesGet",
       "NodesGetKey",
-
       "NodesGetProperties",
       "NodesGetProperty",
       "NodesGetType",
 
-      "RelationshipAdd",
-      "RelationshipDeleteProperties",
-      "RelationshipDeleteProperty",
       "RelationshipGet",
       "RelationshipGetEndingNodeId",
       "RelationshipGetProperties",
       "RelationshipGetProperty",
       "RelationshipGetStartingNodeId",
       "RelationshipGetType",
-      "RelationshipPropertyTypeAdd",
-      "RelationshipPropertyTypeDelete",
-      "RelationshipRemove",
-      "RelationshipResetPropertiesFromJson",
-      "RelationshipSetPropertiesFromJson",
-      "RelationshipSetProperty",
-      "RelationshipSetPropertyFromJson"
       "RelationshipTypeGet",
       "RelationshipTypeGetType",
-      "RelationshipTypeInsert",
       "RelationshipTypesGet",
       "RelationshipTypesGetCount",
 

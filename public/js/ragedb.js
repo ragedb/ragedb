@@ -140,6 +140,11 @@ function getViz(json) {
     return graphJSON(json, { nodes: [], links: [] });
 }
 
+let permissions = "db";
+let radios = document.querySelectorAll('input[type=radio][name="permissions"]');
+radios.forEach(radio => radio.addEventListener('change', () => permissions = radio.value));
+
+
 async function sendscript() {
     let query = editor.getValue();
 
@@ -147,7 +152,7 @@ async function sendscript() {
         addQueryToHistory(query);
     }
 
-    let url = '/db/rage/lua';
+    let url = '/' + permissions + '/rage/lua';
     try {
 		let timer = document.getElementById('timer');
         let clock = document.getElementById('clock');
