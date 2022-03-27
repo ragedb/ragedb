@@ -30,6 +30,7 @@
 #include "handlers/Lua.h"
 #include "handlers/Restore.h"
 #include "handlers/Connected.h"
+#include "Database.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/http/file_handler.hh>
@@ -64,31 +65,23 @@ int main(int argc, char** argv) {
                 // Initialize utilities to create a json parser for each core
                 Utilities utilities;
 
-                ragedb::Graph graph("rage");
-                graph.Start().get();
-                HealthCheck healthCheck(graph);
-                Schema schema(graph);
-                Nodes nodes(graph);
-                Relationships relationships(graph);
-                NodeProperties nodeProperties(graph);
-                RelationshipProperties relationshipProperties(graph);
-                Degrees degrees(graph);
-                Neighbors neighbors(graph);
-                Connected connected(graph);
-                Lua lua(graph);
-                Restore restore(graph);
+                std::map<std::string, Database> databases;
+                databases.emplace("rage", "rage");
 
-                server->set_routes([&relationshipProperties](routes &r) { relationshipProperties.set_routes(r); }).get();
-                server->set_routes([&nodeProperties](routes &r) { nodeProperties.set_routes(r); }).get();
-                server->set_routes([&degrees](routes &r) { degrees.set_routes(r); }).get();
-                server->set_routes([&neighbors](routes &r) { neighbors.set_routes(r); }).get();
-                server->set_routes([&connected](routes &r) { connected.set_routes(r); }).get();
-                server->set_routes([&relationships](routes &r) { relationships.set_routes(r); }).get();
-                server->set_routes([&nodes](routes &r) { nodes.set_routes(r); }).get();
-                server->set_routes([&schema](routes &r) { schema.set_routes(r); }).get();
-                server->set_routes([&lua](routes &r) { lua.set_routes(r); }).get();
-                server->set_routes([&healthCheck](routes &r) { healthCheck.set_routes(r); }).get();
-                server->set_routes([&restore](routes &r) { restore.set_routes(r); }).get();
+                for (auto& [name, graph]: databases) {
+
+                  server->set_routes([graph = &graph](routes &r) { graph->relationshipProperties.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->nodeProperties.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->degrees.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->neighbors.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->connected.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->relationships.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->nodes.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->schema.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->lua.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->healthCheck.set_routes(r); }).get();
+                  server->set_routes([graph =&graph](routes &r) { graph->restore.set_routes(r); }).get();
+                }
 
                 server->set_routes([](seastar::routes &r) {
                         r.add(seastar::operation_type::GET,
@@ -108,9 +101,17 @@ int main(int argc, char** argv) {
                 server->listen(seastar::socket_address{addr, port}).get();
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
                 //graph.Restore().get();
-                seastar::engine().at_exit([&server, &graph] {
+                seastar::engine().at_exit([&server, &databases] {
                     std::cout << "Stopping RageDB HTTP server" << std::endl;
-                    return graph.Stop().then([&] () { return server->stop(); });
+                    std::vector<seastar::future<>> futures;
+                    for (auto& [name, database]: databases) {
+                      futures.push_back(database.graph.Stop());
+                    }
+                    auto p = make_shared(std::move(futures));
+                    return seastar::when_all_succeed(p->begin(), p->end()).then([p, server] () {
+                      return server->stop();
+                    });
+
                 });
 
                 stop_signal.wait().get();  // this will wait till we receive SIGINT or SIGTERM signal
