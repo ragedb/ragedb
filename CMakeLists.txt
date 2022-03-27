@@ -112,7 +112,9 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Degrees.cpp src/main/handlers/Degrees.h
         src/main/handlers/Neighbors.cpp src/main/handlers/Neighbors.h
         src/main/handlers/Lua.cpp src/main/handlers/Lua.h
-        src/main/handlers/Restore.cpp src/main/handlers/Restore.h src/main/handlers/Connected.cpp src/main/handlers/Connected.h)
+        src/main/handlers/Restore.cpp src/main/handlers/Restore.h
+        src/main/handlers/Connected.cpp src/main/handlers/Connected.h
+        src/main/Database.cpp src/main/Database.h)
 target_link_libraries(
         Graph
         project_options
