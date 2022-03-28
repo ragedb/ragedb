@@ -18,25 +18,14 @@
 #include <seastar/core/reactor.hh>
 #include <seastar/core/thread.hh>
 #include "util/stop_signal.hh"
-#include "handlers/HealthCheck.h"
-#include "handlers/Nodes.h"
-#include "handlers/Relationships.h"
-#include "handlers/NodeProperties.h"
-#include "handlers/RelationshipProperties.h"
-#include "handlers/Degrees.h"
-#include "handlers/Neighbors.h"
-#include "handlers/Schema.h"
 #include "handlers/Utilities.h"
-#include "handlers/Lua.h"
-#include "handlers/Restore.h"
-#include "handlers/Connected.h"
-#include "Database.h"
+#include "Management.h"
+#include "handlers/Databases.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/http/file_handler.hh>
 #include <seastar/net/inet_address.hh>
 #include <iostream>
-#include <Graph.h>
 
 namespace bpo = boost::program_options;
 
@@ -61,27 +50,14 @@ int main(int argc, char** argv) {
                 uint16_t port = config["port"].as<uint16_t>();
                 auto server = new seastar::http_server_control();
                 server->start().get();
+                Management management(server);
+                management.add("rage").get();
 
                 // Initialize utilities to create a json parser for each core
                 Utilities utilities;
 
-                std::map<std::string, Database> databases;
-                databases.emplace("rage", "rage");
-
-                for (auto& [name, graph]: databases) {
-
-                  server->set_routes([graph = &graph](routes &r) { graph->relationshipProperties.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->nodeProperties.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->degrees.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->neighbors.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->connected.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->relationships.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->nodes.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->schema.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->lua.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->healthCheck.set_routes(r); }).get();
-                  server->set_routes([graph =&graph](routes &r) { graph->restore.set_routes(r); }).get();
-                }
+                Databases dbs(management, server);
+                server->set_routes([&dbs](routes &r) { dbs.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes &r) {
                         r.add(seastar::operation_type::GET,
@@ -101,17 +77,14 @@ int main(int argc, char** argv) {
                 server->listen(seastar::socket_address{addr, port}).get();
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
                 //graph.Restore().get();
-                seastar::engine().at_exit([&server, &databases] {
+                seastar::engine().at_exit([&server, &management] {
                     std::cout << "Stopping RageDB HTTP server" << std::endl;
-                    std::vector<seastar::future<>> futures;
-                    for (auto& [name, database]: databases) {
-                      futures.push_back(database.graph.Stop());
-                    }
-                    auto p = make_shared(std::move(futures));
-                    return seastar::when_all_succeed(p->begin(), p->end()).then([p, server] () {
+                    return management.stop().then([server](bool success) {
+                      if (success) {
+                        std::cout << "Stopped RageDB Databases" << std::endl;
+                      }
                       return server->stop();
                     });
-
                 });
 
                 stop_signal.wait().get();  // this will wait till we receive SIGINT or SIGTERM signal

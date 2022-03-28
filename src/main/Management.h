@@ -14,7 +14,28 @@
  * limitations under the License.
  */
 
+#ifndef RAGEDB_MANAGEMENT_H
+#define RAGEDB_MANAGEMENT_H
+
+
+#include <string>
 #include "Database.h"
-seastar::future<> Database::start() {
-  return graph.Start();
-}
+class Management
+{
+  std::map<std::string, Database> databases;
+  http_server_control* server;
+
+public:
+  explicit Management(http_server_control*& _server) : server(_server) {}
+  std::vector<std::string> list();
+  std::string get(std::string key);
+  bool contains(std::string key);
+  seastar::future<bool> add(std::string key);
+  Database &at(std::string key);
+  seastar::future<bool> reset(std::string key);
+  seastar::future<bool> remove(std::string key);
+  seastar::future<bool> stop();
+};
+
+
+#endif// RAGEDB_MANAGEMENT_H

@@ -505,4 +505,46 @@ public:
 
 };
 
+//struct database_json : public json::json_base {
+//  json::json_element<std::string> key;
+//  json::json_element<std::map<std::string, std::map<std::string, std::string>>> nodes;
+//  json::json_element<std::map<std::string, std::map<std::string, std::string>>> relationships;
+//
+//  void register_params() {
+//    add(&key, "key");
+//    add(&nodes, "nodes");
+//    add(&relationships, "relationships");
+//  }
+//
+//  database_json() {
+//    register_params();
+//  }
+//
+//  database_json(database_json const & e) : json::json_base() {
+//    register_params();
+//    key = e.key;
+//    nodes = e.nodes;
+//    relationships = e.relationships;
+//  }
+//
+//  database_json& operator=(const database_json& e){
+//    key = e.key;
+//    nodes = e.nodes;
+//    relationships = e.relationships;
+//    return *this;
+//  }
+//
+//public:
+//
+//  database_json(std::string _key, std::map<std::string, std::map<std::string, std::string>> _nodes, std::map<std::string, std::map<std::string, std::string>> _rels) {
+//    register_params();
+//    this->key = _key;
+//    this->nodes = _nodes;
+//    this->relationships = _rels;
+//  }
+//
+//};
+
+
+
 #endif //RAGEDB_JSON_H

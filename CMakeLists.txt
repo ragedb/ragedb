@@ -114,7 +114,9 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Lua.cpp src/main/handlers/Lua.h
         src/main/handlers/Restore.cpp src/main/handlers/Restore.h
         src/main/handlers/Connected.cpp src/main/handlers/Connected.h
-        src/main/Database.cpp src/main/Database.h)
+        src/main/handlers/Databases.cpp src/main/handlers/Databases.h
+        src/main/Database.cpp src/main/Database.h
+        src/main/Management.cpp src/main/Management.h)
 target_link_libraries(
         Graph
         project_options
