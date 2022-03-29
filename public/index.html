@@ -103,7 +103,7 @@
                     <p class="title">Settings
                         <button class="delete is-pulled-right" aria-label="delete" onclick="closeSecondColumn()"></button>
                     </p>
-                    <p>Select your permissions:</p>
+                    <label class="label">Select your permissions:</label>
                     <div>
                         <input type="radio" id="admin" name="permissions" value="db" checked="checked">
                         <label for="admin">Administrator</label>
@@ -114,6 +114,57 @@
                         <input type="radio" id="ro" name="permissions" value="ro">
                         <label for="ro">Read</label>
                     </div>
+                    <br/>
+                    <label class="label">Select your database:</label>
+                    <div class="field has-addons">
+                        <div class="control is-expanded">
+                            <div class="select is-fullwidth">
+                                <select id="databases" class="is-focused">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="control">
+                            <a class="button is-static">
+                                Choose
+                            </a>
+                        </div>
+                    </div>
+                    <div id="create-reset-delete-error"></div>
+                    <br/>
+
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input id="create" class="input" type="text" placeholder="Database">
+                        </div>
+                        <div class="control" onclick="createDatabase()">
+                            <a class="button is-primary">
+                                Create
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input id="reset" class="input" type="text" placeholder="Database">
+                        </div>
+                        <div class="control" onclick="resetDatabase()">
+                            <a class="button is-warning">
+                                &nbsp;Reset
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input id="delete" class="input" type="text" placeholder="Database">
+                        </div>
+                        <div class="control" onclick="deleteDatabase()">
+                            <a class="button is-danger">
+                                Delete
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
                 <div id="collapsible-community" class="is-collapsible" data-parent="only_one">
                     <p class="title">Community

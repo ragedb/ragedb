@@ -152,177 +152,186 @@ async function sendscript() {
         addQueryToHistory(query);
     }
 
-    let url = '/' + permissions + '/rage/lua';
-    try {
-		let timer = document.getElementById('timer');
-        let clock = document.getElementById('clock');
-        clock.classList.add("rotate");
-        timer.innerHTML = timeUnits(0);
-        // clean results
-        const collection = document.getElementsByClassName("results-data");
-        // leave documentation alone
-        for (let i = 0; i < (collection.length - 1); i++) {
-            while (collection[i].firstChild) {
-                collection[i].removeChild(collection[i].firstChild);
-            }
+    let sel = document.getElementById("databases");
+    if (sel.options.length > 0) {
+        let selected_database = sel.options[0].value;
+        if (sel.selectedIndex > -1) {
+            selected_database = sel.options[sel.selectedIndex].value;
         }
 
-        let res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain'
-            },
-            body: query
-        });
-        let text = await res.text();
-        if (text.startsWith("An exception has occurred:")) {
-            responseError.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
-            Tabs[4].click();
-     
-        } else {
-            responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
-            responseRaw.innerHTML = text;
-            let data = JSON.parse(text);
-            updateActiveTab(Tabs[0]);
-            responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(data,null, 2));
+        let url = '/' + permissions + '/' + selected_database +  '/lua';
+        try {
+            let timer = document.getElementById('timer');
+            let clock = document.getElementById('clock');
+            clock.classList.add("rotate");
+            timer.innerHTML = timeUnits(0);
+            // clean results
+            const collection = document.getElementsByClassName("results-data");
+            // leave documentation alone
+            for (let i = 0; i < (collection.length - 1); i++) {
+                while (collection[i].firstChild) {
+                    collection[i].removeChild(collection[i].firstChild);
+                }
+            }
 
-            // Viz
-            let vizWidth = responseViz.parentNode.parentElement.clientWidth - 50; // for padding
-            const vizGraph = ForceGraph()(responseViz)
-                .width(vizWidth)
-                .height(600)
-                .graphData(getViz(data))
-                .centerAt(-200, -50)
-                .zoom(4)
-                .nodeId('id')
-                .nodeLabel(node => JSON.stringify(node.properties, null, '\n'))
-                .nodeAutoColorBy(node => node.id % 24)
-                .linkLabel(rel => JSON.stringify(rel.properties, null, '\n'))
-                .linkSource('starting_node_id')
-                .linkTarget('ending_node_id')
-                .linkDirectionalArrowLength(6)
-                .linkDirectionalArrowRelPos(1)
-                .nodeCanvasObjectMode(() => 'after')
-                .nodeCanvasObject((node, ctx) => {
-                    // calculate key positioning
-                    const textPos = Object.assign(...['x', 'y'].map(c => ({
-                        [c]: node[c]
-                    })));
+            let res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: query
+            });
+            let text = await res.text();
+            if (text.startsWith("An exception has occurred:")) {
+                responseError.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
+                Tabs[4].click();
 
-                    // draw text key
-                    ctx.save();
-                    ctx.font = `4px Sans-Serif`;
-                    ctx.translate(textPos.x, textPos.y + 7);
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = 'darkgrey';
-                    ctx.fillText(node.key, 0, 0);
-                    ctx.restore();
-                })
-                .linkCanvasObjectMode(() => 'after')
-                .linkCanvasObject((link, ctx) => {
-                    const MAX_FONT_SIZE = 4;
-                    const LABEL_NODE_MARGIN = vizGraph.nodeRelSize() * 1.5;
+            } else {
+                responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
+                responseRaw.innerHTML = text;
+                let data = JSON.parse(text);
+                updateActiveTab(Tabs[0]);
+                responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(data,null, 2));
 
-                    const start = link.source;
-                    const end = link.target;
+                // Viz
+                let vizWidth = responseViz.parentNode.parentElement.clientWidth - 50; // for padding
+                const vizGraph = ForceGraph()(responseViz)
+                    .width(vizWidth)
+                    .height(600)
+                    .graphData(getViz(data))
+                    .centerAt(-200, -50)
+                    .zoom(4)
+                    .nodeId('id')
+                    .nodeLabel(node => JSON.stringify(node.properties, null, '\n'))
+                    .nodeAutoColorBy(node => node.id % 24)
+                    .linkLabel(rel => JSON.stringify(rel.properties, null, '\n'))
+                    .linkSource('starting_node_id')
+                    .linkTarget('ending_node_id')
+                    .linkDirectionalArrowLength(6)
+                    .linkDirectionalArrowRelPos(1)
+                    .nodeCanvasObjectMode(() => 'after')
+                    .nodeCanvasObject((node, ctx) => {
+                        // calculate key positioning
+                        const textPos = Object.assign(...['x', 'y'].map(c => ({
+                            [c]: node[c]
+                        })));
 
-                    // ignore unbound links
-                    if (typeof start !== 'object' || typeof end !== 'object') return;
+                        // draw text key
+                        ctx.save();
+                        ctx.font = `4px Sans-Serif`;
+                        ctx.translate(textPos.x, textPos.y + 7);
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = 'darkgrey';
+                        ctx.fillText(node.key, 0, 0);
+                        ctx.restore();
+                    })
+                    .linkCanvasObjectMode(() => 'after')
+                    .linkCanvasObject((link, ctx) => {
+                        const MAX_FONT_SIZE = 4;
+                        const LABEL_NODE_MARGIN = vizGraph.nodeRelSize() * 1.5;
 
-                    // calculate label positioning
-                    const textPos = Object.assign(...['x', 'y'].map(c => ({
-                        [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
-                    })));
+                        const start = link.source;
+                        const end = link.target;
 
-                    const relLink = { x: end.x - start.x, y: end.y - start.y };
+                        // ignore unbound links
+                        if (typeof start !== 'object' || typeof end !== 'object') return;
 
-                    const maxTextLength = Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) - LABEL_NODE_MARGIN * 2;
+                        // calculate label positioning
+                        const textPos = Object.assign(...['x', 'y'].map(c => ({
+                            [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+                        })));
 
-                    let textAngle = Math.atan2(relLink.y, relLink.x);
-                    // maintain label vertical orientation for legibility
-                    if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
-                    if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
+                        const relLink = { x: end.x - start.x, y: end.y - start.y };
 
-                    const label = link.type;
+                        const maxTextLength = Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) - LABEL_NODE_MARGIN * 2;
 
-                    // estimate fontSize to fit in link length
-                    ctx.font = '1px Sans-Serif';
-                    const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
-                    ctx.font = `${fontSize}px Sans-Serif`;
-                    const textWidth = ctx.measureText(label).width;
-                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+                        let textAngle = Math.atan2(relLink.y, relLink.x);
+                        // maintain label vertical orientation for legibility
+                        if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
+                        if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
 
-                    // draw text label (with background rect)
-                    ctx.save();
-                    ctx.translate(textPos.x, textPos.y);
-                    ctx.rotate(textAngle);
+                        const label = link.type;
 
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                    ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
+                        // estimate fontSize to fit in link length
+                        ctx.font = '1px Sans-Serif';
+                        const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
+                        ctx.font = `${fontSize}px Sans-Serif`;
+                        const textWidth = ctx.measureText(label).width;
+                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
 
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = 'darkgrey';
-                    ctx.fillText(label, 0, 0);
-                    ctx.restore();
-                });
+                        // draw text label (with background rect)
+                        ctx.save();
+                        ctx.translate(textPos.x, textPos.y);
+                        ctx.rotate(textAngle);
 
-            let json = JSON.parse(text);
-             for (let index = 0, len = json.length; index < len; ++index) {
-                 let table = json[index];
-                 if (!Array.isArray(table)) {
-                     table = [table];
-                 }
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
 
-                 let elemDiv = document.createElement('div');
-                 responseGrid.appendChild(elemDiv);
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = 'darkgrey';
+                        ctx.fillText(label, 0, 0);
+                        ctx.restore();
+                    });
 
-                 let grid = new gridjs.Grid({data: []}).render(elemDiv);
-
-                 let searchable = true;
-                 // We need to flatten the result for the Grid if it's make up of objects
-                 if (typeof table[0] === 'object' && table[0] !== null) {
-                     if (table.length > 1) {
-                         for (let index = 0, len = table.length; index < len; ++index) {
-                             table[index] = flattenJSON(table[index]);
-                         }
-                    } else {
-                         table = flattenJSON(table[0]);
-                         grid.updateConfig({ columns: Object.keys(table) });
-                         table = [Object.values(table)];
-                         searchable = false;
+                let json = JSON.parse(text);
+                for (let index = 0, len = json.length; index < len; ++index) {
+                    let table = json[index];
+                    if (!Array.isArray(table)) {
+                        table = [table];
                     }
-                } else {
-                     grid.updateConfig({ columns: ["Response"] });
-                     let arrayOfArrays = [];
-                     for (let index = 0, len = table.length; index < len; ++index) {
-                         arrayOfArrays[index] = [table[index]];
-                     }
-                     table = arrayOfArrays;
-                 }
 
-                grid.updateConfig({
-                    data: table,
-                    search: searchable,
-                    sort: {
-                        multiColumn: false
-                    },
-                    pagination: {
-                        enabled: true,
-                        limit: 10,
-                        summary: true
-                    },
-                    resizable: true
-                });
+                    let elemDiv = document.createElement('div');
+                    responseGrid.appendChild(elemDiv);
 
-                grid.forceRender();
+                    let grid = new gridjs.Grid({data: []}).render(elemDiv);
+
+                    let searchable = true;
+                    // We need to flatten the result for the Grid if it's make up of objects
+                    if (typeof table[0] === 'object' && table[0] !== null) {
+                        if (table.length > 1) {
+                            for (let index = 0, len = table.length; index < len; ++index) {
+                                table[index] = flattenJSON(table[index]);
+                            }
+                        } else {
+                            table = flattenJSON(table[0]);
+                            grid.updateConfig({ columns: Object.keys(table) });
+                            table = [Object.values(table)];
+                            searchable = false;
+                        }
+                    } else {
+                        grid.updateConfig({ columns: ["Response"] });
+                        let arrayOfArrays = [];
+                        for (let index = 0, len = table.length; index < len; ++index) {
+                            arrayOfArrays[index] = [table[index]];
+                        }
+                        table = arrayOfArrays;
+                    }
+
+                    grid.updateConfig({
+                        data: table,
+                        search: searchable,
+                        sort: {
+                            multiColumn: false
+                        },
+                        pagination: {
+                            enabled: true,
+                            limit: 10,
+                            summary: true
+                        },
+                        resizable: true
+                    });
+
+                    grid.forceRender();
+                }
             }
+            clock.classList.remove("rotate");
+        } catch (error) {
+            console.log(error);
         }
-        clock.classList.remove("rotate");
-    } catch (error) {
-        console.log(error);
     }
+
 }
 
 
@@ -344,6 +353,71 @@ function syntaxHighlight(json) {
         }
         return '<span class="' + cls + '">' + match + '</span>';
     });
+}
+
+
+// Databases
+async function fetchDatabases(key, method) {
+    let url = "/dbs/" + key;
+    try {
+        let res = await fetch(url, {
+            method: method
+        });
+        return await res.json();
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function renderDatabases() {
+    let databases = await fetchDatabases('', 'get');
+    let sel = document.getElementById("databases");
+    let selected_value = '';
+    if (sel.selectedIndex > -1) {
+        selected_value = sel.options[sel.selectedIndex].value;
+    }
+    sel.length = 0;
+    databases.forEach(db => {
+        let opt = document.createElement("option");
+        opt.value = db;
+        opt.text = db;
+        sel.add(opt);
+    });
+
+    if (selected_value !== '' && Array.from(sel.options).map((opt) => opt.value).includes(selected_value) ) {
+        sel.value = selected_value;
+    }
+
+}
+
+renderDatabases();
+
+async function createDatabase() {
+    let create = document.getElementById("create");
+    let key = create.value;
+    let database = await fetchDatabases(key, 'post');
+    if (database === "Invalid key" || database === "Database already exists") {
+        let div = document.createElement("div");
+        div.classList.add("notification", "is-danger");
+        let button = document.createElement("button");
+        button.classList.add("delete");
+        div.appendChild(button);
+        div.appendChild(document.createTextNode(database));
+        div.appendChild(document.createElement("br"));
+        document.getElementById("create-reset-delete-error").appendChild(div);
+
+        button.addEventListener('click', () => {
+            div.parentNode.removeChild(div);
+        });
+    } else {
+        create.value = '';
+        let sel = document.getElementById("databases");
+        let opt = document.createElement("option");
+        opt.value = key;
+        opt.text = key;
+        sel.add(opt);
+        sel.value = key;
+    }
 }
 
 

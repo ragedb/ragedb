@@ -49,7 +49,8 @@ namespace ragedb {
             copy_file(from, to, std::filesystem::copy_options::overwrite_existing);
             std::filesystem::resize_file(from, 0);
         }
-        reckless::install_crash_handler(&r_logger);
+        // TODO: crash handler expects to be called once, so we either uninstall and call for each or ???
+        // reckless::install_crash_handler(&r_logger);
     }
 
     /**
@@ -85,11 +86,6 @@ namespace ragedb {
 
     void Graph::Log(const seastar::sstring method, const seastar::sstring url, const seastar::sstring body) {
         r_logger.write(with_body_format, std::string(url.c_str()), std::string(method.c_str()), base64::encode(body));
-    }
-
-    seastar::future<seastar::output_stream<char>> Graph::make_output_stream(const seastar::sstring filename) {
-        auto file = co_await seastar::open_file_dma("useless_file.txt", seastar::open_flags::create | seastar::open_flags::wo);
-        co_return co_await seastar::make_file_output_stream(file);
     }
 
 }
