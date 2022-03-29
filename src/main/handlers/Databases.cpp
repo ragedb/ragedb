@@ -85,7 +85,7 @@ future<std::unique_ptr<reply>> Databases::PutDatabaseHandler::handle([[maybe_unu
         rep->write_body("json", sstring(parent.databases.get(key)));
         parent.databases.at(key).graph.Log(req->_method, req->get_url());
       } else {
-        rep->write_body("json", json::stream_object("Database does not exists"));
+        rep->write_body("json", json::stream_object("Database does not exist"));
         rep->set_status(reply::status_type::bad_request);
       }
       return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
@@ -103,7 +103,7 @@ future<std::unique_ptr<reply>> Databases::DeleteDatabaseHandler::handle([[maybe_
         rep->set_status(reply::status_type::no_content);
         parent.databases.at(key).graph.Log(req->_method, req->get_url());
       } else {
-        rep->write_body("json", json::stream_object("Database does not exists"));
+        rep->write_body("json", json::stream_object("Database does not exist"));
         rep->set_status(reply::status_type::not_modified);
       }
       return make_ready_future<std::unique_ptr<reply>>(std::move(rep));

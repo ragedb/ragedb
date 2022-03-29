@@ -357,6 +357,21 @@ function syntaxHighlight(json) {
 
 
 // Databases
+function addErrorMessage(database) {
+    let div = document.createElement("div");
+    div.classList.add("notification", "is-danger");
+    let button = document.createElement("button");
+    button.classList.add("delete");
+    div.appendChild(button);
+    div.appendChild(document.createTextNode(database));
+    div.appendChild(document.createElement("br"));
+    document.getElementById("create-reset-delete-error").appendChild(div);
+
+    button.addEventListener('click', () => {
+        div.parentNode.removeChild(div);
+    });
+}
+
 async function fetchDatabases(key, method) {
     let url = "/dbs/" + key;
     try {
@@ -387,36 +402,50 @@ async function renderDatabases() {
     if (selected_value !== '' && Array.from(sel.options).map((opt) => opt.value).includes(selected_value) ) {
         sel.value = selected_value;
     }
-
 }
 
 renderDatabases();
 
 async function createDatabase() {
-    let create = document.getElementById("create");
-    let key = create.value;
+    let text = document.getElementById("create");
+    let key = text.value;
     let database = await fetchDatabases(key, 'post');
     if (database === "Invalid key" || database === "Database already exists") {
-        let div = document.createElement("div");
-        div.classList.add("notification", "is-danger");
-        let button = document.createElement("button");
-        button.classList.add("delete");
-        div.appendChild(button);
-        div.appendChild(document.createTextNode(database));
-        div.appendChild(document.createElement("br"));
-        document.getElementById("create-reset-delete-error").appendChild(div);
-
-        button.addEventListener('click', () => {
-            div.parentNode.removeChild(div);
-        });
+        addErrorMessage(database);
     } else {
-        create.value = '';
+        text.value = '';
         let sel = document.getElementById("databases");
         let opt = document.createElement("option");
         opt.value = key;
         opt.text = key;
         sel.add(opt);
         sel.value = key;
+    }
+}
+
+
+async function resetDatabase() {
+    let text = document.getElementById("reset");
+    let key = text.value;
+    let database = await fetchDatabases(key, 'put');
+    if (database === "Invalid key" || database === "Database does not exist") {
+        addErrorMessage(database);
+    } else {
+        text.value = '';
+        let sel = document.getElementById("databases");
+        sel.value = key;
+    }
+}
+
+async function deleteDatabase() {
+    let text = document.getElementById("delete");
+    let key = text.value;
+    let database = await fetchDatabases(key, 'delete');
+    if (database === "Invalid key" || database === "Database does not exist") {
+        addErrorMessage(database);
+    } else {
+        text.value = '';
+        await renderDatabases();
     }
 }
 

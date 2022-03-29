@@ -59,7 +59,6 @@ namespace ragedb {
      * @return future
      */
     seastar::future<> Graph::Stop() {
-        reckless::uninstall_crash_handler();
         return shard.stop();
     }
 
