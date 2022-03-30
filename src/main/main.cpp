@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
                 // Initialize utilities to create a json parser for each core
                 Utilities utilities;
 
-                Databases dbs(management, server);
+                Databases dbs(management);
                 server->set_routes([&dbs](routes &r) { dbs.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes &r) {

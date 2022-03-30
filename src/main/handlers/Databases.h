@@ -65,7 +65,6 @@ class Databases {
 
 private:
   Management &databases;
-  http_server_control* server;
   GetDatabasesHandler getDatabasesHandler;
   GetDatabaseHandler getDatabaseHandler;
   PostDatabaseHandler postDatabaseHandler;
@@ -73,8 +72,8 @@ private:
   DeleteDatabaseHandler deleteDatabaseHandler;
 
 public:
-  Databases(Management &_databases, http_server_control*& _server) : databases(_databases), server(_server), getDatabasesHandler(*this), getDatabaseHandler(*this),
-                                                                    postDatabaseHandler(*this), putDatabaseHandler(*this), deleteDatabaseHandler(*this) {}
+  Databases(Management &_databases) : databases(_databases), getDatabasesHandler(*this), getDatabaseHandler(*this),
+                                      postDatabaseHandler(*this), putDatabaseHandler(*this), deleteDatabaseHandler(*this) {}
   void set_routes(routes& routes);
 };
 
