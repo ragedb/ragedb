@@ -27,18 +27,16 @@ std::vector<std::string> Management::list() {
 }
 
 std::string Management::get(std::string key) {
-  std::map<std::string, std::map<std::string, std::string>> nodes;
-  std::map<std::string, std::map<std::string, std::string>> rels;
+  std::set<std::string> nodes = databases.at(key).graph.shard.local().NodeTypesGet();
+  std::vector<std::string> node_types;
+  node_types.assign(nodes.begin(), nodes.end());
 
-  for(auto type : databases.at(key).graph.shard.local().NodeTypesGet() ) {
-    nodes.emplace(type, databases.at(key).graph.shard.local().NodeTypeGet(type));
-  }
-  for(auto type : databases.at(key).graph.shard.local().RelationshipTypesGet() ) {
-    rels.emplace(type, databases.at(key).graph.shard.local().RelationshipTypeGet(type));
-  }
-//  database_json database_json(key, nodes, rels);
-//  return database_json.to_json();
-  return key;
+  std::set<std::string> rels = databases.at(key).graph.shard.local().RelationshipTypesGet();
+  std::vector<std::string> rel_types;
+  rel_types.assign(rels.begin(), rels.end());
+
+  database_json database_json(key, node_types, rel_types);
+  return database_json.to_json();
 }
 
 Database &Management::at(std::string key) {
@@ -55,21 +53,21 @@ seastar::future<bool> Management::add(std::string key) {
   }
 
   databases.emplace(key, key);
-  auto &graph = databases.at(key);
+  auto &database = databases.at(key);
 
   std::vector<seastar::future<>> futures;
 
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.relationshipProperties.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.nodeProperties.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.degrees.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.neighbors.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.connected.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.relationships.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.nodes.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.schema.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.lua.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.healthCheck.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&graph](routes &r) { graph.restore.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.relationshipProperties.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.nodeProperties.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.degrees.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.neighbors.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.connected.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.relationships.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.nodes.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.schema.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.lua.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.healthCheck.set_routes(r); }));
+  futures.emplace_back(server->set_routes([&database](routes &r) { database.restore.set_routes(r); }));
   futures.emplace_back(databases.at(key).start());
 
   auto p = make_shared(std::move(futures));
