@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_MANAGEMENT_H
-#define RAGEDB_MANAGEMENT_H
+#ifndef RAGEDB_DATABASES_H
+#define RAGEDB_DATABASES_H
 
 
 #include <string>
 #include "Database.h"
-class Management
-{
+class Databases {
   std::map<std::string, Database> databases;
   http_server_control* server;
 
 public:
-  explicit Management(http_server_control*& _server) : server(_server) {}
+  explicit Databases(http_server_control*& _server) : server(_server) {}
   std::vector<std::string> list();
   std::string get(std::string key);
   bool contains(std::string key);
@@ -38,4 +37,4 @@ public:
 };
 
 
-#endif// RAGEDB_MANAGEMENT_H
+#endif// RAGEDB_DATABASES_H

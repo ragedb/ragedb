@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "Databases.h"
+#include "Management.h"
 #include "Utilities.h"
 #include "../json/JSON.h"
 
-void Databases::set_routes(routes &routes) {
+void Management::set_routes(routes &routes) {
   auto getDatabases = new match_rule(&getDatabasesHandler);
   getDatabases->add_str("/dbs");
   routes.add(getDatabases, operation_type::GET);
@@ -44,12 +44,12 @@ void Databases::set_routes(routes &routes) {
   routes.add(deleteDatabase, operation_type::DELETE);
 }
 
-future<std::unique_ptr<reply>> Databases::GetDatabasesHandler::handle([[maybe_unused]] const sstring &path, [[maybe_unused]] std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<reply>> Management::GetDatabasesHandler::handle([[maybe_unused]] const sstring &path, [[maybe_unused]] std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
   rep->write_body("json", json::stream_object(parent.databases.list()));
   return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Databases::GetDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<reply>> Management::GetDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
   if (valid_key && parent.databases.contains(req->param[Utilities::KEY])) {
     rep->write_body("json", sstring(parent.databases.get(req->param[Utilities::KEY])));
@@ -57,7 +57,7 @@ future<std::unique_ptr<reply>> Databases::GetDatabaseHandler::handle([[maybe_unu
   return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Databases::PostDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<reply>> Management::PostDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
   if (valid_key) {
     std::string key = req->param[Utilities::KEY];
@@ -75,7 +75,7 @@ future<std::unique_ptr<reply>> Databases::PostDatabaseHandler::handle([[maybe_un
   return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Databases::PutDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<reply>> Management::PutDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
   if (valid_key) {
@@ -93,7 +93,7 @@ future<std::unique_ptr<reply>> Databases::PutDatabaseHandler::handle([[maybe_unu
   }
   return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
 }
-future<std::unique_ptr<reply>> Databases::DeleteDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<reply>> Management::DeleteDatabaseHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
   if (valid_key) {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "Management.h"
+#include "Databases.h"
 #include "json/JSON.h"
 
-std::vector<std::string> Management::list() {
+std::vector<std::string> Databases::list() {
   std::vector<std::string> names;
   names.reserve(databases.size());
   for (auto&& [name, database] : databases) {
@@ -26,7 +26,7 @@ std::vector<std::string> Management::list() {
   return names;
 }
 
-std::string Management::get(std::string key) {
+std::string Databases::get(std::string key) {
   std::set<std::string> nodes = databases.at(key).graph.shard.local().NodeTypesGet();
   std::vector<std::string> node_types;
   node_types.assign(nodes.begin(), nodes.end());
@@ -39,15 +39,15 @@ std::string Management::get(std::string key) {
   return database_json.to_json();
 }
 
-Database &Management::at(std::string key) {
+Database &Databases::at(std::string key) {
   return databases.at(key);
 }
 
-bool Management::contains(std::string key) {
+bool Databases::contains(std::string key) {
   return databases.contains(key);
 }
 
-seastar::future<bool> Management::add(std::string key) {
+seastar::future<bool> Databases::add(std::string key) {
   if (databases.contains(key)) {
     return seastar::make_ready_future<bool>(false);
   }
@@ -76,7 +76,7 @@ seastar::future<bool> Management::add(std::string key) {
   });
 }
 
-seastar::future<bool> Management::reset(std::string key) {
+seastar::future<bool> Databases::reset(std::string key) {
   if (!databases.contains(key)) {
     return seastar::make_ready_future<bool>(false);
   }
@@ -84,7 +84,7 @@ seastar::future<bool> Management::reset(std::string key) {
   return seastar::make_ready_future<bool>(true);
 }
 
-seastar::future<bool> Management::remove(std::string key) {
+seastar::future<bool> Databases::remove(std::string key) {
   if (!databases.contains(key)) {
     return seastar::make_ready_future<bool>(false);
   }
@@ -95,8 +95,7 @@ seastar::future<bool> Management::remove(std::string key) {
   });
 }
 
-seastar::future<bool> Management::stop() {
-
+seastar::future<bool> Databases::stop() {
   std::vector<seastar::future<>> futures;
   for (auto& [name, database]: databases) {
     futures.push_back(database.graph.Stop());

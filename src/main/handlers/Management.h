@@ -14,57 +14,58 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_DATABASES_H
-#define RAGEDB_DATABASES_H
+#ifndef RAGEDB_MANAGEMENT_H
+#define RAGEDB_MANAGEMENT_H
 
 
 #include <string>
 #include "../Database.h"
-#include "../Management.h"
-class Databases {
+#include "../Databases.h"
+
+class Management {
 
   class GetDatabasesHandler : public httpd::handler_base {
   public:
-    explicit GetDatabasesHandler(Databases & databases) : parent(databases) {};
+    explicit GetDatabasesHandler(Management & management) : parent(management) {};
   private:
-    Databases & parent;
+    Management & parent;
     future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
   };
 
   class GetDatabaseHandler : public httpd::handler_base {
   public:
-    explicit GetDatabaseHandler(Databases & databases) : parent(databases) {};
+    explicit GetDatabaseHandler(Management & management) : parent(management) {};
   private:
-    Databases & parent;
+    Management & parent;
     future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
   };
 
   class PostDatabaseHandler : public httpd::handler_base {
   public:
-    explicit PostDatabaseHandler(Databases & databases) : parent(databases) {};
+    explicit PostDatabaseHandler(Management & management) : parent(management) {};
   private:
-    Databases & parent;
+    Management & parent;
     future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
   };
 
   class PutDatabaseHandler : public httpd::handler_base {
   public:
-    explicit PutDatabaseHandler(Databases & databases) : parent(databases) {};
+    explicit PutDatabaseHandler(Management & management) : parent(management) {};
   private:
-    Databases & parent;
+    Management & parent;
     future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
   };
 
   class DeleteDatabaseHandler : public httpd::handler_base {
   public:
-    explicit DeleteDatabaseHandler(Databases & databases) : parent(databases) {};
+    explicit DeleteDatabaseHandler(Management & management) : parent(management) {};
   private:
-    Databases & parent;
+    Management & parent;
     future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
   };
 
 private:
-  Management &databases;
+  Databases &databases;
   GetDatabasesHandler getDatabasesHandler;
   GetDatabaseHandler getDatabaseHandler;
   PostDatabaseHandler postDatabaseHandler;
@@ -72,10 +73,10 @@ private:
   DeleteDatabaseHandler deleteDatabaseHandler;
 
 public:
-  Databases(Management &_databases) : databases(_databases), getDatabasesHandler(*this), getDatabaseHandler(*this),
+  Management(Databases &_databases) : databases(_databases), getDatabasesHandler(*this), getDatabaseHandler(*this),
                                       postDatabaseHandler(*this), putDatabaseHandler(*this), deleteDatabaseHandler(*this) {}
   void set_routes(routes& routes);
 };
 
 
-#endif// RAGEDB_DATABASES_H
+#endif// RAGEDB_MANAGEMENT_H

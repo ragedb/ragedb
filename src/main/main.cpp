@@ -19,8 +19,8 @@
 #include <seastar/core/thread.hh>
 #include "util/stop_signal.hh"
 #include "handlers/Utilities.h"
-#include "Management.h"
-#include "handlers/Databases.h"
+#include "Databases.h"
+#include "handlers/Management.h"
 #include <seastar/http/httpd.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/http/file_handler.hh>
@@ -50,14 +50,14 @@ int main(int argc, char** argv) {
                 uint16_t port = config["port"].as<uint16_t>();
                 auto server = new seastar::http_server_control();
                 server->start().get();
-                Management management(server);
-                management.add("rage").get();
+                Databases databases(server);
+                databases.add("rage").get();
 
                 // Initialize utilities to create a json parser for each core
                 Utilities utilities;
 
-                Databases dbs(management);
-                server->set_routes([&dbs](routes &r) { dbs.set_routes(r); }).get();
+                Management dbms(databases);
+                server->set_routes([&dbms](routes &r) { dbms.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes &r) {
                         r.add(seastar::operation_type::GET,
@@ -77,11 +77,11 @@ int main(int argc, char** argv) {
                 server->listen(seastar::socket_address{addr, port}).get();
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
                 //graph.Restore().get();
-                seastar::engine().at_exit([&server, &management] {
+                seastar::engine().at_exit([&server, &databases] {
                     std::cout << "Stopping RageDB HTTP server" << std::endl;
-                    return management.stop().then([server](bool success) {
+                    return databases.stop().then([server](bool success) {
                       if (success) {
-                        std::cout << "Stopped RageDB Databases" << std::endl;
+                        std::cout << "Stopped RageDB Management" << std::endl;
                       }
                       // TODO: This is in the right place, but the install can only be done once or
                       //  must be uninstalled and redone every time a graph a graph is created
