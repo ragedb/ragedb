@@ -34,6 +34,8 @@ namespace ragedb {
         lua.require_script("json", Lua::json_script);
         lua.require_script("ftcsv", Lua::ftcsv_script);
         lua.require_script("date", Lua::date_script);
+        lua.require_script("template", Lua::template_script);
+        lua.require_script("html", Lua::html_script);
 
         lua.new_enum("Direction",
           "BOTH", Direction::BOTH,
@@ -464,7 +466,26 @@ namespace ragedb {
           lines.emplace_back(line);
         }
 
-        lines.back() = "return json.encode({" + lines.back() + "})";
+        // We can have a single item, or multiple items returned. If single item pass through, if multiple capture in an array
+        // Tricky part is comma in a string "Tom, Jerry and I" is a single item
+
+        bool single = true;
+        const char *startOfString=lines.back().c_str();    // prepare to parse the line - start is position of begin of last line
+        bool inString = false;
+        for (const char* p=startOfString; *p; p++) {  // iterate through the last line
+          if (*p == '"')                        // toggle flag if we're btw double quotes
+            inString = !inString;
+          else if (*p == ',' && !inString) {    // if comma OUTSIDE double quote, we have multiple values being returned
+            single = false;
+            break;
+          }
+        }
+
+        if (single) {
+          lines.back() = "return json.encode(" + lines.back() + ")";
+        } else {
+          lines.back() = "return json.encode({" + lines.back() + "})";
+        }
 
         std::string executable = join(lines, "\n");
         sol::protected_function_result script_result;

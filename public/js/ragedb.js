@@ -185,145 +185,164 @@ async function sendscript() {
             if (text.startsWith("An exception has occurred:")) {
                 responseError.innerHTML = "<div class=\"notification is-danger\">" + text + "</div>";
                 Tabs[4].click();
-
             } else {
                 responseError.innerHTML = "<div class=\"notification is-success\">No Errors</div>";
-                responseRaw.innerHTML = text;
-                let data = JSON.parse(text);
-                updateActiveTab(Tabs[0]);
-                responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(data,null, 2));
 
-                // Viz
-                let vizWidth = responseViz.parentNode.parentElement.clientWidth - 50; // for padding
-                const vizGraph = ForceGraph()(responseViz)
-                    .width(vizWidth)
-                    .height(600)
-                    .graphData(getViz(data))
-                    .centerAt(-200, -50)
-                    .zoom(4)
-                    .nodeId('id')
-                    .nodeLabel(node => JSON.stringify(node.properties, null, '\n'))
-                    .nodeAutoColorBy(node => node.id % 24)
-                    .linkLabel(rel => JSON.stringify(rel.properties, null, '\n'))
-                    .linkSource('starting_node_id')
-                    .linkTarget('ending_node_id')
-                    .linkDirectionalArrowLength(6)
-                    .linkDirectionalArrowRelPos(1)
-                    .nodeCanvasObjectMode(() => 'after')
-                    .nodeCanvasObject((node, ctx) => {
-                        // calculate key positioning
-                        const textPos = Object.assign(...['x', 'y'].map(c => ({
-                            [c]: node[c]
-                        })));
+                if (text.startsWith("<!DOCTYPE html>")) {
+                    let iframe = document.createElement("iframe");
+                    iframe.setAttribute("id", "iframe");
+                    responseRaw.appendChild(iframe);
+                    let frame = document.getElementById('iframe');
 
-                        // draw text key
-                        ctx.save();
-                        ctx.font = `4px Sans-Serif`;
-                        ctx.translate(textPos.x, textPos.y + 7);
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillStyle = 'darkgrey';
-                        ctx.fillText(node.key, 0, 0);
-                        ctx.restore();
-                    })
-                    .linkCanvasObjectMode(() => 'after')
-                    .linkCanvasObject((link, ctx) => {
-                        const MAX_FONT_SIZE = 4;
-                        const LABEL_NODE_MARGIN = vizGraph.nodeRelSize() * 1.5;
+                    frame = (frame.contentWindow || frame.contentDocument);
+                    if (frame.document) frame = frame.document;
 
-                        const start = link.source;
-                        const end = link.target;
+                    frame.open();
+                    frame.write(text);
+                    frame.close();
 
-                        // ignore unbound links
-                        if (typeof start !== 'object' || typeof end !== 'object') return;
+                    updateActiveTab(Tabs[0]);
+                } else {
+                    responseRaw.innerHTML = text;
+                    let data = JSON.parse(text);
+                    updateActiveTab(Tabs[0]);
+                    responseJson.appendChild( document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(data,null, 2));
 
-                        // calculate label positioning
-                        const textPos = Object.assign(...['x', 'y'].map(c => ({
-                            [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
-                        })));
+                    // Viz
+                    let vizWidth = responseViz.parentNode.parentElement.clientWidth - 50; // for padding
+                    const vizGraph = ForceGraph()(responseViz)
+                        .width(vizWidth)
+                        .height(600)
+                        .graphData(getViz(data))
+                        .centerAt(-200, -50)
+                        .zoom(4)
+                        .nodeId('id')
+                        .nodeLabel(node => JSON.stringify(node.properties, null, '\n'))
+                        .nodeAutoColorBy(node => node.id % 24)
+                        .linkLabel(rel => JSON.stringify(rel.properties, null, '\n'))
+                        .linkSource('starting_node_id')
+                        .linkTarget('ending_node_id')
+                        .linkDirectionalArrowLength(6)
+                        .linkDirectionalArrowRelPos(1)
+                        .nodeCanvasObjectMode(() => 'after')
+                        .nodeCanvasObject((node, ctx) => {
+                            // calculate key positioning
+                            const textPos = Object.assign(...['x', 'y'].map(c => ({
+                                [c]: node[c]
+                            })));
 
-                        const relLink = { x: end.x - start.x, y: end.y - start.y };
+                            // draw text key
+                            ctx.save();
+                            ctx.font = `4px Sans-Serif`;
+                            ctx.translate(textPos.x, textPos.y + 7);
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillStyle = 'darkgrey';
+                            ctx.fillText(node.key, 0, 0);
+                            ctx.restore();
+                        })
+                        .linkCanvasObjectMode(() => 'after')
+                        .linkCanvasObject((link, ctx) => {
+                            const MAX_FONT_SIZE = 4;
+                            const LABEL_NODE_MARGIN = vizGraph.nodeRelSize() * 1.5;
 
-                        const maxTextLength = Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) - LABEL_NODE_MARGIN * 2;
+                            const start = link.source;
+                            const end = link.target;
 
-                        let textAngle = Math.atan2(relLink.y, relLink.x);
-                        // maintain label vertical orientation for legibility
-                        if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
-                        if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
+                            // ignore unbound links
+                            if (typeof start !== 'object' || typeof end !== 'object') return;
 
-                        const label = link.type;
+                            // calculate label positioning
+                            const textPos = Object.assign(...['x', 'y'].map(c => ({
+                                [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+                            })));
 
-                        // estimate fontSize to fit in link length
-                        ctx.font = '1px Sans-Serif';
-                        const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
-                        ctx.font = `${fontSize}px Sans-Serif`;
-                        const textWidth = ctx.measureText(label).width;
-                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+                            const relLink = { x: end.x - start.x, y: end.y - start.y };
 
-                        // draw text label (with background rect)
-                        ctx.save();
-                        ctx.translate(textPos.x, textPos.y);
-                        ctx.rotate(textAngle);
+                            const maxTextLength = Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) - LABEL_NODE_MARGIN * 2;
 
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                        ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
+                            let textAngle = Math.atan2(relLink.y, relLink.x);
+                            // maintain label vertical orientation for legibility
+                            if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
+                            if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
 
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillStyle = 'darkgrey';
-                        ctx.fillText(label, 0, 0);
-                        ctx.restore();
-                    });
+                            const label = link.type;
 
-                let json = JSON.parse(text);
-                for (let index = 0, len = json.length; index < len; ++index) {
-                    let table = json[index];
-                    if (!Array.isArray(table)) {
-                        table = [table];
+                            // estimate fontSize to fit in link length
+                            ctx.font = '1px Sans-Serif';
+                            const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
+                            ctx.font = `${fontSize}px Sans-Serif`;
+                            const textWidth = ctx.measureText(label).width;
+                            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+                            // draw text label (with background rect)
+                            ctx.save();
+                            ctx.translate(textPos.x, textPos.y);
+                            ctx.rotate(textAngle);
+
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                            ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
+
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillStyle = 'darkgrey';
+                            ctx.fillText(label, 0, 0);
+                            ctx.restore();
+                        });
+
+                    let json = JSON.parse(text);
+                    if (!Array.isArray(json)) {
+                        json = [json];
                     }
+                    for (let index = 0, len = json.length; index < len; ++index) {
+                        let table = json[index];
+                        if (!Array.isArray(table)) {
+                            table = [table];
+                        }
 
-                    let elemDiv = document.createElement('div');
-                    responseGrid.appendChild(elemDiv);
+                        let elemDiv = document.createElement('div');
+                        responseGrid.appendChild(elemDiv);
 
-                    let grid = new gridjs.Grid({data: []}).render(elemDiv);
+                        let grid = new gridjs.Grid({data: []}).render(elemDiv);
 
-                    let searchable = true;
-                    // We need to flatten the result for the Grid if it's make up of objects
-                    if (typeof table[0] === 'object' && table[0] !== null) {
-                        if (table.length > 1) {
-                            for (let index = 0, len = table.length; index < len; ++index) {
-                                table[index] = flattenJSON(table[index]);
+                        let searchable = true;
+                        // We need to flatten the result for the Grid if it's make up of objects
+                        if (typeof table[0] === 'object' && table[0] !== null) {
+                            if (table.length > 1) {
+                                for (let index = 0, len = table.length; index < len; ++index) {
+                                    table[index] = flattenJSON(table[index]);
+                                }
+                            } else {
+                                table = flattenJSON(table[0]);
+                                grid.updateConfig({ columns: Object.keys(table) });
+                                table = [Object.values(table)];
+                                searchable = false;
                             }
                         } else {
-                            table = flattenJSON(table[0]);
-                            grid.updateConfig({ columns: Object.keys(table) });
-                            table = [Object.values(table)];
-                            searchable = false;
+                            grid.updateConfig({ columns: ["Response"] });
+                            let arrayOfArrays = [];
+                            for (let index = 0, len = table.length; index < len; ++index) {
+                                arrayOfArrays[index] = [table[index]];
+                            }
+                            table = arrayOfArrays;
                         }
-                    } else {
-                        grid.updateConfig({ columns: ["Response"] });
-                        let arrayOfArrays = [];
-                        for (let index = 0, len = table.length; index < len; ++index) {
-                            arrayOfArrays[index] = [table[index]];
-                        }
-                        table = arrayOfArrays;
+
+                        grid.updateConfig({
+                            data: table,
+                            search: searchable,
+                            sort: {
+                                multiColumn: false
+                            },
+                            pagination: {
+                                enabled: true,
+                                limit: 10,
+                                summary: true
+                            },
+                            resizable: true
+                        });
+
+                        grid.forceRender();
                     }
-
-                    grid.updateConfig({
-                        data: table,
-                        search: searchable,
-                        sort: {
-                            multiColumn: false
-                        },
-                        pagination: {
-                            enabled: true,
-                            limit: 10,
-                            summary: true
-                        },
-                        resizable: true
-                    });
-
-                    grid.forceRender();
                 }
             }
             clock.classList.remove("rotate");

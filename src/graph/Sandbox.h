@@ -50,7 +50,9 @@ namespace ragedb {
     inline static const std::vector<std::string> ALLOWED_CUSTOM_FUNCTIONS = {
       "json",
       "date",
-      "ftcsv"
+      "ftcsv",
+      "template",
+      "html"
     };
 
 
@@ -179,7 +181,7 @@ namespace ragedb {
       //"rawequal",
       //"rawget",
       "rawset", // Used by ftcsv
-      //"setmetatable"
+      "setmetatable" // Used by template
     };
 
   };
