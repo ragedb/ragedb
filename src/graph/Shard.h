@@ -1023,7 +1023,8 @@ namespace ragedb {
         std::map<uint16_t, std::vector<Link>> PartitionLinksByNodeShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinksByRelationshipShardId(const std::vector<Link> &links) const;
 
-    };
+        [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
+  };
 }
 
 
