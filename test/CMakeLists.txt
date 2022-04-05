@@ -5,7 +5,7 @@ else()
   include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
 endif()
 
-add_library(catch_main STATIC catch_main.cpp)
+add_library(catch_main STATIC catch_main.cpp types/Date.cpp)
 target_link_libraries(catch_main PUBLIC CONAN_PKG::catch2)
 target_link_libraries(catch_main PRIVATE project_options)
 
@@ -13,7 +13,10 @@ find_package(Seastar REQUIRED)
 
 
 
-add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.cpp Properties.cpp shard/Shards.cpp shard/Nodes.cpp shard/AllNodes.cpp shard/AllRelationships.cpp shard/NodeDegrees.cpp shard/NodeProperties.cpp shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp Link.cpp Node.cpp Graph.cpp)
+add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.cpp Properties.cpp shard/Shards.cpp shard/Nodes.cpp shard/AllNodes.cpp shard/AllRelationships.cpp shard/NodeDegrees.cpp shard/NodeProperties.cpp shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp
+        Link.cpp Node.cpp Graph.cpp
+        types/Date.cpp
+        )
 target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph Seastar::seastar)
 target_include_directories(tests PRIVATE
         ../src/graph
@@ -21,6 +24,7 @@ target_include_directories(tests PRIVATE
         ../src/graph/lua
         ../src/graph/peered
         ../src/graph/shard
+        ../src/graph/types
         ../src/main
         ../src/main/handlers
         ../src/main/json
