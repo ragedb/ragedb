@@ -50,6 +50,9 @@ namespace ragedb {
 
     public:
       Date(double _value) : value(_value) {}
+      Date(std::string _value)  {
+        value = fromString(_value).value;
+      }
       double value;
 
       friend std::ostream& operator<<(std::ostream& os, const Date& date);

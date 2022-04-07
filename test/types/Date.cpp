@@ -35,5 +35,19 @@ SCENARIO( "Date can be created", "[date]" ) {
         REQUIRE(out.str() == "1649137648.000");
       }
     }
+
+    WHEN("a date is created from a string") {
+      ragedb::Date fs("2011-08-17T14:26:59.961+0000");
+
+      THEN("we get it back") {
+        REQUIRE(std::abs(fs.value - 1313591219.961) < 0.01); 
+        std::stringstream out;
+        out << fs;
+        THEN("we get the correct output") {
+          REQUIRE(out.str() == "1313591219.961");
+        }
+      }
+    }
+
   }
 }
