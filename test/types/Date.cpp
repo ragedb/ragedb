@@ -21,6 +21,7 @@
 SCENARIO( "Date can be created", "[date]" ) {
   GIVEN("Nothing") {
     ragedb::Date date(1649137648);
+    ragedb::Date fs("2011-08-17T14:26:59.961+0000");
 
     WHEN("a date is requested") {
       THEN("we get it back") {
@@ -37,17 +38,17 @@ SCENARIO( "Date can be created", "[date]" ) {
     }
 
     WHEN("a date is created from a string") {
-      ragedb::Date fs("2011-08-17T14:26:59.961+0000");
-
       THEN("we get it back") {
-        REQUIRE(std::abs(fs.value - 1313591219.961) < 0.01); 
-        std::stringstream out;
-        out << fs;
-        THEN("we get the correct output") {
-          REQUIRE(out.str() == "1313591219.961");
-        }
+        REQUIRE(std::abs(fs.value - 1313591219.961) < 0.01);
       }
     }
 
+    WHEN("we print a date from a string") {
+      std::stringstream out2;
+      out2 << fs;
+      THEN("we get the correct output") {
+        REQUIRE(out2.str() == "1313591219.961");
+      }
+    }
   }
 }
