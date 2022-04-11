@@ -210,28 +210,36 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
   
     switch (property_type_id) {
-    case Properties::getBooleanPropertyType(): {
+    case Properties::boolean_type: {
       return filterCountBooleans(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getIntegerPropertyType(): {
+    case Properties::integer_type: {
       return filterCountIntegers(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getDoublePropertyType(): {
+    case Properties::double_type: {
       return filterCountDoubles(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getStringPropertyType(): {
+    case Properties::date_type: {
+      // TODO: Verify this
+      return filterCountDoubles(unfiltered, type_id, property, operation, value);
+    }
+    case Properties::string_type: {
       return filterCountStrings(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getBooleanListPropertyType(): {
+    case Properties::boolean_list_type: {
       return filterCountBooleanLists(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getIntegerListPropertyType(): {
+    case Properties::integer_list_type: {
       return filterCountIntegerLists(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getDoubleListPropertyType(): {
+    case Properties::double_list_type: {
       return filterCountDoubleLists(unfiltered, type_id, property, operation, value);
     }
-    case Properties::getStringListPropertyType(): {
+    case Properties::date_list_type: {
+      // TODO: Verify this
+      return filterCountDoubleLists(unfiltered, type_id, property, operation, value);
+    }
+    case Properties::string_list_type: {
       return filterCountStringLists(unfiltered, type_id, property, operation, value);
     }
     default: {
@@ -481,28 +489,36 @@ namespace ragedb {
   
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-    case Properties::getBooleanPropertyType(): {
+    case Properties::boolean_type: {
       return filterBooleanIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getIntegerPropertyType(): {
+    case Properties::integer_type: {
       return filterIntegerIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getDoublePropertyType(): {
+    case Properties::double_type: {
       return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getStringPropertyType(): {
+    case Properties::date_type: {
+      // TODO: Verify this
+      return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_type: {
       return filterStringIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getBooleanListPropertyType(): {
+    case Properties::boolean_list_type: {
       return filterBooleanListIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getIntegerListPropertyType(): {
+    case Properties::integer_list_type: {
       return filterIntegerListIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getDoubleListPropertyType(): {
+    case Properties::double_list_type: {
       return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getStringListPropertyType(): {
+    case Properties::date_list_type: {
+      // TODO: Verify this
+      return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_list_type: {
       return filterStringListIds(unfiltered, type_id, property, operation, value, skip, limit);
     }
     default: {
@@ -749,28 +765,36 @@ namespace ragedb {
   
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-    case Properties::getBooleanPropertyType(): {
+    case Properties::boolean_type: {
       return filterBooleanRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getIntegerPropertyType(): {
+    case Properties::integer_type: {
       return filterIntegerRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getDoublePropertyType(): {
+    case Properties::double_type: {
       return filterDoubleRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getStringPropertyType(): {
+    case Properties::date_type: {
+      // TODO: Verify this
+      return filterDoubleRelationships(unfiltered, type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_type: {
       return filterStringRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getBooleanListPropertyType(): {
+    case Properties::boolean_list_type: {
       return filterBooleanListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getIntegerListPropertyType(): {
+    case Properties::integer_list_type: {
       return filterIntegerListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getDoubleListPropertyType(): {
+    case Properties::double_list_type: {
       return filterDoubleListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
-    case Properties::getStringListPropertyType(): {
+    case Properties::date_list_type: {
+      // TODO: Verify this
+      return filterDoubleListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_list_type: {
       return filterStringListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
     }
     default: {

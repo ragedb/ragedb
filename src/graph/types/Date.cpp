@@ -244,9 +244,13 @@ namespace ragedb {
       return fromString(s.data(), s.size());
     }
 
+    double Date::convert(std::string s) {
+      return Date(s).value;
+    }
+
     std::ostream &operator<<(std::ostream &os, const Date &date) {
       os << std::fixed << std::setw(11) << std::setprecision(3) << std::setfill('0') << date.value;
       return os;
     }
 
-}
+    }

@@ -18,6 +18,7 @@
 #include <utility>
 #include "NodeTypes.h"
 #include "Shard.h"
+#include "types/Date.h"
 
 
 namespace ragedb {
@@ -461,30 +462,39 @@ namespace ragedb {
         // find out what data_type property is supposed to be, cast value to that.
 
         switch (properties[type_id].getPropertyTypeId(property)) {
-            case Properties::getBooleanPropertyType(): {
+            case Properties::boolean_type: {
                 return properties[type_id].setBooleanProperty(property, internal_id, get<bool>(value));
             }
-            case Properties::getIntegerPropertyType(): {
+            case Properties::integer_type: {
                 return properties[type_id].setIntegerProperty(property, internal_id, get<int64_t>(value));
             }
-            case Properties::getDoublePropertyType(): {
+            case Properties::double_type: {
                 return properties[type_id].setDoubleProperty(property, internal_id, get<double>(value));
             }
-            case Properties::getStringPropertyType(): {
+            case Properties::string_type: {
                 return properties[type_id].setStringProperty(property, internal_id, get<std::string>(value));
             }
-            case Properties::getBooleanListPropertyType(): {
+            case Properties::date_type: {
+              // Date are stored as doubles
+              return properties[type_id].setDateProperty(property, internal_id, get<double>(value));
+            }
+            case Properties::boolean_list_type: {
                 return properties[type_id].setListOfBooleanProperty(property, internal_id, get<std::vector<bool>>(value));
             }
-            case Properties::getIntegerListPropertyType(): {
+            case Properties::integer_list_type: {
                 return properties[type_id].setListOfIntegerProperty(property, internal_id, get<std::vector<int64_t>>(value));
             }
-            case Properties::getDoubleListPropertyType(): {
+            case Properties::double_list_type: {
                 return properties[type_id].setListOfDoubleProperty(property, internal_id, get<std::vector<double>>(value));
             }
-            case Properties::getStringListPropertyType(): {
+            case Properties::string_list_type: {
                 return properties[type_id].setListOfStringProperty(property, internal_id, get<std::vector<std::string>>(value));
             }
+            case Properties::date_list_type: {
+              // Lists of Dates are stored as Lists of Doubles
+              return properties[type_id].setListOfDateProperty(property, internal_id, get<std::vector<double>>(value));
+            }
+
         }
         return false;
     }
@@ -493,58 +503,172 @@ namespace ragedb {
         return setNodeProperty(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), property, value);
     }
 
+    bool NodeTypes::setProperty(uint16_t data_type_id, simdjson::dom::element value, uint16_t type_id, const std::string &property, uint64_t internal_id) {
+      // We are going to check that the property type matches the value type
+      // and handle some conversions. If conversions fail, we do not enter a value for that property
+      switch (data_type_id) {
+        case Properties::boolean_type: {
+          // For booleans only allow bool property types
+          if (value.is_bool()) {
+            return properties[type_id].setBooleanProperty(property, internal_id, bool(value));
+          }
+          break;
+        }
+
+        case Properties::integer_type: {
+          if (value.is_int64()) {
+            return properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
+          }
+          if (value.is_uint64()) {
+            // Unsigned Integer Values are not allowed, convert to signed
+            return properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
+          }
+          break;
+        }
+
+        case Properties::double_type: {
+          switch (value.type()) {
+            case simdjson::dom::element_type::INT64:
+              return properties[type_id].setDoubleProperty(property, internal_id, static_cast<double>(int64_t(value)));
+            case simdjson::dom::element_type::UINT64:
+              // Unsigned Integer Values are not allowed, convert to signed
+              return properties[type_id].setDoubleProperty(property, internal_id, static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(value)));
+            case simdjson::dom::element_type::DOUBLE:
+              return properties[type_id].setDoubleProperty(property, internal_id, double(value));
+            default:
+              break;
+          }
+        }
+
+        case Properties::string_type: {
+          if (value.is_string()) {
+            return properties[type_id].setStringProperty(property, internal_id, std::string(value));
+          }
+          break;
+        }
+
+        case Properties::date_type: {
+          switch (value.type()) {
+            case simdjson::dom::element_type::INT64:
+              return properties[type_id].setDateProperty(property, internal_id, static_cast<double>(int64_t(value)));
+            case simdjson::dom::element_type::UINT64:
+              // Unsigned Integer Values are not allowed, convert to signed
+              return properties[type_id].setDateProperty(property, internal_id, static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(value)));
+            case simdjson::dom::element_type::DOUBLE:
+              return properties[type_id].setDateProperty(property, internal_id, double(value));
+            case simdjson::dom::element_type::STRING:
+              return properties[type_id].setDateProperty(property, internal_id, Date::convert(std::string(value)));
+            default:
+              break;
+          }
+        }
+
+        case Properties::boolean_list_type: {
+          if (value.type() == simdjson::dom::element_type::ARRAY) {
+            auto array = simdjson::dom::array(value);
+              std::vector<bool> bool_vector;
+              for (simdjson::dom::element child : simdjson::dom::array(value)) {
+                if (child.is_bool()) {
+                  bool_vector.emplace_back(bool(child));
+                }
+              }
+              return properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
+          }
+          break;
+        }
+
+        case Properties::integer_list_type: {
+          if (value.type() == simdjson::dom::element_type::ARRAY) {
+            auto array = simdjson::dom::array(value);
+            std::vector<int64_t> int_vector;
+            for (simdjson::dom::element child : simdjson::dom::array(value)) {
+              if (child.is_int64()) {
+                int_vector.emplace_back(int64_t(child));
+              }
+              if (child.is_uint64()) {
+                // Unsigned Integer Values are not allowed, convert to signed
+                int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
+              }
+            }
+            return properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
+          }
+          break;
+        }
+
+        case Properties::double_list_type: {
+          if (value.type() == simdjson::dom::element_type::ARRAY) {
+            auto array = simdjson::dom::array(value);
+            std::vector<double> double_vector;
+            for (simdjson::dom::element child : simdjson::dom::array(value)) {
+              switch (child.type()) {
+                case simdjson::dom::element_type::INT64:
+                  double_vector.emplace_back(static_cast<double>(int64_t(value)));
+                case simdjson::dom::element_type::UINT64:
+                  // Unsigned Integer Values are not allowed, convert to signed
+                  double_vector.emplace_back( static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(value)));
+                case simdjson::dom::element_type::DOUBLE:
+                  double_vector.emplace_back( double(value));
+                default:
+                  break;
+              }
+            }
+            return properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
+          }
+          break;
+        }
+
+        case Properties::string_list_type: {
+          if (value.type() == simdjson::dom::element_type::ARRAY) {
+            auto array = simdjson::dom::array(value);
+            std::vector<std::string> string_vector;
+            for (simdjson::dom::element child : simdjson::dom::array(value)) {
+              if (value.is_string()) {
+                string_vector.emplace_back(std::string(child));
+              }
+            }
+            return properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
+          }
+          break;
+        }
+
+        case Properties::date_list_type: {
+          if (value.type() == simdjson::dom::element_type::ARRAY) {
+            std::vector<double> double_vector;
+            for (simdjson::dom::element child : simdjson::dom::array(value)) {
+              switch (child.type()) {
+              case simdjson::dom::element_type::INT64:
+                double_vector.emplace_back(static_cast<double>(int64_t(value)));
+              case simdjson::dom::element_type::UINT64:
+                // Unsigned Integer Values are not allowed, convert to signed
+                double_vector.emplace_back(static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(value)));
+              case simdjson::dom::element_type::DOUBLE:
+                double_vector.emplace_back(double(value));
+              case simdjson::dom::element_type::STRING:
+                double_vector.emplace_back(Date::convert(std::string(value)));
+              default:
+                break;
+              }
+            }
+            return properties[type_id].setListOfDateProperty(property, internal_id, double_vector);
+          }
+        }
+        default: {
+          break;
+        }
+      }
+
+      // The property value given was invalid for the type, set the property as deleted and return false
+      properties[type_id].deleteProperty(property, internal_id);
+      return false;
+    }
+
     bool NodeTypes::setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &json) {
         if (!json.empty()) {
             simdjson::dom::element value;
             simdjson::error_code error = parser.parse(json).get(value);
             if (error == 0U) {
                 uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
-                switch (data_type_id) {
-                    case Properties::getBooleanPropertyType(): {
-                        return properties[type_id].setBooleanProperty(property, internal_id, bool(value));
-                    }
-                    case Properties::getIntegerPropertyType(): {
-                        return properties[type_id].setIntegerProperty(property, internal_id,
-                                                                      static_cast<std::make_signed_t<uint64_t>>(value));
-                    }
-                    case Properties::getDoublePropertyType(): {
-                        return properties[type_id].setDoubleProperty(property, internal_id, double(value));
-                    }
-                    case Properties::getStringPropertyType(): {
-                        return properties[type_id].setStringProperty(property, internal_id, std::string(value));
-                    }
-                    case Properties::getBooleanListPropertyType(): {
-                        std::vector<bool> bool_vector;
-                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                            bool_vector.emplace_back(bool(child));
-                        }
-                        return properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
-                    }
-                    case Properties::getIntegerListPropertyType(): {
-                        std::vector<int64_t> int_vector;
-                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                            int_vector.emplace_back(int64_t(child));
-                        }
-                        return properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
-                    }
-                    case Properties::getDoubleListPropertyType(): {
-                        std::vector<double> double_vector;
-                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                            double_vector.emplace_back(double(child));
-                        }
-                        return properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
-                    }
-                    case Properties::getStringListPropertyType(): {
-                        std::vector<std::string> string_vector;
-                        for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                            string_vector.emplace_back(child);
-                        }
-                        return properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
-                    }
-                    default: {
-                        return false;
-                    }
-                }
+                return setProperty(data_type_id, value, type_id, property, internal_id);
             }
         }
         return false;
@@ -559,153 +683,19 @@ namespace ragedb {
             // Get the properties
             simdjson::dom::object object;
             simdjson::error_code error = parser.parse(json).get(object);
-
             if (!error) {
                 // Add the node properties
+                int valid = 0;
                 for (auto[key, value] : object) {
                     auto property = static_cast<std::string>(key);
                     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
-                    // If the property exists at all
+                    // If the property type exists at all
                     if (property_type_id > 0) {
-                        // We are going to check that the property type matches the value type
-                        // and handle some conversions
-
-                        switch (property_type_id) {
-                            // For booleans only allow bool property types
-                            case Properties::getBooleanPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::BOOL) {
-                                    properties[type_id].setBooleanProperty(property, internal_id, bool(value));
-                                }
-                                break;
-                            }
-
-                            case Properties::getIntegerPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::INT64) {
-                                    properties[type_id].setIntegerProperty(property, internal_id, int64_t(value));
-                                    break;
-                                }
-                                if (value.type() == simdjson::dom::element_type::UINT64) {
-                                    // Unsigned Integer Values are not allowed, convert to signed
-                                    properties[type_id].setIntegerProperty(property, internal_id, static_cast<std::make_signed_t<uint64_t>>(value));
-                                }
-                                break;
-                            }
-
-                            case Properties::getDoublePropertyType(): {
-                                switch (value.type()) {
-                                    case simdjson::dom::element_type::INT64:
-                                        properties[type_id].setDoubleProperty(property, internal_id, static_cast<double>(int64_t(value)));
-                                        break;
-                                    case simdjson::dom::element_type::UINT64:
-                                        // Unsigned Integer Values are not allowed, convert to signed
-                                        properties[type_id].setDoubleProperty(property, internal_id, static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(value)));
-                                        break;
-                                    case simdjson::dom::element_type::DOUBLE:
-                                        properties[type_id].setDoubleProperty(property, internal_id, double(value));
-                                }
-                                break;
-                            }
-
-                            case Properties::getStringPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::STRING) {
-                                    properties[type_id].setStringProperty(property, internal_id, std::string(value));
-                                    break;
-                                }
-                            }
-
-                            case Properties::getBooleanListPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::ARRAY) {
-                                    auto array = simdjson::dom::array(value);
-                                    if (array.size() > 0) {
-                                        simdjson::dom::element first = array.at(0);
-                                        if (first.type() == simdjson::dom::element_type::BOOL) {
-                                            std::vector<bool> bool_vector;
-                                            for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                bool_vector.emplace_back(bool(child));
-                                            }
-                                            properties[type_id].setListOfBooleanProperty(property, internal_id, bool_vector);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            case Properties::getIntegerListPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::ARRAY) {
-                                    auto array = simdjson::dom::array(value);
-                                    if (array.size() > 0) {
-                                        simdjson::dom::element first = array.at(0);
-                                        std::vector<int64_t> int_vector;
-
-                                        switch (first.type()) {
-                                            case simdjson::dom::element_type::INT64:
-                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                    int_vector.emplace_back(int64_t(child));
-                                                }
-                                                properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
-                                                break;
-                                            case simdjson::dom::element_type::UINT64:
-                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                    int_vector.emplace_back(static_cast<std::make_signed_t<uint64_t>>(child));
-                                                }
-                                                properties[type_id].setListOfIntegerProperty(property, internal_id, int_vector);
-                                                break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            case Properties::getDoubleListPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::ARRAY) {
-                                    auto array = simdjson::dom::array(value);
-                                    if (array.size() > 0) {
-                                        simdjson::dom::element first = array.at(0);
-                                        std::vector<double> double_vector;
-
-                                        switch (first.type()) {
-                                            case simdjson::dom::element_type::INT64:
-                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                    double_vector.emplace_back(static_cast<double>(int64_t(child)));
-                                                }
-                                                properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
-                                                break;
-                                            case simdjson::dom::element_type::UINT64:
-                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                    double_vector.emplace_back(static_cast<double>(static_cast<std::make_signed_t<uint64_t>>(child)));
-                                                }
-                                                properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
-                                                break;
-                                            case simdjson::dom::element_type::DOUBLE:
-                                                for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                    double_vector.emplace_back(double(child));
-                                                }
-                                                properties[type_id].setListOfDoubleProperty(property, internal_id, double_vector);
-                                                break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            case Properties::getStringListPropertyType(): {
-                                if (value.type() == simdjson::dom::element_type::ARRAY) {
-                                    auto array = simdjson::dom::array(value);
-                                    if (array.size() > 0) {
-                                        simdjson::dom::element first = array.at(0);
-                                        if (first.type() == simdjson::dom::element_type::STRING) {
-                                            std::vector<std::string> string_vector;
-                                            for (simdjson::dom::element child : simdjson::dom::array(value)) {
-                                                string_vector.emplace_back(child);
-                                            }
-                                            properties[type_id].setListOfStringProperty(property, internal_id, string_vector);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                      // True is 1, so if we set all the properties correctly then valid will equal the object size
+                        valid += setProperty(property_type_id, value, type_id, property, internal_id);
                     }
                 }
-                return true;
+                return valid == object.size();
             }
         }
         return false;

@@ -204,34 +204,42 @@ namespace ragedb {
 
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-      case Properties::getBooleanPropertyType(): {
-        return countBooleans(type_id, property, operation, value);
-      }
-      case Properties::getIntegerPropertyType(): {
-        return countIntegers(type_id, property, operation, value);
-      }
-      case Properties::getDoublePropertyType(): {
-        return countDoubles(type_id, property, operation, value);
-      }
-      case Properties::getStringPropertyType(): {
-        return countStrings(type_id, property, operation, value);
-      }
-      case Properties::getBooleanListPropertyType(): {
-        return countBooleanLists(type_id, property, operation, value);
-      }
-      case Properties::getIntegerListPropertyType(): {
-        return countIntegerLists(type_id, property, operation, value);
-      }
-      case Properties::getDoubleListPropertyType(): {
-        return countDoubleLists(type_id, property, operation, value);
-      }
-      case Properties::getStringListPropertyType(): {
-        return countStringLists(type_id, property, operation, value);
-      }
-      default: {
-        return 0;
-      }
-     }
+    case Properties::boolean_type: {
+      return countBooleans(type_id, property, operation, value);
+    }
+    case Properties::integer_type: {
+      return countIntegers(type_id, property, operation, value);
+    }
+    case Properties::double_type: {
+      return countDoubles(type_id, property, operation, value);
+    }
+    case Properties::date_type: {
+      // TODO: Verify This
+      return countDoubles(type_id, property, operation, value);
+    }
+    case Properties::string_type: {
+      return countStrings(type_id, property, operation, value);
+    }
+    case Properties::boolean_list_type: {
+      return countBooleanLists(type_id, property, operation, value);
+    }
+    case Properties::integer_list_type: {
+      return countIntegerLists(type_id, property, operation, value);
+    }
+    case Properties::double_list_type: {
+      return countDoubleLists(type_id, property, operation, value);
+    }
+    case Properties::date_list_type: {
+      // TODO: Verify This
+      return countDoubleLists(type_id, property, operation, value);
+    }
+    case Properties::string_list_type: {
+      return countStringLists(type_id, property, operation, value);
+    }
+    default: {
+      return 0;
+    }
+    }
   }
 
   std::vector<uint64_t> RelationshipTypes::findNullIds(uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
@@ -647,33 +655,41 @@ namespace ragedb {
 
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-      case Properties::getBooleanPropertyType(): {
-        return findBooleanIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getIntegerPropertyType(): {
-        return findIntegerIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getDoublePropertyType(): {
-        return findDoubleIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getStringPropertyType(): {
-        return findStringIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getBooleanListPropertyType(): {
-        return findBooleanListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getIntegerListPropertyType(): {
-        return findIntegerListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getDoubleListPropertyType(): {
-        return findDoubleListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::getStringListPropertyType(): {
-        return findStringListIds(type_id, property, operation, value, skip, limit);
-      }
-      default: {
-        return std::vector<uint64_t>();
-      }
+    case Properties::boolean_type: {
+      return findBooleanIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::integer_type: {
+      return findIntegerIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::double_type: {
+      return findDoubleIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::date_type: {
+      // TODO: Verify This
+      return findDoubleIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_type: {
+      return findStringIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::boolean_list_type: {
+      return findBooleanListIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::integer_list_type: {
+      return findIntegerListIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::double_list_type: {
+      return findDoubleListIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::date_list_type: {
+      // TODO: Verify This
+      return findDoubleListIds(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_list_type: {
+      return findStringListIds(type_id, property, operation, value, skip, limit);
+    }
+    default: {
+      return std::vector<uint64_t>();
+    }
     }
   }
 
@@ -1093,28 +1109,36 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-    case Properties::getBooleanPropertyType(): {
+    case Properties::boolean_type: {
       return findBooleanRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getIntegerPropertyType(): {
+    case Properties::integer_type: {
       return findIntegerRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getDoublePropertyType(): {
+    case Properties::double_type: {
       return findDoubleRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getStringPropertyType(): {
+    case Properties::date_type: {
+      // TODO: Verify this
+      return findDoubleRelationships(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_type: {
       return findStringRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getBooleanListPropertyType(): {
+    case Properties::boolean_list_type: {
       return findBooleanListRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getIntegerListPropertyType(): {
+    case Properties::integer_list_type: {
       return findIntegerListRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getDoubleListPropertyType(): {
+    case Properties::double_list_type: {
       return findDoubleListRelationships(type_id, property, operation, value, skip, limit);
     }
-    case Properties::getStringListPropertyType(): {
+    case Properties::date_list_type: {
+      // TODO: Verify this
+      return findDoubleListRelationships(type_id, property, operation, value, skip, limit);
+    }
+    case Properties::string_list_type: {
       return findStringListRelationships(type_id, property, operation, value, skip, limit);
     }
     default: {

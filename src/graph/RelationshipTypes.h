@@ -38,6 +38,7 @@ namespace ragedb {
 
         simdjson::dom::parser parser;
         uint shard_id;
+        bool setProperty(uint16_t data_type_id, simdjson::dom::element value, uint16_t type_id, const std::string &property, uint64_t internal_id);
 
     public:
         RelationshipTypes();
@@ -173,6 +174,7 @@ namespace ragedb {
         Properties &getProperties(uint16_t type_id);
         bool setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
         bool deleteProperties(uint16_t type_id, uint64_t internal_id);
+
 
     };
 }

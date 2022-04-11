@@ -54,6 +54,7 @@ namespace ragedb {
         value = fromString(_value).value;
       }
       double value;
+      static double convert(std::string s);
 
       friend std::ostream& operator<<(std::ostream& os, const Date& date);
     };

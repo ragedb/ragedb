@@ -210,28 +210,36 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::getBooleanPropertyType(): {
+      case Properties::boolean_type: {
         return countBooleans(type_id, property, operation, value);
       }
-      case Properties::getIntegerPropertyType(): {
+      case Properties::integer_type: {
         return countIntegers(type_id, property, operation, value);
       }
-      case Properties::getDoublePropertyType(): {
+      case Properties::double_type: {
         return countDoubles(type_id, property, operation, value);
       }
-      case Properties::getStringPropertyType(): {
+      case Properties::date_type: {
+        // TODO: Verify This
+        return countDoubles(type_id, property, operation, value);
+      }
+      case Properties::string_type: {
         return countStrings(type_id, property, operation, value);
       }
-      case Properties::getBooleanListPropertyType(): {
+      case Properties::boolean_list_type: {
         return countBooleanLists(type_id, property, operation, value);
       }
-      case Properties::getIntegerListPropertyType(): {
+      case Properties::integer_list_type: {
         return countIntegerLists(type_id, property, operation, value);
       }
-      case Properties::getDoubleListPropertyType(): {
+      case Properties::double_list_type: {
         return countDoubleLists(type_id, property, operation, value);
       }
-      case Properties::getStringListPropertyType(): {
+      case Properties::date_list_type: {
+        // TODO: Verify This
+        return countDoubleLists(type_id, property, operation, value);
+      }
+      case Properties::string_list_type: {
         return countStringLists(type_id, property, operation, value);
       }
       default: {
@@ -656,28 +664,36 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::getBooleanPropertyType(): {
+      case Properties::boolean_type: {
         return findBooleanIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getIntegerPropertyType(): {
+      case Properties::integer_type: {
         return findIntegerIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getDoublePropertyType(): {
+      case Properties::double_type: {
         return findDoubleIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getStringPropertyType(): {
+      case Properties::date_type: {
+        // TODO: Verify This
+        return findDoubleIds(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::string_type: {
         return findStringIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getBooleanListPropertyType(): {
+      case Properties::boolean_list_type: {
         return findBooleanListIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getIntegerListPropertyType(): {
+      case Properties::integer_list_type: {
         return findIntegerListIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getDoubleListPropertyType(): {
+      case Properties::double_list_type: {
         return findDoubleListIds(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getStringListPropertyType(): {
+      case Properties::date_list_type: {
+        // TODO: Verify This
+        return findDoubleListIds(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::string_list_type: {
         return findStringListIds(type_id, property, operation, value, skip, limit);
       }
       default: {
@@ -1102,28 +1118,36 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::getBooleanPropertyType(): {
+      case Properties::boolean_type: {
         return findBooleanNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getIntegerPropertyType(): {
+      case Properties::integer_type: {
         return findIntegerNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getDoublePropertyType(): {
+      case Properties::double_type: {
         return findDoubleNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getStringPropertyType(): {
+      case Properties::date_type: {
+        // TODO: Verify this
+        return findDoubleNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::string_type: {
         return findStringNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getBooleanListPropertyType(): {
+      case Properties::boolean_list_type: {
         return findBooleanListNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getIntegerListPropertyType(): {
+      case Properties::integer_list_type: {
         return findIntegerListNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getDoubleListPropertyType(): {
+      case Properties::double_list_type: {
         return findDoubleListNodes(type_id, property, operation, value, skip, limit);
       }
-      case Properties::getStringListPropertyType(): {
+      case Properties::date_list_type: {
+        // TODO: Verify this
+        return findDoubleListNodes(type_id, property, operation, value, skip, limit);
+      }
+      case Properties::string_list_type: {
         return findStringListNodes(type_id, property, operation, value, skip, limit);
       }
       default: {
@@ -1132,4 +1156,4 @@ namespace ragedb {
     }
   }
 
-}
+  }

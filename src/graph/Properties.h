@@ -29,8 +29,19 @@ namespace ragedb {
 
     private:
         tsl::sparse_map<std::string, uint8_t> types;
-        tsl::sparse_map<std::string, uint8_t> type_map;
-        std::vector<std::string> allowed_types;
+        tsl::sparse_map<std::string, uint8_t> type_map = {
+          {"boolean",      boolean_type},
+          {"integer",      integer_type},
+          {"double",       double_type},
+          {"string",       string_type},
+          {"boolean_list", boolean_list_type},
+          {"integer_list", integer_list_type},
+          {"double_list",  double_list_type},
+          {"string_list",  string_list_type},
+          {"date",         date_type},
+          {"date_list",    date_list_type}
+        };
+        std::vector<std::string> allowed_types = { "", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list", "date", "date_list" };
         tsl::sparse_map<std::string, roaring::Roaring64Map> deleted;
         tsl::sparse_map<std::string, std::vector<bool>> booleans;
         tsl::sparse_map<std::string, std::vector<int64_t>> integers;
@@ -71,11 +82,13 @@ namespace ragedb {
         bool setBooleanProperty(const std::string&, uint64_t, bool);
         bool setIntegerProperty(const std::string&, uint64_t, int64_t);
         bool setDoubleProperty(const std::string&, uint64_t, double);
+        bool setDateProperty(const std::string &key, uint64_t index, double value);
         bool setStringProperty(const std::string&, uint64_t, const std::string&);
 
         bool setListOfBooleanProperty(const std::string&, uint64_t, const std::vector<bool>&);
         bool setListOfIntegerProperty(const std::string&, uint64_t, const std::vector<int64_t>&);
         bool setListOfDoubleProperty(const std::string&, uint64_t, const std::vector<double>&);
+        bool setListOfDateProperty(const std::string&, uint64_t, const std::vector<double>&);
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
 
         std::map<std::string, property_type_t> getProperties(uint64_t);
@@ -115,30 +128,17 @@ namespace ragedb {
         bool static isDoubleListProperty(property_type_t value);
         bool static isStringListProperty(property_type_t value);
 
-        constexpr static uint16_t getBooleanPropertyType() {
-            return 1;
-        }
-        constexpr static uint16_t getIntegerPropertyType() {
-            return 2;
-        }
-        constexpr static uint16_t getDoublePropertyType() {
-            return 3;
-        }
-        constexpr static uint16_t getStringPropertyType() {
-            return 4;
-        }
-        constexpr static uint16_t getBooleanListPropertyType() {
-            return 5;
-        }
-        constexpr static uint16_t getIntegerListPropertyType() {
-            return 6;
-        }
-        constexpr static uint16_t getDoubleListPropertyType() {
-            return 7;
-        }
-        constexpr static uint16_t getStringListPropertyType() {
-            return 8;
-        }
+        inline const static uint8_t boolean_type = 1;
+        inline const static uint8_t integer_type = 2;
+        inline const static uint8_t double_type = 3;
+        inline const static uint8_t string_type = 4;
+        inline const static uint8_t boolean_list_type = 5;
+        inline const static uint8_t integer_list_type = 6;
+        inline const static uint8_t double_list_type = 7;
+        inline const static uint8_t string_list_type = 8;
+
+        inline const static uint8_t date_type = 9;
+        inline const static uint8_t date_list_type = 10;
 
     };
 }

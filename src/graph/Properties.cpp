@@ -18,29 +18,8 @@
 
 namespace ragedb {
 
-    const static uint8_t boolean_type = 1;
-    const static uint8_t integer_type = 2;
-    const static uint8_t double_type = 3;
-    const static uint8_t string_type = 4;
-    const static uint8_t boolean_list_type = 5;
-    const static uint8_t integer_list_type = 6;
-    const static uint8_t double_list_type = 7;
-    const static uint8_t string_list_type = 8;
-
     Properties::Properties()  {
-        type_map = {
-                {"boolean",      getBooleanPropertyType()},
-                {"integer",      getIntegerPropertyType()},
-                {"double",       getDoublePropertyType()},
-                {"string",       getStringPropertyType()},
-                {"boolean_list", getBooleanListPropertyType()},
-                {"integer_list", getIntegerListPropertyType()},
-                {"double_list",  getDoubleListPropertyType()},
-                {"string_list",  getStringListPropertyType()}
-        };
-
-        allowed_types = {"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list"};
-
+        allowed_types = {"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list", "date", "date_list"};
         clear();
     }
 
@@ -128,6 +107,10 @@ namespace ragedb {
                 strings.emplace(key, std::vector<std::string>());
                 break;
             }
+            case date_type: {
+              doubles.emplace(key, std::vector<double>());
+              break;
+            }
             case boolean_list_type: {
                 booleans_list.emplace(key, std::vector<std::vector<bool>>());
                 break;
@@ -143,6 +126,10 @@ namespace ragedb {
             case string_list_type: {
                 strings_list.emplace(key, std::vector<std::vector<std::string>>());
                 break;
+            }
+            case date_list_type: {
+              doubles_list.emplace(key, std::vector<std::vector<double>>());
+              break;
             }
             default: {
                 return;
@@ -293,6 +280,27 @@ namespace ragedb {
         return true;
     }
 
+    bool Properties::setDateProperty(const std::string &key, uint64_t index, double value) {
+      if(types.empty()) {
+        return false;
+      }
+      auto type_check = types.find(key);
+      if (type_check == types.end()) {
+        return false;
+      }
+      if (types[key] != date_type) {
+        return false;
+      }
+
+      if (doubles[key].size() <= index) {
+        doubles[key].resize(1 + index);
+      }
+      doubles[key][index] = value;
+      deleted[key].remove(index);
+
+      return true;
+    }
+
     bool Properties::setStringProperty(const std::string &key, uint64_t index, const std::string &value) {
         if(types.empty()) {
             return false;
@@ -377,6 +385,27 @@ namespace ragedb {
         return true;
     }
 
+    bool Properties::setListOfDateProperty(const std::string &key, uint64_t index, const std::vector<double> &value) {
+      if(types.empty()) {
+        return false;
+      }
+      auto type_check = types.find(key);
+      if (type_check == types.end()) {
+        return false;
+      }
+      if (types[key] != date_list_type) {
+        return false;
+      }
+
+      if (doubles_list[key].size() <= index) {
+        doubles_list[key].resize(1 + index);
+      }
+      doubles_list[key][index] = value;
+      deleted[key].remove(index);
+
+      return true;
+    }
+
     bool
     Properties::setListOfStringProperty(const std::string &key, uint64_t index, const std::vector<std::string> &value) {
         if(types.empty()) {
@@ -426,6 +455,12 @@ namespace ragedb {
                     }
                     break;
                 }
+                case date_type: {
+                  if (doubles[key].size() > index) {
+                    properties.emplace(key, doubles[key][index]);
+                  }
+                  break;
+                }
                 case string_type: {
                     if (strings[key].size() > index) {
                         properties.emplace(key, strings[key][index]);
@@ -449,6 +484,12 @@ namespace ragedb {
                         properties.emplace(key, doubles_list[key][index]);
                     }
                     break;
+                }
+                case date_list_type: {
+                  if (doubles_list[key].size() > index) {
+                    properties.emplace(key, doubles_list[key][index]);
+                  }
+                  break;
                 }
                 case string_list_type: {
                     if (strings_list[key].size() > index) {

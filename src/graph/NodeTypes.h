@@ -41,6 +41,7 @@ namespace ragedb {
 
         simdjson::dom::parser parser;
         uint shard_id;
+        bool setProperty(uint16_t data_type_id, simdjson::dom::element value, uint16_t type_id, const std::string &property, uint64_t internal_id);
 
     public:
         NodeTypes();
@@ -179,6 +180,7 @@ namespace ragedb {
         std::vector<std::string> &getKeys(uint16_t type_id);
         std::vector<std::vector<Group>> &getOutgoingRelationships(uint16_t type_id);
         std::vector<std::vector<Group>> &getIncomingRelationships(uint16_t type_id);
+
     };
 }
 
