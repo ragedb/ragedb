@@ -116,13 +116,7 @@ namespace ragedb {
     }
 
     uint64_t Shard::NodeGetID(const std::string &type, const std::string &key) {
-        // Check if the Type exists
-        uint16_t type_id = node_types.getTypeId(type);
-        if (type_id > 0) {
-            return node_types.getNodeId(type_id, key);
-        }
-        // Invalid Type or Key
-        return 0;
+      return node_types.getNodeId(type, key);
     }
 
     Node Shard::NodeGet(uint64_t id) {

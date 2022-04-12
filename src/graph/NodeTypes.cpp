@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <iostream>
 #include <utility>
 #include "NodeTypes.h"
 #include "Shard.h"
@@ -367,10 +366,10 @@ namespace ragedb {
 
     std::set<uint16_t> NodeTypes::getTypeIds() {
         std::set<uint16_t> type_ids;
-        for (size_t i=1; i < type_to_id.size(); i++) {
-            type_ids.insert(i);
+        for (auto [key, value]: type_to_id) {
+          type_ids.insert(value);
         }
-
+        type_ids.erase(0);
         return type_ids;
     }
 
@@ -406,13 +405,7 @@ namespace ragedb {
 
     uint64_t NodeTypes::getNodeId(const std::string& type, const std::string& key) {
         uint16_t type_id = getTypeId(type);
-        if(ValidTypeId(type_id)) {
-            auto key_search = key_to_node_id[type_id].find(key);
-            if (key_search != std::end(key_to_node_id[type_id])) {
-                return key_search->second;
-            }
-        }
-        return 0;
+          return getNodeId(type_id, key);
     }
 
     std::string NodeTypes::getNodeKey(uint16_t type_id, uint64_t internal_id) {
@@ -454,7 +447,7 @@ namespace ragedb {
         return getNodeProperty(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), property);
     }
 
-    Properties &NodeTypes::getNodeTypeProperties(uint16_t type_id) {
+    Properties &NodeTypes::getProperties(uint16_t type_id) {
         return properties[type_id];
     }
 

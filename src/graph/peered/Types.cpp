@@ -175,14 +175,14 @@ namespace ragedb {
     }
 
     seastar::future<uint8_t> Shard::NodePropertyTypeInsertPeered(uint16_t type_id, const std::string &key, const std::string &type) {
-        node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().lock().get();
+      node_types.getProperties(type_id).property_type_lock.for_write().lock().get();
 
-        uint8_t property_type_id = node_types.getNodeTypeProperties(type_id).setPropertyType(key, type);
+        uint8_t property_type_id = node_types.getProperties(type_id).setPropertyType(key, type);
 
         return container().invoke_on_all([type_id, key, property_type_id](Shard &all_shards) {
             all_shards.NodePropertyTypeAdd(type_id, key, property_type_id);
         }).then([type_id, property_type_id, this] {
-            this->node_types.getNodeTypeProperties(type_id).property_type_lock.for_write().unlock();
+            this->node_types.getProperties(type_id).property_type_lock.for_write().unlock();
             return seastar::make_ready_future<uint8_t>(property_type_id);
         });
     }

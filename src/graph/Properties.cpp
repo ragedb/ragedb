@@ -72,6 +72,13 @@ namespace ragedb {
         return 0;
     }
 
+    std::string Properties::getPropertyType(const std::string &key){
+      if (types.find(key) != types.end()) {
+        return allowed_types[types[key]];
+      }
+      return "";
+    }
+
     uint8_t Properties::setPropertyTypeId(const std::string &key, uint8_t property_type_id) {
         if (types.find(key) != types.end()) {
             if (types[key] == property_type_id) {
@@ -151,6 +158,10 @@ namespace ragedb {
                 doubles.erase(key);
                 break;
             }
+            case date_type: {
+              doubles.erase(key);
+              break;
+            }
             case string_type: {
                 strings.erase(key);
                 break;
@@ -166,6 +177,10 @@ namespace ragedb {
             case double_list_type: {
                 doubles_list.erase(key);
                 break;
+            }
+            case date_list_type: {
+              doubles_list.erase(key);
+              break;
             }
             case string_list_type: {
                 strings_list.erase(key);

@@ -19,7 +19,7 @@
 namespace ragedb {
 
     uint16_t Shard::NodeTypesGetCount() {
-        return node_types.getSize();
+      return node_types.getTypeIds().size();
     }
 
     uint64_t Shard::NodeTypesGetCount(uint16_t type_id) {
@@ -37,11 +37,11 @@ namespace ragedb {
 
     std::map<std::string, std::string> Shard::NodeTypeGet(const std::string& type) {
         uint16_t type_id = node_types.getTypeId(type);
-        return node_types.getNodeTypeProperties(type_id).getPropertyTypes();
+        return node_types.getProperties(type_id).getPropertyTypes();
     }
 
     uint16_t Shard::RelationshipTypesGetCount() {
-        return relationship_types.getSize();
+      return relationship_types.getTypeIds().size();
     }
 
     uint64_t Shard::RelationshipTypesGetCount(uint16_t type_id) {
@@ -104,7 +104,7 @@ namespace ragedb {
     }
 
     uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
-        return node_types.getNodeTypeProperties(type_id).setPropertyTypeId(key, property_type_id);
+        return node_types.getProperties(type_id).setPropertyTypeId(key, property_type_id);
     }
 
     uint8_t Shard::RelationshipPropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
@@ -113,12 +113,12 @@ namespace ragedb {
 
     std::string Shard::NodePropertyTypeGet(const std::string& type, const std::string& key) {
         uint16_t type_id = node_types.getTypeId(type);
-        return node_types.getNodeTypeProperties(type_id).getPropertyTypes()[key];
+        return node_types.getProperties(type_id).getPropertyType(key);
     }
 
     std::string Shard::RelationshipPropertyTypeGet(const std::string& type,  const std::string& key) {
         uint16_t type_id = relationship_types.getTypeId(type);
-        return relationship_types.getProperties(type_id).getPropertyTypes()[key];
+        return relationship_types.getProperties(type_id).getPropertyType(key);
     }
 
     bool Shard::NodePropertyTypeDelete(uint16_t type_id, const std::string& key) {

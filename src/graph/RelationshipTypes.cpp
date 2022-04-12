@@ -396,12 +396,12 @@ namespace ragedb {
     }
 
     std::set<uint16_t> RelationshipTypes::getTypeIds() {
-        std::set<uint16_t> type_ids;
-        for (size_t i=1; i < type_to_id.size(); i++) {
-            type_ids.insert(i);
-        }
-
-        return type_ids;
+      std::set<uint16_t> type_ids;
+      for (auto [key, value]: type_to_id) {
+        type_ids.insert(value);
+      }
+      type_ids.erase(0);
+      return type_ids;
     }
 
     bool RelationshipTypes::deleteTypeProperty(uint16_t type_id, const std::string &property) {

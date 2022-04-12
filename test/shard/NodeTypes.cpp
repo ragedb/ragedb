@@ -74,6 +74,15 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
                 REQUIRE(type == "Person");
                 REQUIRE(invalid.empty());
             }
+
+            THEN("it should retain a map when asked for") {
+              shard.NodePropertyTypeAdd(1, "name", 4);
+              shard.NodePropertyTypeAdd(1, "age", 2);
+              auto type_map = shard.NodeTypeGet("Person");
+              REQUIRE(type_map.size() > 0);
+              REQUIRE(type_map.at("name") == "string");
+              REQUIRE(type_map.at("age") == "integer");
+            }
         }
 
         WHEN("we add two node types") {
@@ -84,6 +93,13 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
                 uint64_t count = shard.NodeTypesGetCount();
                 REQUIRE(count == 2);
             }
+
+            shard.DeleteNodeType("User");
+            THEN("it should be one") {
+              uint64_t count = shard.NodeTypesGetCount();
+              REQUIRE(count == 1);
+            }
+
         }
     }
 
@@ -167,11 +183,120 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
             shard.NodeAdd(2, "four", R"({ "name":"alex", "age":55, "weight":199, "active":false, "vector":[3,4] })");
 
             THEN("find the count of the nodes") {
-                ragedb::property_type_t value = int64_t(55);
-                uint64_t find_eq_integer = shard.FindNodeCount(2, "age", ragedb::Operation::EQ, value);
-                REQUIRE(find_eq_integer == 2);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::EQ, 55) == 2);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::GT, 55) == 2);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::GTE, 55) == 4);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::LT, 55) == 0);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::LTE, 55) == 2);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::NEQ, 3) == 4);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::IS_NULL, 0) == 0);
+                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::NOT_IS_NULL, 0) == 4);
+                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::STARTS_WITH, "a") == 2);
+                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a") == 2);
+                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::ENDS_WITH, "x") == 4);
+                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x") == 0);
+                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::CONTAINS, "a") == 4);
+                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::NOT_CONTAINS, "l") == 2);
 
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::EQ, 55) == 2);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::GT, 55) == 2);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::GTE, 55) == 4);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::LT, 55) == 0);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::LTE, 55) == 2);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::NEQ, 3) == 4);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::IS_NULL, 0) == 0);
+                REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::NOT_IS_NULL, 0) == 4);
+                REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::STARTS_WITH, "a") == 2);
+                REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::NOT_STARTS_WITH, "a") == 2);
+                REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::ENDS_WITH, "x") == 4);
+                REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::NOT_ENDS_WITH, "x") == 0);
+                REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::CONTAINS, "a") == 4);
+                REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::NOT_CONTAINS, "l") == 2);
+
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::EQ, 55).size() == 2);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::GT, 55).size() == 2);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::GTE, 55).size() == 4);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::LT, 55).size() == 0);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::LTE, 55).size() == 2);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::NEQ, 3).size() == 4);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::IS_NULL, 0).size() == 0);
+                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
+                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
+                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
+                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::CONTAINS, "a").size() == 4);
+                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
+
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::EQ, 55).size() == 2);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::GT, 55).size() == 2);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::GTE, 55).size() == 4);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::LT, 55).size() == 0);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::LTE, 55).size() == 2);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::NEQ, 3).size() == 4);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::IS_NULL, 0).size() == 0);
+                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
+                REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
+                REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
+                REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::CONTAINS, "a").size() == 4);
+                REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
+
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::EQ, 55).size() == 2);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::GT, 55).size() == 2);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::GTE, 55).size() == 4);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::LT, 55).size() == 0);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::LTE, 55).size() == 2);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::NEQ, 3).size() == 4);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::IS_NULL, 0).size() == 0);
+                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
+                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
+                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
+                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::CONTAINS, "a").size() == 4);
+                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
+
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::EQ, 55).size() == 2);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::GT, 55).size() == 2);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::GTE, 55).size() == 4);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::LT, 55).size() == 0);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::LTE, 55).size() == 2);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::NEQ, 3).size() == 4);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::IS_NULL, 0).size() == 0);
+                REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
+                REQUIRE(shard.FindNodes("Person", "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodes("Person", "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
+                REQUIRE(shard.FindNodes("Person", "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
+                REQUIRE(shard.FindNodes("Person", "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
+                REQUIRE(shard.FindNodes("Person", "name", ragedb::Operation::CONTAINS, "a").size() == 4);
+                REQUIRE(shard.FindNodes("Person", "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
             }
+        }
+
+        WHEN("add and remove property types") {
+          shard.NodeTypeInsert("Person", 2);
+          shard.NodePropertyTypeAdd(2, "name", 4);
+          shard.NodePropertyTypeAdd(2, "age", 2);
+          shard.NodePropertyTypeAdd(2, "weight", 3);
+          shard.NodePropertyTypeAdd(2, "active", 1);
+          shard.NodePropertyTypeAdd(2, "vector", 6);
+
+          THEN("add and remove property types") {
+            std::string property_type = shard.NodePropertyTypeGet("Person", "name");
+            REQUIRE(property_type == "string");
+            property_type = shard.NodePropertyTypeGet("Person", "age");
+            REQUIRE(property_type == "integer");
+            property_type = shard.NodePropertyTypeGet("Person", "weight");
+            REQUIRE(property_type == "double");
+            property_type = shard.NodePropertyTypeGet("Person", "active");
+            REQUIRE(property_type == "boolean");
+
+            shard.NodePropertyTypeDelete(2, "name");
+            property_type = shard.NodePropertyTypeGet("Person", "name");
+            REQUIRE(property_type == "");
+          }
         }
     }
 

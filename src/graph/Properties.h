@@ -72,6 +72,7 @@ namespace ragedb {
         seastar::rwlock property_type_lock;
 
         std::map<std::string, std::string> getPropertyTypes();
+        std::string getPropertyType(const std::string& key);
         uint8_t getPropertyTypeId(const std::string& key);
         uint8_t setPropertyTypeId(const std::string& key, uint8_t property_type_id);
         uint8_t setPropertyType(const std::string& key, const std::string& type);

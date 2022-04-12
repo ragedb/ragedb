@@ -172,7 +172,7 @@ namespace ragedb {
         bool deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property);
         bool deleteNodeProperty(uint64_t external_id, const std::string &property);
 
-        Properties &getNodeTypeProperties(uint16_t type_id);
+        Properties &getProperties(uint16_t type_id);
         bool setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string &json);
         bool deleteProperties(uint16_t type_id, uint64_t internal_id);
 
