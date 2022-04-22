@@ -4,6 +4,7 @@
 [![Slack](https://img.shields.io/badge/slack-purple)](https://ragedb.slack.com)
 [![Twitter](https://img.shields.io/twitter/follow/rage_database.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=rage_database)
 ![C++](https://github.com/ragedb/ragedb/workflows/Coverage/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/ragedb/ragedb/badge.svg?branch=main)](https://coveralls.io/github/ragedb/ragedb?branch=main)
 
 [<p align="center"><img src="https://raw.githubusercontent.com/ragedb/ragedb.github.io/main/images/mascot-logo.webp" alt="ragedb mascot" width="660"/></p>](https://ragedb.com)
 <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=53459147-2981-4e5a-97bd-d40d0faa0954" />
