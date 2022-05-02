@@ -1,0 +1,6 @@
+version: "3.9"
+services:
+  ragedb:
+    build: Dockerfile
+    ports:
+      - "7243:7243"
