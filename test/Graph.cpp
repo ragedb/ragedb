@@ -19,7 +19,7 @@
 
 SCENARIO( "Graph can be created", "[graph]" ) {
     GIVEN("A Test Graph") {
-        ragedb::Graph graph = ragedb::Graph("test");
+        auto graph = ragedb::Graph("test");
 
         WHEN("the Graph is started") {
             THEN("we get it to start") {
