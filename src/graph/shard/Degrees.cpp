@@ -53,13 +53,13 @@ namespace ragedb {
             uint16_t node_type_id = externalToTypeId(id);
             uint64_t count = 0;
             // Use the two ifs to handle ALL for a direction
-            if (direction != IN) {
+            if (direction != Direction::IN) {
                 // For each type sum up the values
                 for (const auto &[key, value] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                     count += value.size();
                 }
             }
-            if (direction != OUT) {
+            if (direction != Direction::OUT) {
                 // For each type sum up the values
                 for (const auto &[key, value] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                     count += value.size();
@@ -79,7 +79,7 @@ namespace ragedb {
             if (type_id > 0) {
                 uint64_t count = 0;
                 // Use the two ifs to handle ALL for a direction
-                if (direction != IN) {
+                if (direction != Direction::IN) {
                     auto group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
                                          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
@@ -87,7 +87,7 @@ namespace ragedb {
                         count += group->links.size();
                     }
                 }
-                if (direction != OUT) {
+                if (direction != Direction::OUT) {
                     auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
                                          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
@@ -108,7 +108,7 @@ namespace ragedb {
             uint16_t node_type_id = externalToTypeId(id);
             uint64_t count = 0;
             // Use the two ifs to handle ALL for a direction
-            if (direction != IN) {
+            if (direction != Direction::IN) {
                 // For each requested type sum up the values
                 for (const auto &rel_type : rel_types) {
                     uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -122,7 +122,7 @@ namespace ragedb {
                     }
                 }
             }
-            if (direction != OUT) {
+            if (direction != Direction::OUT) {
                 // For each requested type sum up the values
                 for (const auto &rel_type : rel_types) {
                     uint16_t type_id = relationship_types.getTypeId(rel_type);

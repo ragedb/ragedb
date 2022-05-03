@@ -50,7 +50,7 @@ namespace ragedb {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, rel_type, this](Shard &local_shard) {
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, BOTH, rel_type);
+        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_type);
         return RelationshipsGetPeered(links);
       });
 
@@ -60,7 +60,7 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, rel_type](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, rel_type, this](Shard &local_shard) {
-          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, BOTH, rel_type);
+          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_type);
           return RelationshipsGetPeered(links);
         });
       });
@@ -76,7 +76,7 @@ namespace ragedb {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, type_id, this](Shard &local_shard) {
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, BOTH, type_id);
+        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, type_id);
         return RelationshipsGetPeered(links);
       });
 
@@ -86,7 +86,7 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, type_id](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, type_id, this](Shard &local_shard) {
-          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, BOTH, type_id);
+          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, type_id);
           return RelationshipsGetPeered(links);
         });
       });
@@ -102,7 +102,7 @@ namespace ragedb {
 
       return container().invoke_on(shard_id1, [type1, key1, type2, key2, rel_types, this](Shard &local_shard) {
         uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, BOTH, rel_types);
+        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_types);
         return RelationshipsGetPeered(links);
       });
 
@@ -112,7 +112,7 @@ namespace ragedb {
                         return local_shard.NodeGetID(type2, key2);
                       }).then([this, shard_id1, type1, key1, rel_types](uint64_t node_id2) {
         return container().invoke_on(shard_id1, [type1, key1, node_id2, rel_types, this](Shard &local_shard) {
-          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, BOTH, rel_types);
+          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_types);
           return RelationshipsGetPeered(links);
         });
       });
@@ -237,7 +237,7 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, rel_type, this](Shard &local_shard) {
-      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, BOTH, rel_type);
+      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, Direction::BOTH, rel_type);
       return RelationshipsGetPeered(links);
     });
 
@@ -247,7 +247,7 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, type_id, this](Shard &local_shard) {
-      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, BOTH, type_id);
+      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, Direction::BOTH, type_id);
       return RelationshipsGetPeered(links);
     });
 
@@ -257,7 +257,7 @@ namespace ragedb {
     uint16_t shard_id1 = CalculateShardId(id);
 
     return container().invoke_on(shard_id1, [id, id2, rel_types, this](Shard &local_shard) {
-      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, BOTH, rel_types);
+      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, Direction::BOTH, rel_types);
       return RelationshipsGetPeered(links);
     });
 

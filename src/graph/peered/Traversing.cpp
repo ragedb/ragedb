@@ -62,7 +62,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetLinks(type, key, BOTH, rel_type);
+            return local_shard.NodeGetLinks(type, key, Direction::BOTH, rel_type);
         });
     }
 
@@ -70,7 +70,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, type_id](Shard &local_shard) {
-            return local_shard.NodeGetLinks(type, key, BOTH, type_id);
+            return local_shard.NodeGetLinks(type, key, Direction::BOTH, type_id);
         });
     }
 
@@ -78,7 +78,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetLinks(type, key, BOTH, rel_types);
+            return local_shard.NodeGetLinks(type, key, Direction::BOTH, rel_types);
         });
     }
 
@@ -126,7 +126,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetLinks(external_id, BOTH, rel_type);
+            return local_shard.NodeGetLinks(external_id, Direction::BOTH, rel_type);
         });
     }
 
@@ -134,7 +134,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, type_id](Shard &local_shard) {
-            return local_shard.NodeGetLinks(external_id, BOTH, type_id);
+            return local_shard.NodeGetLinks(external_id, Direction::BOTH, type_id);
         });
     }
 
@@ -142,7 +142,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetLinks(external_id, BOTH, rel_types);
+            return local_shard.NodeGetLinks(external_id, Direction::BOTH, rel_types);
         });
     }
 
@@ -369,11 +369,11 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         switch(direction) {
-            case OUT: {
+            case Direction::OUT: {
                 return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
                     return local_shard.NodeGetOutgoingRelationships(type, key); });
             }
-            case IN: {
+            case Direction::IN: {
                 return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
@@ -406,10 +406,10 @@ namespace ragedb {
         if (rel_type_id != 0) {
             uint16_t node_shard_id = CalculateShardId(type, key);
             switch (direction) {
-                case OUT: {
+                case Direction::OUT: {
                     return container().invoke_on(node_shard_id, [type, key, rel_type_id](Shard &local_shard) { return local_shard.NodeGetOutgoingRelationships(type, key, rel_type_id); });
                 }
-                case IN: {
+                case Direction::IN: {
                     return container().invoke_on(node_shard_id, [type, key, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key, rel_type_id); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                                 std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -443,10 +443,10 @@ namespace ragedb {
         if (rel_type_id != 0) {
             uint16_t node_shard_id = CalculateShardId(type, key);
             switch (direction) {
-                case OUT: {
+                case Direction::OUT: {
                     return container().invoke_on(node_shard_id, [type, key, rel_type_id](Shard &local_shard) { return local_shard.NodeGetOutgoingRelationships(type, key, rel_type_id); });
                 }
-                case IN: {
+                case Direction::IN: {
                     return container().invoke_on(node_shard_id, [type, key, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key, rel_type_id); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                                 std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -480,11 +480,11 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         switch(direction) {
-            case OUT: {
+            case Direction::OUT: {
                 return container().invoke_on(node_shard_id, [type, key, rel_types](Shard &local_shard) {
                     return local_shard.NodeGetOutgoingRelationships(type, key, rel_types); });
             }
-            case IN: {
+            case Direction::IN: {
                 return container().invoke_on(node_shard_id, [type, key, rel_types](Shard &local_shard) {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
@@ -516,11 +516,11 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         switch(direction) {
-            case OUT: {
+            case Direction::OUT: {
                 return container().invoke_on(node_shard_id, [external_id](Shard &local_shard) {
                     return local_shard.NodeGetOutgoingRelationships(external_id); });
             }
-            case IN: {
+            case Direction::IN: {
                 return container().invoke_on(node_shard_id, [external_id](Shard &local_shard) {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
@@ -552,10 +552,10 @@ namespace ragedb {
         if (rel_type_id != 0) {
             uint16_t node_shard_id = CalculateShardId(external_id);
             switch (direction) {
-                case OUT: {
+                case Direction::OUT: {
                     return container().invoke_on(node_shard_id, [external_id, rel_type_id](Shard &local_shard) { return local_shard.NodeGetOutgoingRelationships(external_id, rel_type_id); });
                 }
-                case IN: {
+                case Direction::IN: {
                     return container().invoke_on(node_shard_id, [external_id, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id, rel_type_id); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                                 std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -589,10 +589,10 @@ namespace ragedb {
         if (rel_type_id != 0) {
             uint16_t node_shard_id = CalculateShardId(external_id);
             switch (direction) {
-                case OUT: {
+                case Direction::OUT: {
                     return container().invoke_on(node_shard_id, [external_id, rel_type_id](Shard &local_shard) { return local_shard.NodeGetOutgoingRelationships(external_id, rel_type_id); });
                 }
-                case IN: {
+                case Direction::IN: {
                     return container().invoke_on(node_shard_id, [external_id, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id, rel_type_id); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                                 std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -626,11 +626,11 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         switch(direction) {
-            case OUT: {
+            case Direction::OUT: {
                 return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) {
                     return local_shard.NodeGetOutgoingRelationships(external_id, rel_types); });
             }
-            case IN: {
+            case Direction::IN: {
                 return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {

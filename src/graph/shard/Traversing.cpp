@@ -89,13 +89,13 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::vector<Link> ids;
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           for (const auto &[type, list] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
             std::copy(std::begin(list), std::end(list), std::back_inserter(ids));
           }
         }
         // Use the two ifs to handle ALL for a direction
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           for (const auto &[type, list] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
             std::copy(std::begin(list), std::end(list), std::back_inserter(ids));
           }
@@ -113,7 +113,7 @@ namespace ragedb {
         std::vector<Link> ids;
 
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), [type_id](const Group &g) { return g.rel_type_id == type_id; });
 
           if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
@@ -122,7 +122,7 @@ namespace ragedb {
           }
         }
 
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
@@ -144,7 +144,7 @@ namespace ragedb {
         std::vector<Link> ids;
 
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), [type_id](const Group &g) { return g.rel_type_id == type_id; });
 
           if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
@@ -153,7 +153,7 @@ namespace ragedb {
           }
         }
 
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
@@ -173,7 +173,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::vector<Link> ids;
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           // For each requested type sum up the values
           for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -188,7 +188,7 @@ namespace ragedb {
           }
         }
         // Use the two ifs to handle ALL for a direction
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           // For each requested type sum up the values
           for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -229,13 +229,13 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::vector<Link> ids;
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           for (const auto &[type, list] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
             std::copy_if(std::begin(list), std::end(list), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
           }
         }
         // Use the two ifs to handle ALL for a direction
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           for (const auto &[type, list] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
             std::copy_if(std::begin(list), std::end(list), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
           }
@@ -259,10 +259,10 @@ namespace ragedb {
           [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           std::copy_if(std::begin(out_group->links), std::end(out_group->links), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           std::copy_if(std::begin(in_group->links), std::end(in_group->links), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
         return ids;
@@ -274,7 +274,7 @@ namespace ragedb {
       if (ValidNodeId(id)) {
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
-        if (direction == IN) {
+        if (direction == Direction::IN) {
 
           auto in_group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
@@ -284,7 +284,7 @@ namespace ragedb {
           }
         }
 
-        if (direction == OUT) {
+        if (direction == Direction::OUT) {
           auto out_group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
@@ -315,7 +315,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::vector<Link> ids;
         // Use the two ifs to handle ALL for a direction
-        if (direction != IN) {
+        if (direction != Direction::IN) {
           // For each requested type sum up the values
           for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -330,7 +330,7 @@ namespace ragedb {
           }
         }
         // Use the two ifs to handle ALL for a direction
-        if (direction != OUT) {
+        if (direction != Direction::OUT) {
           // For each requested type sum up the values
           for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);

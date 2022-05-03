@@ -18,7 +18,7 @@
 #define RAGEDB_DIRECTION_H
 
 namespace ragedb {
-    enum Direction {
+    enum class Direction {
         BOTH, IN, OUT
     };
 }

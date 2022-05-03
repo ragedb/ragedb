@@ -42,7 +42,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
     if (valid_type && valid_key) {
         // Gather Options
         std::string options_string;
-        Direction direction = BOTH;
+        Direction direction = Direction::BOTH;
         options_string = req->param.at(Utilities::OPTIONS).c_str();
 
         if(options_string.empty()) {
@@ -65,9 +65,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
         // Parse Direction
         boost::algorithm::to_lower(options[0]);
         if (options[0] == "in") {
-            direction = IN;
+            direction = Direction::IN;
         } else if (options[0] == "out") {
-            direction = OUT;
+            direction = Direction::OUT;
         }
 
         switch(options.size()) {
@@ -120,7 +120,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
 
     // Gather Options
     std::string options_string;
-    Direction direction = BOTH;
+    Direction direction = Direction::BOTH;
     options_string = req->param.at(Utilities::OPTIONS).c_str();
 
     if(options_string.empty()) {
@@ -141,9 +141,9 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
     // Parse Direction
     boost::algorithm::to_lower(options[0]);
     if (options[0] == "in") {
-        direction = IN;
+        direction = Direction::IN;
     } else if (options[0] == "out") {
-        direction = OUT;
+        direction = Direction::OUT;
     }
 
     switch(options.size()) {

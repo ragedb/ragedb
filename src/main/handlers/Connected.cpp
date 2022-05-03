@@ -48,7 +48,7 @@ future<std::unique_ptr<reply>> Connected::GetConnectedHandler::handle([[maybe_un
 
     // Gather Options
     std::string options_string;
-    Direction direction = BOTH;
+    Direction direction = Direction::BOTH;
     options_string = req->param.at(Utilities::OPTIONS).c_str();
 
     if(options_string.empty()) {
@@ -74,9 +74,9 @@ future<std::unique_ptr<reply>> Connected::GetConnectedHandler::handle([[maybe_un
     // Parse Direction
     boost::algorithm::to_lower(options[0]);
     if (options[0] == "in") {
-      direction = IN;
+      direction = Direction::IN;
     } else if (options[0] == "out") {
-      direction = OUT;
+      direction = Direction::OUT;
     }
 
     switch(options.size()) {
@@ -142,7 +142,7 @@ future<std::unique_ptr<reply>> Connected::GetConnectedByIdHandler::handle([[mayb
   if (id > 0 && id2 > 0) {
     // Gather Options
     std::string options_string;
-    Direction direction = BOTH;
+    Direction direction = Direction::BOTH;
     options_string = req->param.at(Utilities::OPTIONS).c_str();
 
     if(options_string.empty()) {
@@ -168,9 +168,9 @@ future<std::unique_ptr<reply>> Connected::GetConnectedByIdHandler::handle([[mayb
     // Parse Direction
     boost::algorithm::to_lower(options[0]);
     if (options[0] == "in") {
-      direction = IN;
+      direction = Direction::IN;
     } else if (options[0] == "out") {
-      direction = OUT;
+      direction = Direction::OUT;
     }
 
     switch(options.size()) {

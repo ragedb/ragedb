@@ -46,7 +46,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetDegree(type, key, BOTH, rel_type);
+            return local_shard.NodeGetDegree(type, key, Direction::BOTH, rel_type);
         });
     }
 
@@ -62,7 +62,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetDegree(type, key, BOTH, rel_types);
+            return local_shard.NodeGetDegree(type, key, Direction::BOTH, rel_types);
         });
     }
 
@@ -94,7 +94,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) {
-            return local_shard.NodeGetDegree(external_id, BOTH, rel_type);
+            return local_shard.NodeGetDegree(external_id, Direction::BOTH, rel_type);
         });
     }
 
@@ -110,7 +110,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
         return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) {
-            return local_shard.NodeGetDegree(external_id, BOTH, rel_types);
+            return local_shard.NodeGetDegree(external_id, Direction::BOTH, rel_types);
         });
     }
 
