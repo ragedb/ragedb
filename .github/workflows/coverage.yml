@@ -133,7 +133,7 @@ jobs:
         working-directory: '${{ github.workspace }}/build'
         run: |        
           sudo pip install gcovr
-          gcovr -r .. --sonarqube coverage.xml
+          gcovr -r .. --sonarqube coverage.xml -k
           mv coverage.xml ..
 
       - name: Upload coverage report
@@ -151,7 +151,7 @@ jobs:
 
       - name: Run build-wrapper
         run: |
-          rm -rf build
+          mv build coverage
           mkdir build
           cmake -S . -B build
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
