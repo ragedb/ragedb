@@ -91,7 +91,7 @@ let responseJson = document.getElementById('response-json');
 let responseError = document.getElementById('response-error');
 let responseViz = document.getElementById('response-viz');
 
-let grid = new gridjs.Grid({data: []}).render(responseGrid);
+//let grid = new gridjs.Grid({data: []}).render(responseGrid);
 
 let updateActiveTab = (newActiveTab) => {
     Tabs.forEach((tab) => {
@@ -309,8 +309,8 @@ async function sendscript() {
                         // We need to flatten the result for the Grid if it's make up of objects
                         if (typeof table[0] === 'object' && table[0] !== null) {
                             if (table.length > 1) {
-                                for (let index = 0, len = table.length; index < len; ++index) {
-                                    table[index] = flattenJSON(table[index]);
+                                for (let index2 = 0, len2 = table.length; index2 < len2; ++index2) {
+                                    table[index2] = flattenJSON(table[index2]);
                                 }
                             } else {
                                 table = flattenJSON(table[0]);
@@ -321,8 +321,8 @@ async function sendscript() {
                         } else {
                             grid.updateConfig({ columns: ["Response"] });
                             let arrayOfArrays = [];
-                            for (let index = 0, len = table.length; index < len; ++index) {
-                                arrayOfArrays[index] = [table[index]];
+                            for (let index2 = 0, len2 = table.length; index2 < len2; ++index2) {
+                                arrayOfArrays[index2] = [table[index2]];
                             }
                             table = arrayOfArrays;
                         }
@@ -411,10 +411,10 @@ async function renderDatabases() {
         selected_value = sel.options[sel.selectedIndex].value;
     }
     sel.length = 0;
-    databases.forEach(db => {
+    databases.forEach(database => {
         let opt = document.createElement("option");
-        opt.value = db;
-        opt.text = db;
+        opt.value = database;
+        opt.text = database;
         sel.add(opt);
     });
 
