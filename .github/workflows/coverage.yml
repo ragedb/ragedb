@@ -133,7 +133,7 @@ jobs:
         working-directory: '${{ github.workspace }}/build'
         run: |        
           sudo pip install gcovr
-          gcovr -r .. --sonarqube coverage.xml -k
+          gcovr -r .. --sonarqube coverage.xml
           mv coverage.xml ..
 
       - name: Upload coverage report
