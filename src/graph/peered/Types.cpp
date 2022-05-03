@@ -46,11 +46,11 @@ namespace ragedb {
         return node_types.getTypes();
     }
 
-    std::map<std::string, std::string> Shard::NodeTypeGetPeered(const std::string& type) {
+    std::map<std::string, std::string, std::less<>> Shard::NodeTypeGetPeered(const std::string& type) {
       return container().local().NodeTypeGet(type);
     }
 
-    std::map<std::string, std::string> Shard::RelationshipTypeGetPeered(const std::string& type) {
+    std::map<std::string, std::string, std::less<>> Shard::RelationshipTypeGetPeered(const std::string& type) {
       return container().local().RelationshipTypeGet(type);
     }
 

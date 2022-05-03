@@ -248,7 +248,7 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertiesHandler::handle(
     if(valid_type && valid_key) {
         return parent.graph.shard.invoke_on(this_shard_id(), [req = std::move(req)] (Shard &local_shard) {
             return local_shard.NodeGetPropertiesPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
-        }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
+        }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t, std::less<>>& properties) mutable {
             json_properties_builder json;
             json.add_properties(properties);
             rep->write_body("json", sstring(json.as_json()));
@@ -266,7 +266,7 @@ future<std::unique_ptr<reply>> NodeProperties::GetNodePropertiesByIdHandler::han
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id] (Shard &local_shard) {
             return local_shard.NodeGetProperties(id);
-        }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
+        }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t, std::less<>>& properties) mutable {
             json_properties_builder json;
             json.add_properties(properties);
             rep->write_body("json", sstring(json.as_json()));

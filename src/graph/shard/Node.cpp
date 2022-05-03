@@ -292,17 +292,17 @@ namespace ragedb {
         return false;
     }
 
-    std::map<std::string, property_type_t> Shard::NodeGetProperties(const std::string &type, const std::string &key) {
+    std::map<std::string, property_type_t, std::less<>> Shard::NodeGetProperties(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetProperties(id);
     }
 
-    std::map<std::string, property_type_t> Shard::NodeGetProperties(uint64_t id) {
+    std::map<std::string, property_type_t, std::less<>> Shard::NodeGetProperties(uint64_t id) {
         // If the node is valid
         if (ValidNodeId(id)) {
             return node_types.getNodeProperties(externalToTypeId(id), externalToInternal(id));
         }
-        return std::map<std::string, property_type_t>();
+        return std::map<std::string, property_type_t, std::less<>>();
     }
 
     bool Shard::NodeSetPropertiesFromJson(const std::string& type, const std::string& key, const std::string& value) {

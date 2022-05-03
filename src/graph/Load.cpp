@@ -51,17 +51,17 @@ namespace ragedb {
     }
 
     sol::object Shard::dofile(const std::string &path) {
-      std::tuple<sol::object, sol::object> ret = loadfile(path);
-      if (std::get<0>(ret) == sol::nil) {
-        throw sol::error(std::get<1>(ret).as<std::string>());
+      auto [name, file_path] = loadfile(path);
+      if (name == sol::nil) {
+        throw sol::error(file_path.as<std::string>());
       }
 
-      sol::unsafe_function func = std::get<0>(ret);
+      sol::unsafe_function func = name;
       return func();
     }
 
     bool Shard::checkPath(const std::string &filepath, bool write) {
-      for (auto basePath : write ? WRITE_PATHS : READ_PATHS) {
+      for (const auto &basePath : write ? WRITE_PATHS : READ_PATHS) {
         auto base = std::filesystem::absolute(basePath).lexically_normal();
         auto path = std::filesystem::absolute(filepath).lexically_normal();
         auto [rootEnd, nothing] = std::mismatch(base.begin(), base.end(), path.begin());

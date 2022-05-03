@@ -25,7 +25,7 @@ namespace ragedb {
 
     Node::Node(uint64_t id, std::string type, std::string key) : id(id), type(std::move(type)), key(std::move(key)) {}
 
-    Node::Node(uint64_t id, std::string type, std::string key, std::map<std::string, property_type_t>  properties) : id(id), type(std::move(type)), key(std::move(key)), properties(std::move(properties)) {}
+    Node::Node(uint64_t id, std::string type, std::string key, std::map<std::string, property_type_t, std::less<>>  properties) : id(id), type(std::move(type)), key(std::move(key)), properties(std::move(properties)) {}
 
     uint64_t Node::getId() const {
         return id;
@@ -43,7 +43,7 @@ namespace ragedb {
         return type;
     }
 
-    std::map<std::string, property_type_t> Node::getProperties() const {
+    std::map<std::string, property_type_t, std::less<>> Node::getProperties() const {
         return properties;
     }
 
@@ -114,7 +114,7 @@ namespace ragedb {
     }
 
     property_type_t Node::getProperty(const std::string& property) {
-        std::map<std::string, property_type_t>::iterator it;
+        std::map<std::string, property_type_t, std::less<>>::iterator it;
         it = properties.find(property);
 
         if (it != std::end(properties)) {

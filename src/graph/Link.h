@@ -18,6 +18,7 @@
 #define RAGEDB_LINK_H
 
 #include <cstdint>
+#include <compare>
 #include <ostream>
 
 namespace ragedb {
@@ -32,11 +33,7 @@ namespace ragedb {
 
         [[nodiscard]] uint64_t getRelationshipId() const;
 
-       // overload `<` operator to use a `Link` object as a key in a `std::map`
-       // It returns true if the current object appears before the specified object
-       bool operator<(const Link &ob) const {
-         return node_id < ob.node_id || (node_id == ob.node_id && rel_id < ob.rel_id);
-       }
+       auto operator<=>(const Link &) const = default;
 
         friend std::ostream& operator<<(std::ostream& os, const Link& ids);
     };

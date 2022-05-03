@@ -67,12 +67,12 @@ public:
     }
 
     if(value.type() == typeid(std::map<std::string, std::any>)) {
-      add_properties(std::any_cast<std::map<std::string, std::any>>(value));
+      add_properties(std::any_cast<std::map<std::string, std::any, std::less<>>>(value));
       return;
     }
   }
 
-  void add_properties(std::map<std::string, std::any> const & props) {
+  void add_properties(std::map<std::string, std::any, std::less<>> const & props) {
     bool initial = true;
     for (auto[key, value] : props) {
       std::string property = static_cast<std::string>(key);
@@ -103,7 +103,7 @@ public:
       }
 
       if(value.type() == typeid(std::map<std::string, std::any>)) {
-        add_properties(std::any_cast<std::map<std::string, std::any>>(value));
+        add_properties(std::any_cast<std::map<std::string, std::any, std::less<>>>(value));
         continue;
       }
       initial = false;
@@ -227,7 +227,7 @@ public:
       }
     }
 
-    void add_properties(std::map<std::string, property_type_t> const & props) {
+    void add_properties(std::map<std::string, property_type_t, std::less<>> const & props) {
         for (auto[property, value] : props) {
             bool nested_initial;
 
@@ -368,15 +368,15 @@ private:
 
 struct properties_json : public json::jsonable {
 private:
-    std::map<std::string, property_type_t> properties;
+    std::map<std::string, property_type_t, std::less<>> properties;
 
 public:
-    properties_json(const std::map<std::string, std::string> &_properties) {
+    properties_json(const std::map<std::string, std::string, std::less<>> &_properties) {
         for(auto [key, value] : _properties) {
             properties.emplace(key, value);
         }
     }
-    properties_json(const std::map<std::string, property_type_t> &_properties) : properties(_properties) {}
+    properties_json(const std::map<std::string, property_type_t, std::less<>> &_properties) : properties(_properties) {}
     properties_json() = default;
     ~properties_json() {
         properties.clear();

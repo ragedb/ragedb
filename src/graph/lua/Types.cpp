@@ -35,7 +35,7 @@ namespace ragedb {
         return sol::as_table(RelationshipTypesGetPeered());
     }
 
-    sol::as_table_t<std::map<std::string, std::string>> Shard::RelationshipTypeGetViaLua(const std::string& type) {
+    sol::as_table_t<std::map<std::string, std::string, std::less<>>> Shard::RelationshipTypeGetViaLua(const std::string& type) {
       return sol::as_table(RelationshipTypeGetPeered(type));
     }
 
@@ -69,7 +69,7 @@ namespace ragedb {
         return sol::as_table(NodeTypesGetPeered());
     }
 
-    sol::as_table_t<std::map<std::string, std::string>> Shard::NodeTypeGetViaLua(const std::string& type) {
+    sol::as_table_t<std::map<std::string, std::string, std::less<>>> Shard::NodeTypeGetViaLua(const std::string& type) {
       return sol::as_table(NodeTypeGetPeered(type));
     }
 

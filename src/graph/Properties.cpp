@@ -56,8 +56,8 @@ namespace ragedb {
       return "";
     }
 
-    std::map<std::string, std::string> Properties::getPropertyTypes() {
-        std::map<std::string, std::string> map;
+    std::map<std::string, std::string, std::less<>> Properties::getPropertyTypes() {
+        std::map<std::string, std::string, std::less<>> map;
         for (auto [type, type_id]: types) {
             map.insert({type, allowed_types[type_id]});
         }
@@ -443,9 +443,9 @@ namespace ragedb {
         return true;
     }
 
-    std::map<std::string, property_type_t> Properties::getProperties(uint64_t index) {
+    std::map<std::string, property_type_t, std::less<>> Properties::getProperties(uint64_t index) {
         // Build a temporary map of string, any
-        std::map<std::string, property_type_t> properties;
+        std::map<std::string, property_type_t, std::less<>> properties;
         // Go through all the property types this Node or Relationship type is supposed to have
         for (auto const&[key, type_id] : types) {
             // If the entry has been deleted, then skip adding it to the map (alternatively we could add an unset Any)

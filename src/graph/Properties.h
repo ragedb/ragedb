@@ -71,7 +71,7 @@ namespace ragedb {
         void clear();
         seastar::rwlock property_type_lock;
 
-        std::map<std::string, std::string> getPropertyTypes();
+        std::map<std::string, std::string, std::less<>> getPropertyTypes();
         std::string getPropertyType(const std::string& key);
         uint8_t getPropertyTypeId(const std::string& key);
         uint8_t setPropertyTypeId(const std::string& key, uint8_t property_type_id);
@@ -92,7 +92,7 @@ namespace ragedb {
         bool setListOfDateProperty(const std::string&, uint64_t, const std::vector<double>&);
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
 
-        std::map<std::string, property_type_t> getProperties(uint64_t);
+        std::map<std::string, property_type_t, std::less<>> getProperties(uint64_t);
         property_type_t getProperty(const std::string&, uint64_t);
         bool isDeleted(const std::string&, uint64_t);
         uint64_t getDeletedCount(const std::string&);

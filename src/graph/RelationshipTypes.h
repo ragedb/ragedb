@@ -156,7 +156,7 @@ namespace ragedb {
         bool setStartingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
         bool setEndingNodeId(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
 
-        std::map<std::string, property_type_t> getRelationshipProperties(uint16_t type_id, uint64_t internal_id);
+        std::map<std::string, property_type_t, std::less<>> getRelationshipProperties(uint16_t type_id, uint64_t internal_id);
         Relationship getRelationship(uint64_t external_id);
         Relationship getRelationship(uint16_t type_id, uint64_t internal_id);
         Relationship getRelationship(uint16_t type_id, uint64_t internal_id, uint64_t external_id);

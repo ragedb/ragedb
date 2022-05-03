@@ -618,7 +618,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::map<std::string, property_type_t>> Shard::RelationshipGetPropertiesPeered(uint64_t id) {
+    seastar::future<std::map<std::string, property_type_t, std::less<>>> Shard::RelationshipGetPropertiesPeered(uint64_t id) {
         uint16_t rel_shard_id = CalculateShardId(id);
 
         return container().invoke_on(rel_shard_id, [id](Shard &local_shard) {

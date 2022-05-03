@@ -30,14 +30,14 @@ namespace ragedb {
         uint64_t id{};
         std::string type{};
         std::string key{};
-        std::map<std::string, property_type_t> properties{};
+        std::map<std::string, property_type_t, std::less<>> properties{};
 
     public:
         Node();
 
         Node(uint64_t id, std::string type, std::string key);
 
-        Node(uint64_t id, std::string type, std::string key, std::map<std::string, property_type_t> );
+        Node(uint64_t id, std::string type, std::string key, std::map<std::string, property_type_t, std::less<>> );
 
         [[nodiscard]] uint64_t getId() const;
 
@@ -47,7 +47,7 @@ namespace ragedb {
 
         [[nodiscard]] std::string getKey() const;
 
-        [[nodiscard]] std::map<std::string, property_type_t> getProperties() const;
+        [[nodiscard]] std::map<std::string, property_type_t, std::less<>> getProperties() const;
 
         [[nodiscard]] sol::table getPropertiesLua(sol::this_state);
 

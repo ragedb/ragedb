@@ -19,8 +19,8 @@
 
 namespace ragedb {
 
-    std::map<std::string, std::string> parseURL(std::string url) {
-        std::map<std::string, std::string> result;
+    std::map<std::string, std::string, std::less<>> parseURL(std::string url) {
+        std::map<std::string, std::string, std::less<>> result;
         size_t start;
         size_t pos;
         const std::string http_delimiter = "http";
@@ -65,7 +65,7 @@ namespace ragedb {
                 std::string line;
                 while (std::getline(restore_file, line)) {
                     try {
-                        std::map<std::string, std::string> parsed = parseURL(line);
+                        std::map<std::string, std::string, std::less<>> parsed = parseURL(line);
                         session.SetUrl(cpr::Url{parsed["address"]});
 
                         auto body_search = parsed.find("body");
