@@ -127,7 +127,7 @@ future<std::unique_ptr<reply>> RelationshipProperties::GetRelationshipProperties
 
     if (id > 0) {
         return parent.graph.shard.local().RelationshipGetPropertiesPeered(id)
-                .then([rep = std::move(rep)] (const std::map<std::string, property_type_t, std::less<>>& properties) mutable {
+                .then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
                     json_properties_builder json;
                     json.add_properties(properties);
                     rep->write_body("json", sstring(json.as_json()));

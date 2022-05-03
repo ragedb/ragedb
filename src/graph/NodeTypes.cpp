@@ -415,11 +415,11 @@ namespace ragedb {
         return id_to_type[0];
     }
 
-    std::map<std::string, property_type_t, std::less<>> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
+    std::map<std::string, property_type_t> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
         if(ValidTypeId(type_id)) {
             return properties[type_id].getProperties(internal_id);
         }
-        return std::map<std::string, property_type_t, std::less<>>();
+        return std::map<std::string, property_type_t>();
     }
 
     Node NodeTypes::getNode(uint64_t external_id) {

@@ -98,8 +98,8 @@ namespace ragedb {
       return sharded_relationship_properties;
     }
 
-    std::map<uint64_t, std::map<std::string, property_type_t, std::less<>>> Shard::RelationshipsGetProperties(const std::vector<uint64_t>& ids) {
-      std::map<uint64_t, std::map<std::string, property_type_t, std::less<>>> sharded_relationship_properties;
+    std::map<uint64_t, std::map<std::string, property_type_t>> Shard::RelationshipsGetProperties(const std::vector<uint64_t>& ids) {
+      std::map<uint64_t, std::map<std::string, property_type_t>> sharded_relationship_properties;
 
       for(uint64_t id : ids) {
         sharded_relationship_properties[id]  = RelationshipGetProperties(id);
@@ -108,8 +108,8 @@ namespace ragedb {
       return sharded_relationship_properties;
     }
 
-    std::map<Link, std::map<std::string, property_type_t, std::less<>>> Shard::RelationshipsGetProperties(const std::vector<Link>& links) {
-      std::map<Link, std::map<std::string, property_type_t, std::less<>>> sharded_relationship_properties;
+    std::map<Link, std::map<std::string, property_type_t>> Shard::RelationshipsGetProperties(const std::vector<Link>& links) {
+      std::map<Link, std::map<std::string, property_type_t>> sharded_relationship_properties;
 
       for(Link link : links) {
         sharded_relationship_properties[link]  = RelationshipGetProperties(link.rel_id);

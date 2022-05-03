@@ -303,7 +303,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::map<std::string, property_type_t, std::less<>>> Shard::NodeGetPropertiesPeered(const std::string& type, const std::string& key) {
+    seastar::future<std::map<std::string, property_type_t>> Shard::NodeGetPropertiesPeered(const std::string& type, const std::string& key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
@@ -311,7 +311,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::map<std::string, property_type_t, std::less<>>> Shard::NodeGetPropertiesPeered(uint64_t id) {
+    seastar::future<std::map<std::string, property_type_t>> Shard::NodeGetPropertiesPeered(uint64_t id) {
         uint16_t node_shard_id = CalculateShardId(id);
 
         return container().invoke_on(node_shard_id, [id](Shard &local_shard) {

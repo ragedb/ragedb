@@ -295,7 +295,7 @@ namespace ragedb {
         return false;
     }
 
-    std::map<std::string, property_type_t, std::less<>> Shard::RelationshipGetProperties(uint64_t id) {
+    std::map<std::string, property_type_t> Shard::RelationshipGetProperties(uint64_t id) {
         if (ValidRelationshipId(id)) {
             return relationship_types.getRelationshipProperties(externalToTypeId(id), externalToInternal(id));
         }
