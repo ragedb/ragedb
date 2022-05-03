@@ -17,8 +17,14 @@
 #include "Roar.h"
 
 namespace ragedb {
-  Roar::Roar() {
-    map = Roaring64Map();
+  Roar::Roar() : map(roaring::Roaring64Map()) {}
+
+  Roar::Roar(Roar &&roar) noexcept {
+    map = std::move(roar.map);
+  }
+
+  Roar::Roar(const Roar &roar) {
+    map = roar.map;
   }
 
   void Roar::add(uint64_t x) {
@@ -73,7 +79,7 @@ namespace ragedb {
     return *this;
   }
 
-  Roar Roar::swap(Roar &r) {
+  Roar Roar::swap(Roar &r) noexcept {
     map.swap(r.map);
     return *this;
   }
@@ -94,11 +100,11 @@ namespace ragedb {
   }
 
   bool Roar::isStrictSubset(const Roar &r) const {
-    return false;
+    return map.isStrictSubset(r.map);
   }
 
   bool Roar::operator==(const Roar &r) const {
-    return false;
+    return map == r.map;
   }
 
   void Roar::flip(uint64_t range_start, uint64_t range_end) {
@@ -146,19 +152,21 @@ namespace ragedb {
   }
 
   void Roar::addNodeIds(std::vector<Link> links) {
-    uint64_t arr[links.size()];
+    std::vector<uint64_t> arr;
+    arr.reserve(links.size());
     for (auto i = 0; i < links.size(); i++) {
       arr[i] = links[i].node_id;
     }
-    map.addMany(links.size(), arr);
+    map.addMany(links.size(), arr.data());
   }
 
   void Roar::addRelationshipIds(std::vector<Link> links) {
-    uint64_t arr[links.size()];
+    std::vector<uint64_t> arr;
+    arr.reserve(links.size());
     for (auto i = 0; i < links.size(); i++) {
       arr[i] = links[i].rel_id;
     }
-    map.addMany(links.size(), arr);
+    map.addMany(links.size(), arr.data());
   }
 
   std::ostream &operator<<(std::ostream &os, const Roar &roar) {
@@ -179,10 +187,13 @@ namespace ragedb {
   std::vector<uint64_t> Roar::getIds() {
     std::vector<uint64_t> ids;
     ids.reserve(map.cardinality());
-    uint64_t* array = new uint64_t[map.cardinality()];
-    map.toUint64Array(array);
-    ids.assign(array, array + map.cardinality());
-    delete[] array;
+
+    std::vector<uint64_t> array;
+    array.reserve(map.cardinality());
+
+    map.toUint64Array(array.data());
+
+    ids.assign(array.data(), array.data() + map.cardinality());
     return ids;
   }
 
@@ -194,8 +205,10 @@ namespace ragedb {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
-    uint64_t array[map.cardinality()];
-    map.toUint64Array(array);
+    std::vector<uint64_t> array;
+    array.reserve(map.cardinality());
+
+    map.toUint64Array(array.data());
 
     for (auto element : array) {
       links.push_back( Link({element,0}));
@@ -212,8 +225,10 @@ namespace ragedb {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
-    uint64_t array[map.cardinality()];
-    map.toUint64Array(array);
+    std::vector<uint64_t> array;
+    array.reserve(map.cardinality());
+
+    map.toUint64Array(array.data());
 
     for (auto element : array) {
       links.push_back( Link({0,element}));
@@ -226,4 +241,6 @@ namespace ragedb {
     return sol::as_table(getRelationshipHalfLinks());
   }
 
-}
+
+
+  }

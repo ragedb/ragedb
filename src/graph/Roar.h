@@ -23,15 +23,16 @@
 #include <sol/types.hpp>
 #include "Link.h"
 
-using namespace roaring;
 namespace ragedb {
   class Roar {
 
-  protected:
-    Roaring64Map map;
+    private:
+    roaring::Roaring64Map map;
 
   public:
     Roar();
+    Roar(const Roar &roar);
+    Roar (Roar && roar) noexcept;
     void addIds(std::vector<uint64_t> ids);
     void addNodeIds(std::vector<Link> links);
     void addRelationshipIds(std::vector<Link> links);
@@ -55,7 +56,7 @@ namespace ragedb {
     Roar &operator-=(const Roar &r);
     Roar &operator|=(const Roar &r);
     Roar &operator^=(const Roar &r);
-    Roar swap(Roar &r);
+    Roar swap(Roar &r) noexcept;
     uint64_t cardinality() const;
     bool isEmpty() const;
     bool isFull() const;
