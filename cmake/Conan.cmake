@@ -29,6 +29,7 @@ macro(run_conan)
     cppcodec/0.2
     cpr/1.7.2
     reckless/3.0.3
+    benchmark/1.6.1
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

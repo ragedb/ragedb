@@ -100,6 +100,11 @@ file(COPY public DESTINATION bin)
 add_subdirectory(src/graph)
 include_directories(src/graph)
 
+add_subdirectory(src/benchmark)
+include_directories(src/benchmark)
+
+
+
 add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/HealthCheck.cpp src/main/handlers/HealthCheck.h
         src/main/handlers/Nodes.cpp src/main/handlers/Nodes.h
@@ -117,6 +122,7 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Management.cpp src/main/handlers/Management.h
         src/main/Database.cpp src/main/Database.h
         src/main/Databases.cpp src/main/Databases.h)
+
 target_link_libraries(
         Graph
         project_options
