@@ -128,6 +128,13 @@ jobs:
         # Execute tests defined by the CMake configuration.
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ctest --output-on-failure --success
+        
+      - name: SonarQube
+        working-directory: '${{ github.workspace }}/build'
+        run: |        
+          sudo pip install gcovr
+          gcovr --sonarqube coverage.xml
+          mv coverage.xml ..
 
       - name: Upload coverage report
         working-directory: ${{github.workspace}}
@@ -144,7 +151,6 @@ jobs:
 
       - name: Run build-wrapper
         run: |
-          mv build/coverage ./coverage
           rm -rf build
           mkdir build
           cmake -S . -B build
