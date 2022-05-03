@@ -26,13 +26,13 @@ class Databases {
 
 public:
   explicit Databases(http_server_control*& _server) : server(_server) {}
-  std::vector<std::string> list();
-  std::string get(std::string key);
-  bool contains(std::string key);
+  std::vector<std::string> list() const;
+  std::string get(std::string const &key);
+  bool contains(std::string const &key);
   seastar::future<bool> add(std::string key);
-  Database &at(std::string key);
-  seastar::future<bool> reset(std::string key);
-  seastar::future<bool> remove(std::string key);
+  Database &at(std::string const &key);
+  seastar::future<bool> reset(std::string const &key);
+  seastar::future<bool> remove(std::string const &key);
   seastar::future<bool> stop();
 };
 

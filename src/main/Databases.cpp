@@ -17,7 +17,7 @@
 #include "Databases.h"
 #include "json/JSON.h"
 
-std::vector<std::string> Databases::list() {
+std::vector<std::string> Databases::list() const {
   std::vector<std::string> names;
   names.reserve(databases.size());
   for (auto&& [name, database] : databases) {
@@ -26,7 +26,7 @@ std::vector<std::string> Databases::list() {
   return names;
 }
 
-std::string Databases::get(std::string key) {
+std::string Databases::get(std::string const &key) {
   std::set<std::string> nodes = databases.at(key).graph.shard.local().NodeTypesGet();
   std::vector<std::string> node_types;
   node_types.assign(nodes.begin(), nodes.end());
@@ -39,44 +39,40 @@ std::string Databases::get(std::string key) {
   return database_json.to_json();
 }
 
-Database &Databases::at(std::string key) {
+Database &Databases::at(std::string const &key) {
   return databases.at(key);
 }
 
-bool Databases::contains(std::string key) {
+bool Databases::contains(std::string const &key) {
   return databases.contains(key);
 }
 
 seastar::future<bool> Databases::add(std::string key) {
-  if (databases.contains(key)) {
-    return seastar::make_ready_future<bool>(false);
-  }
-
-  databases.emplace(key, key);
-  auto &database = databases.at(key);
-
   std::vector<seastar::future<>> futures;
+  auto [db, inserted] = databases.try_emplace(key, key);
+  if (inserted) {
+    auto &database = db->second;
 
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.relationshipProperties.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.nodeProperties.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.degrees.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.neighbors.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.connected.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.relationships.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.nodes.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.schema.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.lua.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.healthCheck.set_routes(r); }));
-  futures.emplace_back(server->set_routes([&database](routes &r) { database.restore.set_routes(r); }));
-  futures.emplace_back(databases.at(key).start());
-
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.relationshipProperties.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.nodeProperties.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.degrees.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.neighbors.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.connected.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.relationships.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.nodes.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.schema.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.lua.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.healthCheck.set_routes(r); }));
+    futures.emplace_back(server->set_routes([&database](routes &r) { database.restore.set_routes(r); }));
+    futures.emplace_back(databases.at(key).start());
+  }
   auto p = make_shared(std::move(futures));
   return seastar::when_all_succeed(p->begin(), p->end()).then([p] () {
     return seastar::make_ready_future<bool>(true);
   });
 }
 
-seastar::future<bool> Databases::reset(std::string key) {
+seastar::future<bool> Databases::reset(std::string const &key) {
   if (!databases.contains(key)) {
     return seastar::make_ready_future<bool>(false);
   }
@@ -84,7 +80,7 @@ seastar::future<bool> Databases::reset(std::string key) {
   return seastar::make_ready_future<bool>(true);
 }
 
-seastar::future<bool> Databases::remove(std::string key) {
+seastar::future<bool> Databases::remove(std::string const &key) {
   if (!databases.contains(key)) {
     return seastar::make_ready_future<bool>(false);
   }

@@ -37,18 +37,19 @@ int main(int argc, char** argv) {
     app.add_options()("port", bpo::value<uint16_t>()->default_value(7243), "HTTP Server port");
 
     try {
-        app.run(argc, argv, [&] {
-            std::cout << "Hello world!\n";
-            std::cout << "This server has " << seastar::smp::count << " cores.\n";
+        app.run(argc, argv, [&app] {
+            std::cout << "RageDB running on " << seastar::smp::count << " cores.\n";
 
-            return seastar::async([&] {
+            return seastar::async([&app] {
                 seastar_apps_lib::stop_signal stop_signal;
-                auto &&config = app.configuration();
+                const auto &config = app.configuration();
 
                 // Start Server
                 seastar::net::inet_address addr(config["address"].as<seastar::sstring>());
                 uint16_t port = config["port"].as<uint16_t>();
-                auto server = new seastar::http_server_control();
+
+                seastar::http_server_control srv;
+                auto server = &srv;
                 server->start().get();
                 Databases databases(server);
                 databases.add("rage").get();
@@ -76,7 +77,7 @@ int main(int argc, char** argv) {
 
                 server->listen(seastar::socket_address{addr, port}).get();
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
-                //graph.Restore().get();
+
                 seastar::engine().at_exit([&server, &databases] {
                     std::cout << "Stopping RageDB HTTP server" << std::endl;
                     return databases.stop().then([server](bool success) {
