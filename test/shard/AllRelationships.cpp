@@ -112,8 +112,8 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
             THEN("the shard keeps the id") {
                 REQUIRE(added > 1);
 
-                std::pair <uint16_t, uint64_t> rel_type_incoming_node_id = shard.RelationshipRemoveGetIncoming(added);
-                bool deleted = shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, added, rel_type_incoming_node_id.second);
+                const auto& [rel_type_id, node_id] =  shard.RelationshipRemoveGetIncoming(added);
+                bool deleted = shard.RelationshipRemoveIncoming(rel_type_id, added, node_id);
                 REQUIRE (deleted);
 
                 REQUIRE(shard.AllRelationships().size() == 3);
@@ -128,9 +128,8 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
 
             THEN("the shard keeps it") {
                 REQUIRE(added > 1);
-
-                std::pair <uint16_t, uint64_t> rel_type_incoming_node_id = shard.RelationshipRemoveGetIncoming(added);
-                bool deleted = shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, added, rel_type_incoming_node_id.second);
+                const auto& [rel_type_id, node_id] =  shard.RelationshipRemoveGetIncoming(added);
+                bool deleted = shard.RelationshipRemoveIncoming(rel_type_id, added, node_id);
                 REQUIRE (deleted);
 
                 std::vector<ragedb::Relationship> it = shard.AllRelationships();
