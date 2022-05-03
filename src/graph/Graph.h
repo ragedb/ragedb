@@ -53,7 +53,7 @@ namespace ragedb {
     public:
         seastar::sharded <Shard> shard;
         explicit Graph(std::string _name) : name (std::move(_name)), writer(strcat(strncat(log_path, name.c_str(), name.size()), ".log")), r_logger(&writer) {};
-        std::string GetName();
+        std::string GetName() const;
         seastar::future<> Start();
         void StartLogging();
         seastar::future<> Stop();

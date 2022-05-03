@@ -25,7 +25,7 @@ namespace ragedb {
      *
      * @return name
      */
-    std::string Graph::GetName() {
+    std::string Graph::GetName() const {
         return name;
     }
 
@@ -72,12 +72,12 @@ namespace ragedb {
         static_cast<void>(seastar::when_all_succeed(std::move(clear))
                 .discard_result()
                 .handle_exception([](const std::exception_ptr& e) {
-                    std::cerr << "Exception in Graph::Clear\n";
+                              std::cerr << "Exception in Graph::Clear\n" << e << "\n";
                 }));
     }
 
-    static const char* format("%s&method=%s");
-    static const char* with_body_format("%s&method=%s&body=%s");
+    constexpr char* format((char*)"%s&method=%s");
+    constexpr char* with_body_format((char*)"%s&method=%s&body=%s");
 
     void Graph::Log(const seastar::sstring method, const seastar::sstring url) {
         r_logger.write(format, std::string(url.c_str()), std::string(method.c_str()));
