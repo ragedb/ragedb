@@ -144,6 +144,7 @@ jobs:
 
       - name: Run build-wrapper
         run: |
+          mv build/coverage ./coverage
           rm -rf build
           mkdir build
           cmake -S . -B build
