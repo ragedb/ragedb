@@ -1,7 +1,7 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
-COPY download download
-RUN download http://security.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20211016_all.deb > ca-certificates_20211016_all.deb
+COPY --chmod=755 download download
+RUN ./download http://security.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20211016_all.deb > ca-certificates_20211016_all.deb
 RUN dpkg -r --force-depends ca-certificates
 RUN dpkg -i ca-certificates_20211016_all.deb
 RUN echo "deb [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
