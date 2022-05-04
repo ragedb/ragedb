@@ -1,5 +1,6 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
+RUN apt install ca-certificates -y
 RUN echo "deb [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
 RUN echo "deb-src [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
 RUN apt-get update -y
