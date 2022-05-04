@@ -1,5 +1,6 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
+RUN apt install curl
 RUN curl -O http://security.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20211016_all.deb
 RUN dpkg -r --force-depends ca-certificates
 RUN dpkg -i ca-certificates_20211016_all.deb
