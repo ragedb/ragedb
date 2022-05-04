@@ -1,7 +1,7 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
-RUN echo "deb https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
-RUN echo "deb-src https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
+RUN echo "deb [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
+RUN echo "deb-src [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
 RUN apt-get update -y
 RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
