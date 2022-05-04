@@ -26,7 +26,6 @@ RUN cmake .. -DCMAKE_BUILD_TYPE=Release
 RUN cmake --build . --target ragedb
 
 FROM ubuntu:22.04
-RUN apt-get -qq update -y
 COPY --from=build /lib/x86_64-linux-gnu/libboost_program_options.so.1.74.0 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libboost_thread.so.1.74.0 /lib/x86_64-linux-gnu/
 COPY --from=build "/lib/x86_64-linux-gnu/libcrypto++.so.8" /lib/x86_64-linux-gnu/
