@@ -184,17 +184,6 @@ fieldset[disabled] .pagination-ellipsis {
     right: 0;
     top: 0; }
 
-.navbar-burger {
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    appearance: none;
-    background: none;
-    border: none;
-    color: currentColor;
-    font-family: inherit;
-    font-size: 1em;
-    margin: 0;
-    padding: 0; }
 
 /* Bulma Base */
 /*! minireset.css v0.0.6 | MIT License | github.com/jgthms/minireset.css */
@@ -242,9 +231,6 @@ select,
 textarea {
     margin: 0; }
 
-html {
-    box-sizing: border-box; }
-
 *, *::before, *::after {
     box-sizing: inherit; }
 
@@ -268,6 +254,7 @@ th:not([align]) {
     text-align: inherit; }
 
 html {
+    box-sizing: border-box;
     background-color: white;
     font-size: 16px;
     -moz-osx-font-smoothing: grayscale;
@@ -1184,7 +1171,6 @@ a.box:active {
     color: transparent !important;
     pointer-events: none; }
 .button.is-loading::after {
-    position: absolute;
     left: calc(50% - (1em * 0.5));
     top: calc(50% - (1em * 0.5));
     position: absolute !important; }
@@ -2959,7 +2945,6 @@ a.tag:hover {
     font-family: inherit;
     font-size: 1em;
     margin: 0;
-    padding: 0;
     align-items: center;
     cursor: pointer;
     display: flex;
@@ -3917,13 +3902,22 @@ body.has-navbar-fixed-bottom {
     overflow-y: hidden; }
 
 .navbar-burger {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 1em;
+    padding: 0;
     color: #4a4a4a;
     cursor: pointer;
     display: block;
     height: 3.25rem;
     position: relative;
     width: 3.25rem;
-    margin-left: auto; }
+    margin: 0 0 0 auto;
+}
 .navbar-burger span {
     background-color: currentColor;
     display: block;
