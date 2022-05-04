@@ -1,6 +1,5 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get -qq update -y
 RUN apt-get install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
