@@ -1,6 +1,6 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get -y clean
+RUN rm -rf /var/lib/apt/lists/
 RUN apt-get -qq update -y && apt-get -qq dist-upgrade -y
 RUN apt-get install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
