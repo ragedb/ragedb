@@ -27,6 +27,8 @@ MIT License
   sparse-map
   sol2
   LuaJIT
+  Eve
 
 BSD 3-Clause License
   csvmonkey
+  
