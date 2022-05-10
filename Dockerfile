@@ -1,16 +1,10 @@
 FROM ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
-COPY --chmod=755 download download
-RUN ./download
-RUN sed -i '1,2d' ca-certificates_20211016_all.deb
-RUN dpkg -i ca-certificates_20211016_all.deb
-RUN echo "deb [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
-RUN echo "deb-src [trusted=yes] https://ppa.launchpadcontent.net/pascallj/docker.io-clone3/ubuntu jammy main" | tee -a /etc/apt/sources.list
-RUN apt-get update -y
+RUN apt-get -qq update -y && apt-get -qq dist-upgrade -y
 RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
-    libtool cmake libyaml-cpp-dev libc-ares-dev stow
+    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl
 RUN pip install --user conan
 RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
@@ -36,6 +30,8 @@ RUN cmake .. -DCMAKE_BUILD_TYPE=Release
 RUN cmake --build . --target ragedb
 
 FROM ubuntu:22.04
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get -qq update -y && apt-get -qq dist-upgrade -y
 COPY --from=build /lib/x86_64-linux-gnu/libboost_program_options.so.1.74.0 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libboost_thread.so.1.74.0 /lib/x86_64-linux-gnu/
 COPY --from=build "/lib/x86_64-linux-gnu/libcrypto++.so.8" /lib/x86_64-linux-gnu/
