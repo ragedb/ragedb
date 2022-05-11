@@ -18,7 +18,7 @@
 #define RAGEDB_OPERATION_H
 
 namespace ragedb {
-    enum Operation {
+    enum class Operation {
             EQ,              // A == B
             NEQ,             // A != B
             GT,              // A  > B

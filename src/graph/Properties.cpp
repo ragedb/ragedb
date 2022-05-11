@@ -18,8 +18,7 @@
 
 namespace ragedb {
 
-    Properties::Properties()  {
-        allowed_types = {"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list", "date", "date_list"};
+    Properties::Properties() : allowed_types({"", "boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list", "date", "date_list"})  {
         clear();
     }
 
@@ -47,8 +46,8 @@ namespace ragedb {
     }
 
 
-    std::string Properties::getPropertyKey(uint8_t id) {
-      for (auto [type, type_id]: types) {
+    std::string Properties::getPropertyKey(uint8_t id) const {
+      for (auto& [type, type_id]: types) {
         if (id == type_id) {
           return type;
         }
@@ -195,8 +194,7 @@ namespace ragedb {
     uint8_t Properties::setPropertyType(const std::string &key, const std::string &type) {
         // What type do we want?
         uint8_t type_id = 0;
-        auto type_search = type_map.find(type);
-        if (type_search != type_map.end()) {
+        if (auto type_search = type_map.find(type); type_search != type_map.end()) {
             type_id = type_map[type];
         }
 
@@ -232,14 +230,22 @@ namespace ragedb {
         return false;
     }
 
+    bool Properties::validType(const std::string &key) {
+      if (types.empty()) {
+        return false;
+      }
+
+      if (auto type_check = types.find(key); type_check == types.end()) {
+        return false;
+      }
+      return true;
+    }
+
     bool Properties::setBooleanProperty(const std::string &key, uint64_t index, bool value) {
-        if(types.empty()) {
+        if (!validType(key)) {
             return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != boolean_type) {
             return false;
         }
@@ -254,13 +260,10 @@ namespace ragedb {
     }
 
     bool Properties::setIntegerProperty(const std::string &key, uint64_t index, int64_t value) {
-        if(types.empty()) {
-            return false;
+        if (!validType(key)) {
+          return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != integer_type) {
             return false;
         }
@@ -275,13 +278,10 @@ namespace ragedb {
     }
 
     bool Properties::setDoubleProperty(const std::string &key, uint64_t index, double value) {
-        if(types.empty()) {
-            return false;
+        if (!validType(key)) {
+          return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != double_type) {
             return false;
         }
@@ -296,13 +296,10 @@ namespace ragedb {
     }
 
     bool Properties::setDateProperty(const std::string &key, uint64_t index, double value) {
-      if(types.empty()) {
+      if (!validType(key)) {
         return false;
       }
-      auto type_check = types.find(key);
-      if (type_check == types.end()) {
-        return false;
-      }
+
       if (types[key] != date_type) {
         return false;
       }
@@ -317,12 +314,10 @@ namespace ragedb {
     }
 
     bool Properties::setStringProperty(const std::string &key, uint64_t index, const std::string &value) {
-        if(types.empty()) {
-            return false;
+        if (!validType(key)) {
+          return false;
         }
-        if (types.find(key) == types.end()) {
-            return false;
-        }
+
         if (types[key] != string_type) {
             return false;
         }
@@ -337,13 +332,10 @@ namespace ragedb {
     }
 
     bool Properties::setListOfBooleanProperty(const std::string &key, uint64_t index, const std::vector<bool> &value) {
-        if(types.empty()) {
-            return false;
+        if (!validType(key)) {
+          return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != boolean_list_type) {
             return false;
         }
@@ -359,13 +351,10 @@ namespace ragedb {
 
     bool
     Properties::setListOfIntegerProperty(const std::string &key, uint64_t index, const std::vector<int64_t> &value) {
-        if(types.empty()) {
-            return false;
+        if (!validType(key)) {
+          return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != integer_list_type) {
             return false;
         }
@@ -380,13 +369,10 @@ namespace ragedb {
     }
 
     bool Properties::setListOfDoubleProperty(const std::string &key, uint64_t index, const std::vector<double> &value) {
-        if(types.empty()) {
-            return false;
+        if (!validType(key)) {
+          return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != double_list_type) {
             return false;
         }
@@ -401,13 +387,10 @@ namespace ragedb {
     }
 
     bool Properties::setListOfDateProperty(const std::string &key, uint64_t index, const std::vector<double> &value) {
-      if(types.empty()) {
+      if (!validType(key)) {
         return false;
       }
-      auto type_check = types.find(key);
-      if (type_check == types.end()) {
-        return false;
-      }
+
       if (types[key] != date_list_type) {
         return false;
       }
@@ -423,13 +406,10 @@ namespace ragedb {
 
     bool
     Properties::setListOfStringProperty(const std::string &key, uint64_t index, const std::vector<std::string> &value) {
-        if(types.empty()) {
+        if (!validType(key)) {
             return false;
         }
-        auto type_check = types.find(key);
-        if (type_check == types.end()) {
-            return false;
-        }
+
         if (types[key] != string_list_type) {
             return false;
         }
@@ -600,62 +580,60 @@ namespace ragedb {
     }
 
     property_type_t Properties::getProperty(const std::string& key, uint64_t index) {
-        if (types.find(key) != types.end()) {
-            if (!deleted[key].contains(index)) {
-                switch (types[key]) {
-                    case boolean_type: {
-                        if (booleans[key].size() > index) {
-                            // property_type_t and vector<bool> don't play nice together due to how vector<bool> is optimized
-                            // so this cast makes sure we return the value typed correctly
-                            return static_cast<bool>(booleans[key][index]);
-                        }
-                        break;
+        if (types.find(key) != types.end() && !deleted[key].contains(index)) {
+            switch (types[key]) {
+                case boolean_type: {
+                    if (booleans[key].size() > index) {
+                        // property_type_t and vector<bool> don't play nice together due to how vector<bool> is optimized
+                        // so this cast makes sure we return the value typed correctly
+                        return static_cast<bool>(booleans[key][index]);
                     }
-                    case integer_type: {
-                        if (integers[key].size() > index) {
-                            return integers[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case integer_type: {
+                    if (integers[key].size() > index) {
+                        return integers[key][index];
                     }
-                    case double_type: {
-                        if (doubles[key].size() > index) {
-                            return doubles[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case double_type: {
+                    if (doubles[key].size() > index) {
+                        return doubles[key][index];
                     }
-                    case string_type: {
-                        if (strings[key].size() > index) {
-                            return strings[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case string_type: {
+                    if (strings[key].size() > index) {
+                        return strings[key][index];
                     }
-                    case boolean_list_type: {
-                        if (booleans_list[key].size() > index) {
-                            return booleans_list[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case boolean_list_type: {
+                    if (booleans_list[key].size() > index) {
+                        return booleans_list[key][index];
                     }
-                    case integer_list_type: {
-                        if (integers[key].size() > index) {
-                            return integers_list[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case integer_list_type: {
+                    if (integers[key].size() > index) {
+                        return integers_list[key][index];
                     }
-                    case double_list_type: {
-                        if (doubles_list[key].size() > index) {
-                            return doubles_list[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case double_list_type: {
+                    if (doubles_list[key].size() > index) {
+                        return doubles_list[key][index];
                     }
-                    case string_list_type: {
-                        if (strings_list[key].size() > index) {
-                            return strings_list[key][index];
-                        }
-                        break;
+                    break;
+                }
+                case string_list_type: {
+                    if (strings_list[key].size() > index) {
+                        return strings_list[key][index];
                     }
-                    default: {
+                    break;
+                }
+                default: {
 
-                    }
                 }
             }
         }
@@ -663,9 +641,7 @@ namespace ragedb {
     }
 
     bool Properties::getBooleanProperty(const std::string& key, uint64_t index) {
-        auto search = booleans.find(key);
-
-        if (search != booleans.end()) {
+        if (auto search = booleans.find(key); search != booleans.end()) {
             if (index < booleans[key].size() ) {
                 return booleans[key][index];
             }
@@ -674,9 +650,7 @@ namespace ragedb {
     }
 
     int64_t Properties::getIntegerProperty(const std::string& key, uint64_t index) {
-        auto search = integers.find(key);
-
-        if (search != integers.end()) {
+        if (auto search = integers.find(key); search != integers.end()) {
             if (index < integers[key].size() ) {
                 return integers[key][index];
             }
@@ -685,9 +659,7 @@ namespace ragedb {
     }
 
     double Properties::getDoubleProperty(const std::string& key, uint64_t index) {
-        auto search = doubles.find(key);
-
-        if (search != doubles.end()) {
+        if (auto search = doubles.find(key); search != doubles.end()) {
             if (index < doubles[key].size() ) {
                 return doubles[key][index];
             }
@@ -696,9 +668,7 @@ namespace ragedb {
     }
 
     std::string Properties::getStringProperty(const std::string& key, uint64_t index) {
-        auto search = strings.find(key);
-
-        if (search != strings.end()) {
+         if (auto search = strings.find(key); search != strings.end()) {
             if (index < strings[key].size() ) {
                 return strings[key][index];
             }
@@ -707,9 +677,7 @@ namespace ragedb {
     }
 
     std::vector<bool> Properties::getListOfBooleanProperty(const std::string& key, uint64_t index) {
-        auto search = booleans_list.find(key);
-
-        if (search != booleans_list.end()) {
+         if (auto search = booleans_list.find(key); search != booleans_list.end()) {
             if (index < booleans_list[key].size() ) {
                 return booleans_list[key][index];
             }
@@ -718,9 +686,7 @@ namespace ragedb {
     }
 
     std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string& key, uint64_t index) {
-        auto search = integers_list.find(key);
-
-        if (search != integers_list.end()) {
+        if (auto search = integers_list.find(key); search != integers_list.end()) {
             if (index < integers_list[key].size() ) {
                 return integers_list[key][index];
             }
@@ -729,9 +695,7 @@ namespace ragedb {
     }
 
     std::vector<double> Properties::getListOfDoubleProperty(const std::string& key, uint64_t index) {
-        auto search = doubles_list.find(key);
-
-        if (search != doubles_list.end()) {
+        if (auto search = doubles_list.find(key); search != doubles_list.end()) {
             if (index < doubles_list[key].size() ) {
                 return doubles_list[key][index];
             }
@@ -740,9 +704,7 @@ namespace ragedb {
     }
 
     std::vector<std::string> Properties::getListOfStringProperty(const std::string& key, uint64_t index) {
-        auto search = strings_list.find(key);
-
-        if (search != strings_list.end()) {
+        if (auto search = strings_list.find(key); search != strings_list.end()) {
             if (index < strings_list[key].size() ) {
                 return strings_list[key][index];
             }
@@ -751,7 +713,7 @@ namespace ragedb {
     }
 
     bool Properties::deleteProperties(uint64_t index) {
-        for (auto[key, value] : types) {
+        for (const auto& [key, value] : types) {
             deleted[key].add(index);
         }
         return true;
@@ -765,35 +727,35 @@ namespace ragedb {
         return false;
     }
 
-    bool Properties::isBooleanProperty(property_type_t value) {
+    bool Properties::isBooleanProperty(const property_type_t& value) {
         return value.index() == 1;
     }
 
-    bool Properties::isIntegerProperty(property_type_t value) {
+    bool Properties::isIntegerProperty(const property_type_t& value) {
         return value.index() == 2;
     }
 
-    bool Properties::isDoubleProperty(property_type_t value) {
+    bool Properties::isDoubleProperty(const property_type_t& value) {
         return value.index() == 3;
     }
 
-    bool Properties::isStringProperty(property_type_t value) {
+    bool Properties::isStringProperty(const property_type_t& value) {
         return value.index() == 4;
     }
 
-    bool Properties::isBooleanListProperty(property_type_t value) {
+    bool Properties::isBooleanListProperty(const property_type_t& value) {
         return value.index() == 5;
     }
 
-    bool Properties::isIntegerListProperty(property_type_t value) {
+    bool Properties::isIntegerListProperty(const property_type_t& value) {
         return value.index() == 6;
     }
 
-    bool Properties::isDoubleListProperty(property_type_t value) {
+    bool Properties::isDoubleListProperty(const property_type_t& value) {
         return value.index() == 7;
     }
 
-    bool Properties::isStringListProperty(property_type_t value) {
+    bool Properties::isStringListProperty(const property_type_t& value) {
         return value.index() == 8;
     }
 }

@@ -17,7 +17,7 @@
 #ifndef RAGEDB_PERMISSION_H
 #define RAGEDB_PERMISSION_H
 namespace ragedb {
-  enum Permission {
+  enum class Permission {
     ADMIN, WRITE, READ
   };
 }

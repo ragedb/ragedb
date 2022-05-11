@@ -79,8 +79,8 @@ namespace ragedb {
         uint8_t setPropertyType(const std::string& key, const std::string& type);
         bool removePropertyType(const std::string& key);
 
-        std::string getPropertyKey(uint8_t);
-
+        std::string getPropertyKey(uint8_t) const;
+        bool validType(const std::string &key);
         bool setBooleanProperty(const std::string&, uint64_t, bool);
         bool setIntegerProperty(const std::string&, uint64_t, int64_t);
         bool setDoubleProperty(const std::string&, uint64_t, double);
@@ -121,14 +121,14 @@ namespace ragedb {
         bool deleteProperty(const std::string&, uint64_t);
         bool deleteProperties(uint64_t);
 
-        bool static isBooleanProperty(property_type_t value);
-        bool static isIntegerProperty(property_type_t value);
-        bool static isDoubleProperty(property_type_t value);
-        bool static isStringProperty(property_type_t value);
-        bool static isBooleanListProperty(property_type_t value);
-        bool static isIntegerListProperty(property_type_t value);
-        bool static isDoubleListProperty(property_type_t value);
-        bool static isStringListProperty(property_type_t value);
+        bool static isBooleanProperty(const property_type_t& value);
+        bool static isIntegerProperty(const property_type_t& value);
+        bool static isDoubleProperty(const property_type_t& value);
+        bool static isStringProperty(const property_type_t& value);
+        bool static isBooleanListProperty(const property_type_t& value);
+        bool static isIntegerListProperty(const property_type_t& value);
+        bool static isDoubleListProperty(const property_type_t& value);
+        bool static isStringListProperty(const property_type_t& value);
 
         inline const static uint8_t boolean_type = 1;
         inline const static uint8_t integer_type = 2;
