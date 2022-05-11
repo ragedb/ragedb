@@ -49,11 +49,11 @@ namespace ragedb {
 
         [[nodiscard]] std::map<std::string, property_type_t> getProperties() const;
 
-        [[nodiscard]] sol::table getPropertiesLua(sol::this_state);
+        [[nodiscard]] sol::table getPropertiesLua(sol::this_state) const;
 
-        [[nodiscard]] property_type_t getProperty(const std::string& property);
+        [[nodiscard]] property_type_t getProperty(const std::string& property) const;
 
-        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state);
+        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state) const;
 
         friend std::ostream& operator<<(std::ostream& os, const Node& node);
 

@@ -39,7 +39,7 @@ namespace ragedb {
         return shard.start(seastar::smp::count);
     }
 
-    void Graph::StartLogging() {
+    void Graph::StartLogging() const {
         std::cout << "Logging to " << log_path <<  '\n';
         std::filesystem::path from{log_path};
 

@@ -17,6 +17,7 @@
 #ifndef RAGEDB_EXPRESSION_H
 #define RAGEDB_EXPRESSION_H
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include "Operation.h"
@@ -95,13 +96,13 @@ namespace ragedb {
                 case Operation::STARTS_WITH:
                   return STARTS_WITH(a, b);
                 case Operation::CONTAINS:
-                  return std::includes(a.begin(), a.end(), b.begin(), b.end());
+                  return std::ranges::includes(a, b);
                 case Operation::ENDS_WITH:
                   return ENDS_WITH(a, b);
                 case Operation::NOT_STARTS_WITH:
                   return NOT_STARTS_WITH(a, b);
                 case Operation::NOT_CONTAINS:
-                  return !std::includes(a.begin(), a.end(), b.begin(), b.end());
+                  return !std::ranges::includes(a, b);
                 case Operation::NOT_ENDS_WITH:
                   return NOT_ENDS_WITH(a, b);
                 default:
@@ -130,7 +131,7 @@ namespace ragedb {
 
         template <typename T>
         static bool GTE(T a, T b) {
-            return a >= b;
+            return (a >= b);
         }
 
         template <typename T>
@@ -144,7 +145,7 @@ namespace ragedb {
 
         template <typename T>
         static bool LTE(T a, T b) {
-            return a <= b;
+            return (a <= b);
         }
 
         template <typename T>
@@ -163,7 +164,7 @@ namespace ragedb {
         template <typename T>
         static bool ENDS_WITH(T a, T b) {
           if (a.size() >= b.size()) {
-            int index = a.size() - b.size();
+            auto index = a.size() - b.size();
             for (int i = 0; i < b.size(); i++) {
               if (a[i + index] != b[i]) {
                 return false;
@@ -190,7 +191,7 @@ namespace ragedb {
         template <typename T>
         static bool NOT_ENDS_WITH(T a, T b) {
           if (a.size() >= b.size()) {
-            int index = a.size() - b.size();
+            auto index = a.size() - b.size();
             for (int i = 0; i < b.size(); i++) {
               if (a[i + index] != b[i]) {
                 return true;
@@ -201,28 +202,28 @@ namespace ragedb {
           return true;
         }
 
-        static bool STARTS_WITH(std::string &a, std::string &b) {
+        static bool STARTS_WITH(const std::string &a, const std::string &b) {
             return a.starts_with(b);
         }
 
-        static bool CONTAINS(std::string &a, std::string &b) {
+        static bool CONTAINS(const std::string &a, const std::string &b) {
             return a.find(b) != std::string::npos;
             //return a.contains(b); is available in C++ 23
         }
 
-        static bool ENDS_WITH(std::string &a, std::string &b) {
+        static bool ENDS_WITH(const std::string &a, const std::string &b) {
             return a.ends_with(b);
         }
 
-        static bool NOT_STARTS_WITH(std::string &a, std::string &b) {
+        static bool NOT_STARTS_WITH(const std::string &a, const std::string &b) {
             return !STARTS_WITH(a, b);
         }
 
-        static bool NOT_CONTAINS(std::string &a, std::string &b) {
+        static bool NOT_CONTAINS(const std::string &a, const std::string &b) {
             return !CONTAINS(a, b);
         }
 
-        static bool NOT_ENDS_WITH(std::string &a, std::string &b) {
+        static bool NOT_ENDS_WITH(const std::string &a, const std::string &b) {
             return !ENDS_WITH(a, b);
         }
     };

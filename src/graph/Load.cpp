@@ -60,7 +60,7 @@ namespace ragedb {
       return func();
     }
 
-    bool Shard::checkPath(const std::string &filepath, bool write) {
+    bool Shard::checkPath(const std::string &filepath, bool write) const {
       for (const auto &basePath : write ? WRITE_PATHS : READ_PATHS) {
         auto base = std::filesystem::absolute(basePath).lexically_normal();
         auto path = std::filesystem::absolute(filepath).lexically_normal();

@@ -91,8 +91,6 @@ let responseJson = document.getElementById('response-json');
 let responseError = document.getElementById('response-error');
 let responseViz = document.getElementById('response-viz');
 
-//let grid = new gridjs.Grid({data: []}).render(responseGrid);
-
 let updateActiveTab = (newActiveTab) => {
     Tabs.forEach((tab) => {
         tab.classList.remove("is-active");
@@ -581,9 +579,6 @@ async function listFavorites() {
     });
     let collapsible = document.getElementById("collapsible-favorites");
     if (collapsible) {
-        // Instantiate bulmaCollapsible component on the node
-        new bulmaCollapsible(collapsible);
-
         // Call method directly on bulmaCollapsible instance registered on the node
         collapsible.bulmaCollapsible('expand');
     }
@@ -646,7 +641,7 @@ async function clearHistory() {
     await listHistory();
 }
 
-// Let's only keep 10 historic queries
+// Let's only keep 20 historic queries
 async function addQueryToHistory(query) {
     let tx = db.transaction("history", "readwrite");
     let historyStore = tx.objectStore("history");
@@ -658,19 +653,19 @@ async function addQueryToHistory(query) {
     }
     await tx.objectStore("history").add({text: query});
 
-    // Manually adding it instead of calling list history so we don't show it if it is not expanded
+    // Manually adding it instead of calling list history, so we don't show it if it is not expanded
     let history = await historyStore.getAll();
     let container = document.getElementById("history");
-      container.innerHTML = history.slice(0).reverse().map(query =>
-        `<span id="history-${query.id}" class="icon-text has-tooltip-arrow has-tooltip-bottom" onclick="setEditor(this.dataset.tooltip)">
+      container.innerHTML = history.slice(0).reverse().map(q =>
+        `<span id="history-${q.id}" class="icon-text has-tooltip-arrow has-tooltip-bottom" onclick="setEditor(this.dataset.tooltip)">
              <span class="icon has-text-info">
                 <i class="fas fa-angle-right"></i>
             </span>
-            <p class="is-size-7">${query.text.substring(0, 20)}</p>
+            <p class="is-size-7">${q.text.substring(0, 20)}</p>
         </span>`).join("<br/> ");
 
-    history.map(query => {
-        document.getElementById("history-" + query.id).dataset.tooltip = query.text;
+    history.map(q => {
+        document.getElementById("history-" + q.id).dataset.tooltip = q.text;
     })
 }
 

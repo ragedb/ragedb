@@ -22,16 +22,16 @@
 
 namespace ragedb {
 
-    NodeTypes::NodeTypes() : type_to_id(), id_to_type(), shard_id(seastar::this_shard_id()) {
+    NodeTypes::NodeTypes() {
         // start with empty blank type 0
-        type_to_id.emplace("", 0);
+        type_to_id.try_emplace("", 0);
         id_to_type.emplace_back();
-        key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
-        keys.emplace_back(std::vector<std::string>());
+        key_to_node_id.emplace_back();
+        keys.emplace_back();
         properties.emplace_back();
-        outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
-        incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(roaring::Roaring64Map());
+        outgoing_relationships.emplace_back();
+        incoming_relationships.emplace_back();
+        deleted_ids.emplace_back();
     }
 
     void NodeTypes::Clear() {
@@ -52,22 +52,22 @@ namespace ragedb {
         deleted_ids.shrink_to_fit();
 
         // start with empty blank type 0
-        type_to_id.emplace("", 0);
+        type_to_id.try_emplace("", 0);
         id_to_type.emplace_back();
-        key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
-        keys.emplace_back(std::vector<std::string>());
+        key_to_node_id.emplace_back();
+        keys.emplace_back();
         properties.emplace_back();
-        outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
-        incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(roaring::Roaring64Map());
+        outgoing_relationships.emplace_back();
+        incoming_relationships.emplace_back();
+        deleted_ids.emplace_back();
     }
 
     bool NodeTypes::addTypeId(const std::string& type, uint16_t type_id) {
-        auto type_search = type_to_id.find(type);
-        if (type_search != type_to_id.end()) {
-            // Type already exists
-            return false;
+        if (type_to_id.find(type) != type_to_id.end()) {
+          // Type already exists
+          return false;
         }
+
         if (ValidTypeId(type_id)) {
             // Id already exists
             return false;
@@ -84,29 +84,27 @@ namespace ragedb {
     }
 
     uint16_t NodeTypes::getTypeId(const std::string &type) {
-        auto type_search = type_to_id.find(type);
-        if (type_search != type_to_id.end()) {
-            return type_search->second;
+        if (auto type_search = type_to_id.find(type); type_search != type_to_id.end()) {
+          return type_search->second;
         }
         return 0;
     }
 
     uint16_t NodeTypes::insertOrGetTypeId(const std::string &type) {
         // Get
-        auto type_search = type_to_id.find(type);
-        if (type_search != type_to_id.end()) {
-            return type_search->second;
+        if (auto type_search = type_to_id.find(type); type_search != type_to_id.end()) {
+          return type_search->second;
         }
         // Insert
-        auto type_id = type_to_id.size();
-        type_to_id.emplace(type, type_id);
+        uint16_t type_id = type_to_id.size();
+        type_to_id.try_emplace(type, type_id);
         id_to_type.emplace_back(type);
-        key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
-        keys.emplace_back(std::vector<std::string>());
-        properties.emplace_back(Properties());
-        outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
-        incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(roaring::Roaring64Map());
+        key_to_node_id.emplace_back();
+        keys.emplace_back();
+        properties.emplace_back();
+        outgoing_relationships.emplace_back();
+        incoming_relationships.emplace_back();
+        deleted_ids.emplace_back();
         return type_id;
     }
 
@@ -125,22 +123,19 @@ namespace ragedb {
 
     bool NodeTypes::deleteTypeId(const std::string &type) {
         // TODO: Recycle type links
-        uint16_t type_id = getTypeId(type);
-        if (ValidTypeId(type_id)) {
+        if (uint16_t type_id = getTypeId(type); ValidTypeId(type_id) && getCount(type_id) == 0) {
             // Before calling this method, all nodes of this type should already be deleted
             // It needs to be handled at the Shard level because we don't own the
             // incoming relationship chains on multiple cores
-            if (getCount(type_id) == 0) {
-                type_to_id[type] = 0;
-                id_to_type[type_id].clear();
-                key_to_node_id[type_id].clear();
-                keys[type_id].clear();
-                properties[type_id].clear();
-                outgoing_relationships[type_id].clear();
-                incoming_relationships[type_id].clear();
-                deleted_ids[type_id].clear();
-                return true;
-            }
+            type_to_id[type] = 0;
+            id_to_type[type_id].clear();
+            key_to_node_id[type_id].clear();
+            keys[type_id].clear();
+            properties[type_id].clear();
+            outgoing_relationships[type_id].clear();
+            incoming_relationships[type_id].clear();
+            deleted_ids[type_id].clear();
+            return true;
         }
         return false;
     }
@@ -165,10 +160,8 @@ namespace ragedb {
     }
 
     bool NodeTypes::containsId(uint16_t type_id, uint64_t internal_id) {
-        if (ValidTypeId(type_id)) {
-            if (ValidNodeId(type_id, internal_id)) {
-                return !deleted_ids[type_id].contains(internal_id);
-            }
+        if (ValidTypeId(type_id) && ValidNodeId(type_id, internal_id)) {
+            return !deleted_ids[type_id].contains(internal_id);
         }
         // If not valid return false
         return false;
@@ -297,7 +290,7 @@ namespace ragedb {
         std::vector<uint64_t>  allIds;
         // links are internal links, we need to switch to external links
         for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
-            for (roaring::Roaring64MapSetBitForwardIterator iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
+            for (auto iterator = deleted_ids[type_id].begin(); iterator != deleted_ids[type_id].end(); ++iterator) {
                 allIds.emplace_back(Shard::internalToExternal(type_id, *iterator));
             }
         }
@@ -364,7 +357,7 @@ namespace ragedb {
         return {id_to_type.begin() + 1, id_to_type.end()};
     }
 
-    std::set<uint16_t> NodeTypes::getTypeIds() {
+    std::set<uint16_t> NodeTypes::getTypeIds() const {
         std::set<uint16_t> type_ids;
         for (auto [key, value]: type_to_id) {
           type_ids.insert(value);
@@ -435,10 +428,8 @@ namespace ragedb {
     }
 
     property_type_t NodeTypes::getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
-        if(ValidTypeId(type_id)) {
-            if (ValidNodeId(type_id, internal_id)) {
-                return properties[type_id].getProperty(property, internal_id);
-            }
+        if(ValidTypeId(type_id) && ValidNodeId(type_id, internal_id)) {
+            return properties[type_id].getProperty(property, internal_id);
         }
         return property_type_t();
     }
@@ -558,7 +549,6 @@ namespace ragedb {
 
         case Properties::boolean_list_type: {
           if (value.type() == simdjson::dom::element_type::ARRAY) {
-            auto array = simdjson::dom::array(value);
               std::vector<bool> bool_vector;
               for (simdjson::dom::element child : simdjson::dom::array(value)) {
                 if (child.is_bool()) {
@@ -572,7 +562,6 @@ namespace ragedb {
 
         case Properties::integer_list_type: {
           if (value.type() == simdjson::dom::element_type::ARRAY) {
-            auto array = simdjson::dom::array(value);
             std::vector<int64_t> int_vector;
             for (simdjson::dom::element child : simdjson::dom::array(value)) {
               if (child.is_int64()) {
@@ -590,7 +579,6 @@ namespace ragedb {
 
         case Properties::double_list_type: {
           if (value.type() == simdjson::dom::element_type::ARRAY) {
-            auto array = simdjson::dom::array(value);
             std::vector<double> double_vector;
             for (simdjson::dom::element child : simdjson::dom::array(value)) {
               switch (child.type()) {
@@ -612,7 +600,6 @@ namespace ragedb {
 
         case Properties::string_list_type: {
           if (value.type() == simdjson::dom::element_type::ARRAY) {
-            auto array = simdjson::dom::array(value);
             std::vector<std::string> string_vector;
             for (simdjson::dom::element child : simdjson::dom::array(value)) {
               if (value.is_string()) {

@@ -65,7 +65,7 @@ namespace ragedb {
         return properties;
     }
 
-    sol::object Relationship::getPropertyLua(const std::string& property, sol::this_state ts) {
+    sol::object Relationship::getPropertyLua(const std::string& property, sol::this_state ts) const {
       property_type_t value = getProperty(property);
       sol::state_view lua = ts;
 
@@ -88,9 +88,9 @@ namespace ragedb {
         return sol::make_object(lua, sol::as_table(get<std::vector<double>>(value)));
       case 8:
         return sol::make_object(lua, sol::as_table(get<std::vector<std::string>>(value)));
+      default:
+        return sol::lua_nil;
       }
-
-      return sol::lua_nil;
     }
 
     sol::table Relationship::getPropertiesLua(sol::this_state ts) const {
@@ -131,9 +131,8 @@ namespace ragedb {
       return sol::as_table(property_map);
     }
 
-    property_type_t Relationship::getProperty(const std::string& property) {
-      std::map<std::string, property_type_t>::iterator it;
-      it = properties.find(property);
+    property_type_t Relationship::getProperty(const std::string& property) const {
+      auto it = properties.find(property);
 
       if (it != std::end(properties)) {
         return it->second;

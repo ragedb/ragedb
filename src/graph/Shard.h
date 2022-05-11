@@ -89,7 +89,7 @@ namespace ragedb {
         std::tuple<sol::object, sol::object> loadstring(const std::string &str, const sol::optional<std::string> &chunkname = sol::detail::default_chunk_name());
         std::tuple<sol::object, sol::object> loadfile(const std::string &path);
         sol::object dofile(const std::string &path);
-        bool checkPath(const std::string &filepath, bool write);
+        bool checkPath(const std::string &filepath, bool write) const;
 
           // Ids
         static uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id);

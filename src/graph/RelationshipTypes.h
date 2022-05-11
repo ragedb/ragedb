@@ -37,7 +37,6 @@ namespace ragedb {
         std::vector<roaring::Roaring64Map> deleted_ids;
 
         simdjson::dom::parser parser;
-        uint shard_id;
         bool setProperty(uint16_t data_type_id, simdjson::dom::element value, uint16_t type_id, const std::string &property, uint64_t internal_id);
 
     public:
@@ -149,7 +148,7 @@ namespace ragedb {
         uint16_t getSize() const;
 
         std::set<std::string> getTypes();
-        std::set<uint16_t> getTypeIds();
+        std::set<uint16_t> getTypeIds() const;
         bool deleteTypeProperty(uint16_t type_id, const std::string &property);
         uint64_t getStartingNodeId(uint16_t type_id, uint64_t internal_id);
         uint64_t getEndingNodeId(uint16_t type_id, uint64_t internal_id);

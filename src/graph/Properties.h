@@ -68,6 +68,7 @@ namespace ragedb {
 
     public:
         Properties();
+        Properties (Properties && _properties) noexcept = default;
         void clear();
         seastar::rwlock property_type_lock;
 

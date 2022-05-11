@@ -55,7 +55,7 @@ namespace ragedb {
         explicit Graph(std::string _name) : name (std::move(_name)), writer(strcat(strncat(log_path, name.c_str(), name.size()), ".log")), r_logger(&writer) {};
         std::string GetName() const;
         seastar::future<> Start();
-        void StartLogging();
+        void StartLogging() const;
         seastar::future<> Stop();
         void Clear();
         void Log(const seastar::sstring method, const seastar::sstring url);

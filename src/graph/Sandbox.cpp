@@ -51,9 +51,11 @@ namespace ragedb {
     switch (permission) {
       case Permission::ADMIN: {
         copyAll(env, lua.globals(), ALLOWED_GRAPH_ADMIN_FUNCTIONS);
+        [[fallthrough]];
       }
       case Permission::WRITE: {
         copyAll(env, lua.globals(), ALLOWED_GRAPH_WRITE_FUNCTIONS);
+        [[fallthrough]];
       }
       default: {
         copyAll(env, lua.globals(), ALLOWED_GRAPH_READ_FUNCTIONS);
