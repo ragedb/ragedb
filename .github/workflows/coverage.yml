@@ -161,9 +161,6 @@ jobs:
       - name: Run build-wrapper
         run: |
           mv build coverage
-          cd coverage
-          find . -type f ! -name "*.gcno" ! -name "*.gcda" -exec rm {} \;
-          cd ..
           mkdir build
           cmake -S . -B build
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
