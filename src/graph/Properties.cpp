@@ -641,73 +641,57 @@ namespace ragedb {
     }
 
     bool Properties::getBooleanProperty(const std::string& key, uint64_t index) {
-        if (auto search = booleans.find(key); search != booleans.end()) {
-            if (index < booleans[key].size() ) {
-                return booleans[key][index];
-            }
+        if (booleans.contains(key) && index < booleans[key].size() ) {
+            return booleans[key][index];
         }
         return tombstone_boolean;
     }
 
     int64_t Properties::getIntegerProperty(const std::string& key, uint64_t index) {
-        if (auto search = integers.find(key); search != integers.end()) {
-            if (index < integers[key].size() ) {
-                return integers[key][index];
-            }
+        if (integers.contains(key) && index < integers[key].size() ) {
+            return integers[key][index];
         }
         return tombstone_int;
     }
 
     double Properties::getDoubleProperty(const std::string& key, uint64_t index) {
-        if (auto search = doubles.find(key); search != doubles.end()) {
-            if (index < doubles[key].size() ) {
-                return doubles[key][index];
-            }
+        if (doubles.contains(key) && index < doubles[key].size() ) {
+            return doubles[key][index];
         }
         return tombstone_double;
     }
 
     std::string Properties::getStringProperty(const std::string& key, uint64_t index) {
-         if (auto search = strings.find(key); search != strings.end()) {
-            if (index < strings[key].size() ) {
-                return strings[key][index];
-            }
+         if (strings.contains(key) && index < strings[key].size() ) {
+             return strings[key][index];
         }
         return tombstone_string;
     }
 
     std::vector<bool> Properties::getListOfBooleanProperty(const std::string& key, uint64_t index) {
-         if (auto search = booleans_list.find(key); search != booleans_list.end()) {
-            if (index < booleans_list[key].size() ) {
-                return booleans_list[key][index];
-            }
+         if (booleans_list.contains(key) && index < booleans_list[key].size() ) {
+             return booleans_list[key][index];
         }
         return tombstone_list_of_booleans;
     }
 
     std::vector<int64_t> Properties::getListOfIntegerProperty(const std::string& key, uint64_t index) {
-        if (auto search = integers_list.find(key); search != integers_list.end()) {
-            if (index < integers_list[key].size() ) {
-                return integers_list[key][index];
-            }
+        if (integers_list.contains(key) && index < integers_list[key].size() ) {
+            return integers_list[key][index];
         }
         return tombstone_list_of_ints;
     }
 
     std::vector<double> Properties::getListOfDoubleProperty(const std::string& key, uint64_t index) {
-        if (auto search = doubles_list.find(key); search != doubles_list.end()) {
-            if (index < doubles_list[key].size() ) {
-                return doubles_list[key][index];
-            }
+        if (doubles_list.contains(key) && index < doubles_list[key].size() ) {
+            return doubles_list[key][index];
         }
         return tombstone_list_of_doubles;
     }
 
     std::vector<std::string> Properties::getListOfStringProperty(const std::string& key, uint64_t index) {
-        if (auto search = strings_list.find(key); search != strings_list.end()) {
-            if (index < strings_list[key].size() ) {
-                return strings_list[key][index];
-            }
+        if (strings_list.contains(key) && index < strings_list[key].size() ) {
+            return strings_list[key][index];
         }
         return tombstone_list_of_strings;
     }
@@ -720,7 +704,7 @@ namespace ragedb {
     }
 
     bool Properties::deleteProperty(const std::string& key, uint64_t index) {
-        if (types.find(key) != types.end()) {
+        if (types.contains(key)) {
             deleted[key].add(index);
             return true;
         }

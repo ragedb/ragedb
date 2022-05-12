@@ -17,15 +17,7 @@
 #include "Roar.h"
 
 namespace ragedb {
-  Roar::Roar() : map(roaring::Roaring64Map()) {}
-
-  Roar::Roar(Roar &&roar) noexcept {
-    map = std::move(roar.map);
-  }
-
-  Roar::Roar(const Roar &roar) {
-    map = roar.map;
-  }
+  Roar::Roar() {}
 
   void Roar::add(uint64_t x) {
     map.add(x);
@@ -101,10 +93,6 @@ namespace ragedb {
 
   bool Roar::isStrictSubset(const Roar &r) const {
     return map.isStrictSubset(r.map);
-  }
-
-  bool Roar::operator==(const Roar &r) const {
-    return map == r.map;
   }
 
   void Roar::flip(uint64_t range_start, uint64_t range_end) {
@@ -184,7 +172,7 @@ namespace ragedb {
     return os;
   }
 
-  std::vector<uint64_t> Roar::getIds() {
+  std::vector<uint64_t> Roar::getIds() const {
     std::vector<uint64_t> ids;
     ids.reserve(map.cardinality());
 
@@ -201,7 +189,7 @@ namespace ragedb {
     return sol::as_table(getIds());
   }
 
-  std::vector<Link> Roar::getNodeHalfLinks() {
+  std::vector<Link> Roar::getNodeHalfLinks() const {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
@@ -221,7 +209,7 @@ namespace ragedb {
     return sol::as_table(getNodeHalfLinks());
   }
 
-  std::vector<Link> Roar::getRelationshipHalfLinks() {
+  std::vector<Link> Roar::getRelationshipHalfLinks() const {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 

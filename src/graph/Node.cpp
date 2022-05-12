@@ -114,9 +114,7 @@ namespace ragedb {
     }
 
     property_type_t Node::getProperty(const std::string& property) const {
-        auto it = properties.find(property);
-
-        if (it != std::end(properties)) {
+        if (auto it = properties.find(property); it != std::end(properties)) {
             return it->second;
         }
         return {};

@@ -47,7 +47,7 @@ namespace ragedb {
         }
 
         //TODO: Look into case insensitivity https://www.boost.org/doc/libs/1_77_0/doc/html/string_algo/reference.html#header.boost.algorithm.string.predicate_hpp
-        static bool EvaluateString(Operation operation, std::string a, std::string b) {
+        static bool EvaluateString(Operation operation, std::string_view a, std::string_view b) {
             switch(operation) {
                 case Operation::EQ:
                   return EQ(a, b);
@@ -151,7 +151,7 @@ namespace ragedb {
         template <typename T>
         static bool STARTS_WITH(T a, T b) {
           if (a.size() >= b.size()) {
-            for (int i = 0; i < b.size(); i++) {
+            for (size_t i = 0; i < b.size(); i++) {
               if (a[i] != b[i]) {
                 return false;
               }
@@ -165,7 +165,7 @@ namespace ragedb {
         static bool ENDS_WITH(T a, T b) {
           if (a.size() >= b.size()) {
             auto index = a.size() - b.size();
-            for (int i = 0; i < b.size(); i++) {
+            for (size_t i = 0; i < b.size(); i++) {
               if (a[i + index] != b[i]) {
                 return false;
               }
@@ -178,7 +178,7 @@ namespace ragedb {
         template <typename T>
         static bool NOT_STARTS_WITH(T a, T b) {
           if (a.size() >= b.size()) {
-            for (int i = 0; i < b.size(); i++) {
+            for (size_t i = 0; i < b.size(); i++) {
               if (a[i] != b[i]) {
                 return true;
               }
@@ -192,7 +192,7 @@ namespace ragedb {
         static bool NOT_ENDS_WITH(T a, T b) {
           if (a.size() >= b.size()) {
             auto index = a.size() - b.size();
-            for (int i = 0; i < b.size(); i++) {
+            for (size_t i = 0; i < b.size(); i++) {
               if (a[i + index] != b[i]) {
                 return true;
               }
@@ -202,28 +202,28 @@ namespace ragedb {
           return true;
         }
 
-        static bool STARTS_WITH(const std::string &a, const std::string &b) {
+        static bool STARTS_WITH(std::string_view a, std::string_view b) {
             return a.starts_with(b);
         }
 
-        static bool CONTAINS(const std::string &a, const std::string &b) {
+        static bool CONTAINS(std::string_view a, std::string_view b) {
             return a.find(b) != std::string::npos;
             //return a.contains(b); is available in C++ 23
         }
 
-        static bool ENDS_WITH(const std::string &a, const std::string &b) {
+        static bool ENDS_WITH(std::string_view a, std::string_view b) {
             return a.ends_with(b);
         }
 
-        static bool NOT_STARTS_WITH(const std::string &a, const std::string &b) {
+        static bool NOT_STARTS_WITH(std::string_view a, std::string_view b) {
             return !STARTS_WITH(a, b);
         }
 
-        static bool NOT_CONTAINS(const std::string &a, const std::string &b) {
+        static bool NOT_CONTAINS(std::string_view a, std::string_view b) {
             return !CONTAINS(a, b);
         }
 
-        static bool NOT_ENDS_WITH(const std::string &a, const std::string &b) {
+        static bool NOT_ENDS_WITH(std::string_view a, std::string_view b) {
             return !ENDS_WITH(a, b);
         }
     };

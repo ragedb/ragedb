@@ -63,7 +63,7 @@ namespace ragedb {
     }
 
     bool NodeTypes::addTypeId(const std::string& type, uint16_t type_id) {
-        if (type_to_id.find(type) != type_to_id.end()) {
+        if (type_to_id.contains(type)) {
           // Type already exists
           return false;
         }
@@ -72,14 +72,14 @@ namespace ragedb {
             // Id already exists
             return false;
         }
-        type_to_id.emplace(type, type_id);
+        type_to_id.try_emplace(type, type_id);
         id_to_type.emplace_back(type);
-        key_to_node_id.emplace_back(tsl::sparse_map<std::string, uint64_t>());
-        keys.emplace_back(std::vector<std::string>());
-        properties.emplace_back(Properties());
-        outgoing_relationships.emplace_back(std::vector<std::vector<Group>>());
-        incoming_relationships.emplace_back(std::vector<std::vector<Group>>());
-        deleted_ids.emplace_back(roaring::Roaring64Map());
+        key_to_node_id.emplace_back();
+        keys.emplace_back();
+        properties.emplace_back();
+        outgoing_relationships.emplace_back();
+        incoming_relationships.emplace_back();
+        deleted_ids.emplace_back();
         return true;
     }
 
@@ -96,7 +96,7 @@ namespace ragedb {
           return type_search->second;
         }
         // Insert
-        uint16_t type_id = type_to_id.size();
+        uint16_t type_id = static_cast<uint16_t>(type_to_id.size());
         type_to_id.try_emplace(type, type_id);
         id_to_type.emplace_back(type);
         key_to_node_id.emplace_back();
@@ -359,7 +359,7 @@ namespace ragedb {
 
     std::set<uint16_t> NodeTypes::getTypeIds() const {
         std::set<uint16_t> type_ids;
-        for (auto [key, value]: type_to_id) {
+        for (const auto& [key, value]: type_to_id) {
           type_ids.insert(value);
         }
         type_ids.erase(0);

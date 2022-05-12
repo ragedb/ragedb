@@ -27,22 +27,22 @@ namespace ragedb {
   class Roar {
 
     private:
-    roaring::Roaring64Map map;
+    roaring::Roaring64Map map = roaring::Roaring64Map();
 
   public:
     Roar();
-    Roar(const Roar &roar);
-    Roar (Roar && roar) noexcept;
+    Roar(const Roar &roar) = default;
+    Roar (Roar && roar) noexcept = default;
     void addIds(std::vector<uint64_t> ids);
     void addNodeIds(std::vector<Link> links);
     void addRelationshipIds(std::vector<Link> links);
-    std::vector<uint64_t> getIds();
+    std::vector<uint64_t> getIds() const;
     sol::as_table_t<std::vector<uint64_t>> getIdsLua();
 
-    std::vector<Link> getNodeHalfLinks();
+    std::vector<Link> getNodeHalfLinks() const;
     sol::as_table_t<std::vector<Link>> getNodeHalfLinksLua();
 
-    std::vector<Link> getRelationshipHalfLinks();
+    std::vector<Link> getRelationshipHalfLinks() const;
     sol::as_table_t<std::vector<Link>> getRelationshipHalfLinksLua();
     void add(uint64_t x);
     void remove(uint64_t x);
@@ -62,7 +62,7 @@ namespace ragedb {
     bool isFull() const;
     bool isSubset(const Roar &r) const;
     bool isStrictSubset(const Roar &r) const;
-    bool operator==(const Roar &r) const;
+    bool operator==(const Roar &r) const = default;
     void flip(uint64_t range_start, uint64_t range_end);
     bool removeRunCompression();
     bool runOptimize();
