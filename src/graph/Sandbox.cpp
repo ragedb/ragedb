@@ -25,10 +25,10 @@ namespace ragedb {
     }
   }
 
-  sol::table deepCopy(sol::state &lua, const sol::table &table) {
+  sol::table deepCopy(const sol::state &lua, const sol::table &table) {
     sol::table table2(lua, sol::create);
-    for (auto pair : table) {
-      table2[pair.first] = pair.second;
+    for (auto [key, value] : table) {
+      table2[key] = value;
     }
     return table2;
   }
@@ -94,9 +94,8 @@ namespace ragedb {
 
     // Set the global environment
     if (!lua_setfenv(lua, thread)) {
-      // "Security: Unable to set environment of the main Lua thread!");
-      throw std::exception();
-    };
+      throw std::runtime_error("Security: Unable to set environment of the main Lua thread!");
+    }
     lua_pop(lua, 1); // Pop thread
 #endif
   }

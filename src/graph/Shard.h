@@ -52,7 +52,7 @@ namespace ragedb {
 
     private:
         uint cpus;
-        uint shard_id;
+        uint shard_id = seastar::this_shard_id();
 
         seastar::rwlock rel_type_lock;                  // Global lock to keep Relationship Type ids in sync
         seastar::rwlock node_type_lock;                 // Global lock to keep Node Type ids in sync
@@ -80,7 +80,7 @@ namespace ragedb {
         static seastar::future<> stop();
         void Clear();
 
-        seastar::future<std::string> RunLua(const std::string &script, sol::environment& environment);
+        seastar::future<std::string> RunLua(const std::string &script, const sol::environment& environment);
         seastar::future<std::string> RunAdminLua(const std::string &script);
         seastar::future<std::string> RunRWLua(const std::string &script);
         seastar::future<std::string> RunROLua(const std::string &script);
