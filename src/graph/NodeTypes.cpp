@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <utility>
 #include "NodeTypes.h"
 #include "Shard.h"
@@ -96,7 +97,7 @@ namespace ragedb {
           return type_search->second;
         }
         // Insert
-        uint16_t type_id = static_cast<uint16_t>(type_to_id.size());
+        auto type_id = static_cast<uint16_t>(type_to_id.size());
         type_to_id.try_emplace(type, type_id);
         id_to_type.emplace_back(type);
         key_to_node_id.emplace_back();
@@ -202,22 +203,25 @@ namespace ragedb {
 
     std::vector<uint64_t>  NodeTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) const {
         std::vector<uint64_t>  allIds;
-        if (ValidTypeId(type_id)) {
-            int current = 1;
-            uint64_t max_id = key_to_node_id[type_id].size();
-
-            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
-                if (current > (skip + limit)) {
-                    return allIds;
-                }
-                if (current > skip) {
-                    if (!deleted_ids[type_id].contains(internal_id)) {
-                        allIds.emplace_back(Shard::internalToExternal(type_id, internal_id));
-                    }
-                }
-                current++;
-            }
+        if (InvalidTypeId(type_id)) {
+            return allIds;
         }
+
+        int current = 1;
+        uint64_t max_id = key_to_node_id[type_id].size();
+
+        for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+            if (current > (skip + limit)) {
+                return allIds;
+            }
+            if (current > skip) {
+                if (!deleted_ids[type_id].contains(internal_id)) {
+                    allIds.emplace_back(Shard::internalToExternal(type_id, internal_id));
+                }
+            }
+            current++;
+        }
+
         return allIds;
     }
 
@@ -256,33 +260,36 @@ namespace ragedb {
 
     std::vector<Node> NodeTypes::getNodes(uint16_t type_id, uint64_t skip, uint64_t limit) {
         std::vector<Node>  allNodes;
-        if (ValidTypeId(type_id)) {
-            int current = 1;
-            uint64_t max_id = key_to_node_id[type_id].size();
-            if (deleted_ids[type_id].isEmpty()) {
-                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
-                    if (current > (skip + limit)) {
-                        return allNodes;
-                    }
-                    if (current > skip) {
+        if (InvalidTypeId(type_id)) {
+            return allNodes;
+        }
+
+        int current = 1;
+        uint64_t max_id = key_to_node_id[type_id].size();
+        if (deleted_ids[type_id].isEmpty()) {
+            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                if (current > (skip + limit)) {
+                    return allNodes;
+                }
+                if (current > skip) {
+                    allNodes.emplace_back(getNode(type_id, internal_id));
+                }
+                current++;
+            }
+        } else {
+            for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
+                if (current > (skip + limit)) {
+                    return allNodes;
+                }
+                if (current > skip) {
+                    if (!deleted_ids[type_id].contains(internal_id)) {
                         allNodes.emplace_back(getNode(type_id, internal_id));
                     }
-                    current++;
                 }
-            } else {
-                for (uint64_t internal_id=0; internal_id < max_id; ++internal_id) {
-                    if (current > (skip + limit)) {
-                        return allNodes;
-                    }
-                    if (current > skip) {
-                        if (!deleted_ids[type_id].contains(internal_id)) {
-                            allNodes.emplace_back(getNode(type_id, internal_id));
-                        }
-                    }
-                    current++;
-                }
+                current++;
             }
         }
+
         return allNodes;
     }
 
@@ -317,12 +324,27 @@ namespace ragedb {
         return (type_id > 0 && type_id < id_to_type.size());
     }
 
-    bool NodeTypes::ValidNodeId(uint16_t type_id, uint64_t internal_id) {
+    bool NodeTypes::InvalidTypeId(uint16_t type_id) const {
+        // TypeId must be greater than zero
+        return (type_id < 1 || type_id >= id_to_type.size());
+    }
+
+    bool NodeTypes::ValidNodeId(uint16_t type_id, uint64_t internal_id) const {
         // If the type is valid, is the internal id within the vector size and is it not deleted?
-        if (ValidTypeId(type_id)) {
-            return key_to_node_id[type_id].size() > internal_id && !deleted_ids[type_id].contains(internal_id);
+        if (InvalidTypeId(type_id)) {
+            return false;
         }
-        return false;
+
+        return key_to_node_id[type_id].size() > internal_id && !deleted_ids[type_id].contains(internal_id);
+    }
+
+    bool NodeTypes::InvalidNodeId(uint16_t type_id, uint64_t internal_id) const {
+        // If the type is valid, is the internal id within the vector size and is it not deleted?
+        if (InvalidTypeId(type_id)) {
+            return true;
+        }
+
+        return key_to_node_id[type_id].size() <= internal_id || deleted_ids[type_id].contains(internal_id);
     }
 
     uint64_t NodeTypes::getCount(uint16_t type_id) {
@@ -446,39 +468,17 @@ namespace ragedb {
         // find out what data_type property is supposed to be, cast value to that.
 
         switch (properties[type_id].getPropertyTypeId(property)) {
-            case Properties::boolean_type: {
-                return properties[type_id].setBooleanProperty(property, internal_id, get<bool>(value));
-            }
-            case Properties::integer_type: {
-                return properties[type_id].setIntegerProperty(property, internal_id, get<int64_t>(value));
-            }
-            case Properties::double_type: {
-                return properties[type_id].setDoubleProperty(property, internal_id, get<double>(value));
-            }
-            case Properties::string_type: {
-                return properties[type_id].setStringProperty(property, internal_id, get<std::string>(value));
-            }
-            case Properties::date_type: {
-              // Date are stored as doubles
-              return properties[type_id].setDateProperty(property, internal_id, get<double>(value));
-            }
-            case Properties::boolean_list_type: {
-                return properties[type_id].setListOfBooleanProperty(property, internal_id, get<std::vector<bool>>(value));
-            }
-            case Properties::integer_list_type: {
-                return properties[type_id].setListOfIntegerProperty(property, internal_id, get<std::vector<int64_t>>(value));
-            }
-            case Properties::double_list_type: {
-                return properties[type_id].setListOfDoubleProperty(property, internal_id, get<std::vector<double>>(value));
-            }
-            case Properties::string_list_type: {
-                return properties[type_id].setListOfStringProperty(property, internal_id, get<std::vector<std::string>>(value));
-            }
-            case Properties::date_list_type: {
-              // Lists of Dates are stored as Lists of Doubles
-              return properties[type_id].setListOfDateProperty(property, internal_id, get<std::vector<double>>(value));
-            }
-
+            case Properties::boolean_type: return properties[type_id].setBooleanProperty(property, internal_id, get<bool>(value));
+            case Properties::integer_type: return properties[type_id].setIntegerProperty(property, internal_id, get<int64_t>(value));
+            case Properties::double_type: return properties[type_id].setDoubleProperty(property, internal_id, get<double>(value));
+            case Properties::string_type: return properties[type_id].setStringProperty(property, internal_id, get<std::string>(value));
+            case Properties::date_type: return properties[type_id].setDateProperty(property, internal_id, get<double>(value)); // Date are stored as doubles
+            case Properties::boolean_list_type: return properties[type_id].setListOfBooleanProperty(property, internal_id, get<std::vector<bool>>(value));
+            case Properties::integer_list_type: return properties[type_id].setListOfIntegerProperty(property, internal_id, get<std::vector<int64_t>>(value));
+            case Properties::double_list_type: return properties[type_id].setListOfDoubleProperty(property, internal_id, get<std::vector<double>>(value));
+            case Properties::string_list_type: return properties[type_id].setListOfStringProperty(property, internal_id, get<std::vector<std::string>>(value));
+            case Properties::date_list_type: return properties[type_id].setListOfDateProperty(property, internal_id, get<std::vector<double>>(value)); // Lists of Dates are stored as Lists of Doubles
+            default: return false;
         }
         return false;
     }
@@ -643,14 +643,17 @@ namespace ragedb {
     }
 
     bool NodeTypes::setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &json) {
-        if (!json.empty()) {
-            simdjson::dom::element value;
-            simdjson::error_code error = parser.parse(json).get(value);
-            if (error == 0U) {
-                uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
-                return setProperty(data_type_id, value, type_id, property, internal_id);
-            }
+        if (json.empty()) {
+            return false;
         }
+
+        simdjson::dom::element value;
+        simdjson::error_code error = parser.parse(json).get(value);
+        if (error == 0U) {
+            uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
+            return setProperty(data_type_id, value, type_id, property, internal_id);
+        }
+
         return false;
     }
 
@@ -659,25 +662,28 @@ namespace ragedb {
     }
 
     bool NodeTypes::setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
-        if (!json.empty()) {
-            // Get the properties
-            simdjson::dom::object object;
-            simdjson::error_code error = parser.parse(json).get(object);
-            if (!error) {
-                // Add the node properties
-                int valid = 0;
-                for (auto[key, value] : object) {
-                    auto property = static_cast<std::string>(key);
-                    const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
-                    // If the property type exists at all
-                    if (property_type_id > 0) {
-                      // True is 1, so if we set all the properties correctly then valid will equal the object size
-                        valid += setProperty(property_type_id, value, type_id, property, internal_id);
-                    }
-                }
-                return valid == object.size();
-            }
+        if (json.empty()) {
+            return false;
         }
+
+        // Get the properties
+        simdjson::dom::object object;
+        simdjson::error_code error = parser.parse(json).get(object);
+        if (!error) {
+            // Add the node properties
+            int valid = 0;
+            for (auto[key, value] : object) {
+                auto property = static_cast<std::string>(key);
+                const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+                // If the property type exists at all
+                if (property_type_id > 0) {
+                  // True is 1, so if we set all the properties correctly then valid will equal the object size
+                    valid += setProperty(property_type_id, value, type_id, property, internal_id);
+                }
+            }
+            return valid == object.size();
+        }
+
         return false;
     }
 

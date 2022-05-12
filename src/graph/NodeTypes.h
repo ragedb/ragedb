@@ -103,36 +103,36 @@ namespace ragedb {
         // Filter Helpers
         void removeDeletedIds(uint16_t type_id, std::vector<uint64_t> &list);
         void removeDeletedProperties(uint16_t type_id, std::vector<uint64_t> &list, const std::string &property);
-        uint64_t filterCountBooleans(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountIntegers(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountDoubles(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountStrings(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountBooleanLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountIntegerLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountDoubleLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
-        uint64_t filterCountStringLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountBooleans(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountIntegers(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountDoubles(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountStrings(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountBooleanLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountIntegerLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountDoubleLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
+        uint64_t filterCountStringLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
 
-        std::vector<uint64_t> filterNullIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterNotNullIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterBooleanIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterIntegerIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterDoubleIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterStringIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterBooleanListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterIntegerListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterDoubleListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<uint64_t> filterStringListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterNullIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterNotNullIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterBooleanIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterIntegerIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterDoubleIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterStringIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterBooleanListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterIntegerListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterDoubleListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> filterStringListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
 
-        std::vector<Node> filterNullNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterNotNullNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterBooleanNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterIntegerNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterDoubleNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterStringNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterBooleanListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterIntegerListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterDoubleListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
-        std::vector<Node> filterStringListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterNullNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterNotNullNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterBooleanNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterIntegerNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterDoubleNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterStringNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterBooleanListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterIntegerListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterDoubleListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
+        std::vector<Node> filterStringListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
 
         uint64_t filterCount(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value);
         std::vector<uint64_t> filterIds(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit);
@@ -143,7 +143,9 @@ namespace ragedb {
         uint64_t getDeletedIdsMinimum(uint16_t type_id);
 
         bool ValidTypeId(uint16_t type_id) const;
-        bool ValidNodeId(uint16_t type_id, uint64_t internal_id);
+        bool InvalidTypeId(uint16_t type_id) const;
+        bool ValidNodeId(uint16_t type_id, uint64_t internal_id) const;
+        bool InvalidNodeId(uint16_t type_id, uint64_t internal_id) const;
 
         std::map<uint16_t, uint64_t> getCounts();
         uint64_t getCount(uint16_t type_id);

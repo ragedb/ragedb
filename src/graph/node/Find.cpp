@@ -210,41 +210,30 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::boolean_type: {
+      case Properties::boolean_type:
         return countBooleans(type_id, property, operation, value);
-      }
-      case Properties::integer_type: {
+      case Properties::integer_type:
         return countIntegers(type_id, property, operation, value);
-      }
-      case Properties::double_type: {
+      case Properties::double_type:
         return countDoubles(type_id, property, operation, value);
-      }
-      case Properties::date_type: {
+      case Properties::date_type:
         // TODO: Verify This
         return countDoubles(type_id, property, operation, value);
-      }
-      case Properties::string_type: {
+      case Properties::string_type:
         return countStrings(type_id, property, operation, value);
-      }
-      case Properties::boolean_list_type: {
+      case Properties::boolean_list_type:
         return countBooleanLists(type_id, property, operation, value);
-      }
-      case Properties::integer_list_type: {
+      case Properties::integer_list_type:
         return countIntegerLists(type_id, property, operation, value);
-      }
-      case Properties::double_list_type: {
+      case Properties::double_list_type:
         return countDoubleLists(type_id, property, operation, value);
-      }
-      case Properties::date_list_type: {
+      case Properties::date_list_type:
         // TODO: Verify This
         return countDoubleLists(type_id, property, operation, value);
-      }
-      case Properties::string_list_type: {
+      case Properties::string_list_type:
         return countStringLists(type_id, property, operation, value);
-      }
-      default: {
+      default:
         return 0;
-      }
     }
   }
 
@@ -326,37 +315,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-        case Operation::EQ: {
+        case Operation::EQ:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
           break;
-        }
-        case Operation::NEQ: {
+        case Operation::NEQ:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
           break;
-        }
-        case Operation::GT: {
+        case Operation::GT:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
           break;
-        }
-        case Operation::GTE: {
+        case Operation::GTE:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
           break;
-        }
-        case Operation::LT: {
+        case Operation::LT:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
           break;
-        }
-        case Operation::LTE: {
+        case Operation::LTE:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
           break;
-        }
         default:
           break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -381,37 +362,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-        case Operation::EQ: {
+        case Operation::EQ:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
           break;
-        }
-        case Operation::NEQ: {
+        case Operation::NEQ:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
           break;
-        }
-        case Operation::GT: {
+        case Operation::GT:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
           break;
-        }
-        case Operation::GTE: {
+        case Operation::GTE:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
           break;
-        }
-        case Operation::LT: {
+        case Operation::LT:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
           break;
-        }
-        case Operation::LTE: {
+        case Operation::LTE:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
           break;
-        }
         default:
           break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -431,37 +404,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-        case Operation::EQ: {
+        case Operation::EQ:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
           break;
-        }
-        case Operation::NEQ: {
+        case Operation::NEQ:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
           break;
-        }
-        case Operation::GT: {
+        case Operation::GT:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
           break;
-        }
-        case Operation::GTE: {
+        case Operation::GTE:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
           break;
-        }
-        case Operation::LT: {
+        case Operation::LT:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
           break;
-        }
-        case Operation::LTE: {
+        case Operation::LTE:
           indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
           break;
-        }
         default:
           break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -664,41 +629,30 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::boolean_type: {
+      case Properties::boolean_type:
         return findBooleanIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_type: {
+      case Properties::integer_type:
         return findIntegerIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_type: {
+      case Properties::double_type:
         return findDoubleIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_type: {
+      case Properties::date_type:
         // TODO: Verify This
         return findDoubleIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_type: {
+      case Properties::string_type:
         return findStringIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::boolean_list_type: {
+      case Properties::boolean_list_type:
         return findBooleanListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_list_type: {
+      case Properties::integer_list_type:
         return findIntegerListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_list_type: {
+      case Properties::double_list_type:
         return findDoubleListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_list_type: {
+      case Properties::date_list_type:
         // TODO: Verify This
         return findDoubleListIds(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_list_type: {
+      case Properties::string_list_type:
         return findStringListIds(type_id, property, operation, value, skip, limit);
-      }
-      default: {
+      default:
         return std::vector<uint64_t>();
-      }
     }
   }
 
@@ -782,37 +736,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -837,37 +783,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -887,37 +825,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -1118,41 +1048,30 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::boolean_type: {
+      case Properties::boolean_type:
         return findBooleanNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_type: {
+      case Properties::integer_type:
         return findIntegerNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_type: {
+      case Properties::double_type:
         return findDoubleNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_type: {
+      case Properties::date_type:
         // TODO: Verify this
         return findDoubleNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_type: {
+      case Properties::string_type:
         return findStringNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::boolean_list_type: {
+      case Properties::boolean_list_type:
         return findBooleanListNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_list_type: {
+      case Properties::integer_list_type:
         return findIntegerListNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_list_type: {
+      case Properties::double_list_type:
         return findDoubleListNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_list_type: {
+      case Properties::date_list_type:
         // TODO: Verify this
         return findDoubleListNodes(type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_list_type: {
+      case Properties::string_list_type:
         return findStringListNodes(type_id, property, operation, value, skip, limit);
-      }
-      default: {
+      default:
         return std::vector<Node>();
-      }
     }
   }
 

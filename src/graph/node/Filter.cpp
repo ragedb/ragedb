@@ -20,22 +20,18 @@
 namespace ragedb {
 
   void NodeTypes::removeDeletedIds(uint16_t type_id, std::vector<uint64_t> &list) {
-    auto new_end = std::remove_if(list.begin(), list.end(),
-      [deleted = deleted_ids[type_id] ](auto id)
-      { return deleted.contains(Shard::externalToInternal(id)); });
-
-    list.erase(new_end, list.end());
+      std::erase_if(list, [deleted = deleted_ids[type_id] ](auto id) {
+          return deleted.contains(Shard::externalToInternal(id));
+      });
   }
 
   void NodeTypes::removeDeletedProperties(uint16_t type_id, std::vector<uint64_t> &list, const std::string &property) {
-    auto new_end = std::remove_if(list.begin(), list.end(),
-      [deleted = properties[type_id].getDeletedMap(property) ](auto id)
-      { return deleted.contains(Shard::externalToInternal(id)); });
-
-    list.erase(new_end, list.end());
+      std::erase_if(list, [deleted = properties[type_id].getDeletedMap(property) ](auto id) {
+          return deleted.contains(Shard::externalToInternal(id));
+      });
   }
 
-  uint64_t NodeTypes::filterCountBooleans(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountBooleans(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isBooleanProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -54,7 +50,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountIntegers(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountIntegers(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isIntegerProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -73,7 +69,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountDoubles(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountDoubles(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isDoubleProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -92,7 +88,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountStrings(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountStrings(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isStringProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -111,7 +107,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountBooleanLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountBooleanLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isBooleanListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -130,7 +126,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountIntegerLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountIntegerLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isIntegerListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -149,7 +145,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountDoubleLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountDoubleLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isDoubleListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -168,7 +164,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCountStringLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::filterCountStringLists(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
     uint64_t count = 0;
     if (Properties::isStringListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -194,7 +190,7 @@ namespace ragedb {
     if(operation == Operation::IS_NULL) {
       uint64_t count = 0;
       for (auto id : unfiltered) {
-        count += properties[type_id].isDeleted(property, id);
+        count += static_cast<uint8_t>(properties[type_id].isDeleted(property, id));
       }
       return count;
     }
@@ -202,7 +198,7 @@ namespace ragedb {
     if(operation == Operation::NOT_IS_NULL) {
       uint64_t count = 0;
       for (auto id : unfiltered) {
-        count += (1 - properties[type_id].isDeleted(property, id));
+        count += (1 - static_cast<uint8_t>(properties[type_id].isDeleted(property, id)));
       }
       return count;
     }
@@ -248,8 +244,8 @@ namespace ragedb {
     }
   }
 
-  std::vector<uint64_t> NodeTypes::filterNullIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterNullIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     uint64_t current = 1;
     for (auto id : list) {
       if (current > (skip + limit)) {
@@ -265,8 +261,8 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::filterNotNullIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterNotNullIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     uint64_t current = 1;
     for (auto id : list) {
       if (current > (skip + limit)) {
@@ -282,8 +278,8 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::filterBooleanIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterBooleanIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
       const bool typedValue = get<bool>(value);
@@ -305,8 +301,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterIntegerIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterIntegerIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
       const int64_t typedValue = get<int64_t>(value);
@@ -329,8 +325,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterDoubleIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterDoubleIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isDoubleProperty(value)) {
       const double typedValue = get<double>(value);
@@ -353,8 +349,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterStringIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterStringIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isStringProperty(value)) {
       const std::string typedValue = get<std::string>(value);
@@ -377,8 +373,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterBooleanListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterBooleanListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<bool> typedValue = get<std::vector<bool>>(value);
@@ -400,8 +396,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterIntegerListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterIntegerListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
@@ -423,8 +419,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterDoubleListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterDoubleListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<double> typedValue = get<std::vector<double>>(value);
@@ -446,8 +442,8 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> NodeTypes::filterStringListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
-    std::vector<uint64_t> ids;
+  std::vector<uint64_t> NodeTypes::filterStringListIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+   std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
@@ -489,45 +485,34 @@ namespace ragedb {
 
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-      case Properties::boolean_type: {
+      case Properties::boolean_type:
         return filterBooleanIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_type: {
+      case Properties::integer_type:
         return filterIntegerIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_type: {
+      case Properties::double_type:
         return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_type: {
+      case Properties::date_type:
         // TODO: Verify this
         return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_type: {
+      case Properties::string_type:
         return filterStringIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::boolean_list_type: {
+      case Properties::boolean_list_type:
         return filterBooleanListIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_list_type: {
+      case Properties::integer_list_type:
         return filterIntegerListIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_list_type: {
+      case Properties::double_list_type:
         return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_list_type: {
+      case Properties::date_list_type:
         // TODO: Verify this
         return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_list_type: {
+      case Properties::string_list_type:
         return filterStringListIds(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      default: {
+      default:
         return std::vector<uint64_t>();
-      }
     }
   }
 
-  std::vector<Node> NodeTypes::filterNullNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterNullNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     uint64_t current = 1;
     for (auto id : list) {
@@ -544,7 +529,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterNotNullNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterNotNullNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     uint64_t current = 1;
     for (auto id : list) {
@@ -561,7 +546,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterBooleanNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterBooleanNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -584,7 +569,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterIntegerNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterIntegerNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -608,7 +593,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterDoubleNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterDoubleNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isDoubleProperty(value)) {
@@ -632,7 +617,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterStringNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterStringNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -656,7 +641,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterBooleanListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterBooleanListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -679,7 +664,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterIntegerListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterIntegerListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -702,7 +687,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterDoubleListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterDoubleListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -725,7 +710,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::filterStringListNodes(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::filterStringListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -766,41 +751,30 @@ namespace ragedb {
 
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-      case Properties::boolean_type: {
+      case Properties::boolean_type:
         return filterBooleanNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_type: {
+      case Properties::integer_type:
         return filterIntegerNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_type: {
+      case Properties::double_type:
         return filterDoubleNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_type: {
+      case Properties::date_type:
         // TODO: Verify this
         return filterDoubleNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_type: {
+      case Properties::string_type:
         return filterStringNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::boolean_list_type: {
+      case Properties::boolean_list_type:
         return filterBooleanListNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::integer_list_type: {
+      case Properties::integer_list_type:
         return filterIntegerListNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::double_list_type: {
+      case Properties::double_list_type:
         return filterDoubleListNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::date_list_type: {
+      case Properties::date_list_type:
         // TODO: Verify this
         return filterDoubleListNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      case Properties::string_list_type: {
+      case Properties::string_list_type:
         return filterStringListNodes(unfiltered, type_id, property, operation, value, skip, limit);
-      }
-      default: {
+      default:
         return std::vector<Node>();
-      }
     }
   }
 

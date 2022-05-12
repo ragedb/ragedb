@@ -21,7 +21,7 @@ namespace ragedb {
     sol::as_table_t<std::vector<Relationship>> Shard::RelationshipsGetViaLua(const std::vector<uint64_t> &ids) {
       std::vector<Relationship> relationships = RelationshipsGetPeered(ids).get0();
 
-      sort(relationships.begin(), relationships.end(), [](Relationship a, Relationship b) {
+      sort(relationships.begin(), relationships.end(), [](const Relationship& a, const Relationship& b) {
         return a.getId() < b.getId();
       });
 
@@ -34,8 +34,8 @@ namespace ragedb {
 
     sol::as_table_t<std::vector<std::string>> Shard::RelationshipsGetTypeViaLua(const std::vector<uint64_t>& ids) {
       std::vector<std::string> properties;
-      for (const auto &value : RelationshipsGetTypePeered(ids).get0()) {
-        properties.emplace_back(value.second);
+      for (const auto& [id, value] : RelationshipsGetTypePeered(ids).get0()) {
+        properties.emplace_back(value);
       }
       return sol::as_table(properties);
     }
@@ -46,8 +46,8 @@ namespace ragedb {
 
     sol::as_table_t<std::vector<uint16_t>> Shard::RelationshipsGetTypeIdViaLua(const std::vector<uint64_t>& ids) {
       std::vector<uint16_t> properties;
-      for (const auto &value : RelationshipsGetTypeIdPeered(ids).get0()) {
-        properties.emplace_back(value.second);
+      for (const auto& [id, value] : RelationshipsGetTypeIdPeered(ids).get0()) {
+        properties.emplace_back(value);
       }
       return sol::as_table(properties);
     }
@@ -60,8 +60,8 @@ namespace ragedb {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
 
-      for (const auto &value : RelationshipsGetPropertyPeered(ids, property).get0()) {
-        properties.emplace_back(PropertyToSolObject(value.second));
+      for (const auto& [id, value] : RelationshipsGetPropertyPeered(ids, property).get0()) {
+        properties.emplace_back(PropertyToSolObject(value));
       }
       return sol::as_table(properties);
     }
@@ -69,8 +69,8 @@ namespace ragedb {
     sol::as_table_t<std::map<Link, sol::object>> Shard::RelationshipsGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property) {
       std::map<Link, sol::object> properties;
 
-      for(auto value : RelationshipsGetPropertyPeered(links, property).get0()) {
-        properties[value.first] = PropertyToSolObject(value.second);
+      for(const auto& [link, value] : RelationshipsGetPropertyPeered(links, property).get0()) {
+        properties[link] = PropertyToSolObject(value);
       }
       return sol::as_table(properties);
     }
@@ -79,8 +79,8 @@ namespace ragedb {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
 
-      for(const auto value : RelationshipsGetPropertiesPeered(ids).get0()) {
-        properties.emplace_back(PropertiesToSolObject(value.second));
+      for(const auto& [id, value] : RelationshipsGetPropertiesPeered(ids).get0()) {
+        properties.emplace_back(PropertiesToSolObject(value));
       }
       return sol::as_table(properties);
     }
@@ -88,8 +88,8 @@ namespace ragedb {
     sol::as_table_t<std::map<Link, sol::object>> Shard::RelationshipsGetPropertiesByLinksViaLua(const std::vector<Link>& links) {
       std::map<Link, sol::object> properties;
 
-      for(auto value : RelationshipsGetPropertiesPeered(links).get0()) {
-        properties[value.first] = PropertiesToSolObject(value.second);
+      for(const auto& [link, value] : RelationshipsGetPropertiesPeered(links).get0()) {
+        properties[link] = PropertiesToSolObject(value);
       }
       return sol::as_table(properties);
     }

@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-  property_type_t Shard::SolObjectToProperty(const sol::object& o) {
+  property_type_t Shard::SolObjectToProperty(const sol::object& o) const {
     if (o == sol::lua_nil) return std::monostate();
     if (o.is<bool>()) return o.as<bool>();
     if (o.is<int>()) return o.as<int64_t>();
@@ -44,7 +44,7 @@ namespace ragedb {
     return std::monostate();
   }
 
-  sol::object Shard::PropertyToSolObject(const property_type_t value) {
+  sol::object Shard::PropertyToSolObject(const property_type_t value) const {
 
     switch (value.index()) {
       case 0:
@@ -65,13 +65,15 @@ namespace ragedb {
         return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<double>>(value)));
       case 8:
         return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<std::string>>(value)));
+      default:
+          return sol::lua_nil;
       }
     return sol::lua_nil;
   }
 
-  sol::table Shard::PropertiesToSolObject(const std::map<std::string, property_type_t> properties) {
+  sol::table Shard::PropertiesToSolObject(const std::map<std::string, property_type_t>& properties) {
     sol::table property_map = lua.create_table();
-    for (auto [_key, value] : properties) {
+    for (const auto& [_key, value] : properties) {
       property_map[_key] = PropertyToSolObject(value);
     }
     return property_map;

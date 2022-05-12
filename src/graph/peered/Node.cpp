@@ -60,7 +60,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::vector<uint64_t>> Shard::NodeAddManyPeered(const std::string &type, const std::vector<std::string> keys, const std::vector<std::string> properties) {
+    seastar::future<std::vector<uint64_t>> Shard::NodeAddManyPeered(const std::string &type, const std::vector<std::string>& keys, const std::vector<std::string>& properties) {
       std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> sharded_nodes = PartitionNodesByNodeTypeKeys(type, keys, properties);
       uint16_t type_id = node_types.getTypeId(type);
 

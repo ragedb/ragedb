@@ -609,15 +609,18 @@ namespace ragedb {
 
     bool RelationshipTypes::setRelationshipPropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property,
                                                             const std::string &json) {
-        if (!json.empty()) {
-            // Get the properties
-            simdjson::dom::element value;
-            simdjson::error_code error = parser.parse(json).get(value);
-            if (error == 0U) {
-                uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
-                return setProperty(data_type_id, value, type_id, property, internal_id);
-            }
+        if (json.empty()) {
+            return false;
         }
+
+        // Get the properties
+        simdjson::dom::element value;
+        simdjson::error_code error = parser.parse(json).get(value);
+        if (error == 0U) {
+            uint16_t data_type_id = properties[type_id].getPropertyTypeId(property);
+            return setProperty(data_type_id, value, type_id, property, internal_id);
+        }
+
         return false;
     }
 
@@ -640,38 +643,17 @@ namespace ragedb {
         // find out what data_type property is supposed to be, cast value to that.
 
         switch (properties[type_id].getPropertyTypeId(property)) {
-          case Properties::boolean_type: {
-            return properties[type_id].setBooleanProperty(property, internal_id, get<bool>(value));
-          }
-          case Properties::integer_type: {
-            return properties[type_id].setIntegerProperty(property, internal_id, get<int64_t>(value));
-          }
-          case Properties::double_type: {
-            return properties[type_id].setDoubleProperty(property, internal_id, get<double>(value));
-          }
-          case Properties::string_type: {
-            return properties[type_id].setStringProperty(property, internal_id, get<std::string>(value));
-          }
-          case Properties::date_type: {
-            // Date are stored as doubles
-            return properties[type_id].setDateProperty(property, internal_id, get<double>(value));
-          }
-          case Properties::boolean_list_type: {
-            return properties[type_id].setListOfBooleanProperty(property, internal_id, get<std::vector<bool>>(value));
-          }
-          case Properties::integer_list_type: {
-            return properties[type_id].setListOfIntegerProperty(property, internal_id, get<std::vector<int64_t>>(value));
-          }
-          case Properties::double_list_type: {
-            return properties[type_id].setListOfDoubleProperty(property, internal_id, get<std::vector<double>>(value));
-          }
-          case Properties::string_list_type: {
-            return properties[type_id].setListOfStringProperty(property, internal_id, get<std::vector<std::string>>(value));
-          }
-          case Properties::date_list_type: {
-            // Lists of Dates are stored as Lists of Doubles
-            return properties[type_id].setListOfDateProperty(property, internal_id, get<std::vector<double>>(value));
-          }
+        case Properties::boolean_type: return properties[type_id].setBooleanProperty(property, internal_id, get<bool>(value));
+        case Properties::integer_type: return properties[type_id].setIntegerProperty(property, internal_id, get<int64_t>(value));
+        case Properties::double_type: return properties[type_id].setDoubleProperty(property, internal_id, get<double>(value));
+        case Properties::string_type: return properties[type_id].setStringProperty(property, internal_id, get<std::string>(value));
+        case Properties::date_type: return properties[type_id].setDateProperty(property, internal_id, get<double>(value)); // Date are stored as doubles
+        case Properties::boolean_list_type: return properties[type_id].setListOfBooleanProperty(property, internal_id, get<std::vector<bool>>(value));
+        case Properties::integer_list_type: return properties[type_id].setListOfIntegerProperty(property, internal_id, get<std::vector<int64_t>>(value));
+        case Properties::double_list_type: return properties[type_id].setListOfDoubleProperty(property, internal_id, get<std::vector<double>>(value));
+        case Properties::string_list_type: return properties[type_id].setListOfStringProperty(property, internal_id, get<std::vector<std::string>>(value));
+        case Properties::date_list_type: return properties[type_id].setListOfDateProperty(property, internal_id, get<std::vector<double>>(value)); // Lists of Dates are stored as Lists of Doubles
+        default: return false;
         }
         return false;
     }
@@ -681,26 +663,29 @@ namespace ragedb {
     }
 
     bool RelationshipTypes::setPropertiesFromJSON(uint16_t type_id, uint64_t internal_id, const std::string& json) {
-        if (!json.empty()) {
-            // Get the properties
-            simdjson::dom::object object;
-            simdjson::error_code error = parser.parse(json).get(object);
-
-            if (!error) {
-                // Add the relationship properties
-                int valid = 0;
-                for (auto[key, value] : object) {
-                  auto property = static_cast<std::string>(key);
-                  const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
-                  // If the property type exists at all
-                  if (property_type_id > 0) {
-                    // True is 1, so if we set all the properties correctly then valid will equal the object size
-                    valid += setProperty(property_type_id, value, type_id, property, internal_id);
-                  }
-                }
-                return valid == object.size();
-            }
+        if (json.empty()) {
+            return false;
         }
+
+        // Get the properties
+        simdjson::dom::object object;
+        simdjson::error_code error = parser.parse(json).get(object);
+
+        if (!error) {
+            // Add the relationship properties
+            int valid = 0;
+            for (auto[key, value] : object) {
+              auto property = static_cast<std::string>(key);
+              const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+              // If the property type exists at all
+              if (property_type_id > 0) {
+                // True is 1, so if we set all the properties correctly then valid will equal the object size
+                valid += setProperty(property_type_id, value, type_id, property, internal_id);
+              }
+            }
+            return valid == object.size();
+        }
+
         return false;
     }
 
