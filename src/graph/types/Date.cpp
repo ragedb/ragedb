@@ -36,7 +36,7 @@ namespace ragedb {
     static double daysFromCivil(int y, unsigned m, unsigned d) noexcept {
       y -= m <= 2;
       const int era = (y >= 0 ? y : y - 399) / 400;
-      const unsigned yoe = static_cast<unsigned>(y - era * 400);            // [0, 399]
+      const auto yoe = static_cast<unsigned>(y - era * 400);            // [0, 399]
       const unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;  // [0, 365]
       const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;           // [0, 146096]
       return era * 146097 + static_cast<int>(doe) - 719468;
@@ -44,30 +44,6 @@ namespace ragedb {
 
     uint64_t Date::hash() const {
       return std::hash<double>()(value);
-    }
-
-    bool Date::operator==(const Date &n) const {
-      return value == n.value;
-    }
-
-    bool Date::operator!=(const Date &n) const {
-      return value != n.value;
-    }
-
-    bool Date::operator<(const Date &n) const {
-      return value < n.value;
-    }
-
-    bool Date::operator<=(const Date &n) const {
-      return value <= n.value;
-    }
-
-    bool Date::operator>(const Date &n) const {
-      return value > n.value;
-    }
-
-    bool Date::operator>=(const Date &n) const {
-      return value >= n.value;
     }
 
     Date Date::fromString(const char *str, uint32_t length) {
@@ -240,7 +216,7 @@ namespace ragedb {
       return t;
     }
 
-    Date Date::fromString(std::string s) {
+    Date Date::fromString(std::string_view s) {
       return fromString(s.data(), s.size());
     }
 

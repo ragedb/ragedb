@@ -31,7 +31,7 @@ namespace ragedb {
         return node_types.getCount(type_id);
     }
 
-    std::vector<uint64_t> Shard::AllNodeIds(uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t> Shard::AllNodeIds(uint64_t skip, uint64_t limit) const {
         return node_types.getIds(skip, limit);
     }
 
@@ -56,7 +56,7 @@ namespace ragedb {
         return node_types.getNodes(type_id, skip, limit);
     }
 
-    std::vector<uint64_t> Shard::AllRelationshipIds(uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t> Shard::AllRelationshipIds(uint64_t skip, uint64_t limit) const {
         return relationship_types.getIds(skip, limit);
     }
 

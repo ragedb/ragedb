@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(const std::vector<Link>& links) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
         link_rels[link] = NodeGetLinks(link.node_id);
@@ -26,7 +26,7 @@ namespace ragedb {
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(const std::vector<Link>& links, Direction direction) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
         link_rels[link] = NodeGetLinks(link.node_id, direction);
@@ -34,7 +34,7 @@ namespace ragedb {
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::string& rel_type) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
         link_rels[link] = NodeGetLinks(link.node_id, direction, rel_type);
@@ -42,7 +42,7 @@ namespace ragedb {
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction, uint16_t type_id) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(const std::vector<Link>& links, Direction direction, uint16_t type_id) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
         link_rels[link] = NodeGetLinks(link.node_id, direction, type_id);
@@ -50,7 +50,7 @@ namespace ragedb {
       return link_rels;
     }
 
-    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    std::map<Link, std::vector<Link>> Shard::LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types) {
       std::map<Link, std::vector<Link>> link_rels;
       for (Link link : links) {
         link_rels[link] = NodeGetLinks(link.node_id, direction, rel_types);
@@ -58,7 +58,7 @@ namespace ragedb {
       return link_rels;
     }
 
-    std::map<Link, std::vector<Relationship>> Shard::LinksGetRelationships(std::map<Link, std::vector<Link>> links) {
+    std::map<Link, std::vector<Relationship>> Shard::LinksGetRelationships(const std::map<Link, std::vector<Link>>& links) {
       std::map<Link, std::vector<Relationship>> link_rels;
       for (auto const &[key, vector_of_links] : links) {
         for (auto const link : vector_of_links) {
@@ -68,7 +68,7 @@ namespace ragedb {
       return link_rels;
     }
 
-    std::map<Link, std::vector<Node>> Shard::LinksGetNeighbors(std::map<Link, std::vector<Link>> links) {
+    std::map<Link, std::vector<Node>> Shard::LinksGetNeighbors(const std::map<Link, std::vector<Link>>& links) {
       std::map<Link, std::vector<Node>> link_nodes;
       for (auto const &[key, vector_of_links] : links) {
         for (auto const link : vector_of_links) {
@@ -78,7 +78,7 @@ namespace ragedb {
       return link_nodes;
     }
 
-    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(std::vector<Link> links) {
+    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links) {
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
       for (int i = 0; i < cpus; i++) {
@@ -91,7 +91,7 @@ namespace ragedb {
           uint16_t node_type_id = externalToTypeId(id);
           uint64_t internal_id = externalToInternal(id);
 
-          for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+          for (const auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
             for (Link link : types.links) {
               uint16_t node_shard_id = CalculateShardId(link.node_id);
               sharded_link_links.at(node_shard_id)[ids].push_back(link);
@@ -109,7 +109,7 @@ namespace ragedb {
       return sharded_link_links;
     }
 
-    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(std::vector<Link> links, const std::string& rel_type){
+    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::string& rel_type){
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
       for (int i = 0; i < cpus; i++) {
@@ -123,8 +123,7 @@ namespace ragedb {
           uint16_t type_id = relationship_types.getTypeId(rel_type);
           uint64_t internal_id = externalToInternal(id);
 
-          auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-            [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+          auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id), [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
           if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
             for(Link link : group->links) {
@@ -144,7 +143,7 @@ namespace ragedb {
       return sharded_link_links;
     }
 
-    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(std::vector<Link> links, uint16_t type_id){
+    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, uint16_t type_id){
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
       for (int i = 0; i < cpus; i++) {
@@ -157,8 +156,7 @@ namespace ragedb {
           uint16_t node_type_id = externalToTypeId(id);
           uint64_t internal_id = externalToInternal(id);
 
-          auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-            [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+          auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id), [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
           if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
             for(Link link : group->links) {
@@ -169,7 +167,7 @@ namespace ragedb {
         }
       }
 
-      for (int i = 0; i < cpus; i++) {
+      for (auto i = 0; i < cpus; i++) {
         if(sharded_link_links.at(i).empty()) {
           sharded_link_links.erase(i);
         }
@@ -178,7 +176,7 @@ namespace ragedb {
       return sharded_link_links;
     }
 
-    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(std::vector<Link> links, const std::vector<std::string> &rel_types) {
+    std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::vector<std::string> &rel_types) {
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
       for (int i = 0; i < cpus; i++) {
@@ -194,7 +192,7 @@ namespace ragedb {
           for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);
             if (type_id > 0) {
-              auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)), [type_id](const Group &g) { return g.rel_type_id == type_id; });
+              auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id), [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
               if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for (Link link : group->links) {
@@ -207,7 +205,7 @@ namespace ragedb {
         }
       }
 
-      for (int i = 0; i < cpus; i++) {
+      for (auto i = 0; i < cpus; i++) {
         if(sharded_link_links.at(i).empty()) {
           sharded_link_links.erase(i);
         }

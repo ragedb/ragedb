@@ -23,7 +23,7 @@
 namespace ragedb {
     class Date {
 
-      Date() {}
+      Date() = default;
 
       static Date null()
       {
@@ -32,25 +32,15 @@ namespace ragedb {
 
       inline uint64_t hash() const;
 
-      inline bool operator==(const Date& n) const;
-
-      inline bool operator!=(const Date& n) const;
-
-      inline bool operator<(const Date& n) const;
-
-      inline bool operator<=(const Date& n) const;
-
-      inline bool operator>(const Date& n) const;
-
-      inline bool operator>=(const Date& n) const;
+      auto operator<=>(const Date&) const = default;
 
       static Date fromString(const char* str, uint32_t length);
 
-      static Date fromString(std::string s);
+      static Date fromString(std::string_view s);
 
     public:
-      Date(double _value) : value(_value) {}
-      Date(std::string _value)  {
+      explicit Date(double _value) : value(_value) {}
+      explicit Date(std::string_view _value)  {
         value = fromString(_value).value;
       }
       double value;

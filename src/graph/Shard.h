@@ -337,28 +337,28 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         // Bulk
-        std::map<Link, std::vector<Link>> LinksGetLinks(std::vector<Link> links);
-        std::map<Link, std::vector<Link>> LinksGetLinks(std::vector<Link> links, Direction direction);
-        std::map<Link, std::vector<Link>> LinksGetLinks(std::vector<Link> links, Direction direction, const std::string& rel_type);
-        std::map<Link, std::vector<Link>> LinksGetLinks(std::vector<Link> links, Direction direction, uint16_t type_id);
-        std::map<Link, std::vector<Link>> LinksGetLinks(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
+        std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links);
+        std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction);
+        std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
+        std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction, uint16_t type_id);
+        std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
 
-        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links);
-        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links, const std::string& rel_type);
-        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links, uint16_t type_id);
-        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(std::vector<Link> links, const std::vector<std::string> &rel_types);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::string& rel_type);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, uint16_t type_id);
+        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
-        std::map<Link, std::vector<Relationship>> LinksGetRelationships(std::map<Link, std::vector<Link>> links);
+        std::map<Link, std::vector<Relationship>> LinksGetRelationships(const std::map<Link, std::vector<Link>>& links);
 
 
-        std::map<Link, std::vector<Node>> LinksGetNeighbors(std::map<Link, std::vector<Link>> links);
+        std::map<Link, std::vector<Node>> LinksGetNeighbors(const std::map<Link, std::vector<Link>>& links);
 
         // All
         std::map<uint16_t, uint64_t> NodeCounts();
         uint64_t NodeCount(const std::string& type);
         uint64_t NodeCount(uint16_t type_id);
 
-        std::vector<uint64_t> AllNodeIds(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> AllNodeIds(uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
         std::vector<uint64_t> AllNodeIds(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         std::vector<uint64_t> AllNodeIds(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
@@ -366,7 +366,7 @@ namespace ragedb {
         std::vector<Node> AllNodes(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         std::vector<Node> AllNodes(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
-        std::vector<uint64_t> AllRelationshipIds(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> AllRelationshipIds(uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
         std::vector<uint64_t> AllRelationshipIds(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         std::vector<uint64_t> AllRelationshipIds(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
