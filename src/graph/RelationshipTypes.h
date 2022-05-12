@@ -55,7 +55,7 @@ namespace ragedb {
         bool containsId(uint16_t, uint64_t);
 
         std::vector<uint64_t> getIds(uint64_t skip, uint64_t limit) const;
-        std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit);
+        std::vector<uint64_t> getIds(uint16_t type_id, uint64_t skip, uint64_t limit) const;
         std::vector<Relationship> getRelationships(uint64_t skip, uint64_t limit);
         std::vector<Relationship> getRelationships(uint16_t type_id, uint64_t skip, uint64_t limit);
 

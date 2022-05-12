@@ -200,7 +200,7 @@ namespace ragedb {
         return allIds;
     }
 
-    std::vector<uint64_t>  NodeTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t>  NodeTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) const {
         std::vector<uint64_t>  allIds;
         if (ValidTypeId(type_id)) {
             int current = 1;

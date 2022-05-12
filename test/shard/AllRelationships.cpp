@@ -178,7 +178,7 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
                 it2 = shard.AllRelationshipIds(3, 1, 2);
                 REQUIRE(it2.size() == 2);
 
-                it2 = shard.AllRelationshipIds(static_cast<uint64_t>(2),static_cast<uint64_t>(3));
+                it2 = shard.AllRelationshipIds(static_cast<uint64_t>(2), 3);
                 REQUIRE(it2.size() == 3);
             }
         }

@@ -220,7 +220,7 @@ namespace ragedb {
         return allIds;
     }
 
-    std::vector<uint64_t>  RelationshipTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t>  RelationshipTypes::getIds(uint16_t type_id, uint64_t skip, uint64_t limit) const {
         std::vector<uint64_t>  allIds;
         int current = 1;
         if (ValidTypeId(type_id)) {

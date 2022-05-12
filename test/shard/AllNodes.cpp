@@ -128,7 +128,7 @@ SCENARIO( "Shard can handle All Nodes", "[node]" ) {
                 it2 = shard.AllNodeIds(2, 1, 2);
                 REQUIRE(it2.size() == 1);
 
-                it2 = shard.AllNodeIds( static_cast<uint64_t>(2) , 3);
+                it2 = shard.AllNodeIds( static_cast<uint64_t>(2), 3);
                 REQUIRE(it2.size() == 3);
             }
         }
