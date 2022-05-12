@@ -26,7 +26,7 @@ namespace ragedb {
     return blank;
   }
 
-  uint64_t RelationshipTypes::countBooleans(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countBooleans(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -46,7 +46,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countIntegers(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countIntegers(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isIntegerProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -66,7 +66,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countDoubles(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countDoubles(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isDoubleProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -86,7 +86,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countStrings(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countStrings(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isStringProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -106,7 +106,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countBooleanLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countBooleanLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -126,7 +126,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countIntegerLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countIntegerLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isIntegerListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -146,7 +146,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countDoubleLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countDoubleLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isDoubleListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -166,7 +166,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::countStringLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::countStringLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isStringListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -186,7 +186,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t RelationshipTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     if (!ValidTypeId(type_id)) return 0;
 
     if(operation == Operation::IS_NULL) {
@@ -204,41 +204,30 @@ namespace ragedb {
 
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-    case Properties::boolean_type: {
+    case Properties::boolean_type:
       return countBooleans(type_id, property, operation, value);
-    }
-    case Properties::integer_type: {
+    case Properties::integer_type:
       return countIntegers(type_id, property, operation, value);
-    }
-    case Properties::double_type: {
+    case Properties::double_type:
       return countDoubles(type_id, property, operation, value);
-    }
-    case Properties::date_type: {
+    case Properties::date_type:
       // TODO: Verify This
       return countDoubles(type_id, property, operation, value);
-    }
-    case Properties::string_type: {
+    case Properties::string_type:
       return countStrings(type_id, property, operation, value);
-    }
-    case Properties::boolean_list_type: {
+    case Properties::boolean_list_type:
       return countBooleanLists(type_id, property, operation, value);
-    }
-    case Properties::integer_list_type: {
+    case Properties::integer_list_type:
       return countIntegerLists(type_id, property, operation, value);
-    }
-    case Properties::double_list_type: {
+    case Properties::double_list_type:
       return countDoubleLists(type_id, property, operation, value);
-    }
-    case Properties::date_list_type: {
+    case Properties::date_list_type:
       // TODO: Verify This
       return countDoubleLists(type_id, property, operation, value);
-    }
-    case Properties::string_list_type: {
+    case Properties::string_list_type:
       return countStringLists(type_id, property, operation, value);
-    }
-    default: {
+    default:
       return 0;
-    }
     }
   }
 
@@ -279,7 +268,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findBooleanIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findBooleanIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -308,7 +297,7 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> RelationshipTypes::findIntegerIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findIntegerIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -318,30 +307,24 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
@@ -362,7 +345,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findDoubleIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findDoubleIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     // Handle values that are parsed as Integers (230 vs 230.0)
@@ -373,37 +356,28 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
-        break;
-      }
-      case Operation::NEQ: {
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
-        break;
-      }
-      case Operation::GT: {
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
-        break;
-      }
-      case Operation::GTE: {
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
-        break;
-      }
-      case Operation::LT: {
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
-        break;
-      }
-      case Operation::LTE: {
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
-        break;
-      }
+      case Operation::EQ:
+          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+          break;
+      case Operation::NEQ:
+          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+          break;
+      case Operation::GT:
+          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+          break;
+      case Operation::GTE:
+          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+          break;
+      case Operation::LT:
+          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+          break;
+      case Operation::LTE:
+          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+          break;
       default:
-        break;
+          break;
       }
-
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -423,37 +397,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -468,7 +434,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findStringIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findStringIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -497,7 +463,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findBooleanListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findBooleanListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -526,7 +492,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findIntegerListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findIntegerListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerListProperty(value)) {
@@ -555,7 +521,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findDoubleListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findDoubleListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerListProperty(value)) {
@@ -611,7 +577,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findStringListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findStringListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isStringListProperty(value)) {
@@ -641,7 +607,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> RelationshipTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     // If the type is invalid, we can't find any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<uint64_t>();
 
@@ -655,41 +621,30 @@ namespace ragedb {
 
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-    case Properties::boolean_type: {
+    case Properties::boolean_type:
       return findBooleanIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_type: {
+    case Properties::integer_type:
       return findIntegerIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_type: {
+    case Properties::double_type:
       return findDoubleIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_type: {
+    case Properties::date_type:
       // TODO: Verify This
       return findDoubleIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_type: {
+    case Properties::string_type:
       return findStringIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::boolean_list_type: {
+    case Properties::boolean_list_type:
       return findBooleanListIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_list_type: {
+    case Properties::integer_list_type:
       return findIntegerListIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_list_type: {
+    case Properties::double_list_type:
       return findDoubleListIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_list_type: {
+    case Properties::date_list_type:
       // TODO: Verify This
       return findDoubleListIds(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_list_type: {
+    case Properties::string_list_type:
       return findStringListIds(type_id, property, operation, value, skip, limit);
-    }
-    default: {
+    default:
       return std::vector<uint64_t>();
-    }
     }
   }
 
@@ -734,7 +689,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findBooleanRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findBooleanRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -763,7 +718,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findIntegerRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findIntegerRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -773,37 +728,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -817,7 +764,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findDoubleRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findDoubleRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     // Handle values that are parsed as Integers (230 vs 230.0)
@@ -828,37 +775,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -878,37 +817,29 @@ namespace ragedb {
       std::vector<std::uint64_t> indexes;
 
       switch(operation) {
-      case Operation::EQ: {
+      case Operation::EQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
         break;
-      }
-      case Operation::NEQ: {
+      case Operation::NEQ:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
         break;
-      }
-      case Operation::GT: {
+      case Operation::GT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
         break;
-      }
-      case Operation::GTE: {
+      case Operation::GTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
         break;
-      }
-      case Operation::LT: {
+      case Operation::LT:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
         break;
-      }
-      case Operation::LTE: {
+      case Operation::LTE:
         indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
         break;
-      }
       default:
         break;
       }
 
-      auto it = remove_if(indexes.begin(), indexes.end(), [blank](uint64_t i) { return blank.contains(i); });
-
-      indexes.erase(it, indexes.end());
+      std::erase_if(indexes, [blank](uint64_t i) { return blank.contains(i); });
 
       for(auto idx : indexes) {
         if(current++ > skip) {
@@ -922,7 +853,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findStringRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findStringRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -951,7 +882,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findBooleanListRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findBooleanListRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -980,7 +911,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findIntegerListRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findIntegerListRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isIntegerListProperty(value)) {
@@ -1009,7 +940,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findDoubleListRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findDoubleListRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
 
@@ -1065,7 +996,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findStringListRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findStringListRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isStringListProperty(value)) {
@@ -1094,7 +1025,7 @@ namespace ragedb {
     return relationships;
   }
 
-  std::vector<Relationship> RelationshipTypes::findRelationships(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::findRelationships(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     // If the type is invalid, we can't find any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<Relationship>();
 
@@ -1109,41 +1040,30 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-    case Properties::boolean_type: {
+    case Properties::boolean_type:
       return findBooleanRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_type: {
+    case Properties::integer_type:
       return findIntegerRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_type: {
+    case Properties::double_type:
       return findDoubleRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_type: {
+    case Properties::date_type:
       // TODO: Verify this
       return findDoubleRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_type: {
+    case Properties::string_type:
       return findStringRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::boolean_list_type: {
+    case Properties::boolean_list_type:
       return findBooleanListRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_list_type: {
+    case Properties::integer_list_type:
       return findIntegerListRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_list_type: {
+    case Properties::double_list_type:
       return findDoubleListRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_list_type: {
+    case Properties::date_list_type:
       // TODO: Verify this
       return findDoubleListRelationships(type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_list_type: {
+    case Properties::string_list_type:
       return findStringListRelationships(type_id, property, operation, value, skip, limit);
-    }
-    default: {
+    default:
       return std::vector<Relationship>();
-    }
     }
   }
 

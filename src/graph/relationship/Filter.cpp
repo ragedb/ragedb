@@ -20,22 +20,18 @@
 namespace ragedb {
 
   void RelationshipTypes::removeDeletedIds(uint16_t type_id, std::vector<uint64_t> &list) {
-    auto new_end = std::remove_if(list.begin(), list.end(),
-      [deleted = deleted_ids[type_id] ](auto id)
-      { return deleted.contains(Shard::externalToInternal(id)); });
-  
-    list.erase(new_end, list.end());
+      std::erase_if(list, [deleted = deleted_ids[type_id] ](auto id) {
+          return deleted.contains(Shard::externalToInternal(id));
+      });
   }
   
   void RelationshipTypes::removeDeletedProperties(uint16_t type_id, std::vector<uint64_t> &list, const std::string &property) {
-    auto new_end = std::remove_if(list.begin(), list.end(),
-      [deleted = properties[type_id].getDeletedMap(property) ](auto id)
-      { return deleted.contains(Shard::externalToInternal(id)); });
-  
-    list.erase(new_end, list.end());
+      std::erase_if(list, [deleted = properties[type_id].getDeletedMap(property) ](auto id) {
+          return deleted.contains(Shard::externalToInternal(id));
+      });
   }
   
-  uint64_t RelationshipTypes::filterCountBooleans(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountBooleans(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -54,7 +50,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountIntegers(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountIntegers(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isIntegerProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -73,7 +69,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountDoubles(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountDoubles(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isDoubleProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -92,7 +88,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountStrings(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountStrings(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isStringProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -111,7 +107,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountBooleanLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountBooleanLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -130,7 +126,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountIntegerLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountIntegerLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isIntegerListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -149,7 +145,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountDoubleLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountDoubleLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isDoubleListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -168,7 +164,7 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCountStringLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCountStringLists(std::vector<uint64_t> ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isStringListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -187,14 +183,14 @@ namespace ragedb {
     return count;
   }
   
-  uint64_t RelationshipTypes::filterCount(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t RelationshipTypes::filterCount(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     // If the type is invalid, we can't filter any so return zero
     if (!ValidTypeId(type_id)) return 0;
   
     if(operation == Operation::IS_NULL) {
       uint64_t count = 0;
       for (auto id : unfiltered) {
-        count += properties[type_id].isDeleted(property, id);
+        count += static_cast<uint8_t>(properties[type_id].isDeleted(property, id));
       }
       return count;
     }
@@ -202,7 +198,7 @@ namespace ragedb {
     if(operation == Operation::NOT_IS_NULL) {
       uint64_t count = 0;
       for (auto id : unfiltered) {
-        count += (1 - properties[type_id].isDeleted(property, id));
+        count += (1 - static_cast<uint8_t>(properties[type_id].isDeleted(property, id)));
       }
       return count;
     }
@@ -210,41 +206,30 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
   
     switch (property_type_id) {
-    case Properties::boolean_type: {
+    case Properties::boolean_type: 
       return filterCountBooleans(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::integer_type: {
+     case Properties::integer_type: 
       return filterCountIntegers(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::double_type: {
+     case Properties::double_type: 
       return filterCountDoubles(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::date_type: {
+     case Properties::date_type: 
       // TODO: Verify this
       return filterCountDoubles(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::string_type: {
+     case Properties::string_type: 
       return filterCountStrings(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::boolean_list_type: {
+     case Properties::boolean_list_type: 
       return filterCountBooleanLists(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::integer_list_type: {
+     case Properties::integer_list_type: 
       return filterCountIntegerLists(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::double_list_type: {
+     case Properties::double_list_type: 
       return filterCountDoubleLists(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::date_list_type: {
+     case Properties::date_list_type: 
       // TODO: Verify this
       return filterCountDoubleLists(unfiltered, type_id, property, operation, value);
-    }
-    case Properties::string_list_type: {
+     case Properties::string_list_type: 
       return filterCountStringLists(unfiltered, type_id, property, operation, value);
-    }
-    default: {
+    default: 
       return 0;
-    }
     }
   }
   
@@ -282,7 +267,7 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> RelationshipTypes::filterBooleanIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterBooleanIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -305,7 +290,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterIntegerIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterIntegerIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -329,7 +314,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterDoubleIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterDoubleIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isDoubleProperty(value)) {
@@ -353,7 +338,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterStringIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterStringIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -377,7 +362,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterBooleanListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterBooleanListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -400,7 +385,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterIntegerListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterIntegerListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -423,7 +408,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterDoubleListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterDoubleListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -446,7 +431,7 @@ namespace ragedb {
     return ids;
   }
     
-  std::vector<uint64_t> RelationshipTypes::filterStringListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterStringListIds(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -469,7 +454,7 @@ namespace ragedb {
     return ids;
   }
   
-  std::vector<uint64_t> RelationshipTypes::filterIds(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> RelationshipTypes::filterIds(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     // If the type is invalid, we can't filter any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<uint64_t>();
   
@@ -489,41 +474,30 @@ namespace ragedb {
   
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-    case Properties::boolean_type: {
+    case Properties::boolean_type: 
       return filterBooleanIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_type: {
+     case Properties::integer_type: 
       return filterIntegerIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_type: {
+     case Properties::double_type: 
       return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_type: {
+     case Properties::date_type: 
       // TODO: Verify this
       return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_type: {
+     case Properties::string_type: 
       return filterStringIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::boolean_list_type: {
+     case Properties::boolean_list_type: 
       return filterBooleanListIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_list_type: {
+     case Properties::integer_list_type: 
       return filterIntegerListIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_list_type: {
+     case Properties::double_list_type: 
       return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_list_type: {
+     case Properties::date_list_type: 
       // TODO: Verify this
       return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_list_type: {
+     case Properties::string_list_type: 
       return filterStringListIds(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    default: {
+    default: 
       return std::vector<uint64_t>();
-    }
     }
   }
   
@@ -561,7 +535,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterBooleanRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterBooleanRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -584,7 +558,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterIntegerRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterIntegerRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -608,7 +582,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterDoubleRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterDoubleRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isDoubleProperty(value)) {
@@ -632,7 +606,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterStringRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterStringRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -656,7 +630,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterBooleanListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterBooleanListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -679,7 +653,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterIntegerListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterIntegerListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -702,7 +676,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterDoubleListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterDoubleListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -725,7 +699,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterStringListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterStringListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -748,7 +722,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterRelationships(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterRelationships(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     // If the type is invalid, we can't filter any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<Relationship>();
   
@@ -765,41 +739,30 @@ namespace ragedb {
   
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
     switch (property_type_id) {
-    case Properties::boolean_type: {
+    case Properties::boolean_type: 
       return filterBooleanRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_type: {
+     case Properties::integer_type: 
       return filterIntegerRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_type: {
+     case Properties::double_type: 
       return filterDoubleRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_type: {
+     case Properties::date_type: 
       // TODO: Verify this
       return filterDoubleRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_type: {
+     case Properties::string_type: 
       return filterStringRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::boolean_list_type: {
+     case Properties::boolean_list_type: 
       return filterBooleanListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::integer_list_type: {
+     case Properties::integer_list_type: 
       return filterIntegerListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::double_list_type: {
+     case Properties::double_list_type: 
       return filterDoubleListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::date_list_type: {
+     case Properties::date_list_type: 
       // TODO: Verify this
       return filterDoubleListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    case Properties::string_list_type: {
+     case Properties::string_list_type: 
       return filterStringListRelationships(unfiltered, type_id, property, operation, value, skip, limit);
-    }
-    default: {
+    default: 
       return std::vector<Relationship>();
-    }
     }
   }
 

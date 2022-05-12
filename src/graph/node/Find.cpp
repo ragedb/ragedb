@@ -26,7 +26,7 @@ namespace ragedb {
     return blank;
   }
 
-  uint64_t NodeTypes::countBooleans(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countBooleans(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -46,7 +46,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countIntegers(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countIntegers(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isIntegerProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -66,7 +66,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countDoubles(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countDoubles(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isDoubleProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -86,7 +86,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countStrings(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countStrings(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isStringProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -106,7 +106,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countBooleanLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countBooleanLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -126,7 +126,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countIntegerLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countIntegerLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isIntegerListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -146,7 +146,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countDoubleLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countDoubleLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isDoubleListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -166,7 +166,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::countStringLists(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::countStringLists(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isStringListProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
@@ -186,7 +186,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, property_type_t value) {
+  uint64_t NodeTypes::findCount(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     // If the type is invalid, we can't find any so return zero
     if (!ValidTypeId(type_id)) return 0;
 
@@ -276,7 +276,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findBooleanIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findBooleanIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -305,7 +305,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findIntegerIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findIntegerIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -351,7 +351,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findDoubleIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findDoubleIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     // Handle values that are parsed as Integers (230 vs 230.0)
@@ -441,7 +441,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findStringIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findStringIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -470,7 +470,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findBooleanListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findBooleanListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -499,7 +499,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findIntegerListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findIntegerListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
       if (Properties::isIntegerListProperty(value)) {
@@ -528,7 +528,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findDoubleListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findDoubleListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isIntegerListProperty(value)) {
@@ -584,7 +584,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findStringListIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findStringListIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<uint64_t> ids;
     int current = 1;
     if (Properties::isStringListProperty(value)) {
@@ -614,7 +614,7 @@ namespace ragedb {
     return ids;
   }
 
-  std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> NodeTypes::findIds(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     // If the type is invalid, we can't find any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<uint64_t>();
 
@@ -697,7 +697,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findBooleanNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findBooleanNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -726,7 +726,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findIntegerNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findIntegerNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -772,7 +772,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findDoubleNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findDoubleNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     // Handle values that are parsed as Integers (230 vs 230.0)
@@ -861,7 +861,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findStringNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findStringNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -890,7 +890,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findBooleanListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findBooleanListNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -919,7 +919,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findIntegerListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findIntegerListNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isIntegerListProperty(value)) {
@@ -948,7 +948,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findDoubleListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findDoubleListNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
 
@@ -1004,7 +1004,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findStringListNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findStringListNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Node> nodes;
     int current = 1;
     if (Properties::isStringListProperty(value)) {
@@ -1033,7 +1033,7 @@ namespace ragedb {
     return nodes;
   }
 
-  std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, property_type_t value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> NodeTypes::findNodes(uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     // If the type is invalid, we can't find any so return an empty array
     if (!ValidTypeId(type_id)) return std::vector<Node>();
 
