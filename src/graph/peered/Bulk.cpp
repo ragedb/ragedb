@@ -510,14 +510,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Relationship>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Relationship>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -616,14 +616,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Relationship>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Relationship>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -682,14 +682,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Relationship>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Relationship>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -748,14 +748,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Relationship>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Relationship>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -815,14 +815,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -1190,14 +1190,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -1256,14 +1256,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
@@ -1322,14 +1322,14 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (auto map_of_relationships : maps_of_incoming_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
 
-            for (auto map_of_relationships : maps_of_outgoing_relationships) {
-              for (auto const [link, rels] : map_of_relationships) {
+            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
+              for (const auto& [link, rels] : map_of_relationships) {
                 combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
               }
             }
