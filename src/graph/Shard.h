@@ -738,18 +738,18 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> FindRelationshipsPeered(uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
         // Filter
-        seastar::future<uint64_t> FilterNodeCountPeered(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
-        seastar::future<uint64_t> FilterNodeCountPeered(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
-        seastar::future<std::vector<uint64_t>> FilterNodeIdsPeered(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<uint64_t>> FilterNodeIdsPeered(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<Node>> FilterNodesPeered(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<Node>> FilterNodesPeered(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<uint64_t> FilterRelationshipCountPeered(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
-        seastar::future<uint64_t> FilterRelationshipCountPeered(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
-        seastar::future<std::vector<uint64_t>> FilterRelationshipIdsPeered(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<uint64_t>> FilterRelationshipIdsPeered(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<Relationship>> FilterRelationshipsPeered(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<Relationship>> FilterRelationshipsPeered(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<uint64_t> FilterNodeCountPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
+        seastar::future<uint64_t> FilterNodeCountPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
+        seastar::future<std::vector<uint64_t>> FilterNodeIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> FilterNodeIdsPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Node>> FilterNodesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Node>> FilterNodesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<uint64_t> FilterRelationshipCountPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
+        seastar::future<uint64_t> FilterRelationshipCountPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
+        seastar::future<std::vector<uint64_t>> FilterRelationshipIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> FilterRelationshipIdsPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Relationship>> FilterRelationshipsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<Relationship>> FilterRelationshipsPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
 
         // *****************************************************************************************************************************
@@ -1022,7 +1022,7 @@ namespace ragedb {
 
 
         // Partition by Shards
-        std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties);
+        std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionIdsByShardId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByShardId(const std::vector<Link> &links) const;

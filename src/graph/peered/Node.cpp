@@ -20,10 +20,10 @@ namespace ragedb {
 
     seastar::future<uint64_t> Shard::NodeAddEmptyPeered(const std::string &type, const std::string &key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
-        uint16_t type_id = node_types.getTypeId(type);
 
         // The node type exists, so continue on
-        if (type_id > 0) {
+        if (uint16_t type_id = node_types.getTypeId(type);
+            type_id > 0) {
             return container().invoke_on(node_shard_id, [type_id, key](Shard &local_shard) {
                 return local_shard.NodeAddEmpty(type_id, key);
             });
@@ -31,7 +31,7 @@ namespace ragedb {
 
         // The node type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [node_shard_id, type, key, this] (Shard &local_shard) {
-            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, type, key, this] (uint16_t node_type_id) {
+            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, this] (uint16_t node_type_id) {
                 return container().invoke_on(node_shard_id, [node_type_id, key](Shard &local_shard) {
                     return local_shard.NodeAddEmpty(node_type_id, key);
                 });
@@ -41,10 +41,10 @@ namespace ragedb {
 
     seastar::future<uint64_t> Shard::NodeAddPeered(const std::string &type, const std::string &key, const std::string &properties) {
         uint16_t node_shard_id = CalculateShardId(type, key);
-        uint16_t node_type_id = node_types.getTypeId(type);
 
         // The node type exists, so continue on
-        if (node_type_id > 0) {
+        if ( uint16_t node_type_id = node_types.getTypeId(type);
+            node_type_id > 0) {
             return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
                 return local_shard.NodeAdd(node_type_id, key, properties);
             });
@@ -52,9 +52,9 @@ namespace ragedb {
 
         // The node type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [node_shard_id, type, key, properties, this](Shard &local_shard) {
-            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, properties, this](uint16_t node_type_id) {
-                return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
-                    return local_shard.NodeAdd(node_type_id, key, properties);
+            return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, properties, this](uint16_t type_id) {
+                return container().invoke_on(node_shard_id, [type_id, key, properties](Shard &local_shard) {
+                    return local_shard.NodeAdd(type_id, key, properties);
                 });
             });
         });
@@ -62,10 +62,10 @@ namespace ragedb {
 
     seastar::future<std::vector<uint64_t>> Shard::NodeAddManyPeered(const std::string &type, const std::vector<std::string>& keys, const std::vector<std::string>& properties) {
       std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> sharded_nodes = PartitionNodesByNodeTypeKeys(type, keys, properties);
-      uint16_t type_id = node_types.getTypeId(type);
 
       // The node type exists, so continue on
-      if (type_id > 0) {
+      if (uint16_t type_id = node_types.getTypeId(type);
+          type_id > 0) {
         std::vector<seastar::future<std::vector<uint64_t>>> futures;
         for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
           auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id] (Shard &local_shard) {
@@ -88,11 +88,11 @@ namespace ragedb {
 
       // The node type needs to be set by Shard 0 and propagated
       return container().invoke_on(0, [type, sharded_nodes, this](Shard &local_shard) {
-        return local_shard.NodeTypeInsertPeered(type).then([sharded_nodes, this](uint16_t type_id) {
+        return local_shard.NodeTypeInsertPeered(type).then([sharded_nodes, this](uint16_t node_type_id) {
           std::vector<seastar::future<std::vector<uint64_t>>> futures;
           for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
-            auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id] (Shard &local_shard) {
-              return local_shard.NodeAddMany(type_id, grouped_nodes);
+            auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, node_type_id] (Shard &local_shard) {
+              return local_shard.NodeAddMany(node_type_id, grouped_nodes);
             });
             futures.push_back(std::move(future));
           }
@@ -162,7 +162,7 @@ namespace ragedb {
             auto p = make_shared(std::move(futures));
             return seastar::when_all(p->begin(), p->end())
             .then([p] (std::vector<seastar::future<bool>> results) {
-                if (std::any_of(results.begin(), results.end(), [] (auto& f) { return f.failed(); })) {
+                if (std::ranges::any_of(results, [] (auto& f) { return f.failed(); })) {
                     return seastar::make_ready_future<bool>(false);
                 }
                 return seastar::make_ready_future<bool>(true);
@@ -185,7 +185,7 @@ namespace ragedb {
             auto p = make_shared(std::move(futures));
             return seastar::when_all(p->begin(), p->end())
             .then([p] (std::vector<seastar::future<bool>> results) {
-                if (std::any_of(results.begin(), results.end(), [] (auto& f) { return f.failed(); })) {
+                if (std::ranges::any_of(results, [] (auto& f) { return f.failed(); })) {
                     return seastar::make_ready_future<bool>(false);
                 }
                 return seastar::make_ready_future<bool>(true);
@@ -196,7 +196,7 @@ namespace ragedb {
     seastar::future<bool> Shard::NodeRemovePeered(uint64_t external_id) {
         uint16_t node_shard_id = CalculateShardId(external_id);
 
-        return container().invoke_on(node_shard_id, [external_id](Shard &local_shard) {
+        return container().invoke_on(node_shard_id, [external_id](const Shard &local_shard) {
             return local_shard.ValidNodeId(external_id);
         }).then([node_shard_id, external_id, this] (bool valid) {
             if (valid) {
@@ -208,7 +208,7 @@ namespace ragedb {
                     return seastar::make_ready_future<bool>(false);
                 }).then([external_id, node_shard_id, this] (auto valid3) {
                     if (valid3) {
-                        return container().invoke_on(node_shard_id, [external_id, node_shard_id] (Shard &local_shard) {
+                        return container().invoke_on(node_shard_id, [external_id] (Shard &local_shard) {
                             return local_shard.NodeRemove(external_id);
                         });
                     }

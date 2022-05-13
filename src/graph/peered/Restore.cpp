@@ -20,7 +20,7 @@
 namespace ragedb {
 
     std::map<std::string, std::string> parseURL(std::string url) {
-        std::map<std::string, std::string> result;
+
         size_t start;
         size_t pos;
         const std::string http_delimiter = "http";
@@ -31,23 +31,24 @@ namespace ragedb {
 
         pos = url.find(method_delimiter);
         std::string address = url.substr(start, pos - start);
-        result.insert({"address", address});
+        std::map<std::string, std::string> result = {
+            {"address", address}
+        };
+
         url.erase(0, pos + method_delimiter.length());
 
         pos = url.find(body_delimiter);
         if (pos == std::string::npos) {
             // There is no body
-            result.emplace("method", url);
+            result.try_emplace("method", url);
         } else {
-            result.emplace("method", url.substr(0, pos));
-            result.emplace("body", url.substr(pos + body_delimiter.length()));
+            result.try_emplace("method", url.substr(0, pos));
+            result.try_emplace("body", url.substr(pos + body_delimiter.length()));
         }
         return result;
     }
 
     void Restore(const std::string& name) {
-        auto start = std::chrono::high_resolution_clock::now();
-
         uint64_t count = 0;
         std::fstream restore_file;
         restore_file.open(name + ".restore", std::ios::in);
@@ -100,7 +101,7 @@ namespace ragedb {
     }
 
     seastar::future<std::string> Shard::RestorePeered(const std::string& name) {
-        std::thread t(Restore, name);
+        std::jthread t(Restore, name);
         t.detach();
 
         std::string message = "Restoring " + name;

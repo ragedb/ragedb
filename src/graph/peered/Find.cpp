@@ -65,12 +65,12 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<uint64_t>>& results) {
             uint64_t current = 0;
 
             std::vector<uint64_t> ids;
 
-            for (auto result : results) {
+            for (const auto& result : results) {
                 for( auto id : result) {
                     if (++current > skip) {
                         ids.push_back(id);
@@ -102,12 +102,12 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<uint64_t>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<uint64_t>>& results) {
             uint64_t current = 0;
 
             std::vector<uint64_t> ids;
 
-            for (auto result : results) {
+            for (const auto& result : results) {
                 for( auto id : result) {
                     if (++current > skip) {
                         ids.push_back(id);
@@ -138,13 +138,13 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<Node>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<Node>>& results) {
             uint64_t current = 0;
 
             std::vector<Node> nodes;
 
-            for (auto result : results) {
-                for( auto node : result) {
+            for (const auto& result : results) {
+                for(const auto& node : result) {
                     if (++current > skip) {
                         nodes.push_back(node);
                     }
@@ -174,13 +174,13 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p, property, value, skip, limit, max] (const std::vector<std::vector<Relationship>>& results) {
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<Relationship>>& results) {
             uint64_t current = 0;
 
             std::vector<Relationship> relationships;
 
-            for (auto result : results) {
-                for( auto relationship : result) {
+            for (const auto& result : results) {
+                for(const auto& relationship : result) {
                     if (++current > skip) {
                         relationships.push_back(relationship);
                     }

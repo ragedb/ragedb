@@ -34,12 +34,11 @@ namespace ragedb {
       uint64_t internal_id1 = externalToInternal(id1);
 
       // Remove relationship from Node 1
-      auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
-        std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
+      auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
         [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
       if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-        auto rel_to_delete = find_if(std::begin(group->links), std::end(group->links), [external_id](Link entry) {
+          auto rel_to_delete = std::ranges::find_if(group->links, [external_id](Link entry) {
           return entry.rel_id == external_id;
         });
         if (rel_to_delete != std::end(group->links)) {
@@ -61,11 +60,10 @@ namespace ragedb {
       uint64_t internal_id2 = externalToInternal(node_id);
       uint16_t id2_type_id = externalToTypeId(node_id);
 
-      auto group = find_if(std::begin(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
-        std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
+      auto group = std::ranges::find_if(node_types.getIncomingRelationships(id2_type_id).at(internal_id2),
         [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
-      auto rel_to_delete = find_if(std::begin(group->links), std::end(group->links), [external_id](Link entry) {
+      auto rel_to_delete = std::ranges::find_if(group->links, [external_id](Link entry) {
         return entry.rel_id == external_id;
       });
       if (rel_to_delete != std::end(group->links)) {
@@ -78,10 +76,10 @@ namespace ragedb {
     seastar::future<uint64_t> Shard::RelationshipAddEmptyPeered(const std::string &rel_type, const std::string &type1, const std::string &key1, const std::string &type2, const std::string &key2) {
         uint16_t shard_id1 = CalculateShardId(type1, key1);
         uint16_t shard_id2 = CalculateShardId(type2, key2);
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
 
         // The rel type exists, continue on
-        if (rel_type_id > 0) {
+        if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id > 0) {
             // if the shards are the same, then handle this special case
             if(shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2](Shard &local_shard) {
@@ -89,7 +87,7 @@ namespace ragedb {
                 });
             }
             // we need to get id2 on its shard
-            return container().invoke_on(shard_id2, [type1, key1, type2, key2](Shard &local_shard) {
+            return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                 return local_shard.NodeGetID(type2, key2);
             }).then([shard_id1, shard_id2, rel_type_id, type1, key1, this] (uint64_t id2) {
                 // if id2 is valid, we need to get id1 on its shard
@@ -97,9 +95,9 @@ namespace ragedb {
                     return container()
                     .invoke_on(shard_id1,[rel_type_id, type1, key1, id2](Shard &local_shard) {
                         std::vector<uint64_t> ids;
-                        uint64_t id1 = local_shard.NodeGetID(type1, key1);
                         // if id1 is valid, we need to try to create the relationship
-                        if (id1 > 0) {
+                        if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
+                            id1 > 0) {
                             uint64_t rel_id = local_shard.RelationshipAddEmptyToOutgoing(
                                     rel_type_id, id1, id2);
                             if (rel_id > 0) {
@@ -129,7 +127,7 @@ namespace ragedb {
         // The relationship type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [shard_id1, shard_id2, rel_type, type1, key1, type2, key2, this] (Shard &local_shard) {
             return local_shard.RelationshipTypeInsertPeered(rel_type)
-                    .then([shard_id1, shard_id2, rel_type, type1, key1, type2, key2, this] (uint16_t rel_type_id) {
+                    .then([shard_id1, shard_id2, type1, key1, type2, key2, this] (uint16_t rel_type_id) {
                         // if the shards are the same, then handle this special case
                         if(shard_id1 == shard_id2) {
                             return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2](Shard &local_shard) {
@@ -137,7 +135,7 @@ namespace ragedb {
                             });
                         }
                         // we need to get id2 on its shard
-                        return container().invoke_on(shard_id2, [type1, key1, type2, key2](Shard &local_shard) {
+                        return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                             return local_shard.NodeGetID(type2, key2);
                         }).then([shard_id1, shard_id2, rel_type_id, type1, key1, this] (uint64_t id2) {
                             // if id2 is valid, we need to get id1 on its shard
@@ -145,9 +143,9 @@ namespace ragedb {
                                 return container()
                                         .invoke_on(shard_id1,[rel_type_id, type1, key1, id2](Shard &local_shard) {
                                             std::vector<uint64_t> ids;
-                                            uint64_t id1 = local_shard.NodeGetID(type1, key1);
                                             // if id1 is valid, we need to try to create the relationship
-                                            if (id1 > 0) {
+                                            if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
+                                                id1 > 0) {
                                                 uint64_t rel_id = local_shard.RelationshipAddEmptyToOutgoing(
                                                         rel_type_id, id1, id2);
                                                 if (rel_id > 0) {
@@ -180,10 +178,10 @@ namespace ragedb {
                                                            const std::string &type2, const std::string &key2, const std::string& properties) {
         uint16_t shard_id1 = CalculateShardId(type1, key1);
         uint16_t shard_id2 = CalculateShardId(type2, key2);
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
 
         // The rel type exists, continue on
-        if (rel_type_id > 0) {
+        if ( uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id > 0) {
             // if the shards are the same, then handle this special case
             if(shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2, properties](Shard &local_shard) {
@@ -191,7 +189,7 @@ namespace ragedb {
                 });
             }
             // we need to get id2 on its shard
-            return container().invoke_on(shard_id2, [type1, key1, type2, key2](Shard &local_shard) {
+            return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                 return local_shard.NodeGetID(type2, key2);
             }).then([shard_id1, shard_id2, rel_type_id, type1, key1, properties, this] (uint64_t id2) {
                 // if id2 is valid, we need to get id1 on its shard
@@ -199,9 +197,9 @@ namespace ragedb {
                     return container()
                             .invoke_on(shard_id1,[rel_type_id, type1, key1, id2, properties](Shard &local_shard) {
                                 std::vector<uint64_t> ids;
-                                uint64_t id1 = local_shard.NodeGetID(type1, key1);
                                 // if id1 is valid, we need to try to create the relationship
-                                if (id1 > 0) {
+                                if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
+                                    id1 > 0) {
                                     uint64_t rel_id = local_shard.RelationshipAddToOutgoing(
                                             rel_type_id, id1, id2, properties);
                                     if (rel_id > 0) {
@@ -231,7 +229,7 @@ namespace ragedb {
         // The relationship type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [shard_id1, shard_id2, rel_type, type1, key1, type2, key2, properties, this] (Shard &local_shard) {
             return local_shard.RelationshipTypeInsertPeered(rel_type)
-                    .then([shard_id1, shard_id2, rel_type, type1, key1, type2, key2, properties, this] (uint16_t rel_type_id) {
+                    .then([shard_id1, shard_id2, type1, key1, type2, key2, properties, this] (uint16_t rel_type_id) {
                         // if the shards are the same, then handle this special case
                         if (shard_id1 == shard_id2) {
                             return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2, properties](
@@ -250,9 +248,9 @@ namespace ragedb {
                                         .invoke_on(shard_id1,
                                                    [rel_type_id, type1, key1, id2, properties](Shard &local_shard) {
                                                        std::vector<uint64_t> ids;
-                                                       uint64_t id1 = local_shard.NodeGetID(type1, key1);
                                                        // if id1 is valid, we need to try to create the relationship
-                                                       if (id1 > 0) {
+                                                       if ( uint64_t id1 = local_shard.NodeGetID(type1, key1);
+                                                           id1 > 0) {
                                                            uint64_t rel_id = local_shard.RelationshipAddToOutgoing(
                                                                    rel_type_id, id1, id2, properties);
                                                            if (rel_id > 0) {
@@ -288,9 +286,10 @@ namespace ragedb {
         // Get the shard ids and check if the type exists
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+
         // The rel type exists, continue on
-        if (rel_type_id > 0) {
+        if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id > 0) {
             // if the shards are the same, then handle this special case
             if (shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, id1, id2](Shard &local_shard) {
@@ -327,7 +326,7 @@ namespace ragedb {
         // The relationship type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [shard_id1, shard_id2, rel_type, id1, id2, this](Shard &local_shard) {
             return local_shard.RelationshipTypeInsertPeered(rel_type)
-                    .then([shard_id1, shard_id2, rel_type, id1, id2, this](uint16_t rel_type_id) {
+                    .then([shard_id1, shard_id2, id1, id2, this](uint16_t rel_type_id) {
                         if (shard_id1 == shard_id2) {
                             return container().invoke_on(shard_id1, [rel_type_id, id1, id2](Shard &local_shard) {
                                 return local_shard.RelationshipAddEmptySameShard(rel_type_id, id1, id2);
@@ -412,9 +411,9 @@ namespace ragedb {
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
 
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
         // The rel type exists, continue on
-        if (rel_type_id > 0) {
+        if ( uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id > 0) {
             if (shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, id1, id2, properties](Shard &local_shard) {
                     return local_shard.RelationshipAddSameShard(rel_type_id, id1, id2, properties);
@@ -544,7 +543,7 @@ namespace ragedb {
     seastar::future<bool> Shard::RelationshipRemovePeered(uint64_t external_id) {
         uint16_t rel_shard_id = CalculateShardId(external_id);
 
-        return container().invoke_on(rel_shard_id, [external_id] (Shard &local_shard) {
+        return container().invoke_on(rel_shard_id, [external_id] (const Shard &local_shard) {
             return local_shard.ValidRelationshipId(external_id);
         }).then([rel_shard_id, external_id, this] (bool valid) {
             if(valid) {

@@ -177,7 +177,7 @@ namespace ragedb {
 
       std::vector<seastar::future<std::map<Link, uint16_t>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_links ) {
-        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+        auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (const Shard &local_shard) {
           return local_shard.NodesGetTypeId(grouped_node_ids);
         });
         futures.push_back(std::move(future));
