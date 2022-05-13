@@ -124,15 +124,12 @@ jobs:
           curl -sSLo $HOME/.sonar/build-wrapper-linux-x86.zip ${{ env.BUILD_WRAPPER_DOWNLOAD_URL }}
           unzip -o $HOME/.sonar/build-wrapper-linux-x86.zip -d $HOME/.sonar/
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
-          
-      - name: build with cmake
-        uses: lukka/run-cmake@v3
-        with:
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          cmakeAppendedArgs: '-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage  -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11'
-          buildWithCMake: true
-          buildDirectory: '${{ github.workspace }}/build'
+
+      - name: Run build-wrapper
+        run: |
+          mkdir build
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage  -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Debug
 
       - name: Test
         working-directory: '${{ github.workspace }}/build'
@@ -160,12 +157,6 @@ jobs:
           export COVERALLS_SERVICE_NAME="github-workflows"
           coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake --gcov /usr/bin/gcov-11 --gcov-options '\-lp' > /dev/null
 
-      - name: Run build-wrapper
-        run: |
-          mv build coverage
-          mkdir build
-          cmake -S . -B build
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
       - name: Run sonar-scanner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
