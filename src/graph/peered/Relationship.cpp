@@ -90,37 +90,33 @@ namespace ragedb {
             return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                 return local_shard.NodeGetID(type2, key2);
             }).then([shard_id1, shard_id2, rel_type_id, type1, key1, this] (uint64_t id2) {
-                // if id2 is valid, we need to get id1 on its shard
-                if (id2 > 0) {
-                    return container()
-                    .invoke_on(shard_id1,[rel_type_id, type1, key1, id2](Shard &local_shard) {
-                        std::vector<uint64_t> ids;
-                        // if id1 is valid, we need to try to create the relationship
-                        if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
-                            id1 > 0) {
-                            uint64_t rel_id = local_shard.RelationshipAddEmptyToOutgoing(
-                                    rel_type_id, id1, id2);
-                            if (rel_id > 0) {
-                                ids.push_back(id1);
-                                ids.push_back(rel_id);
-                            }
-                        }
-                        // We return a vector because we need both the node id and the relationship id
-                        return ids;
-                    }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
-                        // if the relationship is valid (and by extension both nodes) then add the second part
-                        if (!ids.empty()) {
-                            return container()
-                            .invoke_on(shard_id2, [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](
-                                    Shard &local_shard) {
-                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                            });
-                        }
-                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                    });
+                if (id2 == 0) {
+                    // Invalid node id 2
+                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
                 }
-                // Invalid node id 2
-                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                // if id2 is valid, we need to get id1 on its shard
+                return container().invoke_on(shard_id1,[rel_type_id, type1, key1, id2](Shard &local_shard2) {
+                    std::vector<uint64_t> ids;
+                    // if id1 is valid, we need to try to create the relationship
+                    if (uint64_t id1 = local_shard2.NodeGetID(type1, key1);
+                        id1 > 0) {
+                        uint64_t rel_id = local_shard2.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
+                        if (rel_id > 0) {
+                            ids.push_back(id1);
+                            ids.push_back(rel_id);
+                        }
+                    }
+                    // We return a vector because we need both the node id and the relationship id
+                    return ids;
+                }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
+                    // if the relationship is valid (and by extension both nodes) then add the second part
+                    if (ids.empty()) {
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    }
+                    return container().invoke_on(shard_id2, [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](Shard &local_shard) {
+                        return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                    });
+                });
             });
         }
 
@@ -130,47 +126,43 @@ namespace ragedb {
                     .then([shard_id1, shard_id2, type1, key1, type2, key2, this] (uint16_t rel_type_id) {
                         // if the shards are the same, then handle this special case
                         if(shard_id1 == shard_id2) {
-                            return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2](Shard &local_shard) {
-                                return local_shard.RelationshipAddEmptySameShard(rel_type_id, type1, key1, type2, key2);
+                            return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2](Shard &local_shard2) {
+                                return local_shard2.RelationshipAddEmptySameShard(rel_type_id, type1, key1, type2, key2);
                             });
                         }
                         // we need to get id2 on its shard
                         return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                             return local_shard.NodeGetID(type2, key2);
                         }).then([shard_id1, shard_id2, rel_type_id, type1, key1, this] (uint64_t id2) {
-                            // if id2 is valid, we need to get id1 on its shard
-                            if (id2 > 0) {
-                                return container()
-                                        .invoke_on(shard_id1,[rel_type_id, type1, key1, id2](Shard &local_shard) {
-                                            std::vector<uint64_t> ids;
-                                            // if id1 is valid, we need to try to create the relationship
-                                            if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
-                                                id1 > 0) {
-                                                uint64_t rel_id = local_shard.RelationshipAddEmptyToOutgoing(
-                                                        rel_type_id, id1, id2);
-                                                if (rel_id > 0) {
-                                                    ids.push_back(id1);
-                                                    ids.push_back(rel_id);
-                                                }
-                                            }
-                                            // We return a vector because we need both the node id and the relationship id
-                                            return ids;
-                                        }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
-                                    // if the relationship is valid (and by extension both nodes) then add the second part
-                                    if (!ids.empty()) {
-                                        return container()
-                                                .invoke_on(shard_id2, [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](
-                                                        Shard &local_shard) {
-                                                    return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                                                });
-                                    }
-                                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                                });
+                            if (id2 == 0) {
+                                // Invalid node id 2
+                                return seastar::make_ready_future<uint64_t>(uint64_t(0));
                             }
-                            // Invalid node id 2
-                            return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                            // if id2 is valid, we need to get id1 on its shard
+                            return container().invoke_on(shard_id1,[rel_type_id, type1, key1, id2](Shard &local_shard2) {
+                                std::vector<uint64_t> ids;
+                                // if id1 is valid, we need to try to create the relationship
+                                if (uint64_t id1 = local_shard2.NodeGetID(type1, key1);
+                                    id1 > 0) {
+                                    uint64_t rel_id = local_shard2.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
+                                    if (rel_id > 0) {
+                                        ids.push_back(id1);
+                                        ids.push_back(rel_id);
+                                    }
+                                }
+                                // We return a vector because we need both the node id and the relationship id
+                                return ids;
+                            }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
+                            // if the relationship is valid (and by extension both nodes) then add the second part
+                            if (ids.empty()) {
+                                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                            }
+                            return container().invoke_on(shard_id2, [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](Shard &local_shard) {
+                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                            });
                         });
                     });
+                });
         });
     }
 
@@ -192,37 +184,34 @@ namespace ragedb {
             return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                 return local_shard.NodeGetID(type2, key2);
             }).then([shard_id1, shard_id2, rel_type_id, type1, key1, properties, this] (uint64_t id2) {
-                // if id2 is valid, we need to get id1 on its shard
-                if (id2 > 0) {
-                    return container()
-                            .invoke_on(shard_id1,[rel_type_id, type1, key1, id2, properties](Shard &local_shard) {
-                                std::vector<uint64_t> ids;
-                                // if id1 is valid, we need to try to create the relationship
-                                if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
-                                    id1 > 0) {
-                                    uint64_t rel_id = local_shard.RelationshipAddToOutgoing(
-                                            rel_type_id, id1, id2, properties);
-                                    if (rel_id > 0) {
-                                        ids.push_back(id1);
-                                        ids.push_back(rel_id);
-                                    }
-                                }
-                                // We return a vector because we need both the node id and the relationship id
-                                return ids;
-                            }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
-                        // if the relationship is valid (and by extension both nodes) then add the second part
-                        if (!ids.empty()) {
-                            return container()
-                                    .invoke_on(shard_id2, [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](
-                                            Shard &local_shard) {
-                                        return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                                    });
-                        }
-                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                    });
+                if (id2 == 0) {
+                    // Invalid node id 2
+                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
                 }
-                // Invalid node id 2
-                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                // if id2 is valid, we need to get id1 on its shard
+                return container()
+                        .invoke_on(shard_id1,[rel_type_id, type1, key1, id2, properties](Shard &local_shard) {
+                            std::vector<uint64_t> ids;
+                            // if id1 is valid, we need to try to create the relationship
+                            if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
+                                id1 > 0) {
+                                uint64_t rel_id = local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
+                                if (rel_id > 0) {
+                                    ids.push_back(id1);
+                                    ids.push_back(rel_id);
+                                }
+                            }
+                            // We return a vector because we need both the node id and the relationship id
+                            return ids;
+                        }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
+                    // if the relationship is valid (and by extension both nodes) then add the second part
+                    if (ids.empty()) {
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    }
+                    return container().invoke_on(shard_id2, [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](Shard &local_shard) {
+                        return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                    });
+                });
             });
         }
 
@@ -242,43 +231,35 @@ namespace ragedb {
                         return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                             return local_shard.NodeGetID(type2, key2);
                         }).then([shard_id1, shard_id2, rel_type_id, type1, key1, properties, this](uint64_t id2) {
-                            // if id2 is valid, we need to get id1 on its shard
-                            if (id2 > 0) {
-                                return container()
-                                        .invoke_on(shard_id1,
-                                                   [rel_type_id, type1, key1, id2, properties](Shard &local_shard) {
-                                                       std::vector<uint64_t> ids;
-                                                       // if id1 is valid, we need to try to create the relationship
-                                                       if ( uint64_t id1 = local_shard.NodeGetID(type1, key1);
-                                                           id1 > 0) {
-                                                           uint64_t rel_id = local_shard.RelationshipAddToOutgoing(
-                                                                   rel_type_id, id1, id2, properties);
-                                                           if (rel_id > 0) {
-                                                               ids.push_back(id1);
-                                                               ids.push_back(rel_id);
-                                                           }
-                                                       }
-                                                       // We return a vector because we need both the node id and the relationship id
-                                                       return ids;
-                                                   }).then(
-                                        [rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
-                                            // if the relationship is valid (and by extension both nodes) then add the second part
-                                            if (!ids.empty()) {
-                                                return container()
-                                                        .invoke_on(shard_id2,
-                                                                   [rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](
-                                                                           Shard &local_shard) {
-                                                                       return local_shard.RelationshipAddToIncoming(
-                                                                               rel_type_id, rel_id, id1, id2);
-                                                                   });
-                                            }
-                                            return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                                        });
+                            if (id2 == 0) {
+                                // Invalid node id 2
+                                return seastar::make_ready_future<uint64_t>(uint64_t(0));
                             }
-                            // Invalid node id 2
-                            return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                        });
-                    });
+                                // if id2 is valid, we need to get id1 on its shard
+                                return container().invoke_on(shard_id1,[rel_type_id, type1, key1, id2, properties](Shard &local_shard) {
+                                   std::vector<uint64_t> ids;
+                                   // if id1 is valid, we need to try to create the relationship
+                                   if (uint64_t id1 = local_shard.NodeGetID(type1, key1);
+                                       id1 > 0) {
+                                       uint64_t rel_id = local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
+                                       if (rel_id > 0) {
+                                           ids.push_back(id1);
+                                           ids.push_back(rel_id);
+                                       }
+                                   }
+                                   // We return a vector because we need both the node id and the relationship id
+                                   return ids;
+                               }).then([rel_type_id, shard_id2, id2, this](std::vector<uint64_t> ids) {
+                                    // if the relationship is valid (and by extension both nodes) then add the second part
+                                    if (ids.empty()) {
+                                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                                    }
+                                    return container().invoke_on(shard_id2,[rel_type_id, id1 = ids[0], id2, rel_id = ids[1]](Shard &local_shard) {
+                                       return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                                   });
+                                });
+                          });
+              });
         });
     }
 
@@ -297,30 +278,30 @@ namespace ragedb {
                 });
             }
             // we need to validate id2 on its shard
-            return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
+            return container().invoke_on(shard_id2, [id2](const Shard &local_shard) {
                 return local_shard.ValidNodeId(id2);
             }).then([shard_id1, shard_id2, rel_type_id, id1, id2, this] (bool valid) {
-                // if id2 is valid, we need to validate id1 on its shard
-                if (valid) {
-                    return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
-                        if (local_shard.ValidNodeId(id1)) {
-                            // if both nodes are valid, then go ahead and try to create the relationship
-                            return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
-                        }
-                        // Invalid id1
-                        return uint64_t(0);
-                            }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
-                                // if the relationship is valid (and by extension both nodes) then add the second part
-                                if (rel_id > 0) {
-                                 return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
-                                        return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                                 });
-                                }
-                                return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                    });
+                if (!valid) {
+                    // Invalid id2
+                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
                 }
-                // Invalid id2
-                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                // if id2 is valid, we need to validate id1 on its shard
+                return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
+                    if (local_shard.ValidNodeId(id1)) {
+                        // if both nodes are valid, then go ahead and try to create the relationship
+                        return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
+                    }
+                    // Invalid id1
+                    return uint64_t(0);
+                }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                    // if the relationship is valid (and by extension both nodes) then add the second part
+                    if (rel_id == 0) {
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    }
+                     return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                            return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                     });
+                  });
             });
         }
         // The relationship type needs to be set by Shard 0 and propagated
@@ -334,30 +315,30 @@ namespace ragedb {
                         }
 
                         // we need to validate id2 on its shard
-                        return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
+                        return container().invoke_on(shard_id2, [id2](const Shard &local_shard) {
                             return local_shard.ValidNodeId(id2);
                         }).then([shard_id1, shard_id2, rel_type_id, id1, id2, this] (bool valid) {
-                            // if id2 is valid, we need to validate id1 on its shard
                             if (valid) {
-                                return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
-                                    if (local_shard.ValidNodeId(id1)) {
-                                        // if both nodes are valid, then go ahead and try to create the relationship
-                                        return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
-                                    }
-                                    // Invalid id1
-                                    return uint64_t(0);
-                                }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
-                                    // if the relationship is valid (and by extension both nodes) then add the second part
-                                    if (rel_id > 0) {
-                                        return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
-                                            return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                                        });
-                                    }
-                                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                                });
+                                // Invalid id2
+                                return seastar::make_ready_future<uint64_t>(uint64_t(0));
                             }
-                            // Invalid id2
-                            return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                            // if id2 is valid, we need to validate id1 on its shard
+                            return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
+                                if (local_shard.ValidNodeId(id1)) {
+                                    // if both nodes are valid, then go ahead and try to create the relationship
+                                    return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
+                                }
+                                // Invalid id1
+                                return uint64_t(0);
+                            }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                                // if the relationship is valid (and by extension both nodes) then add the second part
+                                if (rel_id == 0) {
+                                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                                }
+                                return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                                    return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                                });
+                            });
                         });
                     });
         });
@@ -377,30 +358,30 @@ namespace ragedb {
                 });
             }
             // we need to validate id2 on its shard
-            return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
+            return container().invoke_on(shard_id2, [id2](const Shard &local_shard) {
                 return local_shard.ValidNodeId(id2);
             }).then([shard_id1, shard_id2, rel_type_id, id1, id2, this] (bool valid) {
-                // if id2 is valid, we need to validate id1 on its shard
-                if (valid) {
-                    return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
-                        if (local_shard.ValidNodeId(id1)) {
-                            // if both nodes are valid, then go ahead and try to create the relationship
-                            return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
-                        }
-                        // Invalid id1
-                        return uint64_t(0);
-                    }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
-                        // if the relationship is valid (and by extension both nodes) then add the second part
-                        if (rel_id > 0) {
-                            return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
-                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                            });
-                        }
-                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                    });
+                if (!valid) {
+                    // Invalid id2
+                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
                 }
-                // Invalid id2
-                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                // if id2 is valid, we need to validate id1 on its shard
+                return container().invoke_on(shard_id1,[rel_type_id, id1, id2](Shard &local_shard) {
+                    if (local_shard.ValidNodeId(id1)) {
+                        // if both nodes are valid, then go ahead and try to create the relationship
+                        return local_shard.RelationshipAddEmptyToOutgoing(rel_type_id, id1, id2);
+                    }
+                    // Invalid id1
+                    return uint64_t(0);
+                }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                    // if the relationship is valid (and by extension both nodes) then add the second part
+                    if (rel_id == 0) {
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    }
+                    return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                        return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                    });
+                });
             });
         }
         // Invalid Relationship type id
@@ -421,30 +402,30 @@ namespace ragedb {
             }
 
             // we need to validate id2 on its shard
-            return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
+            return container().invoke_on(shard_id2, [id2](const Shard &local_shard) {
                 return local_shard.ValidNodeId(id2);
             }).then([shard_id1, shard_id2, rel_type_id, id1, id2, properties, this] (bool valid) {
-                // if id2 is valid, we need to validate id1 on its shard
-                if (valid) {
-                    return container().invoke_on(shard_id1,[rel_type_id, id1, id2, properties](Shard &local_shard) {
-                        if (local_shard.ValidNodeId(id1)) {
-                            // if both nodes are valid, then go ahead and try to create the relationship
-                            return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
-                        }
-                        // Invalid id1
-                        return uint64_t(0);
-                    }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
-                        // if the relationship is valid (and by extension both nodes) then add the second part
-                        if (rel_id > 0) {
-                            return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
-                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                            });
-                        }
-                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                    });
+                if (!valid) {
+                    // Invalid id2
+                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
                 }
-                // Invalid id2
-                return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                // if id2 is valid, we need to validate id1 on its shard
+                return container().invoke_on(shard_id1,[rel_type_id, id1, id2, properties](Shard &local_shard) {
+                    if (local_shard.ValidNodeId(id1)) {
+                        // if both nodes are valid, then go ahead and try to create the relationship
+                        return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
+                    }
+                    // Invalid id1
+                    return uint64_t(0);
+                }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                    // if the relationship is valid (and by extension both nodes) then add the second part
+                    if (rel_id == 0) {
+                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                    }
+                    return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                        return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                    });
+                });
             });
         }
 
@@ -462,33 +443,34 @@ namespace ragedb {
                         return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
                             return local_shard.ValidNodeId(id2);
                         }).then([shard_id1, shard_id2, rel_type_id, id1, id2, properties, this] (bool valid) {
-                            // if id2 is valid, we need to validate id1 on its shard
-                            if (valid) {
-                                return container().invoke_on(shard_id1,[rel_type_id, id1, id2, properties](Shard &local_shard) {
-                                    if (local_shard.ValidNodeId(id1)) {
-                                        // if both nodes are valid, then go ahead and try to create the relationship
-                                        return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
-                                    }
-                                    // Invalid id1
-                                    return uint64_t(0);
-                                }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
-                                    // if the relationship is valid (and by extension both nodes) then add the second part
-                                    if (rel_id > 0) {
-                                        return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
-                                            return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                                        });
-                                    }
-                                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
-                                });
+                            if (!valid) {
+                                // Invalid id2
+                                return seastar::make_ready_future<uint64_t>(uint64_t(0));
                             }
-                            // Invalid id2
-                            return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                            // if id2 is valid, we need to validate id1 on its shard
+                            return container().invoke_on(shard_id1,[rel_type_id, id1, id2, properties](Shard &local_shard) {
+                                if (local_shard.ValidNodeId(id1)) {
+                                    // if both nodes are valid, then go ahead and try to create the relationship
+                                    return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
+                                }
+                                // Invalid id1
+                                return uint64_t(0);
+                            }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+                                // if the relationship is valid (and by extension both nodes) then add the second part
+                                if (rel_id == 0) {
+                                    return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                                }
+                                return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                                    return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                                });
+                            });
                         });
                     });
         });
     }
 
-    seastar::future<uint64_t> Shard::RelationshipAddPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties) {
+    seastar::future<uint64_t> Shard::RelationshipAddPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties)
+    {
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
 
@@ -501,35 +483,36 @@ namespace ragedb {
             }
 
             // we need to validate id2 on its shard
-            return container().invoke_on(shard_id2, [id2](Shard &local_shard) {
-                return local_shard.ValidNodeId(id2);
-            }).then([shard_id1, shard_id2, rel_type_id, id1, id2, properties, this] (bool valid) {
-                // if id2 is valid, we need to validate id1 on its shard
-                if (valid) {
-                    return container().invoke_on(shard_id1,[rel_type_id, id1, id2, properties](Shard &local_shard) {
-                        if (local_shard.ValidNodeId(id1)) {
-                            // if both nodes are valid, then go ahead and try to create the relationship
-                            return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
-                        }
-                        // Invalid id1
-                        return uint64_t(0);
-                    }).then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
+            return container().invoke_on(shard_id2, [id2](const Shard &local_shard) {
+                                  return local_shard.ValidNodeId(id2);
+                              })
+              .then([shard_id1, shard_id2, rel_type_id, id1, id2, properties, this](bool valid) {
+                  if (!valid) {
+                      // Invalid id2
+                      return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                  }
+                  // if id2 is valid, we need to validate id1 on its shard
+                  return container().invoke_on(shard_id1, [rel_type_id, id1, id2, properties](Shard &local_shard) {
+                                        if (local_shard.ValidNodeId(id1)) {
+                                            // if both nodes are valid, then go ahead and try to create the relationship
+                                            return local_shard.RelationshipAddToOutgoing(rel_type_id, id1, id2, properties);
+                                        }
+                                        // Invalid id1
+                                        return uint64_t(0);
+                                    })
+                    .then([rel_type_id, shard_id2, id1, id2, this](uint64_t rel_id) {
                         // if the relationship is valid (and by extension both nodes) then add the second part
-                        if (rel_id > 0) {
-                            return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
-                                return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
-                            });
+                        if (rel_id == 0) {
+                            return seastar::make_ready_future<uint64_t>(uint64_t(0));
                         }
-                        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+                        return container().invoke_on(shard_id2, [rel_type_id, id1, id2, rel_id](Shard &local_shard) {
+                            return local_shard.RelationshipAddToIncoming(rel_type_id, rel_id, id1, id2);
+                        });
                     });
-                }
-                // Invalid id2
-                return seastar::make_ready_future<uint64_t>(uint64_t(0));
-            });
+              });
         }
-
-        // Invalid Relationship type id
-        return seastar::make_ready_future<uint64_t>(uint64_t(0));
+    // Invalid Relationship type id
+    return seastar::make_ready_future<uint64_t>(uint64_t(0));
     }
 
     seastar::future<Relationship> Shard::RelationshipGetPeered(uint64_t id) {
@@ -546,18 +529,17 @@ namespace ragedb {
         return container().invoke_on(rel_shard_id, [external_id] (const Shard &local_shard) {
             return local_shard.ValidRelationshipId(external_id);
         }).then([rel_shard_id, external_id, this] (bool valid) {
-            if(valid) {
-                return container().invoke_on(rel_shard_id, [external_id] (Shard &local_shard) {
-                    return local_shard.RelationshipRemoveGetIncoming(external_id);
-                }).then([external_id, this] (std::pair <uint16_t, uint64_t> rel_type_incoming_node_id) {
-
-                    uint16_t shard_id2 = CalculateShardId(rel_type_incoming_node_id.second);
-                    return container().invoke_on(shard_id2, [rel_type_incoming_node_id, external_id] (Shard &local_shard) {
-                        return local_shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, external_id, rel_type_incoming_node_id.second);
-                    });
-                });
+            if(!valid) {
+                return seastar::make_ready_future<bool>(false);
             }
-            return seastar::make_ready_future<bool>(false);
+            return container().invoke_on(rel_shard_id, [external_id] (Shard &local_shard) {
+                return local_shard.RelationshipRemoveGetIncoming(external_id);
+            }).then([external_id, this] (std::pair <uint16_t, uint64_t> rel_type_incoming_node_id) {
+                uint16_t shard_id2 = CalculateShardId(rel_type_incoming_node_id.second);
+                return container().invoke_on(shard_id2, [rel_type_incoming_node_id, external_id] (Shard &local_shard) {
+                    return local_shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, external_id, rel_type_incoming_node_id.second);
+                });
+            });
         });
     }
 
