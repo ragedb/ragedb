@@ -173,9 +173,8 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::NodeGetRelationshipsPeered(const std::string& type, const std::string& key, const std::string& rel_type) {
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-
-        if (rel_type_id > 0) {
+        if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id > 0) {
             uint16_t node_shard_id = CalculateShardId(type, key);
             return container().invoke_on(node_shard_id, [type, key, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(type, key, rel_type_id); })
                     .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_relationships_ids) {
@@ -282,9 +281,8 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::NodeGetRelationshipsPeered(uint64_t external_id, const std::string& rel_type) {
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-
-        if (rel_type_id > 0) {
+        if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id > 0) {
             uint16_t node_shard_id = CalculateShardId(external_id);
             return container().invoke_on(node_shard_id, [external_id, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(external_id, rel_type_id); })
                     .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_relationships_ids) {
@@ -312,7 +310,6 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::NodeGetRelationshipsPeered(uint64_t external_id,  uint16_t rel_type_id) {
-
         if (rel_type_id > 0) {
             uint16_t node_shard_id = CalculateShardId(external_id);
             return container().invoke_on(node_shard_id, [external_id, rel_type_id](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(external_id, rel_type_id); })
@@ -401,9 +398,8 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::NodeGetRelationshipsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
-
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-        if (rel_type_id != 0) {
+        if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id != 0) {
             uint16_t node_shard_id = CalculateShardId(type, key);
             switch (direction) {
                 case Direction::OUT: {
@@ -548,8 +544,8 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::NodeGetRelationshipsPeered(uint64_t external_id, Direction direction, const std::string& rel_type) {
-        uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-        if (rel_type_id != 0) {
+        if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
+            rel_type_id != 0) {
             uint16_t node_shard_id = CalculateShardId(external_id);
             switch (direction) {
                 case Direction::OUT: {

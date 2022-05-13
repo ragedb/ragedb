@@ -95,12 +95,12 @@ namespace ragedb {
         return type_id;
     }
 
-    std::string RelationshipTypes::getType(const std::string &type) {
+    std::string RelationshipTypes::getType(const std::string &type) const {
         uint16_t type_id = getTypeId(type);
         return getType(type_id);
     }
 
-    std::string RelationshipTypes::getType(uint16_t type_id) {
+    std::string RelationshipTypes::getType(uint16_t type_id) const {
         if (ValidTypeId(type_id)) {
             return id_to_type[type_id];
         }

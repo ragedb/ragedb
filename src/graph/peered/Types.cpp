@@ -18,12 +18,12 @@
 
 namespace ragedb {
 
-    uint16_t Shard::NodeTypesGetCountPeered() {
+    uint16_t Shard::NodeTypesGetCountPeered() const {
         return node_types.getSize();
     }
 
     seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(uint16_t type_id) {
-        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (Shard &local) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (const Shard &local) {
             return local.NodeTypesGetCount(type_id);
         });
 
@@ -33,7 +33,7 @@ namespace ragedb {
     }
 
     seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(const std::string &type) {
-        seastar::future<std::vector<uint64_t>> v = container().map([type] (Shard &local) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type] (const Shard &local) {
             return local.NodeTypesGetCount(type);
         });
 
@@ -54,12 +54,12 @@ namespace ragedb {
       return container().local().RelationshipTypeGet(type);
     }
 
-    uint16_t Shard::RelationshipTypesGetCountPeered() {
+    uint16_t Shard::RelationshipTypesGetCountPeered() const {
         return relationship_types.getSize();
     }
 
     seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(uint16_t type_id) {
-        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (Shard &local) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (const Shard &local) {
             return local.RelationshipTypesGetCount(type_id);
         });
 
@@ -69,7 +69,7 @@ namespace ragedb {
     }
 
     seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(const std::string &type) {
-        seastar::future<std::vector<uint64_t>> v = container().map([type] (Shard &local) {
+        seastar::future<std::vector<uint64_t>> v = container().map([type] (const Shard &local) {
             return local.RelationshipTypesGetCount(type);
         });
 
@@ -82,11 +82,11 @@ namespace ragedb {
         return relationship_types.getTypes();
     }
 
-    std::string Shard::NodeTypeGetTypePeered(uint16_t type_id) {
+    std::string Shard::NodeTypeGetTypePeered(uint16_t type_id) const {
         return node_types.getType(type_id);
     }
 
-    uint16_t Shard::NodeTypeGetTypeIdPeered(const std::string &type) {
+    uint16_t Shard::NodeTypeGetTypeIdPeered(const std::string &type) const {
         return node_types.getTypeId(type);
     }
 
@@ -110,8 +110,8 @@ namespace ragedb {
     }
 
     seastar::future<bool> Shard::DeleteNodeTypePeered(const std::string& type) {
-        uint16_t type_id = node_types.getTypeId(type);
-        if (type_id != 0) {
+        if (uint16_t type_id = node_types.getTypeId(type);
+            type_id != 0) {
             // type_id is global so unfortunately we need to lock here
             this->node_type_lock.for_write().lock().get();
             // The type was found and must therefore be deleted on all shards.
@@ -127,11 +127,11 @@ namespace ragedb {
         return seastar::make_ready_future<bool>(false);
     }
 
-    std::string Shard::RelationshipTypeGetTypePeered(uint16_t type_id) {
+    std::string Shard::RelationshipTypeGetTypePeered(uint16_t type_id) const {
         return relationship_types.getType(type_id);
     }
 
-    uint16_t Shard::RelationshipTypeGetTypeIdPeered(const std::string &type) {
+    uint16_t Shard::RelationshipTypeGetTypeIdPeered(const std::string &type) const {
         return relationship_types.getTypeId(type);
     }
 
@@ -204,7 +204,7 @@ namespace ragedb {
         uint16_t node_type_id = node_types.getTypeId(node_type);
         if (node_type_id == 0) {
             return container().invoke_on(0, [node_type, key, type, this] (Shard &local_shard) {
-                return local_shard.NodeTypeInsertPeered(node_type).then([node_type, key, type, this](uint16_t node_type_id) {
+                return local_shard.NodeTypeInsertPeered(node_type).then([key, type, this](uint16_t node_type_id) {
                     return container().invoke_on(0, [node_type_id, key, type] (Shard &local_shard) {
                         return local_shard.NodePropertyTypeInsertPeered(node_type_id, key, type);
                     });
@@ -221,7 +221,7 @@ namespace ragedb {
         uint16_t relationship_type_id = relationship_types.getTypeId(relationship_type);
         if (relationship_type_id == 0) {
             return container().invoke_on(0, [relationship_type, key, type, this] (Shard &local_shard) {
-                return local_shard.RelationshipTypeInsertPeered(relationship_type).then([relationship_type, key, type, this](uint16_t node_type_id) {
+                return local_shard.RelationshipTypeInsertPeered(relationship_type).then([key, type, this](uint16_t node_type_id) {
                     return container().invoke_on(0, [node_type_id, key, type] (Shard &local_shard) {
                         return local_shard.RelationshipPropertyTypeInsertPeered(node_type_id, key, type);
                     });

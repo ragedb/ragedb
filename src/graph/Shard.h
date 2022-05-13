@@ -426,28 +426,28 @@ namespace ragedb {
         seastar::future<std::string> RestorePeered(const std::string& name);
 
         // Node Types
-        uint16_t NodeTypesGetCountPeered();
+        uint16_t NodeTypesGetCountPeered() const;
         seastar::future<uint64_t> NodeTypesGetCountPeered(uint16_t type_id);
         seastar::future<uint64_t> NodeTypesGetCountPeered(const std::string& type);
         std::set<std::string> NodeTypesGetPeered();
         std::map<std::string, std::string> NodeTypeGetPeered(const std::string& type);
 
         // Relationship Types
-        uint16_t RelationshipTypesGetCountPeered();
+        uint16_t RelationshipTypesGetCountPeered() const ;
         seastar::future<uint64_t> RelationshipTypesGetCountPeered(uint16_t type_id);
         seastar::future<uint64_t> RelationshipTypesGetCountPeered(const std::string& type);
         std::set<std::string> RelationshipTypesGetPeered();
         std::map<std::string, std::string> RelationshipTypeGetPeered(const std::string& type);
 
         // Node Type
-        std::string NodeTypeGetTypePeered(uint16_t type_id);
-        uint16_t NodeTypeGetTypeIdPeered(const std::string& type);
+        std::string NodeTypeGetTypePeered(uint16_t type_id) const;
+        uint16_t NodeTypeGetTypeIdPeered(const std::string& type) const;
         seastar::future<uint16_t> NodeTypeInsertPeered(const std::string& type);
         seastar::future<bool> DeleteNodeTypePeered(const std::string& type);
 
         // Relationship Type
-        std::string RelationshipTypeGetTypePeered(uint16_t type_id);
-        uint16_t RelationshipTypeGetTypeIdPeered(const std::string& type);
+        std::string RelationshipTypeGetTypePeered(uint16_t type_id) const;
+        uint16_t RelationshipTypeGetTypeIdPeered(const std::string& type) const;
         seastar::future<uint16_t> RelationshipTypeInsertPeered(const std::string& type);
         seastar::future<bool> DeleteRelationshipTypePeered(const std::string& type);
 
