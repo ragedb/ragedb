@@ -25,7 +25,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
     // Get the {Node Type Id, Count} map for each core
     std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
-    for (int i=0; i<cpus; i++) {
+    for (uint16_t i=0; i<cpus; i++) {
         auto future = container().invoke_on(i, [&countsFunction] (Shard &local_shard) mutable {
             return (local_shard.*countsFunction)();
         });
@@ -102,7 +102,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
         // Get the {Node Type Id, Count} map for each core
         std::vector<seastar::future<uint64_t>> futures;
-        for (int i=0; i<cpus; i++) {
+        for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [node_type_id] (Shard &local_shard) mutable {
                 return local_shard.NodeCount(node_type_id);
             });
@@ -160,7 +160,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
         // Get the {Node Type Id, Count} map for each core
         std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
-        for (int i=0; i<cpus; i++) {
+        for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
                 return local_shard.NodeCounts();
             });
@@ -228,7 +228,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
         // Get the {Node Type Id, Count} map for each core
         std::vector<seastar::future<uint64_t>> futures;
-        for (int i=0; i<cpus; i++) {
+        for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [node_type_id] (Shard &local_shard) mutable {
                 return local_shard.NodeCount(node_type_id);
             });
@@ -287,7 +287,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
         // Get the {Relationship Type Id, Count} map for each core
         std::vector<seastar::future<uint64_t>> futures;
-        for (int i=0; i<cpus; i++) {
+        for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [relationship_type_id] (Shard &local_shard) mutable {
                 return local_shard.AllRelationshipIdCounts(relationship_type_id);
             });
@@ -346,7 +346,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
         // Get the {Relationship Type Id, Count} map for each core
         std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
-        for (int i=0; i<cpus; i++) {
+        for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
                 return local_shard.AllRelationshipIdCounts();
             });
@@ -412,7 +412,7 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
         // Get the {Relationship Type Id, Count} map for each core
         std::vector<seastar::future<uint64_t>> futures;
-        for (int i=0; i<cpus; i++) {
+        for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [relationship_type_id] (Shard &local_shard) mutable {
                 return local_shard.AllRelationshipIdCounts(relationship_type_id);
             });
