@@ -306,22 +306,22 @@ namespace ragedb {
 
       switch(operation) {
       case Operation::EQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x == typedValue; }, indexes);
         break;
       case Operation::NEQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x != typedValue; }, indexes);
         break;
       case Operation::GT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x > typedValue; }, indexes);
         break;
       case Operation::GTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x >= typedValue; }, indexes);
         break;
       case Operation::LT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x < typedValue; }, indexes);
         break;
       case Operation::LTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x <= typedValue; }, indexes);
         break;
       default:
         break;
@@ -353,22 +353,22 @@ namespace ragedb {
 
       switch(operation) {
       case Operation::EQ:
-          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+          ragedb::collect_indexes(vec, [typedValue](auto x) { return x == typedValue; }, indexes);
           break;
       case Operation::NEQ:
-          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+          ragedb::collect_indexes(vec, [typedValue](auto x) { return x != typedValue; }, indexes);
           break;
       case Operation::GT:
-          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+          ragedb::collect_indexes(vec, [typedValue](auto x) { return x > typedValue; }, indexes);
           break;
       case Operation::GTE:
-          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+          ragedb::collect_indexes(vec, [typedValue](auto x) { return x >= typedValue; }, indexes);
           break;
       case Operation::LT:
-          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+          ragedb::collect_indexes(vec, [typedValue](auto x) { return x < typedValue; }, indexes);
           break;
       case Operation::LTE:
-          indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+          ragedb::collect_indexes(vec, [typedValue](auto x) { return x <= typedValue; }, indexes);
           break;
       default:
           break;
@@ -394,22 +394,22 @@ namespace ragedb {
 
       switch(operation) {
       case Operation::EQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x == typedValue; }, indexes);
         break;
       case Operation::NEQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x != typedValue; }, indexes);
         break;
       case Operation::GT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x > typedValue; }, indexes);
         break;
       case Operation::GTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x >= typedValue; }, indexes);
         break;
       case Operation::LT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x < typedValue; }, indexes);
         break;
       case Operation::LTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x <= typedValue; }, indexes);
         break;
       default:
         break;
@@ -723,22 +723,22 @@ namespace ragedb {
 
       switch(operation) {
       case Operation::EQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x == typedValue; }, indexes);
         break;
       case Operation::NEQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x != typedValue; }, indexes);
         break;
       case Operation::GT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x > typedValue; }, indexes);
         break;
       case Operation::GTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x >= typedValue; }, indexes);
         break;
       case Operation::LT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x < typedValue; }, indexes);
         break;
       case Operation::LTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x <= typedValue; }, indexes);
         break;
       default:
         break;
@@ -770,22 +770,22 @@ namespace ragedb {
 
       switch(operation) {
       case Operation::EQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x == typedValue; }, indexes);
         break;
       case Operation::NEQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x != typedValue; }, indexes);
         break;
       case Operation::GT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x > typedValue; }, indexes);
         break;
       case Operation::GTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x >= typedValue; }, indexes);
         break;
       case Operation::LT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x < typedValue; }, indexes);
         break;
       case Operation::LTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x <= typedValue; }, indexes);
         break;
       default:
         break;
@@ -812,22 +812,22 @@ namespace ragedb {
 
       switch(operation) {
       case Operation::EQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x == typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x == typedValue; }, indexes);
         break;
       case Operation::NEQ:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x != typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x != typedValue; }, indexes);
         break;
       case Operation::GT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x > typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x > typedValue; }, indexes);
         break;
       case Operation::GTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x >= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x >= typedValue; }, indexes);
         break;
       case Operation::LT:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x < typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x < typedValue; }, indexes);
         break;
       case Operation::LTE:
-        indexes = ragedb::collect_indexes(vec.begin(), vec.end(), [typedValue](auto x) { return x <= typedValue; });
+        ragedb::collect_indexes(vec, [typedValue](auto x) { return x <= typedValue; }, indexes);
         break;
       default:
         break;

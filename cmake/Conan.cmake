@@ -25,7 +25,7 @@ macro(run_conan)
     tsl-sparse-map/0.6.2
     simdjson/1.0.2
     roaring/0.5.0
-    jfalcou-eve/v2021.10.0
+    jfalcou-eve/v2022.03.0
     cppcodec/0.2
     cpr/1.7.2
     reckless/3.0.3
