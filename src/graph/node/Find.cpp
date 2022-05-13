@@ -217,7 +217,7 @@ namespace ragedb {
       case Properties::double_type:
         return countDoubles(type_id, property, operation, value);
       case Properties::date_type:
-        // TODO: Verify This
+        
         return countDoubles(type_id, property, operation, value);
       case Properties::string_type:
         return countStrings(type_id, property, operation, value);
@@ -228,7 +228,7 @@ namespace ragedb {
       case Properties::double_list_type:
         return countDoubleLists(type_id, property, operation, value);
       case Properties::date_list_type:
-        // TODO: Verify This
+        
         return countDoubleLists(type_id, property, operation, value);
       case Properties::string_list_type:
         return countStringLists(type_id, property, operation, value);
@@ -244,7 +244,7 @@ namespace ragedb {
     roaring::Roaring64Map blank;
     blank |= properties[type_id].getDeletedMap(property);
     blank -= getDeletedMap(type_id);
-    for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+    for (auto iterator = blank.begin(); iterator != blank.end(); ++iterator) {
       if (current > (skip + limit)) {
         break;
       }
@@ -265,7 +265,7 @@ namespace ragedb {
     blank -= getDeletedMap(type_id);
     blank -= properties[type_id].getDeletedMap(property);
 
-    for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+    for (auto iterator = blank.begin(); iterator != blank.end(); ++iterator) {
       if (current > (skip + limit)) {
         break;
       }
@@ -357,7 +357,7 @@ namespace ragedb {
     // Handle values that are parsed as Integers (230 vs 230.0)
     if (Properties::isIntegerProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
-      const double typedValue = static_cast<double>(get<int64_t>(value));
+      const auto typedValue = static_cast<double>(get<int64_t>(value));
       const std::vector<double> &vec = properties[type_id].getDoubles(property);
       std::vector<std::uint64_t> indexes;
 
@@ -636,7 +636,6 @@ namespace ragedb {
       case Properties::double_type:
         return findDoubleIds(type_id, property, operation, value, skip, limit);
       case Properties::date_type:
-        // TODO: Verify This
         return findDoubleIds(type_id, property, operation, value, skip, limit);
       case Properties::string_type:
         return findStringIds(type_id, property, operation, value, skip, limit);
@@ -647,7 +646,6 @@ namespace ragedb {
       case Properties::double_list_type:
         return findDoubleListIds(type_id, property, operation, value, skip, limit);
       case Properties::date_list_type:
-        // TODO: Verify This
         return findDoubleListIds(type_id, property, operation, value, skip, limit);
       case Properties::string_list_type:
         return findStringListIds(type_id, property, operation, value, skip, limit);
@@ -664,7 +662,7 @@ namespace ragedb {
     roaring::Roaring64Map blank;
     blank |= properties[type_id].getDeletedMap(property);
     blank -= getDeletedMap(type_id);
-    for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+    for (auto iterator = blank.begin(); iterator != blank.end(); ++iterator) {
       if (current > (skip + limit)) {
         break;
       }
@@ -686,7 +684,7 @@ namespace ragedb {
     blank -= getDeletedMap(type_id);
     blank -= properties[type_id].getDeletedMap(property);
 
-    for (roaring::Roaring64MapSetBitForwardIterator iterator = blank.begin(); iterator != blank.end(); ++iterator) {
+    for (auto iterator = blank.begin(); iterator != blank.end(); ++iterator) {
       if (current > (skip + limit)) {
         break;
       }
@@ -778,7 +776,7 @@ namespace ragedb {
     // Handle values that are parsed as Integers (230 vs 230.0)
     if (Properties::isIntegerProperty(value)) {
       const roaring::Roaring64Map blank = getBlanks(type_id, property);
-      const double typedValue = static_cast<double>(get<int64_t>(value));
+      const auto typedValue = static_cast<double>(get<int64_t>(value));
       const std::vector<double> &vec = properties[type_id].getDoubles(property);
       std::vector<std::uint64_t> indexes;
 
@@ -1055,7 +1053,6 @@ namespace ragedb {
       case Properties::double_type:
         return findDoubleNodes(type_id, property, operation, value, skip, limit);
       case Properties::date_type:
-        // TODO: Verify this
         return findDoubleNodes(type_id, property, operation, value, skip, limit);
       case Properties::string_type:
         return findStringNodes(type_id, property, operation, value, skip, limit);
@@ -1066,7 +1063,6 @@ namespace ragedb {
       case Properties::double_list_type:
         return findDoubleListNodes(type_id, property, operation, value, skip, limit);
       case Properties::date_list_type:
-        // TODO: Verify this
         return findDoubleListNodes(type_id, property, operation, value, skip, limit);
       case Properties::string_list_type:
         return findStringListNodes(type_id, property, operation, value, skip, limit);

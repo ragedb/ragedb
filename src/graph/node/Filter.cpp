@@ -38,7 +38,7 @@ namespace ragedb {
       const bool typedValue = get<bool>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -57,7 +57,7 @@ namespace ragedb {
       const int64_t typedValue = get<int64_t>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -76,7 +76,7 @@ namespace ragedb {
       const double typedValue = get<double>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -95,7 +95,7 @@ namespace ragedb {
       const std::string typedValue = get<std::string>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::EvaluateString(operation, properties[type_id].getStringProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -114,7 +114,7 @@ namespace ragedb {
       const std::vector<bool> typedValue = get<std::vector<bool>>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::EvaluateVector<bool>(operation, properties[type_id].getListOfBooleanProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -133,7 +133,7 @@ namespace ragedb {
       const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::EvaluateVector<int64_t>(operation, properties[type_id].getListOfIntegerProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -152,7 +152,7 @@ namespace ragedb {
       const std::vector<double> typedValue = get<std::vector<double>>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::EvaluateVector<double>(operation, properties[type_id].getListOfDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -171,7 +171,7 @@ namespace ragedb {
       const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
       for(auto id : ids) {
         // If the node or property has been deleted, ignore it
-        if (blank.contains( Shard::externalToInternal(id))) {
+        if (blank.contains(Shard::externalToInternal(id))) {
           continue;
         }
         if (!Expression::EvaluateVector<std::string>(operation, properties[type_id].getListOfStringProperty(property,  Shard::externalToInternal(id)), typedValue)) {
@@ -183,7 +183,7 @@ namespace ragedb {
     return count;
   }
 
-  uint64_t NodeTypes::filterCount(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
+  uint64_t NodeTypes::filterCount(const std::vector<uint64_t>& unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     // If the type is invalid, we can't filter any so return zero
     if (!ValidTypeId(type_id)) return 0;
 
@@ -206,38 +206,26 @@ namespace ragedb {
     const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
 
     switch (property_type_id) {
-      case Properties::boolean_type: {
+      case Properties::boolean_type:
         return filterCountBooleans(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::integer_type: {
+      case Properties::integer_type:
         return filterCountIntegers(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::double_type: {
+      case Properties::double_type:
         return filterCountDoubles(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::date_type: {
-        // TODO: Verify this
+      case Properties::date_type:
         return filterCountDoubles(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::string_type: {
+      case Properties::string_type:
         return filterCountStrings(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::boolean_list_type: {
+      case Properties::boolean_list_type:
         return filterCountBooleanLists(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::integer_list_type: {
+      case Properties::integer_list_type:
         return filterCountIntegerLists(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::double_list_type: {
+      case Properties::double_list_type:
         return filterCountDoubleLists(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::date_list_type: {
-        // TODO: Verify this
+      case Properties::date_list_type:
         return filterCountDoubleLists(unfiltered, type_id, property, operation, value);
-      }
-      case Properties::string_list_type: {
+      case Properties::string_list_type:
         return filterCountStringLists(unfiltered, type_id, property, operation, value);
-      }
       default: {
         return 0;
       }
@@ -492,7 +480,6 @@ namespace ragedb {
       case Properties::double_type:
         return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::date_type:
-        // TODO: Verify this
         return filterDoubleIds(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::string_type:
         return filterStringIds(unfiltered, type_id, property, operation, value, skip, limit);
@@ -503,7 +490,6 @@ namespace ragedb {
       case Properties::double_list_type:
         return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::date_list_type:
-        // TODO: Verify this
         return filterDoubleListIds(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::string_list_type:
         return filterStringListIds(unfiltered, type_id, property, operation, value, skip, limit);
@@ -758,7 +744,6 @@ namespace ragedb {
       case Properties::double_type:
         return filterDoubleNodes(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::date_type:
-        // TODO: Verify this
         return filterDoubleNodes(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::string_type:
         return filterStringNodes(unfiltered, type_id, property, operation, value, skip, limit);
@@ -769,7 +754,6 @@ namespace ragedb {
       case Properties::double_list_type:
         return filterDoubleListNodes(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::date_list_type:
-        // TODO: Verify this
         return filterDoubleListNodes(unfiltered, type_id, property, operation, value, skip, limit);
       case Properties::string_list_type:
         return filterStringListNodes(unfiltered, type_id, property, operation, value, skip, limit);
