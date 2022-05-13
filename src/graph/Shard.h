@@ -702,6 +702,12 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
+        //seastar::future<std::vector<uint64_t>> AllIdsPeered(std::map<uint16_t, uint64_t> (Shard::*countsFunction)(), std::vector<uint64_t> (Shard::*idsFunction)(uint16_t, uint64_t, uint64_t) const, uint64_t skip, uint64_t limit);
+        typedef std::map<uint16_t, uint64_t> (Shard::*CountsFunction)();
+        typedef std::vector<uint64_t> (Shard::*IdsFunction)(uint16_t type_id, uint64_t skip, uint64_t limit) const;
+        //seastar::future<std::vector<uint64_t>> AllIdsPeered(std::map<uint16_t, uint64_t> (Shard::*countsFunction)(), IdsFunction idsFunction, uint64_t skip, uint64_t limit);
+        seastar::future<std::vector<uint64_t>> AllIdsPeered(CountsFunction countsFunction, IdsFunction idsFunction, uint64_t skip, uint64_t limit);
+
         seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
@@ -1024,6 +1030,9 @@ namespace ragedb {
         std::map<uint16_t, std::vector<Link>> PartitionLinksByRelationshipShardId(const std::vector<Link> &links) const;
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
+
+
+
   };
 }
 
