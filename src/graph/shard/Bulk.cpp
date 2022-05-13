@@ -81,7 +81,7 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links) {
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
-      for (int i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
       }
 
@@ -100,7 +100,7 @@ namespace ragedb {
         }
       }
 
-      for (int i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         if(sharded_link_links.at(i).empty()) {
           sharded_link_links.erase(i);
         }
@@ -112,7 +112,7 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::string& rel_type){
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
-      for (int i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
       }
 
@@ -134,7 +134,7 @@ namespace ragedb {
         }
       }
 
-      for (int i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         if(sharded_link_links.at(i).empty()) {
           sharded_link_links.erase(i);
         }
@@ -146,7 +146,7 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, uint16_t type_id){
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
-      for (int i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
       }
 
@@ -179,7 +179,7 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::vector<std::string> &rel_types) {
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
-      for (int i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
       }
 

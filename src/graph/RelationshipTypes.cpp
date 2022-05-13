@@ -72,7 +72,7 @@ namespace ragedb {
         return false;
     }
 
-    uint16_t RelationshipTypes::getTypeId(const std::string &type) {
+    uint16_t RelationshipTypes::getTypeId(const std::string &type) const {
         if (auto type_search = type_to_id.find(type); type_search != type_to_id.end()) {
           return type_search->second;
         }
@@ -348,7 +348,7 @@ namespace ragedb {
         return (type_id > 0 && type_id < id_to_type.size());
     }
 
-    bool RelationshipTypes::ValidRelationshipId(uint16_t type_id, uint64_t internal_id) {
+    bool RelationshipTypes::ValidRelationshipId(uint16_t type_id, uint64_t internal_id) const {
         // If the type is valid, is the internal id within the vector size and is it not deleted?
         if (ValidTypeId(type_id)) {
             return starting_node_ids[type_id].size() > internal_id && !deleted_ids[type_id].contains(internal_id);
@@ -356,7 +356,7 @@ namespace ragedb {
         return false;
     }
 
-    uint64_t RelationshipTypes::getCount(uint16_t type_id) {
+    uint64_t RelationshipTypes::getCount(uint16_t type_id) const {
         if (ValidTypeId(type_id)) {
             return starting_node_ids[type_id].size() - deleted_ids[type_id].cardinality();
         }

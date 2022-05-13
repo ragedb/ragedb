@@ -44,7 +44,7 @@ namespace ragedb {
         void Clear();
 
         bool addTypeId(const std::string &type, uint16_t relationship_type_id);
-        uint16_t getTypeId(const std::string &type);
+        uint16_t getTypeId(const std::string &type) const;
         uint16_t insertOrGetTypeId(const std::string &type);
         std::string getType(const std::string &type);
         std::string getType(uint16_t relationship_type_id);
@@ -139,10 +139,10 @@ namespace ragedb {
         uint64_t getDeletedIdsMinimum(uint16_t type_id);
 
         bool ValidTypeId(uint16_t type_id) const;
-        bool ValidRelationshipId(uint16_t type_id, uint64_t internal_id);
+        bool ValidRelationshipId(uint16_t type_id, uint64_t internal_id) const;
 
         std::map<uint16_t, uint64_t> getCounts();
-        uint64_t getCount(uint16_t type_id);
+        uint64_t getCount(uint16_t type_id) const;
         uint64_t getDeletedCount(uint16_t node_type_id);
         roaring::Roaring64Map& getDeletedMap(uint16_t type_id);
         uint16_t getSize() const;

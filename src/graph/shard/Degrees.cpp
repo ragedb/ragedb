@@ -80,16 +80,16 @@ namespace ragedb {
                 uint64_t count = 0;
                 // Use the two ifs to handle ALL for a direction
                 if (direction != Direction::IN) {
-                    auto group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
-                                         [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+                    auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+                      [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                     if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                         count += group->links.size();
                     }
                 }
                 if (direction != Direction::OUT) {
-                    auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-                                         [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+                    auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+                      [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                     if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                         count += group->links.size();
@@ -113,8 +113,8 @@ namespace ragedb {
                 for (const auto &rel_type : rel_types) {
                     uint16_t type_id = relationship_types.getTypeId(rel_type);
                     if (type_id > 0) {
-                        auto group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
-                                             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+                        auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+                          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                         if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
                             count += group->links.size();
@@ -127,8 +127,8 @@ namespace ragedb {
                 for (const auto &rel_type : rel_types) {
                     uint16_t type_id = relationship_types.getTypeId(rel_type);
                     if (type_id > 0) {
-                        auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-                                             [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+                        auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+                          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                         if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                             count += group->links.size();

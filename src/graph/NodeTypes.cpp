@@ -84,7 +84,7 @@ namespace ragedb {
         return true;
     }
 
-    uint16_t NodeTypes::getTypeId(const std::string &type) {
+    uint16_t NodeTypes::getTypeId(const std::string &type) const {
         if (auto type_search = type_to_id.find(type); type_search != type_to_id.end()) {
           return type_search->second;
         }
@@ -347,7 +347,7 @@ namespace ragedb {
         return key_to_node_id[type_id].size() <= internal_id || deleted_ids[type_id].contains(internal_id);
     }
 
-    uint64_t NodeTypes::getCount(uint16_t type_id) {
+    uint64_t NodeTypes::getCount(uint16_t type_id) const {
         if (ValidTypeId(type_id)) {
             return key_to_node_id[type_id].size() - deleted_ids[type_id].cardinality();
         }

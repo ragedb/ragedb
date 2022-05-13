@@ -25,8 +25,8 @@ namespace ragedb {
         uint64_t external_id = 0;
 
         // Check if the key exists
-        auto key_search = node_types.getKeysToNodeId(type_id).find(key);
-        if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
+        if (auto key_search = node_types.getKeysToNodeId(type_id).find(key);
+            key_search == std::end(node_types.getKeysToNodeId(type_id))) {
             // If we have deleted nodes, fill in the space by adding the new node here
             if (node_types.hasDeleted(type_id)) {
                 internal_id = node_types.getDeletedIdsMinimum(type_id);
@@ -54,8 +54,9 @@ namespace ragedb {
         uint64_t external_id = 0;
 
         // Check if the key exists
-        auto key_search = node_types.getKeysToNodeId(type_id).find(key);
-        if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
+
+        if ( auto key_search = node_types.getKeysToNodeId(type_id).find(key);
+            key_search == std::end(node_types.getKeysToNodeId(type_id))) {
             // If we have deleted nodes, fill in the space by adding the new node here
             if (node_types.hasDeleted(type_id)) {
                 internal_id = node_types.getDeletedIdsMinimum(type_id);
@@ -85,8 +86,8 @@ namespace ragedb {
 
       for (auto [key, properties] : nodes ) {
         // Check if the key exists
-        auto key_search = node_types.getKeysToNodeId(type_id).find(key);
-        if (key_search == std::end(node_types.getKeysToNodeId(type_id))) {
+        if ( auto key_search = node_types.getKeysToNodeId(type_id).find(key);
+            key_search == std::end(node_types.getKeysToNodeId(type_id))) {
           uint64_t internal_id = node_types.getCount(type_id);
           uint64_t external_id = 0;
           // If we have deleted nodes, fill in the space by adding the new node here
@@ -163,11 +164,9 @@ namespace ragedb {
             node_types.deleteProperties(node_type_id, internal_id);
 
             // Go through all the outgoing relationships and delete them and their counterparts that I own
-            for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            for (const auto[rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
-                uint16_t rel_type_id = types.rel_type_id;
-
-                for (Link link : types.links) {
+                for (Link link : links) {
                     uint64_t internal_relationship_id = externalToInternal(link.rel_id);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
@@ -184,11 +183,9 @@ namespace ragedb {
                         for (auto &other_types : node_types.getIncomingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
                             if (other_types.rel_type_id == rel_type_id) {
-                                other_types.links.erase(
-                                        std::remove_if(std::begin(other_types.links), std::end(other_types.links),
-                                                       [link](Link entry) {
-                                                           return entry.rel_id == link.rel_id;
-                                                       }), std::end(other_types.links));
+                                std::erase_if(other_types.links, [link](Link entry) {
+                                    return entry.rel_id == link.rel_id;
+                                });
                             }
                         }
                     }
@@ -199,11 +196,9 @@ namespace ragedb {
             node_types.getOutgoingRelationships(node_type_id).at(internal_id).clear();
 
             // Go through all the incoming relationships and delete them and their counterpart
-            for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+            for (const auto &[rel_type_id, links] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
-                uint16_t rel_type_id = types.rel_type_id;
-
-                for (Link link : types.links) {
+                for (Link link : links) {
                     uint64_t internal_relationship_id = externalToInternal(link.rel_id);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
@@ -220,11 +215,9 @@ namespace ragedb {
                         for (auto &other_types : node_types.getOutgoingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
                             if (other_types.rel_type_id == rel_type_id) {
-                                other_types.links.erase(
-                                        std::remove_if(std::begin(other_types.links), std::end(other_types.links),
-                                                       [link](Link entry) {
-                                                           return entry.rel_id == link.rel_id;
-                                                       }), std::end(other_types.links));
+                                std::erase_if(other_types.links, [link](Link entry) {
+                                    return entry.rel_id == link.rel_id;
+                                });
                             }
                         }
                     }
@@ -251,9 +244,9 @@ namespace ragedb {
         return property_type_t();
     }
 
-    bool Shard::NodeSetProperty(uint64_t id, const std::string& property, property_type_t value) {
+    bool Shard::NodeSetProperty(uint64_t id, const std::string& property, const property_type_t& value) {
         if (ValidNodeId(id)) {
-            return node_types.setNodeProperty(id, property, std::move(value));
+            return node_types.setNodeProperty(id, property, value);
         }
         return false;
     }

@@ -32,14 +32,14 @@ namespace ragedb {
     }
 
     uint16_t Shard::externalToTypeId(uint64_t id) {
-        return (id & TYPE_MASK ) >> SHARD_BITS;
+        return (uint16_t)((id & TYPE_MASK ) >> SHARD_BITS);
     }
 
     uint16_t Shard::CalculateShardId(uint64_t id) {
         if(id < SHARD_MASK) {
             return 0;
         }
-        return id & SHARD_MASK;
+        return (uint16_t)(id & SHARD_MASK);
     }
 
     uint16_t Shard::CalculateShardId(const std::string &type, const std::string &key) const {
@@ -78,7 +78,7 @@ namespace ragedb {
         return (uint16_t)(((__uint128_t)x64 * (__uint128_t)cpus) >> SIXTY_FOUR);
     }
 
-    bool Shard::ValidNodeId(uint64_t id) {
+    bool Shard::ValidNodeId(uint64_t id) const {
         // Node must be greater than zero,
         // less than maximum node id,
         // belong to this shard
@@ -87,7 +87,7 @@ namespace ragedb {
                && node_types.ValidNodeId(externalToTypeId(id), externalToInternal(id));
     }
 
-    bool Shard::ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id) {
+    bool Shard::ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id) const {
       // Node must be greater than zero,
       // less than maximum node id,
       // belong to this shard
@@ -96,7 +96,7 @@ namespace ragedb {
              && node_types.ValidNodeId(type_id, internal_id);
     }
 
-    bool Shard::ValidRelationshipId(uint64_t id) {
+    bool Shard::ValidRelationshipId(uint64_t id) const {
         // Relationship must be greater than zero,
         // less than maximum relationship id,
         // belong to this shard
@@ -105,7 +105,7 @@ namespace ragedb {
         && relationship_types.ValidRelationshipId(externalToTypeId(id), externalToInternal(id));
     }
 
-    bool Shard::ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id) {
+    bool Shard::ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id) const {
       // Relationship must be greater than zero,
       // less than maximum relationship id,
       // belong to this shard

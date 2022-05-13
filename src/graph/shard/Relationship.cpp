@@ -19,8 +19,8 @@
 namespace ragedb {
 
 [[maybe_unused]] void Shard::insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &links) const {
-      Link link = Link(id1, external_id);
-      links.insert(std::upper_bound(links.begin(), links.end(), link), link);
+      auto link = Link(id1, external_id);
+      links.insert(std::ranges::upper_bound(links, link), link);
     }
 
     uint64_t Shard::RelationshipAddEmptySameShard(uint16_t rel_type_id, uint64_t id1, uint64_t id2) {
@@ -45,8 +45,8 @@ namespace ragedb {
             external_id = internalToExternal(rel_type_id, internal_id);
 
             // Add the relationship to the outgoing node
-            auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
-                                 [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+            auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
+              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
                group->links.emplace_back(id2, external_id);
@@ -57,8 +57,8 @@ namespace ragedb {
             }
 
             // Add the relationship to the incoming node
-            group = find_if(std::begin(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)), std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
-                            [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+            group = std::ranges::find_if(node_types.getIncomingRelationships(id2_type_id).at(internal_id2),
+              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2))) {
               group->links.emplace_back(id1, external_id);
@@ -98,8 +98,8 @@ namespace ragedb {
             external_id = internalToExternal(rel_type_id, internal_id);
 
             // Add the relationship to the outgoing node
-            auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
-                                 [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+            auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
+              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
               group->links.emplace_back(id2, external_id);
@@ -110,8 +110,8 @@ namespace ragedb {
             }
 
             // Add the relationship to the incoming node
-            group = find_if(std::begin(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)), std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
-                            [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+            group = std::ranges::find_if(node_types.getIncomingRelationships(id2_type_id).at(internal_id2),
+              [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
             // See if the relationship type is already there
             if (group != std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2))) {
               group->links.emplace_back(id1, external_id);
@@ -161,8 +161,8 @@ namespace ragedb {
         external_id = internalToExternal(rel_type_id, internal_id);
 
         // Add the relationship to the outgoing node
-        auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
-                             [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+        auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
+          [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
         // See if the relationship type is already there
         if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
           group->links.emplace_back(id2, external_id);
@@ -196,8 +196,8 @@ namespace ragedb {
         external_id = internalToExternal(rel_type_id, internal_id);
 
         // Add the relationship to the outgoing node
-        auto group = find_if(std::begin(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)), std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1)),
-                             [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+        auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
+          [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
         // See if the relationship type is already there
         if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
           group->links.emplace_back(id2, external_id);
@@ -214,8 +214,8 @@ namespace ragedb {
         uint64_t internal_id2 = externalToInternal(id2);
         uint16_t id2_type_id = externalToTypeId(id2);
         // Add the relationship to the incoming node
-        auto group = find_if(std::begin(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)), std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2)),
-                             [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+        auto group = std::ranges::find_if(node_types.getIncomingRelationships(id2_type_id).at(internal_id2),
+          [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
         // See if the relationship type is already there
         if (group != std::end(node_types.getIncomingRelationships(id2_type_id).at(internal_id2))) {
             group->links.emplace_back(id1, external_id);

@@ -98,10 +98,10 @@ namespace ragedb {
         static uint16_t CalculateShardId(uint64_t id);
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
         uint16_t CalculateShardId(const std::string &type, const std::string &key, const property_type_t &value) const;
-        bool ValidNodeId(uint64_t id);
-        bool ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id);
-        bool ValidRelationshipId(uint64_t id);
-        bool ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id);
+        bool ValidNodeId(uint64_t id) const;
+        bool ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id) const;
+        bool ValidRelationshipId(uint64_t id) const;
+        bool ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id) const;
 
         // *****************************************************************************************************************************
         //                                               Single Shard
@@ -110,16 +110,16 @@ namespace ragedb {
         static seastar::future<std::string> HealthCheck();
 
         // Node Types
-        uint16_t NodeTypesGetCount();
-        uint64_t NodeTypesGetCount(uint16_t type_id);
-        uint64_t NodeTypesGetCount(const std::string& type);
+        uint16_t NodeTypesGetCount() const;
+        uint64_t NodeTypesGetCount(uint16_t type_id) const;
+        uint64_t NodeTypesGetCount(const std::string& type) const;
         std::set<std::string> NodeTypesGet();
         std::map<std::string, std::string> NodeTypeGet(const std::string& type);
 
         // Relationship Types
-        uint16_t RelationshipTypesGetCount();
-        uint64_t RelationshipTypesGetCount(uint16_t type_id);
-        uint64_t RelationshipTypesGetCount(const std::string& type);
+        uint16_t RelationshipTypesGetCount() const;
+        uint64_t RelationshipTypesGetCount(uint16_t type_id) const;
+        uint64_t RelationshipTypesGetCount(const std::string& type) const;
         std::set<std::string> RelationshipTypesGet();
         std::map<std::string, std::string> RelationshipTypeGet(const std::string& type);
 
@@ -171,8 +171,8 @@ namespace ragedb {
         std::map<Link, std::string> NodesGetKey(const std::vector<Link>& links);
         std::map<uint64_t, std::string> NodesGetType(const std::vector<uint64_t>&);
         std::map<Link, std::string> NodesGetType(const std::vector<Link>& links);
-        std::map<uint64_t, uint16_t> NodesGetTypeId(const std::vector<uint64_t>&);
-        std::map<Link, uint16_t> NodesGetTypeId(const std::vector<Link>& links);
+        std::map<uint64_t, uint16_t> NodesGetTypeId(const std::vector<uint64_t>&) const;
+        std::map<Link, uint16_t> NodesGetTypeId(const std::vector<Link>& links) const;
 
         std::map<uint64_t, property_type_t> NodesGetProperty(const std::vector<uint64_t> &ids, const std::string& property);
         std::map<Link, property_type_t> NodesGetProperty(const std::vector<Link>& links, const std::string& property);
@@ -181,7 +181,7 @@ namespace ragedb {
 
         // Node Property
         property_type_t NodeGetProperty(uint64_t id, const std::string& property);
-        bool NodeSetProperty(uint64_t id, const std::string& property, property_type_t value);
+        bool NodeSetProperty(uint64_t id, const std::string& property, const property_type_t& value);
         bool NodeSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value);
         property_type_t NodeGetProperty(const std::string& type, const std::string& key, const std::string& property);
         bool NodeGetProperty(const std::string& type, const std::string& key, const std::string& property, property_type_t value);
@@ -398,23 +398,23 @@ namespace ragedb {
         std::vector<Relationship> FindRelationships(uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
         // Filter
-        uint64_t FilterNodeCount(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
-        uint64_t FilterNodeCount(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
+        uint64_t FilterNodeCount(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
+        uint64_t FilterNodeCount(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
 
-        std::vector<uint64_t> FilterNodeIds(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<uint64_t> FilterNodeIds(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> FilterNodeIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> FilterNodeIds(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
-        std::vector<Node> FilterNodes(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<Node> FilterNodes(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Node> FilterNodes(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Node> FilterNodes(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
-        uint64_t FilterRelationshipCount(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
-        uint64_t FilterRelationshipCount(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
+        uint64_t FilterRelationshipCount(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
+        uint64_t FilterRelationshipCount(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
 
-        std::vector<uint64_t> FilterRelationshipIds(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<uint64_t> FilterRelationshipIds(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> FilterRelationshipIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> FilterRelationshipIds(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
-        std::vector<Relationship> FilterRelationships(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<Relationship> FilterRelationships(std::vector<uint64_t> ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Relationship> FilterRelationships(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Relationship> FilterRelationships(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
 
 

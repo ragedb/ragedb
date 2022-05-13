@@ -78,7 +78,7 @@ namespace ragedb {
       return sharded_node_types;
     }
 
-    std::map<uint64_t, uint16_t> Shard::NodesGetTypeId(const std::vector<uint64_t>& node_ids) {
+    std::map<uint64_t, uint16_t> Shard::NodesGetTypeId(const std::vector<uint64_t>& node_ids) const {
       std::map<uint64_t, uint16_t> sharded_node_type_ids;
 
       for(uint64_t id : node_ids) {
@@ -88,7 +88,7 @@ namespace ragedb {
       return sharded_node_type_ids;
     }
 
-    std::map<Link, uint16_t> Shard::NodesGetTypeId(const std::vector<Link>& links) {
+    std::map<Link, uint16_t> Shard::NodesGetTypeId(const std::vector<Link>& links) const {
       std::map<Link, uint16_t> sharded_node_type_ids;
 
       for(Link link : links) {

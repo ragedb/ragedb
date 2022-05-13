@@ -19,20 +19,17 @@
 namespace ragedb {
 
     bool Shard::NodeRemoveDeleteIncoming(uint64_t id, const std::map<uint16_t, std::vector<uint64_t>>&grouped_relationships) {
-        for (const auto& rel_type_node_ids : grouped_relationships) {
-            uint16_t rel_type_id = rel_type_node_ids.first;
-            for (auto node_id : rel_type_node_ids.second) {
+        for (const auto& [rel_type_id, ids] : grouped_relationships) {
+            for (auto node_id : ids) {
                 uint64_t internal_id = externalToInternal(node_id);
                 uint16_t node_type_id = externalToTypeId(node_id);
 
-                auto group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
-                                     [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
-
-                if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                    group->links.erase(std::remove_if(std::begin(group->links), std::end(group->links), [id](Link entry) {
-                        return entry.node_id == id;
-                    }), std::end(group->links));
-                }
+                std::ranges::for_each(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+                  [rel_type_id = rel_type_id, id] (Group& g) {
+                      if (g.rel_type_id == rel_type_id) {
+                          std::erase_if(g.links, [id](auto entry) { return entry.node_id == id; });
+                      };
+                  });
             }
         }
 
@@ -43,18 +40,18 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(external_id);
         uint16_t node_type_id = externalToTypeId(external_id);
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> relationships_to_delete;
-        for (int i = 0; i < cpus; i++) {
+        for (uint16_t i = 0; i < cpus; i++) {
             relationships_to_delete.insert({i, std::map<uint16_t, std::vector<uint64_t>>() });
         }
 
         // Go through all the outgoing relationships and return the counterparts that I do not own
-        for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+        for (const auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
             // Get the Relationship Type of the list
             uint16_t rel_type = types.rel_type_id;
 
             for (Link link : types.links) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
-                for (int i = 0; i < cpus; i++) {
+                for (uint16_t i = 0; i < cpus; i++) {
                     node_ids.insert({ i, std::vector<uint64_t>() });
                 }
 
@@ -71,7 +68,7 @@ namespace ragedb {
                 }
             }
         }
-        for (int i = 0; i < cpus; i++) {
+        for (uint16_t i = 0; i < cpus; i++) {
             if(relationships_to_delete[i].empty()) {
                 relationships_to_delete.erase(i);
             }
@@ -84,7 +81,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(external_id);
         uint16_t node_type_id = externalToTypeId(external_id);
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> relationships_to_delete;
-        for (int i = 0; i < cpus; i++) {
+        for (uint16_t i = 0; i < cpus; i++) {
             relationships_to_delete.insert({i, std::map<uint16_t, std::vector<uint64_t>>() });
         }
 
@@ -95,7 +92,7 @@ namespace ragedb {
 
             for (Link link : group.links) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
-                for (int i = 0; i < cpus; i++) {
+                for (uint16_t i = 0; i < cpus; i++) {
                     node_ids.insert({ i, std::vector<uint64_t>() });
                 }
 
@@ -105,7 +102,7 @@ namespace ragedb {
                     node_ids.at(node_shard_id).push_back(link.node_id);
                 }
 
-                for (int i = 0; i < cpus; i++) {
+                for (uint16_t i = 0; i < cpus; i++) {
                     if(!node_ids.at(i).empty()) {
                         relationships_to_delete[i].insert({ rel_type, node_ids.at(i) });
                     }
@@ -113,7 +110,7 @@ namespace ragedb {
 
             }
         }
-        for (int i = 0; i < cpus; i++) {
+        for (uint16_t i = 0; i < cpus; i++) {
             if(relationships_to_delete[i].empty()) {
                 relationships_to_delete.erase(i);
             }
@@ -123,31 +120,30 @@ namespace ragedb {
     }
 
     bool Shard::NodeRemoveDeleteOutgoing(uint64_t id, const std::map<uint16_t, std::vector<uint64_t>> &grouped_relationships) {
-        for (const auto& rel_type_node_ids : grouped_relationships) {
-            uint16_t rel_type_id = rel_type_node_ids.first;
-            for (auto node_id : rel_type_node_ids.second) {
+        for (const auto& [rel_type_id, ids] : grouped_relationships) {
+            for (auto node_id : ids) {
                 uint64_t internal_id = externalToInternal(node_id);
                 uint16_t node_type_id = externalToTypeId(node_id);
 
-                auto group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
-                                     [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
+                std::ranges::for_each(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+                  [rel_type_id = rel_type_id, id, this] (Group& g) {
+                      // Look in the relationship chain for any relationships of the node to be removed and delete them.
+                      if (g.rel_type_id == rel_type_id) {
+                          std::erase_if(g.links, [id, &rel_type_id, this](auto entry) {
+                              if (entry.node_id == id) {
+                                  uint64_t internal_id = externalToInternal(entry.rel_id);
+                                  // Update the relationship type counts
+                                  relationship_types.removeId(rel_type_id, internal_id);
+                                  relationship_types.setStartingNodeId(rel_type_id, internal_id, 0);
+                                  relationship_types.setEndingNodeId(rel_type_id, internal_id, 0);
+                                  relationship_types.deleteProperties(rel_type_id, internal_id);
+                                  return true;
+                              }
 
-                if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                    // Look in the relationship chain for any relationships of the node to be removed and delete them.
-                    group->links.erase(std::remove_if(std::begin(group->links), std::end(group->links), [id, rel_type_id, this](Link entry) {
-                        if (entry.node_id == id) {
-                            uint64_t internal_id = externalToInternal(entry.rel_id);
-                            // Update the relationship type counts
-                            relationship_types.removeId(rel_type_id, internal_id);
-                            relationship_types.setStartingNodeId(rel_type_id, internal_id, 0);
-                            relationship_types.setEndingNodeId(rel_type_id, internal_id, 0);
-                            relationship_types.deleteProperties(rel_type_id, internal_id);
-                            return true;
-                        }
-
-                        return false;
-                    }), std::end(group->links));
-                }
+                              return false;
+                          });
+                      };
+                  });
 
             }
         }
