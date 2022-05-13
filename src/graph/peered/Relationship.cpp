@@ -239,7 +239,7 @@ namespace ragedb {
                             });
                         }
                         // we need to get id2 on its shard
-                        return container().invoke_on(shard_id2, [type1, key1, type2, key2](Shard &local_shard) {
+                        return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
                             return local_shard.NodeGetID(type2, key2);
                         }).then([shard_id1, shard_id2, rel_type_id, type1, key1, properties, this](uint64_t id2) {
                             // if id2 is valid, we need to get id1 on its shard
@@ -451,7 +451,7 @@ namespace ragedb {
         // The relationship type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [shard_id1, shard_id2, rel_type, id1, id2, properties, this](Shard &local_shard) {
             return local_shard.RelationshipTypeInsertPeered(rel_type)
-                    .then([shard_id1, shard_id2, rel_type, id1, id2, properties, this](uint16_t rel_type_id) {
+                    .then([shard_id1, shard_id2, id1, id2, properties, this](uint16_t rel_type_id) {
                         if (shard_id1 == shard_id2) {
                             return container().invoke_on(shard_id1, [rel_type_id, id1, id2, properties](Shard &local_shard) {
                                 return local_shard.RelationshipAddSameShard(rel_type_id, id1, id2, properties);

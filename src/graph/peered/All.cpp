@@ -18,82 +18,69 @@
 
 namespace ragedb {
 
-// Reference implementation using Pointers-to-member-functions to avoid code duplication.
-// Not sure if worth it for just nodes and relationships
-seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction countsFunction, IdsFunction idsFunction, uint64_t skip, uint64_t limit) {
-    uint64_t max = skip + limit;
-
-    // Get the {Node Type Id, Count} map for each core
-    std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
-    for (uint16_t i=0; i<cpus; i++) {
-        auto future = container().invoke_on(i, [&countsFunction] (Shard &local_shard) mutable {
-            return (local_shard.*countsFunction)();
-        });
-        futures.push_back(std::move(future));
-    }
-
-    auto p = make_shared(std::move(futures));
-    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this, &idsFunction] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
-        uint64_t current = 0;
-        uint64_t next;
-        int current_shard_id = 0;
-        std::vector<uint64_t> ids;
-        std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
-        for (const auto& map : results) {
-            std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
-            for (auto entry : map) {
-                // If we have no results of this type, skip it
-                if (entry.second == 0) {
-                    continue;
-                }
-                next = current + entry.second;
-                if (next > skip) {
-                    std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                    threaded_requests.insert({ entry.first, pair });
-                    if (next > max) {
-                        break; // We have everything we need
-                    }
-                }
-                current = next;
-            }
-            if(!threaded_requests.empty()) {
-                requests.insert({current_shard_id, threaded_requests});
-            }
-            current_shard_id++;
-        }
-
-        std::vector<seastar::future<std::vector<uint64_t>>> futures;
-
-        for (const auto& request : requests) {
-            for (auto entry : request.second) {
-                auto future = container().invoke_on(request.first, [entry, &idsFunction] (Shard &local_shard) mutable {
-                    return (local_shard.*idsFunction)(entry.first, entry.second.first, entry.second.second);
-                });
-                futures.push_back(std::move(future));
-            }
-        }
-
-        auto p2 = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
-            std::vector<uint64_t> ids;
-            ids.reserve(limit);
-            for (auto result : results) {
-                ids.insert(std::end(ids), std::begin(result), std::end(result));
-            }
-            return ids;
-        });
-    });
-}
     seastar::future<std::vector<uint64_t>> Shard::AllNodeIdsPeered(uint64_t skip, uint64_t limit) {
-        IdsFunction idsFunction = &Shard::AllNodeIds;
-        CountsFunction countsFunction = &Shard::NodeCounts;
-        return Shard::AllIdsPeered(countsFunction, idsFunction, skip, limit);
-    }
+        uint64_t max = skip + limit;
 
-    seastar::future<std::vector<uint64_t>> Shard::AllRelationshipIdsPeered(uint64_t skip, uint64_t limit) {
-        IdsFunction idsFunction = &Shard::AllRelationshipIds;
-        CountsFunction countsFunction = &Shard::AllRelationshipIdCounts;
-        return Shard::AllIdsPeered(countsFunction, idsFunction, skip, limit);
+        // Get the {Node Type Id, Count} map for each core
+        std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.NodeCounts();
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+            uint64_t current = 0;
+            uint64_t next;
+            int current_shard_id = 0;
+            std::vector<uint64_t> ids;
+            std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
+            for (const auto& map : results) {
+                std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
+                for (const auto& [core_id, request_count] : map) {
+                    // If we have no results of this type, skip it
+                    if (request_count == 0) {
+                        continue;
+                    }
+                    next = current + request_count;
+                    if (next > skip) {
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
+                        threaded_requests.insert({ core_id, pair });
+                        if (next > max) {
+                            break; // We have everything we need
+                        }
+                    }
+                    current = next;
+                }
+                if(!threaded_requests.empty()) {
+                    requests.insert({current_shard_id, threaded_requests});
+                }
+                current_shard_id++;
+            }
+
+            std::vector<seastar::future<std::vector<uint64_t>>> futures;
+
+            for (const auto& [request_shard_id, request] : requests) {
+                for (const auto [type_id, skip_and_limit] : request) {
+                    auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
+                        return local_shard.AllNodeIds(type_id, skip, limit);
+                    });
+                    futures.push_back(std::move(future));
+                }
+            }
+
+            auto p2 = make_shared(std::move(futures));
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
+                std::vector<uint64_t> ids;
+                ids.reserve(limit);
+                for (const auto& result : results) {
+                    ids.insert(std::end(ids), std::begin(result), std::end(result));
+                }
+                return ids;
+            });
+        });
     }
 
     seastar::future<std::vector<uint64_t>> Shard::AllNodeIdsPeered(const std::string& type, uint64_t skip, uint64_t limit) {
@@ -136,9 +123,9 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
 
-            for (const auto& request : requests) {
-                auto future = container().invoke_on(request.first, [node_type_id, request] (Shard &local_shard) mutable {
-                    return local_shard.AllNodeIds(node_type_id, request.second.first, request.second.second);
+            for (const auto& [request_shard_id, skip_and_limit] : requests) {
+                auto future = container().invoke_on(request_shard_id, [node_type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
+                    return local_shard.AllNodeIds(node_type_id, skip, limit);
                 });
                 futures.push_back(std::move(future));
             }
@@ -175,18 +162,16 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
             std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
             for (const auto& map : results) {
                 std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
-                for (auto entry : map) {
+                for (const auto& [core_id, request_count] : map) {
                     // If we have no results of this type, skip it
-                    if (entry.second == 0) {
+                    if (request_count == 0) {
                         continue;
                     }
-                    // current is 2, limit is 10, skip 3, entry.second is 15
-                    // skip = skip - current
 
-                    uint64_t next = current + entry.second;
+                    uint64_t next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.insert({ entry.first, pair });
+                        threaded_requests.insert({ core_id, pair });
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -201,10 +186,10 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
             std::vector<seastar::future<std::vector<Node>>> futures;
 
-            for (const auto& request : requests) {
-                for (auto entry : request.second) {
-                    auto future = container().invoke_on(request.first, [entry] (Shard &local_shard) mutable {
-                        return local_shard.AllNodes(entry.first, entry.second.first, entry.second.second);
+            for (const auto& [request_shard_id, request] : requests) {
+                for (const auto [type_id, skip_and_limit] : request) {
+                    auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip=skip_and_limit.first, limit=skip_and_limit.second] (Shard &local_shard) mutable {
+                        return local_shard.AllNodes(type_id, skip, limit);
                     });
                     futures.push_back(std::move(future));
                 }
@@ -261,12 +246,11 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
             std::vector<seastar::future<std::vector<Node>>> futures;
 
-            for (const auto& request : requests) {
-                auto future = container().invoke_on(request.first, [node_type_id, request] (Shard &local_shard) mutable {
-                    return local_shard.AllNodes(node_type_id, request.second.first, request.second.second);
+            for (const auto& [request_shard_id, skip_and_limit] : requests) {
+                auto future = container().invoke_on(request_shard_id, [node_type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
+                    return local_shard.AllNodes(node_type_id, skip, limit);
                 });
                 futures.push_back(std::move(future));
-
             }
 
             auto p2 = make_shared(std::move(futures));
@@ -277,6 +261,71 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
                     requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
                 }
                 return requested_nodes;
+            });
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::AllRelationshipIdsPeered(uint64_t skip, uint64_t limit) {
+        uint64_t max = skip + limit;
+
+        // Get the {Relationship Type Id, Count} map for each core
+        std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.AllRelationshipIdCounts();
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, limit, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+            uint64_t current = 0;
+            uint64_t next;
+            int current_shard_id = 0;
+            std::vector<uint64_t> ids;
+            std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
+            for (const auto& map : results) {
+                std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
+                for (const auto& [core_id, request_count] : map) {
+                    // If we have no results of this type, skip it
+                    if (request_count == 0) {
+                        continue;
+                    }
+                    next = current + request_count;
+                    if (next > skip) {
+                        std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
+                        threaded_requests.insert({ core_id, pair });
+                        if (next > max) {
+                            break; // We have everything we need
+                        }
+                    }
+                    current = next;
+                }
+                if(!threaded_requests.empty()) {
+                    requests.insert({current_shard_id, threaded_requests});
+                }
+                current_shard_id++;
+            }
+
+            std::vector<seastar::future<std::vector<uint64_t>>> futures;
+
+            for (const auto& [request_shard_id, request] : requests) {
+                for (const auto [type_id, skip_and_limit] : request) {
+                    auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
+                        return local_shard.AllRelationshipIds(type_id, skip, limit);
+                    });
+                    futures.push_back(std::move(future));
+                }
+            }
+
+            auto p2 = make_shared(std::move(futures));
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
+                std::vector<uint64_t> ids;
+                ids.reserve(limit);
+                for (auto result : results) {
+                    ids.insert(std::end(ids), std::begin(result), std::end(result));
+                }
+                return ids;
             });
         });
     }
@@ -321,9 +370,9 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
 
-            for (const auto& request : requests) {
-                auto future = container().invoke_on(request.first, [relationship_type_id, request] (Shard &local_shard) mutable {
-                    return local_shard.AllRelationshipIds(relationship_type_id, request.second.first, request.second.second);
+            for (const auto& [request_shard_id, skip_and_limit] : requests) {
+                auto future = container().invoke_on(request_shard_id, [relationship_type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
+                    return local_shard.AllRelationshipIds(relationship_type_id, skip, limit);
                 });
                 futures.push_back(std::move(future));
 
@@ -362,15 +411,15 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
             std::map<uint16_t, std::map<uint16_t, std::pair<uint64_t , uint64_t>>> requests;
             for (const auto& map : results) {
                 std::map<uint16_t, std::pair<uint64_t , uint64_t>> threaded_requests;
-                for (auto entry : map) {
+                for (const auto& [core_id, request_count] : map) {
                     // If we have no results of this type, skip it
-                    if (entry.second == 0) {
+                    if (request_count == 0) {
                         continue;
                     }
-                    next = current + entry.second;
+                    next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.insert({ entry.first, pair });
+                        threaded_requests.insert({ core_id, pair });
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -385,10 +434,10 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
             std::vector<seastar::future<std::vector<Relationship>>> futures;
 
-            for (const auto& request : requests) {
-                for (auto entry : request.second) {
-                    auto future = container().invoke_on(request.first, [entry] (Shard &local_shard) mutable {
-                        return local_shard.AllRelationships(entry.first, entry.second.first, entry.second.second);
+            for (const auto& [request_shard_id, request] : requests) {
+                for (const auto [type_id, skip_and_limit] : request) {
+                    auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip=skip_and_limit.first, limit=skip_and_limit.second] (Shard &local_shard) mutable {
+                        return local_shard.AllRelationships(type_id, skip, limit);
                     });
                     futures.push_back(std::move(future));
                 }
@@ -446,9 +495,9 @@ seastar::future<std::vector<uint64_t>> Shard::AllIdsPeered(CountsFunction counts
 
             std::vector<seastar::future<std::vector<Relationship>>> futures;
 
-            for (const auto& request : requests) {
-                auto future = container().invoke_on(request.first, [relationship_type_id, request] (Shard &local_shard) mutable {
-                    return local_shard.AllRelationships(relationship_type_id, request.second.first, request.second.second);
+            for (const auto& [request_shard_id, skip_and_limit] : requests) {
+                auto future = container().invoke_on(request_shard_id, [relationship_type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
+                    return local_shard.AllRelationships(relationship_type_id, skip, limit);
                 });
                 futures.push_back(std::move(future));
 
