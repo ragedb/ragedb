@@ -756,27 +756,27 @@ namespace ragedb {
         sol::table PropertiesToSolObject(const std::map<std::string, property_type_t>& properties);
 
           // Relationship Types
-        uint16_t RelationshipTypesGetCountViaLua();
+        uint16_t RelationshipTypesGetCountViaLua() const;
         uint64_t RelationshipTypesGetCountByTypeViaLua(const std::string& type);
         uint64_t RelationshipTypesGetCountByIdViaLua(uint16_t type_id);
         sol::as_table_t<std::set<std::string>> RelationshipTypesGetViaLua();
         sol::as_table_t<std::map<std::string, std::string>> RelationshipTypeGetViaLua(const std::string& type);
 
         // Relationship Type
-        std::string RelationshipTypeGetTypeViaLua(uint16_t type_id);
-        uint16_t RelationshipTypeGetTypeIdViaLua(const std::string& type);
+        std::string RelationshipTypeGetTypeViaLua(uint16_t type_id) const;
+        uint16_t RelationshipTypeGetTypeIdViaLua(const std::string& type) const;
         uint16_t RelationshipTypeInsertViaLua(const std::string& type);
 
         // Node Types
-        uint16_t NodeTypesGetCountViaLua();
+        uint16_t NodeTypesGetCountViaLua() const;
         uint64_t NodeTypesGetCountByTypeViaLua(const std::string& type);
         uint64_t NodeTypesGetCountByIdViaLua(uint16_t type_id);
         sol::as_table_t<std::set<std::string>> NodeTypesGetViaLua();
         sol::as_table_t<std::map<std::string, std::string>> NodeTypeGetViaLua(const std::string& type);
 
         // Node Type
-        std::string NodeTypeGetTypeViaLua(uint16_t type_id);
-        uint16_t NodeTypeGetTypeIdViaLua(const std::string& type);
+        std::string NodeTypeGetTypeViaLua(uint16_t type_id) const;
+        uint16_t NodeTypeGetTypeIdViaLua(const std::string& type) const;
         uint16_t NodeTypeInsertViaLua(const std::string& type);
 
         //Node

@@ -497,7 +497,7 @@ namespace ragedb {
     }
   }
   
-  std::vector<Relationship> RelationshipTypes::filterNullRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterNullRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     uint64_t current = 1;
     for (auto id : list) {
@@ -514,7 +514,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterNotNullRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterNotNullRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     uint64_t current = 1;
     for (auto id : list) {
@@ -531,7 +531,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterBooleanRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterBooleanRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanProperty(value)) {
@@ -554,7 +554,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterIntegerRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterIntegerRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isIntegerProperty(value)) {
@@ -578,7 +578,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterDoubleRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterDoubleRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isDoubleProperty(value)) {
@@ -602,7 +602,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterStringRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterStringRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isStringProperty(value)) {
@@ -626,7 +626,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterBooleanListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterBooleanListRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -649,7 +649,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterIntegerListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterIntegerListRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -672,7 +672,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterDoubleListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterDoubleListRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
@@ -695,7 +695,7 @@ namespace ragedb {
     return relationships;
   }
   
-  std::vector<Relationship> RelationshipTypes::filterStringListRelationships(std::vector<uint64_t> list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> RelationshipTypes::filterStringListRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     std::vector<Relationship> relationships;
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
