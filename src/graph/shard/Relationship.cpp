@@ -53,7 +53,7 @@ namespace ragedb {
                // TODO - Consider: insert_sorted(id2, external_id, group->links);
             } else {
                 // otherwise, create a new type with the links
-                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(rel_type_id, std::vector<Link>({Link(id2, external_id)}));
             }
 
             // Add the relationship to the incoming node
@@ -65,7 +65,7 @@ namespace ragedb {
               // TODO - Consider: insert_sorted(id1, external_id, group->links);
             } else {
                 // otherwise, create a new type with the links
-                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, external_id)})));
+                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(rel_type_id, std::vector<Link>({Link(id1, external_id)}));
             }
 
             return external_id;
@@ -106,7 +106,7 @@ namespace ragedb {
               // TODO - Consider: insert_sorted(id2, external_id, group->links);
             } else {
                 // otherwise create a new type with the links
-                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+                node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(rel_type_id, std::vector<Link>({Link(id2, external_id)}));
             }
 
             // Add the relationship to the incoming node
@@ -118,7 +118,7 @@ namespace ragedb {
               // TODO - Consider: insert_sorted(id1, external_id, group->links);
             } else {
                 // otherwise create a new type with the links
-                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id1, external_id)})));
+                node_types.getIncomingRelationships(id2_type_id).at(internal_id2).emplace_back(rel_type_id, std::vector<Link>({Link(id1, external_id)}));
             }
 
             return external_id;
@@ -169,7 +169,7 @@ namespace ragedb {
           // TODO - Consider: insert_sorted(id2, external_id, group->links);
         } else {
             // otherwise create a new type with the links
-            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(rel_type_id, std::vector<Link>({Link(id2, external_id)}));
         }
 
         return external_id;
@@ -204,7 +204,7 @@ namespace ragedb {
           // TODO - Consider: insert_sorted(id2, external_id, group->links);
         } else {
             // otherwise create a new type with the links
-            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(Group(rel_type_id, std::vector<Link>({Link(id2, external_id)})));
+            node_types.getOutgoingRelationships(id1_type_id).at(internal_id1).emplace_back(rel_type_id, std::vector<Link>({Link(id2, external_id)}));
         }
 
         return external_id;
@@ -235,7 +235,7 @@ namespace ragedb {
         return {};
     }
 
-    std::string Shard::RelationshipGetType(uint64_t id) {
+    std::string Shard::RelationshipGetType(uint64_t id) const {
         if (ValidRelationshipId(id)) {
             return relationship_types.getType(externalToTypeId(id));
         }
@@ -243,7 +243,7 @@ namespace ragedb {
         return relationship_types.getType(0);
     }
 
-    uint16_t Shard::RelationshipGetTypeId(uint64_t id) {
+    uint16_t Shard::RelationshipGetTypeId(uint64_t id) const {
         if (ValidRelationshipId(id)) {
             return externalToTypeId(id);
         }

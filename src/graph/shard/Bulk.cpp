@@ -167,7 +167,7 @@ namespace ragedb {
         }
       }
 
-      for (auto i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         if(sharded_link_links.at(i).empty()) {
           sharded_link_links.erase(i);
         }
@@ -205,7 +205,7 @@ namespace ragedb {
         }
       }
 
-      for (auto i = 0; i < cpus; i++) {
+      for (uint16_t i = 0; i < cpus; i++) {
         if(sharded_link_links.at(i).empty()) {
           sharded_link_links.erase(i);
         }

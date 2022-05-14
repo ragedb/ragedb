@@ -211,8 +211,8 @@ namespace ragedb {
                                           const std::string& type2, const std::string& key2, const std::string& properties);
         uint64_t RelationshipAddToOutgoing(uint16_t rel_type, uint64_t id1, uint64_t id2, const std::string& properties);
         Relationship RelationshipGet(uint64_t rel_id);
-        std::string RelationshipGetType(uint64_t id);
-        uint16_t RelationshipGetTypeId(uint64_t id);
+        std::string RelationshipGetType(uint64_t id) const ;
+        uint16_t RelationshipGetTypeId(uint64_t id) const;
         uint64_t RelationshipGetStartingNodeId(uint64_t id);
         uint64_t RelationshipGetEndingNodeId(uint64_t id);
 
