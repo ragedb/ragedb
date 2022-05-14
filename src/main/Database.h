@@ -48,7 +48,6 @@ public:
   Lua lua;
   Restore restore;
 
-public:
   seastar::future<> start();
 };
 

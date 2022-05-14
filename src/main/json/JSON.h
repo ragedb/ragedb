@@ -75,7 +75,7 @@ public:
   void add_properties(std::map<std::string, std::any> const & props) {
     bool initial = true;
     for (auto[key, value] : props) {
-      std::string property = static_cast<std::string>(key);
+      auto property = static_cast<std::string>(key);
 
       if(value.type() == typeid(std::string)) {
         add_object(initial, property, seastar::json::formatter::to_json(std::any_cast<std::string>(value)));
@@ -373,7 +373,7 @@ private:
 public:
     properties_json(const std::map<std::string, std::string> &_properties) {
         for(auto [key, value] : _properties) {
-            properties.emplace(key, value);
+            properties.try_emplace(key, value);
         }
     }
     properties_json(const std::map<std::string, property_type_t> &_properties) : properties(_properties) {}
@@ -382,7 +382,7 @@ public:
         properties.clear();
     }
 
-    std::string to_json() const {
+    std::string to_json() const override {
         json_properties_builder jsonPropertiesBuilder;
         jsonPropertiesBuilder.add_properties(properties);
         return jsonPropertiesBuilder.as_json();
@@ -436,8 +436,6 @@ struct relationship_json : public json::json_base {
         properties = e.properties;
         return *this;
     }
-
-public:
 
     // We have the relationship, but don't know the relationship type, so go get it
     relationship_json(Relationship& r) {
@@ -493,8 +491,6 @@ struct node_json : public json::json_base {
         return *this;
     }
 
-public:
-
     node_json(Node& n) {
         register_params();
         this->id = n.getId();
@@ -520,11 +516,8 @@ struct database_json : public json::json_base {
     register_params();
   }
 
-  database_json(database_json const & e) : json::json_base() {
+  database_json(database_json const & e) : json::json_base(), key(e.key), nodes(e.nodes), relationships(e.relationships) {
     register_params();
-    key = e.key;
-    nodes = e.nodes;
-    relationships = e.relationships;
   }
 
   database_json& operator=(const database_json& e){
@@ -533,8 +526,6 @@ struct database_json : public json::json_base {
     relationships = e.relationships;
     return *this;
   }
-
-public:
 
   database_json(std::string _key, std::vector<std::string> _nodes, std::vector<std::string> _rels) {
     register_params();

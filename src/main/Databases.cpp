@@ -43,7 +43,7 @@ Database &Databases::at(std::string const &key) {
   return databases.at(key);
 }
 
-bool Databases::contains(std::string const &key) {
+bool Databases::contains(std::string const &key) const {
   return databases.contains(key);
 }
 
