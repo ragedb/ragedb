@@ -21,7 +21,7 @@ namespace ragedb {
     std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> Shard::PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const {
       std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> sharded_nodes;
       for (uint16_t i = 0; i < cpus; i++) {
-        sharded_nodes.insert({i, std::vector<std::tuple<std::string, std::string>>() });
+        sharded_nodes.try_emplace(i);
       }
 
       for (int i = 0; i < keys.size(); i++) {
@@ -39,7 +39,7 @@ namespace ragedb {
     std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionIdsByShardId(const std::vector<uint64_t> &ids) const {
       std::map<uint16_t, std::vector<uint64_t>> sharded_ids;
       for (uint16_t i = 0; i < cpus; i++) {
-        sharded_ids.insert({i, std::vector<uint64_t>() });
+        sharded_ids.try_emplace(i);
       }
       for (auto id : ids) {
         sharded_ids[CalculateShardId(id)].emplace_back(id);
@@ -56,7 +56,7 @@ namespace ragedb {
     std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByShardId(const std::vector<Link>& links) const {
       std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
       for (uint16_t i = 0; i < cpus; i++) {
-        sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
+        sharded_nodes_ids.try_emplace(i);
       }
       for (auto link : links) {
         sharded_nodes_ids[CalculateShardId(link.node_id)].emplace_back(link.node_id);

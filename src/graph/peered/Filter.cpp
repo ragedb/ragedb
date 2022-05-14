@@ -67,19 +67,19 @@ namespace ragedb {
     return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<uint64_t>>& results) {
       uint64_t current = 0;
 
-      std::vector<uint64_t> ids;
+      std::vector<uint64_t> node_ids;
 
       for (const auto& result : results) {
         for( auto id : result) {
           if (++current > skip) {
-            ids.push_back(id);
+              node_ids.push_back(id);
           }
           if (current >= max) {
-            return ids;
+            return node_ids;
           }
         }
       }
-      return ids;
+      return node_ids;
     });
   }
 
@@ -170,19 +170,19 @@ namespace ragedb {
     return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<uint64_t>>& results) {
       uint64_t current = 0;
 
-      std::vector<uint64_t> ids;
+      std::vector<uint64_t> relationship_ids;
 
       for (const auto& result : results) {
         for(auto id : result) {
           if (++current > skip) {
-            ids.push_back(id);
+              relationship_ids.push_back(id);
           }
           if (current >= max) {
-            return ids;
+            return relationship_ids;
           }
         }
       }
-      return ids;
+      return relationship_ids;
     });
   }
 

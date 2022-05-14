@@ -47,7 +47,7 @@ namespace ragedb {
                     next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.insert({ core_id, pair });
+                        threaded_requests.try_emplace(core_id, pair);
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -55,7 +55,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.insert({current_shard_id, threaded_requests});
+                    requests.try_emplace(current_shard_id, threaded_requests);
                 }
                 current_shard_id++;
             }
@@ -63,7 +63,7 @@ namespace ragedb {
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
 
             for (const auto& [request_shard_id, request] : requests) {
-                for (const auto [type_id, skip_and_limit] : request) {
+                for (const auto& [type_id, skip_and_limit] : request) {
                     auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
                         return local_shard.AllNodeIds(type_id, skip, limit);
                     });
@@ -112,7 +112,7 @@ namespace ragedb {
                 next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                    requests.insert({ current_shard_id, pair });
+                    requests.try_emplace(current_shard_id, pair);
                     if (next > max) {
                         break; // We have everything we need
                     }
@@ -171,7 +171,7 @@ namespace ragedb {
                     uint64_t next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.insert({ core_id, pair });
+                        threaded_requests.try_emplace(core_id, pair);
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -179,7 +179,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.insert({current_shard_id, threaded_requests});
+                    requests.try_emplace(current_shard_id, threaded_requests);
                 }
                 current_shard_id++;
             }
@@ -187,7 +187,7 @@ namespace ragedb {
             std::vector<seastar::future<std::vector<Node>>> futures;
 
             for (const auto& [request_shard_id, request] : requests) {
-                for (const auto [type_id, skip_and_limit] : request) {
+                for (const auto& [type_id, skip_and_limit] : request) {
                     auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip=skip_and_limit.first, limit=skip_and_limit.second] (Shard &local_shard) mutable {
                         return local_shard.AllNodes(type_id, skip, limit);
                     });
@@ -235,7 +235,7 @@ namespace ragedb {
                 uint64_t next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                    requests.insert({ current_shard_id, pair });
+                    requests.try_emplace(current_shard_id, pair);
                     if (next > max) {
                         break; // We have everything we need
                     }
@@ -294,7 +294,7 @@ namespace ragedb {
                     next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.insert({ core_id, pair });
+                        threaded_requests.try_emplace(core_id, pair);
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -302,7 +302,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.insert({current_shard_id, threaded_requests});
+                    requests.try_emplace(current_shard_id, threaded_requests);
                 }
                 current_shard_id++;
             }
@@ -310,7 +310,7 @@ namespace ragedb {
             std::vector<seastar::future<std::vector<uint64_t>>> futures;
 
             for (const auto& [request_shard_id, request] : requests) {
-                for (const auto [type_id, skip_and_limit] : request) {
+                for (const auto& [type_id, skip_and_limit] : request) {
                     auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip = skip_and_limit.first, limit = skip_and_limit.second] (Shard &local_shard) mutable {
                         return local_shard.AllRelationshipIds(type_id, skip, limit);
                     });
@@ -359,7 +359,7 @@ namespace ragedb {
                 next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                    requests.insert({ current_shard_id, pair });
+                    requests.try_emplace(current_shard_id, pair);
                     if (next > max) {
                         break; // We have everything we need
                     }
@@ -419,7 +419,7 @@ namespace ragedb {
                     next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.insert({ core_id, pair });
+                        threaded_requests.try_emplace(core_id, pair);
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -427,7 +427,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.insert({current_shard_id, threaded_requests});
+                    requests.try_emplace(current_shard_id, threaded_requests);
                 }
                 current_shard_id++;
             }
@@ -435,7 +435,7 @@ namespace ragedb {
             std::vector<seastar::future<std::vector<Relationship>>> futures;
 
             for (const auto& [request_shard_id, request] : requests) {
-                for (const auto [type_id, skip_and_limit] : request) {
+                for (const auto& [type_id, skip_and_limit] : request) {
                     auto future = container().invoke_on(request_shard_id, [type_id=type_id, skip=skip_and_limit.first, limit=skip_and_limit.second] (Shard &local_shard) mutable {
                         return local_shard.AllRelationships(type_id, skip, limit);
                     });
@@ -484,7 +484,7 @@ namespace ragedb {
                 next = current + count;
                 if (next > skip) {
                     std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                    requests.insert({ current_shard_id, pair });
+                    requests.try_emplace(current_shard_id, pair);
                     if (next > max) {
                         break; // We have everything we need
                     }

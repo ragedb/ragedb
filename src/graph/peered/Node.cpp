@@ -32,8 +32,8 @@ namespace ragedb {
         // The node type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [node_shard_id, type, key, this] (Shard &local_shard) {
             return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, this] (uint16_t node_type_id) {
-                return container().invoke_on(node_shard_id, [node_type_id, key](Shard &local_shard) {
-                    return local_shard.NodeAddEmpty(node_type_id, key);
+                return container().invoke_on(node_shard_id, [node_type_id, key](Shard &local_shard2) {
+                    return local_shard2.NodeAddEmpty(node_type_id, key);
                 });
             });
         });
@@ -53,8 +53,8 @@ namespace ragedb {
         // The node type needs to be set by Shard 0 and propagated
         return container().invoke_on(0, [node_shard_id, type, key, properties, this](Shard &local_shard) {
             return local_shard.NodeTypeInsertPeered(type).then([node_shard_id, key, properties, this](uint16_t type_id) {
-                return container().invoke_on(node_shard_id, [type_id, key, properties](Shard &local_shard) {
-                    return local_shard.NodeAdd(type_id, key, properties);
+                return container().invoke_on(node_shard_id, [type_id, key, properties](Shard &local_shard2) {
+                    return local_shard2.NodeAdd(type_id, key, properties);
                 });
             });
         });
@@ -91,8 +91,8 @@ namespace ragedb {
         return local_shard.NodeTypeInsertPeered(type).then([sharded_nodes, this](uint16_t node_type_id) {
           std::vector<seastar::future<std::vector<uint64_t>>> futures;
           for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
-            auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, node_type_id] (Shard &local_shard) {
-              return local_shard.NodeAddMany(node_type_id, grouped_nodes);
+            auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, node_type_id] (Shard &local_shard2) {
+              return local_shard2.NodeAddMany(node_type_id, grouped_nodes);
             });
             futures.push_back(std::move(future));
           }
