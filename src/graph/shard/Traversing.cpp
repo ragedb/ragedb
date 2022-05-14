@@ -398,7 +398,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
         for (const auto& [rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
@@ -432,7 +432,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
@@ -471,7 +471,7 @@ namespace ragedb {
         uint16_t node_type_id = externalToTypeId(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
@@ -511,7 +511,7 @@ namespace ragedb {
         uint16_t node_type_id = externalToTypeId(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
         for (const auto &rel_type : rel_types) {
@@ -581,7 +581,7 @@ namespace ragedb {
         uint16_t node_type_id = externalToTypeId(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         for (const auto &[rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
@@ -618,10 +618,10 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.insert({i, std::vector<uint64_t>() });
+            sharded_nodes_ids.try_emplace(i);
         }
 
-        auto group = find_if(std::begin(node_types.getOutgoingRelationships(node_type_id).at(internal_id)), std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id)),
+        auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
                              [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
         if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
@@ -631,7 +631,7 @@ namespace ragedb {
             }
         }
 
-        group = find_if(std::begin(node_types.getIncomingRelationships(node_type_id).at(internal_id)), std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id)),
+        group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
                         [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
         if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
@@ -659,7 +659,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
@@ -700,7 +700,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         for (const auto &rel_type : rel_types) {
@@ -766,8 +766,8 @@ namespace ragedb {
 
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
-        for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
-            for (Link link : types.links) {
+        for (const auto& [rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            for (Link link : links) {
                 node_relationships.emplace_back(relationship_types.getRelationship(link.rel_id));
             }
         }
@@ -870,11 +870,11 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
-        for (auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
-            for (Link link : types.links) {
+        for (const auto& [rel_type_id, links]  : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+            for (Link link : links) {
                 uint16_t node_shard_id = CalculateShardId(link.node_id);
                 sharded_relationships_ids.at(node_shard_id).push_back(link.rel_id);
             }
@@ -899,7 +899,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
@@ -930,7 +930,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_relationships_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
@@ -960,7 +960,7 @@ namespace ragedb {
             uint64_t internal_id = externalToInternal(id);
             std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids;
             for (uint16_t i = 0; i < cpus; i++) {
-                sharded_relationships_ids.try_emplace(i, std::vector<uint64_t>());
+                sharded_relationships_ids.try_emplace(i);
             }
             for (const auto &rel_type : rel_types) {
                 uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -1017,7 +1017,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         for (const auto &[type_id, links] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
@@ -1045,7 +1045,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
@@ -1075,7 +1075,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
@@ -1107,7 +1107,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
         for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -1164,11 +1164,11 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
-        for (auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
-            for (Link link : types.links) {
+        for (const auto& [rel_type_id, links]  : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            for (Link link : links) {
                 uint16_t node_shard_id = CalculateShardId(link.node_id);
                 sharded_nodes_ids.at(node_shard_id).push_back(link.node_id);
             }
@@ -1192,7 +1192,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
@@ -1223,7 +1223,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
 
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
@@ -1254,7 +1254,7 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids;
         for (uint16_t i = 0; i < cpus; i++) {
-            sharded_nodes_ids.try_emplace(i, std::vector<uint64_t>());
+            sharded_nodes_ids.try_emplace(i);
         }
         for (const auto &rel_type : rel_types) {
             uint16_t type_id = relationship_types.getTypeId(rel_type);

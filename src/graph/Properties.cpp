@@ -423,72 +423,72 @@ namespace ragedb {
         return true;
     }
 
-    std::map<std::string, property_type_t> Properties::getProperties(uint64_t index) {
+    std::map<std::string, property_type_t> Properties::getProperties(uint64_t index) const {
         // Build a temporary map of string, any
         std::map<std::string, property_type_t> properties;
         // Go through all the property types this Node or Relationship type is supposed to have
         for (auto const&[key, type_id] : types) {
             // If the entry has been deleted, then skip adding it to the map (alternatively we could add an unset Any)
-            if (!deleted[key].contains(index)) {
+            if (!deleted.at(key).contains(index)) {
                 // Find the value based on the type and key and add it to the properties map
                 switch (type_id) {
                 case boolean_type: {
-                    if (booleans[key].size() > index) {
-                        properties.emplace(key, booleans[key][index]);
+                    if (booleans.at(key).size() > index) {
+                        properties.emplace(key, booleans.at(key)[index]);
                     }
                     break;
                 }
                 case integer_type: {
-                    if (integers[key].size() > index) {
-                        properties.emplace(key, integers[key][index]);
+                    if (integers.at(key).size() > index) {
+                        properties.emplace(key, integers.at(key)[index]);
                     }
                     break;
                 }
                 case double_type: {
-                    if (doubles[key].size() > index) {
-                        properties.emplace(key, doubles[key][index]);
+                    if (doubles.at(key).size() > index) {
+                        properties.emplace(key, doubles.at(key)[index]);
                     }
                     break;
                 }
                 case date_type: {
-                  if (doubles[key].size() > index) {
-                    properties.emplace(key, doubles[key][index]);
+                  if (doubles.at(key).size() > index) {
+                    properties.emplace(key, doubles.at(key)[index]);
                   }
                   break;
                 }
                 case string_type: {
-                    if (strings[key].size() > index) {
-                        properties.emplace(key, strings[key][index]);
+                    if (strings.at(key).size() > index) {
+                        properties.emplace(key, strings.at(key)[index]);
                     }
                     break;
                 }
                 case boolean_list_type: {
-                    if (booleans_list[key].size() > index) {
-                        properties.emplace(key, booleans_list[key][index]);
+                    if (booleans_list.at(key).size() > index) {
+                        properties.emplace(key, booleans_list.at(key)[index]);
                     }
                     break;
                 }
                 case integer_list_type: {
-                    if (integers_list[key].size() > index) {
-                        properties.emplace(key, integers_list[key][index]);
+                    if (integers_list.at(key).size() > index) {
+                        properties.emplace(key, integers_list.at(key)[index]);
                     }
                     break;
                 }
                 case double_list_type: {
-                    if (doubles_list[key].size() > index) {
-                        properties.emplace(key, doubles_list[key][index]);
+                    if (doubles_list.at(key).size() > index) {
+                        properties.emplace(key, doubles_list.at(key)[index]);
                     }
                     break;
                 }
                 case date_list_type: {
-                  if (doubles_list[key].size() > index) {
-                    properties.emplace(key, doubles_list[key][index]);
+                  if (doubles_list.at(key).size() > index) {
+                    properties.emplace(key, doubles_list.at(key)[index]);
                   }
                   break;
                 }
                 case string_list_type: {
-                    if (strings_list[key].size() > index) {
-                        properties.emplace(key, strings_list[key][index]);
+                    if (strings_list.at(key).size() > index) {
+                        properties.emplace(key, strings_list.at(key)[index]);
                     }
                     break;
                 }

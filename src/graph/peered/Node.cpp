@@ -259,7 +259,7 @@ namespace ragedb {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, property, value](Shard &local_shard) {
-            return local_shard.NodeGetProperty(type, key, property, value);
+            return local_shard.NodeSetProperty(type, key, property, value);
         });
     }
 

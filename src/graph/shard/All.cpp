@@ -22,12 +22,12 @@ namespace ragedb {
         return node_types.getCounts();
     }
 
-    uint64_t Shard::NodeCount(const std::string &type) {
+    uint64_t Shard::NodeCount(const std::string &type) const {
         uint16_t type_id = node_types.getTypeId(type);
         return NodeCount(type_id);
     }
 
-    uint64_t Shard::NodeCount(uint16_t type_id) {
+    uint64_t Shard::NodeCount(uint16_t type_id) const {
         return node_types.getCount(type_id);
     }
 
@@ -35,7 +35,7 @@ namespace ragedb {
         return node_types.getIds(skip, limit);
     }
 
-    std::vector<uint64_t> Shard::AllNodeIds(const std::string& type, uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t> Shard::AllNodeIds(const std::string& type, uint64_t skip, uint64_t limit) const {
         return AllNodeIds(node_types.getTypeId(type), skip, limit);
     }
 
@@ -60,7 +60,7 @@ namespace ragedb {
         return relationship_types.getIds(skip, limit);
     }
 
-    std::vector<uint64_t> Shard::AllRelationshipIds(const std::string& rel_type, uint64_t skip, uint64_t limit) {
+    std::vector<uint64_t> Shard::AllRelationshipIds(const std::string& rel_type, uint64_t skip, uint64_t limit) const {
         uint16_t type_id = relationship_types.getTypeId(rel_type);
         return AllRelationshipIds(type_id, skip, limit);
     }
@@ -69,29 +69,29 @@ namespace ragedb {
         return relationship_types.getIds(type_id, skip, limit);
     }
 
-    std::vector<Relationship> Shard::AllRelationships(uint64_t skip, uint64_t limit) {
+    std::vector<Relationship> Shard::AllRelationships(uint64_t skip, uint64_t limit) const {
         return relationship_types.getRelationships(skip, limit);
     }
 
-    std::vector<Relationship> Shard::AllRelationships(const std::string& rel_type, uint64_t skip, uint64_t limit) {
+    std::vector<Relationship> Shard::AllRelationships(const std::string& rel_type, uint64_t skip, uint64_t limit) const {
         uint16_t type_id = relationship_types.getTypeId(rel_type);
         return AllRelationships(type_id, skip, limit);
     }
 
-    std::vector<Relationship> Shard::AllRelationships(uint16_t type_id, uint64_t skip, uint64_t limit) {
+    std::vector<Relationship> Shard::AllRelationships(uint16_t type_id, uint64_t skip, uint64_t limit) const {
         return relationship_types.getRelationships(type_id, skip, limit);
     }
 
-    std::map<uint16_t, uint64_t> Shard::AllRelationshipIdCounts() {
+    std::map<uint16_t, uint64_t> Shard::AllRelationshipIdCounts() const {
         return relationship_types.getCounts();
     }
 
-    uint64_t Shard::AllRelationshipIdCounts(const std::string &type) {
+    uint64_t Shard::AllRelationshipIdCounts(const std::string &type) const {
         uint16_t type_id = relationship_types.getTypeId(type);
         return AllRelationshipIdCounts(type_id);
     }
 
-    uint64_t Shard::AllRelationshipIdCounts(uint16_t type_id) {
+    uint64_t Shard::AllRelationshipIdCounts(uint16_t type_id) const {
         return relationship_types.getCount(type_id);
     }
 

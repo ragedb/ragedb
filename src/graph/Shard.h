@@ -154,13 +154,13 @@ namespace ragedb {
         // Node
         uint64_t NodeAddEmpty(uint16_t type_id, const std::string& key);
         uint64_t NodeAdd(uint16_t type_id, const std::string& key, const std::string& properties);
-        std::vector<uint64_t> NodeAddMany(uint16_t type_id, const std::vector<std::tuple<std::string, std::string>> nodes);
+        std::vector<uint64_t> NodeAddMany(uint16_t type_id, const std::vector<std::tuple<std::string, std::string>>& nodes);
         uint64_t NodeGetID(const std::string& type, const std::string& key);
         Node NodeGet(uint64_t id);
         Node NodeGet(const std::string& type, const std::string& key);
         static uint16_t NodeGetTypeId(uint64_t id);
-        std::string NodeGetType(uint64_t id);
-        std::string NodeGetKey(uint64_t id);
+        std::string NodeGetType(uint64_t id) const;
+        std::string NodeGetKey(uint64_t id) const;
         bool NodeRemove(uint64_t id);
         bool NodeRemove(const std::string& type, const std::string& key);
 
@@ -184,8 +184,8 @@ namespace ragedb {
         bool NodeSetProperty(uint64_t id, const std::string& property, const property_type_t& value);
         bool NodeSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value);
         property_type_t NodeGetProperty(const std::string& type, const std::string& key, const std::string& property);
-        bool NodeGetProperty(const std::string& type, const std::string& key, const std::string& property, property_type_t value);
-        bool NodeSetPropertyFromJson(const std::string& type, const std::string& key, const std::string& property,const std::string& value);
+        bool NodeSetProperty(const std::string& type, const std::string& key, const std::string& property, const property_type_t& value);
+        bool NodeSetPropertyFromJson(const std::string& type, const std::string& key, const std::string& property, const std::string& value);
         bool NodeDeleteProperty(const std::string& type, const std::string& key, const std::string& property);
         bool NodeDeleteProperty(uint64_t id, const std::string& property);
 
@@ -355,11 +355,11 @@ namespace ragedb {
 
         // All
         std::map<uint16_t, uint64_t> NodeCounts();
-        uint64_t NodeCount(const std::string& type);
-        uint64_t NodeCount(uint16_t type_id);
+        uint64_t NodeCount(const std::string& type) const;
+        uint64_t NodeCount(uint16_t type_id) const;
 
         std::vector<uint64_t> AllNodeIds(uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
-        std::vector<uint64_t> AllNodeIds(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> AllNodeIds(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
         std::vector<uint64_t> AllNodeIds(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
 
         std::vector<Node> AllNodes(uint64_t skip = SKIP, uint64_t limit = LIMIT);
@@ -367,16 +367,16 @@ namespace ragedb {
         std::vector<Node> AllNodes(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
         std::vector<uint64_t> AllRelationshipIds(uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
-        std::vector<uint64_t> AllRelationshipIds(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<uint64_t> AllRelationshipIds(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
         std::vector<uint64_t> AllRelationshipIds(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
 
-        std::vector<Relationship> AllRelationships(uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<Relationship> AllRelationships(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<Relationship> AllRelationships(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<Relationship> AllRelationships(uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
+        std::vector<Relationship> AllRelationships(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
+        std::vector<Relationship> AllRelationships(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
 
-        std::map<uint16_t, uint64_t> AllRelationshipIdCounts();
-        uint64_t AllRelationshipIdCounts(const std::string& type);
-        uint64_t AllRelationshipIdCounts(uint16_t type_id);
+        std::map<uint16_t, uint64_t> AllRelationshipIdCounts() const;
+        uint64_t AllRelationshipIdCounts(const std::string& type) const;
+        uint64_t AllRelationshipIdCounts(uint16_t type_id) const;
 
         // Find
         uint64_t FindNodeCount(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);

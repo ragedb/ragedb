@@ -108,7 +108,7 @@ namespace ragedb {
         return id_to_type[0];
     }
 
-    uint64_t RelationshipTypes::getStartingNodeId(uint16_t type_id, uint64_t internal_id) {
+    uint64_t RelationshipTypes::getStartingNodeId(uint16_t type_id, uint64_t internal_id) const {
         if (ValidTypeId(type_id)) {
             return starting_node_ids[type_id][internal_id];
         }
@@ -116,7 +116,7 @@ namespace ragedb {
         return 0;
     }
 
-    uint64_t RelationshipTypes::getEndingNodeId(uint16_t type_id, uint64_t internal_id) {
+    uint64_t RelationshipTypes::getEndingNodeId(uint16_t type_id, uint64_t internal_id) const {
         if (ValidTypeId(type_id)) {
             return ending_node_ids[type_id][internal_id];
         }
@@ -252,7 +252,7 @@ namespace ragedb {
         return allIds;
     }
 
-    std::vector<Relationship> RelationshipTypes::getRelationships(uint64_t skip, uint64_t limit) {
+    std::vector<Relationship> RelationshipTypes::getRelationships(uint64_t skip, uint64_t limit) const {
         std::vector<Relationship> allRelationships;
         int current = 1;
         // links are internal links, we need to switch to external links
@@ -285,7 +285,7 @@ namespace ragedb {
         return allRelationships;
     }
 
-    std::vector<Relationship> RelationshipTypes::getRelationships(uint16_t type_id, uint64_t skip, uint64_t limit) {
+    std::vector<Relationship> RelationshipTypes::getRelationships(uint16_t type_id, uint64_t skip, uint64_t limit) const {
         std::vector<Relationship>  allRelationships;
         int current = 1;
         if (ValidTypeId(type_id)) {
@@ -405,7 +405,7 @@ namespace ragedb {
         return false;
     }
 
-    std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() {
+    std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() const {
         std::map<uint16_t,uint64_t> counts;
         for (size_t type_id=1; type_id < type_to_id.size(); type_id++) {
             counts.insert({type_id, starting_node_ids[type_id].size() - deleted_ids[type_id].cardinality()});
@@ -414,22 +414,22 @@ namespace ragedb {
         return counts;
     }
 
-    std::map<std::string, property_type_t> RelationshipTypes::getRelationshipProperties(uint16_t type_id, uint64_t internal_id) {
+    std::map<std::string, property_type_t> RelationshipTypes::getRelationshipProperties(uint16_t type_id, uint64_t internal_id) const {
         if(ValidTypeId(type_id)) {
-            return properties[type_id].getProperties(internal_id);
+            return properties.at(type_id).getProperties(internal_id);
         }
         return std::map<std::string, property_type_t>();
     }
 
-    Relationship RelationshipTypes::getRelationship(uint64_t external_id) {
+    Relationship RelationshipTypes::getRelationship(uint64_t external_id) const {
         return getRelationship(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), external_id);
     }
 
-    Relationship RelationshipTypes::getRelationship(uint16_t type_id, uint64_t internal_id) {
+    Relationship RelationshipTypes::getRelationship(uint16_t type_id, uint64_t internal_id) const {
         return Relationship(Shard::internalToExternal(type_id, internal_id), getType(type_id), getStartingNodeId(type_id,internal_id), getEndingNodeId(type_id,internal_id), getRelationshipProperties(type_id, internal_id));
     }
 
-    Relationship RelationshipTypes::getRelationship(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
+    Relationship RelationshipTypes::getRelationship(uint16_t type_id, uint64_t internal_id, uint64_t external_id) const {
         return Relationship(external_id, getType(type_id), getStartingNodeId(type_id,internal_id), getEndingNodeId(type_id,internal_id), getRelationshipProperties(type_id, internal_id));
     }
 

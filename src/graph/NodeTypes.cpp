@@ -423,7 +423,7 @@ namespace ragedb {
           return getNodeId(type_id, key);
     }
 
-    std::string NodeTypes::getNodeKey(uint16_t type_id, uint64_t internal_id) {
+    std::string NodeTypes::getNodeKey(uint16_t type_id, uint64_t internal_id) const {
         if(ValidTypeId(type_id)) {
             return keys[type_id][internal_id];
         }
@@ -692,23 +692,23 @@ namespace ragedb {
     }
 
     bool NodeTypes::deleteNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {
-        return properties[type_id].deleteProperty(property, internal_id);
+        return properties.at(type_id).deleteProperty(property, internal_id);
     }
 
     bool NodeTypes::deleteProperties(uint16_t type_id, uint64_t internal_id) {
-        return properties[type_id].deleteProperties(internal_id);
+        return properties.at(type_id).deleteProperties(internal_id);
     }
 
     std::vector<std::string>& NodeTypes::getKeys(uint16_t type_id) {
-        return keys[type_id];
+        return keys.at(type_id);
     }
 
     std::vector<std::vector<Group>>& NodeTypes::getOutgoingRelationships(uint16_t type_id) {
-        return outgoing_relationships[type_id];
+        return outgoing_relationships.at(type_id);
     }
 
     std::vector<std::vector<Group>>& NodeTypes::getIncomingRelationships(uint16_t type_id) {
-        return incoming_relationships[type_id];
+        return incoming_relationships.at(type_id);
     }
 
 }

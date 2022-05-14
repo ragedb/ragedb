@@ -81,7 +81,7 @@ namespace ragedb {
         return external_id;
     }
 
-    std::vector<uint64_t> Shard::NodeAddMany(uint16_t type_id, const std::vector<std::tuple<std::string, std::string>> nodes) {
+    std::vector<uint64_t> Shard::NodeAddMany(uint16_t type_id, const std::vector<std::tuple<std::string, std::string>>& nodes) {
       std::vector<uint64_t> ids;
 
       for (auto [key, properties] : nodes ) {
@@ -135,16 +135,16 @@ namespace ragedb {
         return externalToTypeId(id);
     }
 
-    std::string Shard::NodeGetType(uint64_t id) {
+    std::string Shard::NodeGetType(uint64_t id) const {
         if (ValidNodeId(id)) {
             return node_types.getType(externalToTypeId(id));
         }
         return node_types.getType(0);
     }
 
-    std::string Shard::NodeGetKey(uint64_t id) {
+    std::string Shard::NodeGetKey(uint64_t id) const {
         if (ValidNodeId(id)) {
-            return node_types.getKeys(externalToTypeId(id))[externalToInternal(id)];
+            return node_types.getNodeKey(externalToTypeId(id), externalToInternal(id));
         }
         return node_types.getType(0);
     }
@@ -164,7 +164,7 @@ namespace ragedb {
             node_types.deleteProperties(node_type_id, internal_id);
 
             // Go through all the outgoing relationships and delete them and their counterparts that I own
-            for (const auto[rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            for (const auto& [rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
                 for (Link link : links) {
                     uint64_t internal_relationship_id = externalToInternal(link.rel_id);
@@ -268,9 +268,9 @@ namespace ragedb {
         return NodeSetPropertyFromJson(id, property, value);
     }
 
-    bool Shard::NodeGetProperty(const std::string& type, const std::string& key, const std::string& property, property_type_t value) {
+    bool Shard::NodeSetProperty(const std::string& type, const std::string& key, const std::string& property, const property_type_t& value) {
         uint64_t id = NodeGetID(type, key);
-        return NodeSetProperty(id, property, std::move(value));
+        return NodeSetProperty(id, property, value);
     }
 
     bool Shard::NodeDeleteProperty(const std::string& type, const std::string& key, const std::string& property) {
