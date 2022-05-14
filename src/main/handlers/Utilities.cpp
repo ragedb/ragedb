@@ -18,49 +18,49 @@
 
 
 
-bool Utilities::validate_parameter(const sstring &parameter, std::unique_ptr<request> &req, std::unique_ptr<reply> &rep, std::string message) {
+bool Utilities::validate_parameter(const seastar::sstring &parameter, std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep, std::string message) {
     bool valid_type = req->param.exists(parameter);
     if (!valid_type) {
-        rep->write_body("json", json::stream_object(std::move(message)));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object(std::move(message)));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
     }
     return valid_type;
 }
 
-uint64_t Utilities::validate_id(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+uint64_t Utilities::validate_id(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
     // Validate id is unsigned long long
     uint64_t id;
 
     try {
         id = std::stoull(req->param["id"]);
     } catch (std::exception& e) {
-        rep->write_body("json", json::stream_object("Invalid id"));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object("Invalid id"));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
         return 0;
     }
 
     return id;
 }
 
-uint64_t Utilities::validate_id2(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+uint64_t Utilities::validate_id2(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
     // Validate id is unsigned long long
     uint64_t id;
 
     try {
         id = std::stoull(req->param["id2"]);
     } catch (std::exception& e) {
-        rep->write_body("json", json::stream_object("Invalid id2"));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object("Invalid id2"));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
         return 0;
     }
 
     return id;
 }
 
-uint64_t Utilities::validate_limit(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+uint64_t Utilities::validate_limit(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
     // Validate limit is unsigned long long
 
-    sstring limit_param = req->get_query_param("limit");
+    seastar::sstring limit_param = req->get_query_param("limit");
     if (limit_param.empty()) {
         return 100;
     }
@@ -68,16 +68,16 @@ uint64_t Utilities::validate_limit(std::unique_ptr<request> &req, std::unique_pt
         uint64_t limit = std::stoull(limit_param);
         return limit;
     } catch (std::exception& e) {
-        rep->write_body("json", json::stream_object("Invalid limit parameter"));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object("Invalid limit parameter"));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
         return 0;
     }
 }
 
-uint64_t Utilities::validate_skip(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+uint64_t Utilities::validate_skip(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
     // Validate skip is unsigned long long
 
-    sstring skip_param = req->get_query_param("skip");
+    seastar::sstring skip_param = req->get_query_param("skip");
     if (skip_param.empty()) {
         return 0;
     }
@@ -86,16 +86,16 @@ uint64_t Utilities::validate_skip(std::unique_ptr<request> &req, std::unique_ptr
         uint64_t skip = std::stoull(skip_param);
         return skip;
     } catch (std::exception& e) {
-        rep->write_body("json", json::stream_object("Invalid skip parameter"));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object("Invalid skip parameter"));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
         return 0;
     }
 }
 
-ragedb::Operation Utilities::validate_operation(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+ragedb::Operation Utilities::validate_operation(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
     // Validate operation is allowed
 
-    sstring parameter = req->param["operation"];
+    seastar::sstring parameter = req->param["operation"];
 
     static std::unordered_map<std::string,ragedb::Operation> const table = {
             {"EQ", ragedb::Operation::EQ},
@@ -118,13 +118,13 @@ ragedb::Operation Utilities::validate_operation(std::unique_ptr<request> &req, s
     if (it != table.end()) {
         return it->second;
     } else {
-        rep->write_body("json", json::stream_object("Invalid operation parameter"));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object("Invalid operation parameter"));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
         return ragedb::Operation::UNKNOWN;
     }
 }
 
-bool Utilities::validate_combination(const ragedb::Operation& operation, const property_type_t &property) {
+bool Utilities::validate_combination(const ragedb::Operation& operation, const ragedb::property_type_t &property) {
     if (operation == ragedb::Operation::UNKNOWN) {
         return false;
     }
@@ -142,35 +142,35 @@ std::vector<std::string> vector_bool_to_string(std::vector<bool> source) {
   return return_vector;
 }
 
-void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const property_type_t &property) {
+void Utilities::convert_property_to_json(std::unique_ptr<seastar::httpd::reply> &rep, const ragedb::property_type_t &property) {
 
   switch (property.index()) {
     case 0:
-      rep->write_body("json", json::stream_object("null"));
+      rep->write_body("json", seastar::json::stream_object("null"));
       break;
     case 1:
-      rep->write_body("json", json::stream_object(get<bool>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<bool>(property)));
       break;
     case 2:
-      rep->write_body("json", json::stream_object(get<int64_t>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<int64_t>(property)));
       break;
     case 3:
-      rep->write_body("json", json::stream_object(get<double>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<double>(property)));
       break;
     case 4:
-      rep->write_body("json", json::stream_object(get<std::string>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<std::string>(property)));
       break;
     case 5:
-      rep->write_body("json", json::stream_object(vector_bool_to_string(get<std::vector<bool>>(property))));
+      rep->write_body("json", seastar::json::stream_object(vector_bool_to_string(get<std::vector<bool>>(property))));
       break;
     case 6:
-      rep->write_body("json", json::stream_object(get<std::vector<int64_t>>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<std::vector<int64_t>>(property)));
       break;
     case 7:
-      rep->write_body("json", json::stream_object(get<std::vector<double>>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<std::vector<double>>(property)));
       break;
     case 8:
-      rep->write_body("json", json::stream_object(get<std::vector<std::string>>(property)));
+      rep->write_body("json", seastar::json::stream_object(get<std::vector<std::string>>(property)));
       break;
   }
 
@@ -178,17 +178,17 @@ void Utilities::convert_property_to_json(std::unique_ptr<reply> &rep, const prop
 
 std::vector<simdjson::dom::parser> Utilities::parsers;
 
-bool Utilities::validate_json(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+bool Utilities::validate_json(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
     simdjson::dom::object object;
     simdjson::error_code error = parsers[seastar::this_shard_id()].parse(req->content).get(object);
     if (error) {
-        rep->write_body("json", json::stream_object("Invalid JSON"));
-        rep->set_status(reply::status_type::bad_request);
+        rep->write_body("json", seastar::json::stream_object("Invalid JSON"));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
     }
     return !error;
 }
 
-property_type_t Utilities::validate_json_property(const std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+ragedb::property_type_t Utilities::validate_json_property(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
         simdjson::dom::element value;
 
         simdjson::error_code error = parsers[seastar::this_shard_id()].parse(req->content).get(value);
@@ -213,14 +213,14 @@ property_type_t Utilities::validate_json_property(const std::unique_ptr<request>
                 }
                 case simdjson::dom::element_type::NULL_VALUE: {
                     // Null Values are not allowed, just ignore them
-                    rep->write_body("json", json::stream_object("Invalid JSON"));
-                    rep->set_status(reply::status_type::bad_request);
+                    rep->write_body("json", seastar::json::stream_object("Invalid JSON"));
+                    rep->set_status(seastar::httpd::reply::status_type::bad_request);
                     return std::monostate();
                 }
                 case simdjson::dom::element_type::OBJECT: {
                     // TODO: Add support for nested properties
-                    rep->write_body("json", json::stream_object("Invalid JSON"));
-                    rep->set_status(reply::status_type::bad_request);
+                    rep->write_body("json", seastar::json::stream_object("Invalid JSON"));
+                    rep->set_status(seastar::httpd::reply::status_type::bad_request);
                     return std::monostate();
                 }
                 case simdjson::dom::element_type::ARRAY: {
@@ -234,14 +234,14 @@ property_type_t Utilities::validate_json_property(const std::unique_ptr<request>
                         switch (first.type()) {
                             case simdjson::dom::element_type::ARRAY: {
                                 // TODO: Add support for nested properties
-                                rep->write_body("json", json::stream_object("Invalid JSON"));
-                                rep->set_status(reply::status_type::bad_request);
+                                rep->write_body("json", seastar::json::stream_object("Invalid JSON"));
+                                rep->set_status(seastar::httpd::reply::status_type::bad_request);
                                 return std::monostate();
                             }
                             case simdjson::dom::element_type::OBJECT: {
                                 // TODO: Add support for nested properties
-                                rep->write_body("json", json::stream_object("Invalid JSON"));
-                                rep->set_status(reply::status_type::bad_request);
+                                rep->write_body("json", seastar::json::stream_object("Invalid JSON"));
+                                rep->set_status(seastar::httpd::reply::status_type::bad_request);
                                 return std::monostate();
                             }
                             case simdjson::dom::element_type::INT64: {
@@ -276,8 +276,8 @@ property_type_t Utilities::validate_json_property(const std::unique_ptr<request>
                             }
                             case simdjson::dom::element_type::NULL_VALUE: {
                                 // Null Values are not allowed, just ignore them
-                                rep->write_body("json", json::stream_object("Invalid JSON"));
-                                rep->set_status(reply::status_type::bad_request);
+                                rep->write_body("json", seastar::json::stream_object("Invalid JSON"));
+                                rep->set_status(seastar::httpd::reply::status_type::bad_request);
                                 return std::monostate();
                             }
                         }
@@ -288,12 +288,12 @@ property_type_t Utilities::validate_json_property(const std::unique_ptr<request>
     return std::monostate();
 }
 
-bool Utilities::validate_allowed_data_type(std::unique_ptr<request> &req, std::unique_ptr<reply> &rep) {
+bool Utilities::validate_allowed_data_type(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
   if ( req->param.exists(Utilities::DATA_TYPE) ) {
     bool allowed_type = allowed_types.find(req->param.at(Utilities::DATA_TYPE)) != allowed_types.end();
     if (!allowed_type) {
-      rep->write_body("json", json::stream_object("Allowed data types: \"boolean\", \"integer\", \"double\", \"string\", \"boolean_list\", \"integer_list\", \"double_list\", \"string_list\""));
-      rep->set_status(reply::status_type::bad_request);
+      rep->write_body("json", seastar::json::stream_object("Allowed data types: \"boolean\", \"integer\", \"double\", \"string\", \"boolean_list\", \"integer_list\", \"double_list\", \"string_list\""));
+      rep->set_status(seastar::httpd::reply::status_type::bad_request);
     }
     return allowed_type;
   }

@@ -19,31 +19,31 @@
 #include "Utilities.h"
 #include "../json/JSON.h"
 
-void Relationships::set_routes(routes &routes) {
+void Relationships::set_routes(seastar::routes &routes) {
 
-    auto getRelationships = new match_rule(&getRelationshipsHandler);
+    auto getRelationships = new seastar::match_rule(&getRelationshipsHandler);
     getRelationships->add_str("/db/" + graph.GetName() + "/relationships");
-    routes.add(getRelationships, operation_type::GET);
+    routes.add(getRelationships, seastar::operation_type::GET);
 
-    auto getRelationshipsOfType = new match_rule(&getRelationshipsOfTypeHandler);
+    auto getRelationshipsOfType = new seastar::match_rule(&getRelationshipsOfTypeHandler);
     getRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
     getRelationshipsOfType->add_param("type");
-    routes.add(getRelationshipsOfType, operation_type::GET);
+    routes.add(getRelationshipsOfType, seastar::operation_type::GET);
 
-    auto getRelationship = new match_rule(&getRelationshipHandler);
+    auto getRelationship = new seastar::match_rule(&getRelationshipHandler);
     getRelationship->add_str("/db/" + graph.GetName() + "/relationship");
     getRelationship->add_param("id");
-    routes.add(getRelationship, operation_type::GET);
+    routes.add(getRelationship, seastar::operation_type::GET);
 
-    auto postRelationshipById = new match_rule(&postRelationshipByIdHandler);
+    auto postRelationshipById = new seastar::match_rule(&postRelationshipByIdHandler);
     postRelationshipById->add_str("/db/" + graph.GetName() + "/node");
     postRelationshipById->add_param("id");
     postRelationshipById->add_str("/relationship");
     postRelationshipById->add_param("id2");
     postRelationshipById->add_param("rel_type");
-    routes.add(postRelationshipById, operation_type::POST);
+    routes.add(postRelationshipById, seastar::operation_type::POST);
 
-    auto postRelationship = new match_rule(&postRelationshipHandler);
+    auto postRelationship = new seastar::match_rule(&postRelationshipHandler);
     postRelationship->add_str("/db/" + graph.GetName() + "/node");
     postRelationship->add_param("type");
     postRelationship->add_param("key");
@@ -51,37 +51,37 @@ void Relationships::set_routes(routes &routes) {
     postRelationship->add_param("type2");
     postRelationship->add_param("key2");
     postRelationship->add_param("rel_type");
-    routes.add(postRelationship, operation_type::POST);
+    routes.add(postRelationship, seastar::operation_type::POST);
 
-    auto deleteRelationship = new match_rule(&deleteRelationshipHandler);
+    auto deleteRelationship = new seastar::match_rule(&deleteRelationshipHandler);
     deleteRelationship->add_str("/db/" + graph.GetName() + "/relationship");
     deleteRelationship->add_param("id");
-    routes.add(deleteRelationship, operation_type::DELETE);
+    routes.add(deleteRelationship, seastar::operation_type::DELETE);
 
-    auto getRelationshipsById = new match_rule(&getNodeRelationshipsByIdHandler);
+    auto getRelationshipsById = new seastar::match_rule(&getNodeRelationshipsByIdHandler);
     getRelationshipsById->add_str("/db/" + graph.GetName() + "/node");
     getRelationshipsById->add_param("id");
     getRelationshipsById->add_str("/relationships");
     getRelationshipsById->add_param("options", true);
-    routes.add(getRelationshipsById, operation_type::GET);
+    routes.add(getRelationshipsById, seastar::operation_type::GET);
 
-    auto getNodeRelationships = new match_rule(&getNodeRelationshipsHandler);
+    auto getNodeRelationships = new seastar::match_rule(&getNodeRelationshipsHandler);
     getNodeRelationships->add_str("/db/" + graph.GetName() + "/node");
     getNodeRelationships->add_param("type");
     getNodeRelationships->add_param("key");
     getNodeRelationships->add_str("/relationships");
     getNodeRelationships->add_param("options", true);
-    routes.add(getNodeRelationships, operation_type::GET);
+    routes.add(getNodeRelationships, seastar::operation_type::GET);
 
-    auto findRelationshipsOfType = new match_rule(&findRelationshipsOfTypeHandler);
+    auto findRelationshipsOfType = new seastar::match_rule(&findRelationshipsOfTypeHandler);
     findRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
     findRelationshipsOfType->add_param("type");
     findRelationshipsOfType->add_param("property");
     findRelationshipsOfType->add_param("operation");
-    routes.add(findRelationshipsOfType, operation_type::POST);
+    routes.add(findRelationshipsOfType, seastar::operation_type::POST);
 }
 
-future<std::unique_ptr<reply>> Relationships::GetRelationshipsHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::GetRelationshipsHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t limit = Utilities::validate_limit(req, rep);
     uint64_t skip = Utilities::validate_skip(req, rep);
 
@@ -92,12 +92,12 @@ future<std::unique_ptr<reply>> Relationships::GetRelationshipsHandler::handle([[
                 for(Relationship r : relationships) {
                     json_array.emplace_back(r);
                 }
-                rep->write_body("json", json::stream_object(json_array));
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                rep->write_body("json", seastar::json::stream_object(json_array));
+                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
             });
 }
 
-future<std::unique_ptr<reply>> Relationships::GetRelationshipsOfTypeHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::GetRelationshipsOfTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
@@ -112,34 +112,34 @@ future<std::unique_ptr<reply>> Relationships::GetRelationshipsOfTypeHandler::han
                         for(Relationship r : relationships) {
                             json_array.emplace_back(r);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     }
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                 });
     }
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::GetRelationshipHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::GetRelationshipHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
         return parent.graph.shard.local().RelationshipGetPeered(id)
                 .then([rep = std::move(rep)] (Relationship relationship) mutable {
                     if (relationship.getId() == 0) {
-                        rep->set_status(reply::status_type::not_found);
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->set_status(seastar::httpd::reply::status_type::not_found);
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     }
-                    rep->write_body("json", json::stream_object((relationship_json(relationship))));
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    rep->write_body("json", seastar::json::stream_object((relationship_json(relationship))));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                 });
     }
 
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::PostRelationshipHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::PostRelationshipHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
     bool valid_type2 = Utilities::validate_parameter(Utilities::TYPE2, req, rep, "Invalid type2");
@@ -154,15 +154,15 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipHandler::handle([[
                     .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this] (uint64_t id) mutable {
                         if (id > 0) {
                             return parent.graph.shard.local().RelationshipGetPeered(id).then([rep = std::move(rep), rel_type] (Relationship relationship) mutable {
-                                rep->write_body("json", json::stream_object((relationship_json(relationship))));
-                                rep->set_status(reply::status_type::created);
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                rep->write_body("json", seastar::json::stream_object((relationship_json(relationship))));
+                                rep->set_status(seastar::httpd::reply::status_type::created);
+                                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                             });
                         } else {
-                            rep->write_body("json", json::stream_object("Invalid Request"));
-                            rep->set_status(reply::status_type::bad_request);
+                            rep->write_body("json", seastar::json::stream_object("Invalid Request"));
+                            rep->set_status(seastar::httpd::reply::status_type::bad_request);
                         }
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         } else {
             if (Utilities::validate_json(req, rep)) {
@@ -180,22 +180,22 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipHandler::handle([[
                                         [rep = std::move(rep)](Relationship relationship) mutable {
                                             rep->write_body("json",
                                                             json::stream_object((relationship_json(relationship))));
-                                            rep->set_status(reply::status_type::created);
-                                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                            rep->set_status(seastar::httpd::reply::status_type::created);
+                                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                                         });
                             } else {
-                                rep->write_body("json", json::stream_object("Invalid Request"));
-                                rep->set_status(reply::status_type::bad_request);
+                                rep->write_body("json", seastar::json::stream_object("Invalid Request"));
+                                rep->set_status(seastar::httpd::reply::status_type::bad_request);
                             }
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
         }
     }
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::PostRelationshipByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
     uint64_t id2 = Utilities::validate_id2(req, rep);
     bool valid_rel_type = Utilities::validate_parameter(Utilities::REL_TYPE, req, rep, "Invalid relationship type");
@@ -208,15 +208,15 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handl
                     .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this] (uint64_t relationship_id) mutable {
                         if (relationship_id > 0) {
                             return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then([rep = std::move(rep)] (Relationship relationship) mutable {
-                                rep->write_body("json", json::stream_object((relationship_json(relationship))));
-                                rep->set_status(reply::status_type::created);
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                rep->write_body("json", seastar::json::stream_object((relationship_json(relationship))));
+                                rep->set_status(seastar::httpd::reply::status_type::created);
+                                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                             });
                         } else {
-                            rep->write_body("json", json::stream_object("Invalid Request"));
-                            rep->set_status(reply::status_type::bad_request);
+                            rep->write_body("json", seastar::json::stream_object("Invalid Request"));
+                            rep->set_status(seastar::httpd::reply::status_type::bad_request);
                         }
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         } else {
             if (Utilities::validate_json(req, rep)) {
@@ -230,41 +230,41 @@ future<std::unique_ptr<reply>> Relationships::PostRelationshipByIdHandler::handl
                                         [rep = std::move(rep)](Relationship relationship) mutable {
                                             rep->write_body("json",
                                                             json::stream_object((relationship_json(relationship))));
-                                            rep->set_status(reply::status_type::created);
-                                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                            rep->set_status(seastar::httpd::reply::status_type::created);
+                                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                                         });
 
                             } else {
-                                rep->write_body("json", json::stream_object("Invalid Request"));
-                                rep->set_status(reply::status_type::bad_request);
+                                rep->write_body("json", seastar::json::stream_object("Invalid Request"));
+                                rep->set_status(seastar::httpd::reply::status_type::bad_request);
                             }
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
         }
     }
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::DeleteRelationshipHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::DeleteRelationshipHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
-                rep->set_status(reply::status_type::no_content);
+                rep->set_status(seastar::httpd::reply::status_type::no_content);
             } else {
-                rep->set_status(reply::status_type::not_modified);
+                rep->set_status(seastar::httpd::reply::status_type::not_modified);
             }
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
         });
     }
 
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::GetNodeRelationshipsHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
@@ -284,8 +284,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handl
                         for(Relationship r : relationships) {
                             json_array.emplace_back(r);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         }
 
@@ -313,8 +313,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handl
                             for(Relationship r : relationships) {
                                 json_array.emplace_back(r);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             case 2: {
                 // Get Node Relationships with Direction and Type(s)
@@ -330,8 +330,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handl
                                 for(Relationship r : relationships) {
                                     json_array.emplace_back(r);
                                 }
-                                rep->write_body("json", json::stream_object(json_array));
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                rep->write_body("json", seastar::json::stream_object(json_array));
+                                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                             });
                 }
 
@@ -343,23 +343,23 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsHandler::handl
                             for(Relationship r : relationships) {
                                 json_array.emplace_back(r);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
 
             default:  {
-                rep->write_body("json", json::stream_object("Invalid request"));
-                rep->set_status(reply::status_type::bad_request);
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                rep->write_body("json", seastar::json::stream_object("Invalid request"));
+                rep->set_status(seastar::httpd::reply::status_type::bad_request);
+                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
             }
         }
     }
 
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::GetNodeRelationshipsByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -377,8 +377,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
                         for(Relationship r : relationships) {
                             json_array.emplace_back(r);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         }
 
@@ -406,8 +406,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
                             for(Relationship r : relationships) {
                                 json_array.emplace_back(r);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             case 2: {
                 // Get Node Degree with Direction and Type(s)
@@ -422,8 +422,8 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
                                 for(Relationship r : relationships) {
                                     json_array.emplace_back(r);
                                 }
-                                rep->write_body("json", json::stream_object(json_array));
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                rep->write_body("json", seastar::json::stream_object(json_array));
+                                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                             });
                 }
 
@@ -435,23 +435,23 @@ future<std::unique_ptr<reply>> Relationships::GetNodeRelationshipsByIdHandler::h
                             for(Relationship r : relationships) {
                                 json_array.emplace_back(r);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
 
             default:  {
-                rep->write_body("json", json::stream_object("Invalid request"));
-                rep->set_status(reply::status_type::bad_request);
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                rep->write_body("json", seastar::json::stream_object("Invalid request"));
+                rep->set_status(seastar::httpd::reply::status_type::bad_request);
+                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
             }
         }
     }
 
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Relationships::FindRelationshipsOfTypeHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Relationships::FindRelationshipsOfTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
     ragedb::Operation operation = Utilities::validate_operation(req, rep);
@@ -470,11 +470,11 @@ future<std::unique_ptr<reply>> Relationships::FindRelationshipsOfTypeHandler::ha
                         for(Relationship relationship : relationships) {
                             json_array.emplace_back(relationship);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     }
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                 });
     }
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }

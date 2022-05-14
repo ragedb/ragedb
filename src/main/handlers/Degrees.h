@@ -22,36 +22,31 @@
 #include <seastar/http/httpd.hh>
 #include <seastar/http/json_path.hh>
 
-using namespace seastar;
-using namespace httpd;
-using namespace ragedb;
-
 class Degrees {
 
-    class GetDegreeHandler : public httpd::handler_base {
+    class GetDegreeHandler : public seastar::httpd::handler_base {
     public:
         explicit GetDegreeHandler(Degrees& degrees) : parent(degrees) {};
     private:
         Degrees& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class GetDegreeByIdHandler : public httpd::handler_base {
+    class GetDegreeByIdHandler : public seastar::httpd::handler_base {
     public:
         explicit GetDegreeByIdHandler(Degrees& degrees) : parent(degrees) {};
     private:
         Degrees& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-private:
-    Graph& graph;
+    ragedb::Graph& graph;
     GetDegreeHandler getDegreeHandler;
     GetDegreeByIdHandler getDegreeByIdHandler;
 
 public:
-    explicit Degrees(Graph &_graph) : graph(_graph), getDegreeHandler(*this), getDegreeByIdHandler(*this) {}
-    void set_routes(routes& routes);
+    explicit Degrees (ragedb::Graph &_graph) : graph(_graph), getDegreeHandler(*this), getDegreeByIdHandler(*this) {}
+    void set_routes(seastar::routes& routes);
 
 };
 

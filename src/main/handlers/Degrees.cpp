@@ -18,24 +18,24 @@
 #include "../json/JSON.h"
 #include "Degrees.h"
 
-void Degrees::set_routes(routes &routes) {
-    auto getDegree = new match_rule(&getDegreeHandler);
+void Degrees::set_routes(seastar::routes &routes) {
+    auto getDegree = new seastar::match_rule(&getDegreeHandler);
     getDegree->add_str("/db/" + graph.GetName() + "/node");
     getDegree->add_param("type");
     getDegree->add_param("key");
     getDegree->add_str("/degree");
     getDegree->add_param("options", true);
-    routes.add(getDegree, operation_type::GET);
+    routes.add(getDegree, seastar::operation_type::GET);
 
-    auto getDegreeById = new match_rule(&getDegreeByIdHandler);
+    auto getDegreeById = new seastar::match_rule(&getDegreeByIdHandler);
     getDegreeById->add_str("/db/" + graph.GetName() + "/node");
     getDegreeById->add_param("id");
     getDegreeById->add_str("/degree");
     getDegreeById->add_param("options", true);
-    routes.add(getDegreeById, operation_type::GET);
+    routes.add(getDegreeById, seastar::operation_type::GET);
 }
 
-future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
@@ -51,8 +51,8 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                     .then([rep = std::move(rep)] (uint64_t degree) mutable {
                         json_properties_builder json;
                         json.add("degree", degree);
-                        rep->write_body("json", sstring(json.as_json()));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::sstring(json.as_json()));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         }
 
@@ -77,8 +77,8 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                         .then([rep = std::move(rep)] (uint64_t degree) mutable {
                             json_properties_builder json;
                             json.add("degree", degree);
-                            rep->write_body("json", sstring(json.as_json()));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::sstring(json.as_json()));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             case 2: {
                 // Get Node Degree with Direction and Type(s)
@@ -90,8 +90,8 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                             .then([rep = std::move(rep)] (uint64_t degree) mutable {
                                 json_properties_builder json;
                                 json.add("degree", degree);
-                                rep->write_body("json", sstring(json.as_json()));
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                rep->write_body("json", seastar::sstring(json.as_json()));
+                                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                             });
                 }
 
@@ -100,22 +100,22 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]
                         .then([rep = std::move(rep)] (uint64_t degree) mutable {
                             json_properties_builder json;
                             json.add("degree", degree);
-                            rep->write_body("json", sstring(json.as_json()));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::sstring(json.as_json()));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
 
             default:  {
-                rep->write_body("json", json::stream_object("Invalid request"));
-                rep->set_status(reply::status_type::bad_request);
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                rep->write_body("json", seastar::json::stream_object("Invalid request"));
+                rep->set_status(seastar::httpd::reply::status_type::bad_request);
+                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
             }
         }
     }
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     // Gather Options
@@ -128,7 +128,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
         auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id);
         json_properties_builder json;
         json.add("degree", degree);
-        rep->write_body("json", sstring(json.as_json()));
+        rep->write_body("json", seastar::sstring(json.as_json()));
         co_return rep;
     }
 
@@ -152,7 +152,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
             auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction);
             json_properties_builder json;
             json.add("degree", degree);
-            rep->write_body("json", sstring(json.as_json()));
+            rep->write_body("json", seastar::sstring(json.as_json()));
             co_return rep;
         }
 
@@ -165,7 +165,7 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
                 auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0]);
                 json_properties_builder json;
                 json.add("degree", degree);
-                rep->write_body("json", sstring(json.as_json()));
+                rep->write_body("json", seastar::sstring(json.as_json()));
                 co_return rep;
             }
 
@@ -173,13 +173,13 @@ future<std::unique_ptr<reply>> Degrees::GetDegreeByIdHandler::handle([[maybe_unu
             auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types);
             json_properties_builder json;
             json.add("degree", degree);
-            rep->write_body("json", sstring(json.as_json()));
+            rep->write_body("json", seastar::sstring(json.as_json()));
             co_return rep;
         }
 
         default:  {
-            rep->write_body("json", json::stream_object("Invalid request"));
-            rep->set_status(reply::status_type::bad_request);
+            rep->write_body("json", seastar::json::stream_object("Invalid request"));
+            rep->set_status(seastar::httpd::reply::status_type::bad_request);
             co_return rep;
         }
     }

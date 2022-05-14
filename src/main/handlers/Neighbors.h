@@ -22,35 +22,30 @@
 #include <seastar/http/httpd.hh>
 #include <seastar/http/json_path.hh>
 
-using namespace seastar;
-using namespace httpd;
-using namespace ragedb;
-
 class Neighbors {
-    class GetNeighborsHandler : public httpd::handler_base {
+    class GetNeighborsHandler : public seastar::httpd::handler_base {
     public:
         explicit GetNeighborsHandler(Neighbors& neighbors) : parent(neighbors) {};
     private:
         Neighbors& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class GetNeighborsByIdHandler : public httpd::handler_base {
+    class GetNeighborsByIdHandler : public seastar::httpd::handler_base {
     public:
         explicit GetNeighborsByIdHandler(Neighbors& neighbors) : parent(neighbors) {};
     private:
         Neighbors& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-private:
-    Graph& graph;
+    ragedb::Graph& graph;
     GetNeighborsHandler getNeighborsHandler;
     GetNeighborsByIdHandler getNeighborsByIdHandler;
 
 public:
-    explicit Neighbors(Graph &_graph) : graph(_graph), getNeighborsHandler(*this), getNeighborsByIdHandler(*this) {}
-    void set_routes(routes& routes);
+    explicit Neighbors (ragedb::Graph &_graph) : graph(_graph), getNeighborsHandler(*this), getNeighborsByIdHandler(*this) {}
+    void set_routes(seastar::routes& routes);
 };
 
 

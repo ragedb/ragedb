@@ -16,18 +16,18 @@
 
 #include "HealthCheck.h"
 
-void HealthCheck::set_routes(routes &routes) {
-    auto healthCheck = new match_rule(&healthCheckHandler);
+void HealthCheck::set_routes(seastar::routes &routes) {
+    auto healthCheck = new seastar::match_rule(&healthCheckHandler);
     healthCheck->add_str("/db/" + graph.GetName() + "/health_check");
-    routes.add(healthCheck, operation_type::GET);
+    routes.add(healthCheck, seastar::operation_type::GET);
 }
 
-future<std::unique_ptr<reply>> HealthCheck::HealthCheckHandler::handle(
-        [[maybe_unused]] const sstring &path,
-        [[maybe_unused]] std::unique_ptr<request> req,
-        std::unique_ptr<reply> rep) {
+seastar::future<std::unique_ptr<seastar::httpd::reply>> HealthCheck::HealthCheckHandler::handle(
+        [[maybe_unused]] const seastar::sstring &path,
+        [[maybe_unused]] std::unique_ptr<seastar::request> req,
+        std::unique_ptr<seastar::httpd::reply> rep) {
 
     auto checks = co_await parent.graph.shard.local().HealthCheckPeered();
-    rep->write_body("json", json::stream_object(checks));
+    rep->write_body("json", seastar::json::stream_object(checks));
     co_return rep;
 }

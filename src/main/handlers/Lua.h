@@ -22,48 +22,43 @@
 #include <seastar/http/httpd.hh>
 #include <seastar/http/json_path.hh>
 
-using namespace seastar;
-using namespace httpd;
-using namespace ragedb;
-
 class Lua {
 
-    class PostLuaHandler : public httpd::handler_base {
+    class PostLuaHandler : public seastar::httpd::handler_base {
     public:
         explicit PostLuaHandler(Lua& lua) : parent(lua) {};
 
     private:
         Lua& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class PostLuaRWHandler : public httpd::handler_base {
+    class PostLuaRWHandler : public seastar::httpd::handler_base {
     public:
       explicit PostLuaRWHandler(Lua& lua) : parent(lua) {};
 
     private:
       Lua& parent;
-      future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+      seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class PostLuaROHandler : public httpd::handler_base {
+    class PostLuaROHandler : public seastar::httpd::handler_base {
     public:
       explicit PostLuaROHandler(Lua& lua) : parent(lua) {};
 
     private:
       Lua& parent;
-      future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+      seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-private:
-    Graph& graph;
+    ragedb::Graph& graph;
     PostLuaHandler postLuaHandler;
     PostLuaRWHandler postLuaRWHandler;
     PostLuaROHandler postLuaROHandler;
 
 public:
-    explicit Lua(Graph &_graph) : graph(_graph), postLuaHandler(*this), postLuaRWHandler(*this), postLuaROHandler(*this) {}
-    void set_routes(routes& routes);
+    explicit Lua (ragedb::Graph &_graph) : graph(_graph), postLuaHandler(*this), postLuaRWHandler(*this), postLuaROHandler(*this) {}
+    void set_routes(seastar::routes& routes);
 };
 
 

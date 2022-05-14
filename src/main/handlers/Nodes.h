@@ -22,79 +22,73 @@
 #include <seastar/http/httpd.hh>
 #include <seastar/http/json_path.hh>
 
-using namespace seastar;
-using namespace httpd;
-using namespace ragedb;
-
 class Nodes {
 
-    class GetNodesHandler : public httpd::handler_base {
+    class GetNodesHandler : public seastar::httpd::handler_base {
     public:
         explicit GetNodesHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class GetNodesOfTypeHandler : public httpd::handler_base {
+    class GetNodesOfTypeHandler : public seastar::httpd::handler_base {
     public:
         explicit GetNodesOfTypeHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class GetNodeHandler : public httpd::handler_base {
+    class GetNodeHandler : public seastar::httpd::handler_base {
     public:
         explicit GetNodeHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class GetNodeByIdHandler : public httpd::handler_base {
+    class GetNodeByIdHandler : public seastar::httpd::handler_base {
     public:
         explicit GetNodeByIdHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class PostNodeHandler : public httpd::handler_base {
+    class PostNodeHandler : public seastar::httpd::handler_base {
     public:
         explicit PostNodeHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class DeleteNodeHandler : public httpd::handler_base {
+    class DeleteNodeHandler : public seastar::httpd::handler_base {
     public:
         explicit DeleteNodeHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class DeleteNodeByIdHandler : public httpd::handler_base {
+    class DeleteNodeByIdHandler : public seastar::httpd::handler_base {
     public:
         explicit DeleteNodeByIdHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-    class FindNodesOfTypeHandler : public httpd::handler_base {
+    class FindNodesOfTypeHandler : public seastar::httpd::handler_base {
     public:
         explicit FindNodesOfTypeHandler(Nodes& nodes) : parent(nodes) {};
     private:
         Nodes& parent;
-        future<std::unique_ptr<reply>> handle(const sstring& path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
     };
 
-
-private:
-    Graph& graph;
+    ragedb::Graph& graph;
     GetNodesHandler getNodesHandler;
     GetNodesOfTypeHandler getNodesOfTypeHandler;
     GetNodeHandler getNodeHandler;
@@ -105,10 +99,10 @@ private:
     FindNodesOfTypeHandler findNodesOfTypeHandler;
 
 public:
-    explicit Nodes(Graph &_graph) : graph(_graph), getNodesHandler(*this), getNodesOfTypeHandler(*this),
+    explicit Nodes (ragedb::Graph &_graph) : graph(_graph), getNodesHandler(*this), getNodesOfTypeHandler(*this),
     getNodeHandler(*this), getNodeByIdHandler(*this), postNodeHandler(*this), deleteNodeHandler(*this),
     deleteNodeByIdHandler(*this), findNodesOfTypeHandler(*this) {}
-    void set_routes(routes& routes);
+    void set_routes(seastar::routes& routes);
 };
 
 #endif //RAGEDB_NODES_H

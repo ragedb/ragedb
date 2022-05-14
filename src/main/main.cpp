@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
                 Utilities utilities;
 
                 Management dbms(databases);
-                server->set_routes([&dbms](routes &r) { dbms.set_routes(r); }).get();
+                server->set_routes([&dbms](seastar::routes &r) { dbms.set_routes(r); }).get();
 
                 server->set_routes([](seastar::routes &r) {
                         r.add(seastar::operation_type::GET,
@@ -70,8 +70,8 @@ int main(int argc, char** argv) {
                   .get();
 
                 server->set_routes([](seastar::routes &r) {
-                  r.add(operation_type::GET, url("").remainder("path"),
-                    new directory_handler("./public/"));
+                  r.add(seastar::httpd::operation_type::GET, seastar::url("").remainder("path"),
+                    new seastar::directory_handler("./public/"));
                 }).get();
 
 

@@ -18,25 +18,25 @@
 #include "../json/JSON.h"
 #include "Neighbors.h"
 
-void Neighbors::set_routes(routes &routes) {
-    auto getNeighbors = new match_rule(&getNeighborsHandler);
+void Neighbors::set_routes(seastar::routes &routes) {
+    auto getNeighbors = new seastar::match_rule(&getNeighborsHandler);
     getNeighbors->add_str("/db/" + graph.GetName() + "/node");
     getNeighbors->add_param("type");
     getNeighbors->add_param("key");
     getNeighbors->add_str("/neighbors");
     getNeighbors->add_param("options", true);
-    routes.add(getNeighbors, operation_type::GET);
+    routes.add(getNeighbors, seastar::operation_type::GET);
 
-    auto getNeighborsById = new match_rule(&getNeighborsByIdHandler);
+    auto getNeighborsById = new seastar::match_rule(&getNeighborsByIdHandler);
     getNeighborsById->add_str("/db/" + graph.GetName() + "/node");
     getNeighborsById->add_param("id");
     getNeighborsById->add_str("/neighbors");
     getNeighborsById->add_param("options", true);
-    routes.add(getNeighborsById, operation_type::GET);
+    routes.add(getNeighborsById, seastar::operation_type::GET);
 }
 
 
-future<std::unique_ptr<reply>> Neighbors::GetNeighborsHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Neighbors::GetNeighborsHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
@@ -55,8 +55,8 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsHandler::handle([[maybe_un
                         for(Node n : nodes) {
                             json_array.emplace_back(n);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         }
 
@@ -84,8 +84,8 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsHandler::handle([[maybe_un
                             for(Node n : nodes) {
                                 json_array.emplace_back(n);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
 
             case 2: {
@@ -101,8 +101,8 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsHandler::handle([[maybe_un
                                 for(Node n : nodes) {
                                     json_array.emplace_back(n);
                                 }
-                                rep->write_body("json", json::stream_object(json_array));
-                                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                                rep->write_body("json", seastar::json::stream_object(json_array));
+                                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                             });
                 }
 
@@ -114,22 +114,22 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsHandler::handle([[maybe_un
                             for(Node n : nodes) {
                                 json_array.emplace_back(n);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
 
             default:  {
-                rep->write_body("json", json::stream_object("Invalid request"));
-                rep->set_status(reply::status_type::bad_request);
-                return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                rep->write_body("json", seastar::json::stream_object("Invalid request"));
+                rep->set_status(seastar::httpd::reply::status_type::bad_request);
+                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
             }
         }
     }
-    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<reply>> Neighbors::GetNeighborsByIdHandler::handle([[maybe_unused]] const sstring &path, std::unique_ptr<request> req, std::unique_ptr<reply> rep) {
+future<std::unique_ptr<seastar::httpd::reply>> Neighbors::GetNeighborsByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     // Gather Options
@@ -146,8 +146,8 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsByIdHandler::handle([[mayb
                     for(Node n : nodes) {
                         json_array.emplace_back(n);
                     }
-                    rep->write_body("json", json::stream_object(json_array));
-                    return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                    rep->write_body("json", seastar::json::stream_object(json_array));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                 });
     }
 
@@ -175,8 +175,8 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsByIdHandler::handle([[mayb
                         for(Node n : nodes) {
                             json_array.emplace_back(n);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         case 2: {
             // Get Node Neighbors with Direction and Type(s)
@@ -191,8 +191,8 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsByIdHandler::handle([[mayb
                             for(Node n : nodes) {
                                 json_array.emplace_back(n);
                             }
-                            rep->write_body("json", json::stream_object(json_array));
-                            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                            rep->write_body("json", seastar::json::stream_object(json_array));
+                            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                         });
             }
 
@@ -204,15 +204,15 @@ future<std::unique_ptr<reply>> Neighbors::GetNeighborsByIdHandler::handle([[mayb
                         for(Node n : nodes) {
                             json_array.emplace_back(n);
                         }
-                        rep->write_body("json", json::stream_object(json_array));
-                        return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+                        rep->write_body("json", seastar::json::stream_object(json_array));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
                     });
         }
 
         default:  {
-            rep->write_body("json", json::stream_object("Invalid request"));
-            rep->set_status(reply::status_type::bad_request);
-            return make_ready_future<std::unique_ptr<reply>>(std::move(rep));
+            rep->write_body("json", seastar::json::stream_object("Invalid request"));
+            rep->set_status(seastar::httpd::reply::status_type::bad_request);
+            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
         }
     }
 }
