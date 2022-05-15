@@ -35,6 +35,43 @@ std::vector<int> generate_data(size_t size) {
   return data;
 }
 
+std::vector<int> first = generate_data(32768);
+std::vector<int> second = generate_data(32768);
+std::unordered_map<int, std::vector<int>> map1;
+std::unordered_map<int, std::vector<int>> map2;
+std::unordered_map<int, std::vector<int>> sorted_map1;
+std::unordered_map<int, std::vector<int>> sorted_map2;
+
+void DoSetup(const benchmark::State& state) {
+    map1[8] = generate_data(8);
+    map2[8] = generate_data(8);
+    map1[64] = generate_data(64);
+    map2[64] = generate_data(64);
+    map1[512] = generate_data(512);
+    map2[512] = generate_data(512);
+    map1[4096] = generate_data(4096);
+    map2[4096] = generate_data(4096);
+    map1[32768] = generate_data(32768);
+    map2[32768] = generate_data(32768);
+
+    sorted_map1.insert(map1.begin(), map1.end());
+    sorted_map2.insert(map2.begin(), map2.end());
+
+    std::ranges::sort(sorted_map1[8]);
+    std::ranges::sort(sorted_map2[8]);
+    std::ranges::sort(sorted_map1[64]);
+    std::ranges::sort(sorted_map2[64]);
+    std::ranges::sort(sorted_map1[512]);
+    std::ranges::sort(sorted_map2[512]);
+    std::ranges::sort(sorted_map1[4096]);
+    std::ranges::sort(sorted_map2[4096]);
+    std::ranges::sort(sorted_map1[32768]);
+    std::ranges::sort(sorted_map2[32768]);
+
+    // Setup/Teardown should never be called with any thread_idx != 0.
+    assert(state.thread_index() == 0);
+}
+
 std::vector<int> intersection_unordered_set(std::vector<int>& nums1, std::vector<int>& nums2) {
   std::unordered_set<int> st(nums1.begin(), nums1.end());
   std::vector<int> ans;
@@ -83,8 +120,7 @@ std::vector<int> intersection_two_sets(std::vector<int>& nums1, std::vector<int>
   return ans;
 }
 
-std::vector<int> intersection_sort_both(std::vector<int>& nums1, std::vector<int>& nums2) {
-
+std::vector<int> intersection_both(std::vector<int>& nums1, std::vector<int>& nums2) {
   sort (nums1.begin(), nums1.end());
   sort (nums2.begin(), nums2.end());
   std::map <int, int> map;
@@ -113,46 +149,46 @@ std::vector<int> intersection_sort_both(std::vector<int>& nums1, std::vector<int
 }
 
 std::vector<int> intersection_roaring_in_place(std::vector<int>& num1, std::vector<int>& num2) {
-  roaring::Roaring map1;
-  roaring::Roaring map2;
+  roaring::Roaring roaring1;
+  roaring::Roaring roaring2;
   std::vector<int> result;
 
   for(int i = 0 ; i<num1.size() ; i++){
-    map1.add(num1[i]);
+      roaring1.add(num1[i]);
   }
   for(int i = 0 ; i<num2.size() ; i++){
-    map1.add(num2[i]);
+      roaring1.add(num2[i]);
   }
 
-  map1 &= map2;
+  roaring1 &= roaring2;
 
-  result.reserve(map1.cardinality());
-  uint32_t* array = new uint32_t[map1.cardinality()];
-  map1.toUint32Array(array);
-  result.assign(array, array + map1.cardinality());
+  result.reserve(roaring1.cardinality());
+  uint32_t* array = new uint32_t[roaring1.cardinality()];
+  roaring1.toUint32Array(array);
+  result.assign(array, array + roaring1.cardinality());
   delete[] array;
   return result;
 }
 
 std::vector<int> intersection_roaring(std::vector<int>& num1, std::vector<int>& num2) {
-  roaring::Roaring map1;
-  roaring::Roaring map2;
-  roaring::Roaring map3;
+  roaring::Roaring roaring1;
+  roaring::Roaring roaring2;
+  roaring::Roaring roaring3;
   std::vector<int> result;
 
   for(int i = 0 ; i<num1.size() ; i++){
-    map1.add(num1[i]);
+      roaring1.add(num1[i]);
   }
   for(int i = 0 ; i<num2.size() ; i++){
-    map1.add(num2[i]);
+      roaring1.add(num2[i]);
   }
 
-  map3 = map1 & map2;
+  roaring3 = roaring1 & roaring2;
 
-  result.reserve(map3.cardinality());
-  uint32_t* array = new uint32_t[map3.cardinality()];
-  map3.toUint32Array(array);
-  result.assign(array, array + map3.cardinality());
+  result.reserve(roaring3.cardinality());
+  uint32_t* array = new uint32_t[roaring3.cardinality()];
+  roaring3.toUint32Array(array);
+  result.assign(array, array + roaring3.cardinality());
   delete[] array;
   return result;
 }
@@ -190,7 +226,6 @@ std::vector<int> intersection_binary_search(std::vector<int>& nums1, std::vector
   else
     return binarySearch(nums2,nums1);
 }
-
 
 bool isInArray(std::vector<int> &nums2, int &start_idx, int last_number){
   int end_idx = nums2.size()- 1;
@@ -239,50 +274,106 @@ std::vector<int> intersection_sorted_early_termination(std::vector<int>& nums1, 
   }
   return intersection;
 }
-std::vector<int> first = generate_data(32768);
-std::vector<int> second = generate_data(32768);
-std::unordered_map<int, std::vector<int>> map1;
-std::unordered_map<int, std::vector<int>> map2;
 
-void DoSetup(const benchmark::State& state) {
-  map1[8] = generate_data(8);
-  map2[8] = generate_data(8);
-  map1[64] = generate_data(64);
-  map2[64] = generate_data(64);
-  map1[512] = generate_data(512);
-  map2[512] = generate_data(512);
-  map1[4096] = generate_data(4096);
-  map2[4096] = generate_data(4096);
-  map1[32768] = generate_data(32768);
-  map2[32768] = generate_data(32768);
+std::vector<int> using_ranges_set_intersection(std::vector<int>& nums1, std::vector<int>& nums2) {
+    sort(nums1.begin(),nums1.end());
+    sort(nums2.begin(),nums2.end());
+    std::vector<int>ans;
+    std::ranges::set_intersection(nums1,nums2,back_inserter(ans));
+    return ans;
+}
 
+// Already In Order
+std::vector<int> intersection_in_order_binary_search(std::vector<int>& nums1, std::vector<int>& nums2) {
+    int n1 = nums1.size();
+    int n2 = nums2.size();
 
-  // Setup/Teardown should never be called with any thread_idx != 0.
-  assert(state.thread_index() == 0);
+    if(n1<n2)
+        return binarySearch(nums1,nums2);
+    else
+        return binarySearch(nums2,nums1);
+}
+
+std::vector<int> intersection_in_order_both(std::vector<int>& nums1, std::vector<int>& nums2) {
+    std::map <int, int> map;
+    std::vector<int> ret;
+    int i = 0;
+    int j = 0;
+
+    while (i < nums1.size() && j < nums2.size()) {
+        if (nums1[i] == nums2[j]){
+            map.emplace(nums1[i], i);
+            i++;
+            j++;
+            continue;
+        }
+        else if (nums1[i] > nums2[j])
+            j++;
+        else if (nums1[i] < nums2[j])
+            i++;
+    }
+
+    for (auto it : map) {
+        ret.emplace_back(it.first);
+    }
+
+    return ret;
+}
+
+std::vector<int> intersection_in_order_early_termination(std::vector<int>& nums1, std::vector<int>& nums2) {
+    std::vector<int> intersection;
+    if(nums1.empty() || nums2.empty()){
+        return intersection;
+    }
+
+    int last_number = -1;
+    int start_idx = 0;
+    int end_idx = nums2.size()-1;
+    for(size_t i = 0; i < nums1.size(); ++i){
+        if(nums1[i]!=last_number){
+            last_number = nums1[i];
+
+            if(nums2[end_idx] < last_number){
+                // max number in nums2 is smaller than current nr in nums1
+                break;
+            }
+
+            if(isInArray(nums2, start_idx, last_number)){
+                intersection.push_back(last_number);
+            }
+        }
+    }
+    return intersection;
+}
+
+std::vector<int> using_ranges_in_order_set_intersection(std::vector<int>& nums1, std::vector<int>& nums2) {
+    std::vector<int>ans;
+    std::ranges::set_intersection(nums1,nums2,back_inserter(ans));
+    return ans;
 }
 
 static void BM_Intersection_unordered_set(benchmark::State &state) {
   first = map1[state.range(0)];
   second = map2[state.range(0)];
   for (auto _ : state) {
-    intersection_unordered_set(first, second);
+    benchmark::DoNotOptimize(intersection_unordered_set(first, second));
   }
 }
 
 static void BM_Intersection_unordered_map(benchmark::State &state) {
-//  std::vector<int> first = generate_data(state.range(0));
-//  std::vector<int> second = generate_data(state.range(0));
-  for (auto _ : state) {
-    intersection_unordered_map(first, second);
-  }
+    first = map1[state.range(0)];
+    second = map2[state.range(0)];
+    for (auto _ : state) {
+      benchmark::DoNotOptimize(intersection_unordered_map(first, second));
+    }
 }
 
 static void BM_Intersection_two_sets(benchmark::State &state) {
-//  std::vector<int> first = generate_data(state.range(0));
-//  std::vector<int> second = generate_data(state.range(0));
-  for (auto _ : state) {
-    intersection_two_sets(first, second);
-  }
+    first = map1[state.range(0)];
+    second = map2[state.range(0)];
+    for (auto _ : state) {
+      benchmark::DoNotOptimize(intersection_two_sets(first, second));
+    }
 }
 
 static void BM_Intersection_sort_both(benchmark::State &state) {
@@ -290,16 +381,16 @@ static void BM_Intersection_sort_both(benchmark::State &state) {
   second = map2[state.range(0)];
 
   for (auto _ : state) {
-    benchmark::DoNotOptimize(intersection_sort_both(first, second));
+    benchmark::DoNotOptimize(intersection_both(first, second));
   }
 }
 
 static void BM_Intersection_roaring_in_place(benchmark::State &state) {
-//  std::vector<int> first = generate_data(state.range(0));
-//  std::vector<int> second = generate_data(state.range(0));
-  for (auto _ : state) {
-    intersection_roaring_in_place(first, second);
-  }
+    first = map1[state.range(0)];
+    second = map2[state.range(0)];
+    for (auto _ : state) {
+      benchmark::DoNotOptimize(intersection_roaring_in_place(first, second));
+    }
 }
 
 static void BM_Intersection_roaring(benchmark::State &state) {
@@ -312,11 +403,11 @@ static void BM_Intersection_roaring(benchmark::State &state) {
 }
 
 static void BM_Intersection_binary_search(benchmark::State &state) {
-//  std::vector<int> first = generate_data(state.range(0));
-//  std::vector<int> second = generate_data(state.range(0));
-  for (auto _ : state) {
-    intersection_binary_search(first, second);
-  }
+    first = map1[state.range(0)];
+    second = map2[state.range(0)];
+    for (auto _ : state) {
+      benchmark::DoNotOptimize(intersection_binary_search(first, second));
+    }
 }
 
 static void BM_Intersection_sorted_early_term(benchmark::State &state) {
@@ -328,13 +419,68 @@ static void BM_Intersection_sorted_early_term(benchmark::State &state) {
   }
 }
 
+static void BM_Intersection_set_intersection(benchmark::State &state) {
+    first = map1[state.range(0)];
+    second = map2[state.range(0)];
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(using_ranges_set_intersection(first, second));
+    }
+}
+
+// Already In Order
+
+static void BM_Intersection_in_order_binary_search(benchmark::State &state) {
+    first = sorted_map1[state.range(0)];
+    second = sorted_map2[state.range(0)];
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(intersection_in_order_binary_search(first, second));
+    }
+}
+
+static void BM_Intersection_in_order_both(benchmark::State &state) {
+    first = sorted_map1[state.range(0)];
+    second = sorted_map2[state.range(0)];
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(intersection_in_order_both(first, second));
+    }
+}
+
+static void BM_Intersection_in_order_early_term(benchmark::State &state) {
+    first = sorted_map1[state.range(0)];
+    second = sorted_map2[state.range(0)];
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(intersection_in_order_early_termination(first, second));
+    }
+}
+
+static void BM_Intersection_in_order_set_intersection(benchmark::State &state) {
+    first = sorted_map1[state.range(0)];
+    second = sorted_map2[state.range(0)];
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(using_ranges_in_order_set_intersection(first, second));
+    }
+}
 // Register the function as a benchmark
-//BENCHMARK(BM_Intersection_two_sets)->Range(8, 8 << 10);
-//BENCHMARK(BM_Intersection_binary_search)->Range(8, 8 << 10);
-//BENCHMARK(BM_Intersection_unordered_map)->Range(8, 8 << 10);
-//BENCHMARK(BM_Intersection_unordered_set)->Range(8, 8 << 10);
-//BENCHMARK(BM_Intersection_roaring_in_place)->Range(8, 8 << 10);
+
+// Not Sorted
+BENCHMARK(BM_Intersection_two_sets)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_binary_search)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_unordered_map)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_unordered_set)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_roaring_in_place)->Range(8, 8 << 12)->Setup(DoSetup);
 BENCHMARK(BM_Intersection_roaring)->Range(8, 8 << 12)->Setup(DoSetup);
 BENCHMARK(BM_Intersection_sort_both)->Range(8, 8 << 12)->Setup(DoSetup);
 BENCHMARK(BM_Intersection_sorted_early_term)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_set_intersection)->Range(8, 8 << 12)->Setup(DoSetup);
 
+// Already Sorted
+
+BENCHMARK(BM_Intersection_in_order_both)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_in_order_binary_search)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_in_order_early_term)->Range(8, 8 << 12)->Setup(DoSetup);
+BENCHMARK(BM_Intersection_in_order_set_intersection)->Range(8, 8 << 12)->Setup(DoSetup);
