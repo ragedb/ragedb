@@ -87,6 +87,7 @@ RandomAccessIterator branch_less_upper_bound_iterators(RandomAccessIterator firs
 template<class RandomAccessIterator, class T>
 inline RandomAccessIterator leapfrogSeek2( RandomAccessIterator first, RandomAccessIterator last, const T& val ) {
     RandomAccessIterator it;
+    it = branch_less_upper_bound_iterators( first, last, val);
     int bound, halfBound;
 
     //1. We first look for an interval [bound/2, bound] such that contains our value of interest.
@@ -621,10 +622,13 @@ static void BM_Intersection_multi_set_intersection_leapfrog2(benchmark::State &s
 //  ->ArgsProduct({
 //    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
 //    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-//BENCHMARK(BM_Intersection_multi_set_intersection_galloping_search)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+BENCHMARK(BM_Intersection_multi_set_intersection_galloping_search)
+  ->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+      return *(std::max_element(std::begin(v), std::end(v)));
+  })
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
 //BENCHMARK(BM_Intersection_multi_set_intersection_branchless)
 //  ->ArgsProduct({
 //    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
@@ -633,17 +637,17 @@ static void BM_Intersection_multi_set_intersection_leapfrog2(benchmark::State &s
 //  ->ArgsProduct({
 //    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
 //    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-
-BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog2)
-  ->ArgsProduct({
-    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-
-BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog)
-  ->ArgsProduct({
-    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-
+//
+//BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog2)
+//  ->ArgsProduct({
+//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+//
+//BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog)
+//  ->ArgsProduct({
+//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+//
 
 
 
@@ -653,6 +657,7 @@ BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog)
 //    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
 //    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
 
+BENCHMARK_MAIN();
 
 /**
  * This is pure binary search
