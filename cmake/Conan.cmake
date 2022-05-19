@@ -16,7 +16,7 @@ macro(run_conan)
   conan_cmake_run(
     REQUIRES
     ${CONAN_EXTRA_REQUIRES}
-    catch2/2.13.8
+    catch2/2.13.9
     docopt.cpp/0.6.3
     fmt/8.0.1
     spdlog/1.9.2
