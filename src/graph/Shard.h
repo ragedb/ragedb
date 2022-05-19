@@ -349,8 +349,6 @@ namespace ragedb {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         std::map<Link, std::vector<Relationship>> LinksGetRelationships(const std::map<Link, std::vector<Link>>& links);
-
-
         std::map<Link, std::vector<Node>> LinksGetNeighbors(const std::map<Link, std::vector<Link>>& links);
 
         // All
@@ -648,8 +646,6 @@ namespace ragedb {
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetOutgoingNeighborsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         // Bulk
-
-
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, Direction direction);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
@@ -702,7 +698,7 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
-         seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(const std::string& rel_type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
@@ -745,6 +741,17 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> FilterRelationshipsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<Relationship>> FilterRelationshipsPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
+        // Intersect
+        seastar::future<std::vector<uint64_t>> IntersectIdsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<uint64_t> IntersectIdsCountPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<std::vector<Node>> IntersectNodesPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<std::vector<Relationship>> IntersectRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+
+        // Difference
+        seastar::future<std::vector<uint64_t>> DifferenceIdsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<uint64_t> DifferenceIdsCountPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<std::vector<Node>> DifferenceNodesPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<std::vector<Relationship>> DifferenceRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
 
         // *****************************************************************************************************************************
         //                                                              Via Lua
@@ -986,6 +993,27 @@ namespace ragedb {
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypeIdViaLua(const std::vector<Link>& links, uint16_t type_id);
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypesViaLua(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
+        // Connected
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+
         // All
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
@@ -1013,6 +1041,18 @@ namespace ragedb {
         uint64_t FilterRelationshipCountViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
         sol::as_table_t<std::vector<uint64_t>> FilterRelationshipIdsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<Relationship>> FilterRelationshipsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+
+        // Intersect
+        sol::as_table_t<std::vector<uint64_t>> IntersectIdsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        sol::as_table_t<std::vector<Node>> IntersectNodesViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        sol::as_table_t<std::vector<Relationship>> IntersectRelationshipsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        uint64_t IntersectIdsCountViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+
+        // Difference
+        sol::as_table_t<std::vector<uint64_t>> DifferenceIdsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        sol::as_table_t<std::vector<Node>> DifferenceNodesViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        sol::as_table_t<std::vector<Relationship>> DifferenceRelationshipsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        uint64_t DifferenceIdsCountViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
 
 
         // Partition by Shards

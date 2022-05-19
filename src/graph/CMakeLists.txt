@@ -1,22 +1,22 @@
 set(HEADER_FILES
+        Direction.h
+        Expression.h
         Graph.h
-        Shard.h
         Group.h
         Link.h
-        Node.h
-        Relationship.h
-        NodeTypes.h
-        RelationshipTypes.h
-        Properties.h
-        PropertyType.h
-        Direction.h
-        Operation.h
-        Expression.h
         Lua.h
-        Roar.h
-        Sandbox.h
+        Node.h
+        NodeTypes.h
+        Operation.h
         Order.h
         Permission.h
+        Properties.h
+        PropertyType.h
+        Relationship.h
+        RelationshipTypes.h
+        Roar.h
+        Sandbox.h
+        Shard.h
         Uniqueness.h
         types/Date.h
         eve/CollectIndexes.h)
@@ -34,11 +34,28 @@ set(SOURCE_FILES
         Roar.cpp
         Sandbox.cpp
         Load.cpp
-        node/Find.cpp relationship/Find.cpp shard/Find.cpp peered/Find.cpp lua/Find.cpp
-        node/Filter.cpp relationship/Filter.cpp shard/Filter.cpp peered/Filter.cpp lua/Filter.cpp
-        shard/Ids.cpp shard/Types.cpp shard/Node.cpp shard/Nodes.cpp shard/Relationship.cpp shard/Relationships.cpp shard/Traversing.cpp shard/All.cpp shard/Degrees.cpp shard/Helpers.cpp shard/Bulk.cpp
-        peered/Types.cpp peered/Node.cpp peered/Nodes.cpp peered/Relationship.cpp peered/Relationships.cpp peered/Traversing.cpp peered/All.cpp peered/Degrees.cpp peered/Neighbors.cpp peered/Bulk.cpp peered/Restore.cpp peered/Connected.cpp peered/Helpers.cpp
-        lua/Types.cpp lua/Node.cpp lua/Nodes.cpp lua/Relationship.cpp lua/Relationships.cpp lua/Degrees.cpp lua/Traversing.cpp lua/Neighbors.cpp lua/All.cpp lua/Bulk.cpp lua/Helpers.cpp
-        types/Date.cpp)
+        lua/All.cpp peered/All.cpp shard/All.cpp
+        lua/Bulk.cpp peered/Bulk.cpp shard/Bulk.cpp
+        lua/Connected.cpp peered/Connected.cpp # no shard
+        lua/Degrees.cpp peered/Degrees.cpp shard/Degrees.cpp
+        lua/Difference.cpp peered/Difference.cpp # no shard
+        lua/Filter.cpp peered/Filter.cpp shard/Filter.cpp
+        lua/Find.cpp peered/Find.cpp shard/Find.cpp
+        lua/Helpers.cpp peered/Helpers.cpp shard/Helpers.cpp
+        lua/Intersect.cpp peered/Intersect.cpp # no shard
+        lua/Neighbors.cpp peered/Neighbors.cpp # no shard
+        lua/Node.cpp peered/Node.cpp shard/Node.cpp
+        lua/Nodes.cpp peered/Nodes.cpp shard/Nodes.cpp
+        lua/Relationship.cpp peered/Relationship.cpp shard/Relationship.cpp
+        lua/Relationships.cpp peered/Relationships.cpp shard/Relationships.cpp
+        lua/Traversing.cpp peered/Traversing.cpp shard/Traversing.cpp
+        lua/Types.cpp peered/Types.cpp shard/Types.cpp
+
+        node/Find.cpp relationship/Find.cpp
+        node/Filter.cpp relationship/Filter.cpp
+
+        shard/Ids.cpp
+        peered/Restore.cpp
+        types/Date.cpp )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})
