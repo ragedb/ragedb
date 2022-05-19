@@ -230,7 +230,7 @@ void leapfrogJoin( std::vector<C<A...>>& indexes, std::vector<T>& resultSet ) {
         if( index.size() == 0 )
             return;
 
-    //2. Sort indexes by their first value and do some initial iterators book-keeping!
+    // 2. Sort indexes by their first value and do some initial iterators book-keeping!
     std::sort( indexes.begin(), indexes.end(),
       [] ( const C<A...>& a, const C<A...>& b ) { return *a.begin() < *b.begin(); }
     );
@@ -346,7 +346,7 @@ size_t scalar_branchless_unrolled(const int *A, size_t lenA,
 std::unordered_map<int, std::unordered_map<int, std::vector<std::vector<int>>>> sorted_maps;
 std::vector<std::vector<int>> sorted_vectors;
 
-std::vector<int> generate_sorted_data(size_t size) {
+std::vector<int> generate_sorted_data(int count, int size) {
     auto randomNumberBetween = [](int low, int high) {
         auto randomFunc = [distribution_ = std::uniform_int_distribution<int>(low, high),
                             random_engine_ = std::mt19937{ std::random_device{}() }]() mutable {
@@ -356,24 +356,21 @@ std::vector<int> generate_sorted_data(size_t size) {
     };
 
     std::vector<int> data;
-    std::generate_n(std::back_inserter(data), size, randomNumberBetween(1, size * 20));
+    std::generate_n(std::back_inserter(data), size, randomNumberBetween(1, size * 20 / count));
 
     std::ranges::sort(data);
     return data;
 }
 
 void DoSetupMultiSet(const benchmark::State& state) {
-    std::vector<int> counts = { 2, 3, 4, 5, 6, 7 };
-    std::vector<int> sizes = { 8, 64, 512, 4096, 32768, 262144 };
-    for (auto count : counts) {
-        for (auto size : sizes) {
-            std::vector<std::vector<int>> vectors;
-            for (int i = 0; i < count; i++) {
-                vectors.emplace_back(generate_sorted_data(size));
-            }
-            sorted_maps[count][size] = vectors;
-        }
+    auto count = state.range(0);
+    auto size = state.range(1);
+
+    std::vector<std::vector<int>> vectors;
+    for (auto i = 0; i < count; i++) {
+        vectors.emplace_back(generate_sorted_data(count, size));
     }
+    sorted_maps[count][size] = vectors;
 
     // Setup/Teardown should never be called with any thread_idx != 0.
     assert(state.thread_index() == 0);
@@ -613,15 +610,15 @@ static void BM_Intersection_multi_set_intersection_leapfrog2(benchmark::State &s
 //    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
 //    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
 
-//BENCHMARK(BM_Intersection_multi_set_intersection_set_intersection)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-//
-//BENCHMARK(BM_Intersection_multi_set_intersection_binary_search)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+BENCHMARK(BM_Intersection_multi_set_intersection_set_intersection)
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+
+BENCHMARK(BM_Intersection_multi_set_intersection_binary_search)
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
 BENCHMARK(BM_Intersection_multi_set_intersection_galloping_search)
   ->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
       return *(std::max_element(std::begin(v), std::end(v)));
@@ -629,25 +626,25 @@ BENCHMARK(BM_Intersection_multi_set_intersection_galloping_search)
   ->ArgsProduct({
     benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
     benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-//BENCHMARK(BM_Intersection_multi_set_intersection_branchless)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-//BENCHMARK(BM_Intersection_multi_set_intersection_branchless_unrolled)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+BENCHMARK(BM_Intersection_multi_set_intersection_branchless)
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+BENCHMARK(BM_Intersection_multi_set_intersection_branchless_unrolled)
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
 //
-//BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog2)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-//
-//BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog)
-//  ->ArgsProduct({
-//    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
-//    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
-//
+BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog2)
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+
+BENCHMARK(BM_Intersection_multi_set_intersection_leapfrog)
+  ->ArgsProduct({
+    benchmark::CreateDenseRange(2, 7, /*step=*/ 1),
+    benchmark::CreateRange(8, 262144, /*multi=*/ 8) })->Setup(DoSetupMultiSet);
+
 
 
 
