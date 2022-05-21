@@ -18,6 +18,87 @@
 
 namespace ragedb {
 
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(const std::string& type, const std::string& key) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(type, key);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, direction](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(type, key, direction);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, direction, rel_type](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(type, key, direction, rel_type);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, uint16_t type_id) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, direction, type_id](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(type, key, direction, type_id);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types) {
+        uint16_t node_shard_id = CalculateShardId(type, key);
+
+        return container().invoke_on(node_shard_id, [type, key, direction, rel_types](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(type, key, direction, rel_types);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(uint64_t id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(id);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(uint64_t id, Direction direction) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, direction](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(id, direction);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, direction, rel_type](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(id, direction, rel_type);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(uint64_t id, Direction direction, uint16_t type_id) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, direction, type_id](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(id, direction, type_id);
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
+        uint16_t node_shard_id = CalculateShardId(id);
+
+        return container().invoke_on(node_shard_id, [id, direction, rel_types](Shard &local_shard) {
+            return local_shard.NodeGetNeighborIds(id, direction, rel_types);
+        });
+    }
+
+
     seastar::future<std::vector<Node>> Shard::NodeGetNeighborsPeered(const std::string& type, const std::string& key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 

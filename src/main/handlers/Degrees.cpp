@@ -125,11 +125,13 @@ future<std::unique_ptr<seastar::httpd::reply>> Degrees::GetDegreeByIdHandler::ha
 
     if(options_string.empty()) {
         // Get Node Degree
-        auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id);
-        json_properties_builder json;
-        json.add("degree", degree);
-        rep->write_body("json", seastar::sstring(json.as_json()));
-        co_return rep;
+        return parent.graph.shard.local().NodeGetDegreePeered(id)
+          .then([rep = std::move(rep)] (uint64_t degree) mutable {
+              json_properties_builder json;
+              json.add("degree", degree);
+              rep->write_body("json", seastar::sstring(json.as_json()));
+              return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          });
     }
 
     std::vector<std::string> options;
@@ -149,11 +151,13 @@ future<std::unique_ptr<seastar::httpd::reply>> Degrees::GetDegreeByIdHandler::ha
     switch(options.size()) {
         case 1: {
             // Get Node Degree with Direction
-            auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction);
-            json_properties_builder json;
-            json.add("degree", degree);
-            rep->write_body("json", seastar::sstring(json.as_json()));
-            co_return rep;
+            return parent.graph.shard.local().NodeGetDegreePeered(id, direction)
+              .then([rep = std::move(rep)] (uint64_t degree) mutable {
+                  json_properties_builder json;
+                  json.add("degree", degree);
+                  rep->write_body("json", seastar::sstring(json.as_json()));
+                  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+              });
         }
 
         case 2: {
@@ -162,25 +166,29 @@ future<std::unique_ptr<seastar::httpd::reply>> Degrees::GetDegreeByIdHandler::ha
             boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
             // Single Relationship Type
             if (rel_types.size() == 1) {
-                auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0]);
-                json_properties_builder json;
-                json.add("degree", degree);
-                rep->write_body("json", seastar::sstring(json.as_json()));
-                co_return rep;
-            }
+                return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types[0])
+                  .then([rep = std::move(rep)] (uint64_t degree) mutable {
+                      json_properties_builder json;
+                      json.add("degree", degree);
+                      rep->write_body("json", seastar::sstring(json.as_json()));
+                      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                  });
+           }
 
             // Multiple Relationship Types
-            auto degree = co_await parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types);
-            json_properties_builder json;
-            json.add("degree", degree);
-            rep->write_body("json", seastar::sstring(json.as_json()));
-            co_return rep;
+           return parent.graph.shard.local().NodeGetDegreePeered(id, direction, rel_types)
+             .then([rep = std::move(rep)] (uint64_t degree) mutable {
+                 json_properties_builder json;
+                 json.add("degree", degree);
+                 rep->write_body("json", seastar::sstring(json.as_json()));
+                 return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+             });
         }
 
         default:  {
             rep->write_body("json", seastar::json::stream_object("Invalid request"));
             rep->set_status(seastar::httpd::reply::status_type::bad_request);
-            co_return rep;
+            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
         }
     }
 }

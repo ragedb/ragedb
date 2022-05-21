@@ -293,8 +293,23 @@ namespace ragedb {
             [this](const std::string& type, const std::string& key, const std::vector<std::string>& rel_types) { return this->NodeGetDegreeForTypesViaLua(type, key, rel_types); }
             ));
 
+        // Neighbors
+        lua.set_function("NodeGetNeighborIds", sol::overload(
+           [this](uint64_t id) { return this->NodeGetNeighborIdsViaLua(id); },
+           [this](uint64_t id, Direction direction) { return this->NodeGetNeighborIdsViaLua(id, direction); },
+           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(id, direction, rel_type); },
+           [this](uint64_t id, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(id, direction, rel_types); },
+           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(id, Direction::BOTH, rel_type); },
+           [this](uint64_t id, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(id, Direction::BOTH, rel_types); },
+           [this](const std::string& type, const std::string& key) { return this->NodeGetNeighborIdsViaLua(type, key); },
+           [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetNeighborIdsViaLua(type, key, direction); },
+           [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(type, key, direction, rel_type); },
+           [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(type, key, direction, rel_types); },
+           [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_type); },
+           [this](const std::string& type, const std::string& key, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_types); }
+           ));
+
         // Traversing
-        //TODO: Node Get Neighbor Ids
         lua.set_function("NodeGetLinks", sol::overload(
            [this](uint64_t id) { return this->NodeGetLinksByIdViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetLinksByIdForDirectionViaLua(id, direction); },
@@ -371,19 +386,19 @@ namespace ragedb {
 
         // Connected
         lua.set_function("NodeGetConnected", sol::overload(
-                                               [this](uint64_t id, uint64_t id2) { return this->NodeGetConnectedViaLua(id, id2); },
-                                               [this](uint64_t id, uint64_t id2, Direction direction) { return this->NodeGetConnectedViaLua(id, id2, direction); },
-                                               [this](uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, direction, rel_type); },
-                                               [this](uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, direction, rel_types); },
-                                               [this](uint64_t id, uint64_t id2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, rel_type); },
-                                               [this](uint64_t id, uint64_t id2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, rel_types); },
-                                               [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2) { return this->NodeGetConnectedViaLua(type, key, type2, key2); },
-                                               [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction); },
-                                               [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_type); },
-                                               [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_types); },
-                                               [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, rel_type); },
-                                               [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, rel_types); }
-                                               ));
+           [this](uint64_t id, uint64_t id2) { return this->NodeGetConnectedViaLua(id, id2); },
+           [this](uint64_t id, uint64_t id2, Direction direction) { return this->NodeGetConnectedViaLua(id, id2, direction); },
+           [this](uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, direction, rel_type); },
+           [this](uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, direction, rel_types); },
+           [this](uint64_t id, uint64_t id2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, rel_type); },
+           [this](uint64_t id, uint64_t id2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, rel_types); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2) { return this->NodeGetConnectedViaLua(type, key, type2, key2); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_type); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_types); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, rel_type); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, rel_types); }
+           ));
 
         // All
         lua.set_function("AllNodeIds", sol::overload(
@@ -424,6 +439,13 @@ namespace ragedb {
         lua.set_function("IntersectNodes", &Shard::IntersectNodesViaLua, this);
         lua.set_function("IntersectRelationships", &Shard::IntersectRelationshipsViaLua, this);
         lua.set_function("IntersectIdsCount", &Shard::IntersectIdsCountViaLua, this);
+
+        // Difference
+        lua.set_function("DifferenceIds", &Shard::DifferenceIdsViaLua, this);
+        lua.set_function("DifferenceNodes", &Shard::DifferenceNodesViaLua, this);
+        lua.set_function("DifferenceRelationships", &Shard::DifferenceRelationshipsViaLua, this);
+        lua.set_function("DifferenceIdsCount", &Shard::DifferenceIdsCountViaLua, this);
+
 
         // Create a sanitized environment to restrict the user's Lua code
         lua.set_function("loadstring", &Shard::loadstring, this);

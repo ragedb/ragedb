@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <compare>
 #include <ostream>
+#include <tuple>
 
 namespace ragedb {
     class Link {
@@ -29,11 +30,15 @@ namespace ragedb {
         uint64_t node_id;
         uint64_t rel_id;
 
+        constexpr auto to_tuple() const noexcept {
+            return std::tie(node_id, rel_id);
+        }
+
         [[nodiscard]] uint64_t getNodeId() const;
 
         [[nodiscard]] uint64_t getRelationshipId() const;
 
-       auto operator<=>(const Link &) const = default;
+        auto operator<=>(const Link &) const = default;
 
         friend std::ostream& operator<<(std::ostream& os, const Link& ids);
     };

@@ -227,3 +227,9 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedByIdHandle
 
   return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
 }
+
+Connected::GetConnectedHandler::GetConnectedHandler(Connected& connected) : parent(connected) {}
+Connected::GetConnectedByIdHandler::GetConnectedByIdHandler(Connected& connected) : parent(connected) {}
+Connected::Connected (ragedb::Graph &_graph) : graph(_graph), getConnectedHandler(*this), getConnectedByIdHandler(*this) {}
+
+//Connected::GetConnectedHandler::~GetConnectedHandler() {}

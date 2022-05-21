@@ -24,14 +24,14 @@
 #include <seastar/testing/test_case.hh>
 #include <seastar/testing/seastar_test.hh>
 
+//#include <boost/test/included/unit_test.hpp>
+
 #include <exception>
-
-using namespace std::chrono_literals;
-
 #include <seastar/net/inet_address.hh>
-#include "../src/main/handlers/Connected.h"
+#include "../../src/main/handlers/Connected.h"
 #include <Graph.h>
 
+using namespace std::chrono_literals;
 
 //SEASTAR_TEST_CASE(handler_connected_set_routes) {
 //  return seastar::async([] {
@@ -50,12 +50,14 @@ SEASTAR_TEST_CASE(handler_connected_handle) {
     seastar::sstring address = "0.0.0.0";
     uint16_t port = 7243;
     seastar::net::inet_address addr(address);
-    auto server = new http_server_control();
+    auto server = new seastar::http_server_control();
     server->start().get();
-    server->set_routes([&connected](routes &r) { connected->set_routes(r); }).get();
+    server->set_routes([&connected](seastar::routes &r) { connected->set_routes(r); }).get();
     server->listen(seastar::socket_address{addr, port}).get();
+//delete connected;
     graph.Stop().get();
     server->stop().get();
+    delete server;
   });
 }
 

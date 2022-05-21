@@ -14,8 +14,31 @@
  * limitations under the License.
  */
 
+#include <ranges>
 #include "Group.h"
 
 namespace ragedb {
     Group::Group(uint16_t rel_type_id, std::vector<Link> ids) : rel_type_id(rel_type_id), links(std::move(ids)) {}
+
+    std::vector<uint64_t> Group::node_ids(){
+        std::vector<uint64_t> ids{};
+        ids.reserve(links.size());
+
+        for (auto id : links | std::views::transform(&Link::to_tuple) | std::views::elements<0>) {
+            ids.emplace_back(id);
+        }
+
+        return ids;
+    }
+
+    std::vector<uint64_t> Group::rel_ids(){
+        std::vector<uint64_t> ids{};
+        ids.reserve(links.size());
+
+        for (auto id : links | std::views::transform(&Link::to_tuple) | std::views::elements<1>) {
+            ids.emplace_back(id);
+        }
+
+        return ids;
+    }
 }

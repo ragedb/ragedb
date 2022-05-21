@@ -23,11 +23,13 @@ void HealthCheck::set_routes(seastar::routes &routes) {
 }
 
 seastar::future<std::unique_ptr<seastar::httpd::reply>> HealthCheck::HealthCheckHandler::handle(
-        [[maybe_unused]] const seastar::sstring &path,
-        [[maybe_unused]] std::unique_ptr<seastar::request> req,
-        std::unique_ptr<seastar::httpd::reply> rep) {
+  [[maybe_unused]] const seastar::sstring &path,
+  [[maybe_unused]] std::unique_ptr<seastar::request> req,
+  std::unique_ptr<seastar::httpd::reply> rep) {
 
-    auto checks = co_await parent.graph.shard.local().HealthCheckPeered();
-    rep->write_body("json", seastar::json::stream_object(checks));
-    co_return rep;
+    return parent.graph.shard.local().HealthCheckPeered()
+      .then([rep = std::move(rep)] (const std::vector<std::string>& checks) mutable {
+          rep->write_body("json", seastar::json::stream_object(checks));
+          return seastar::make_ready_future<std::unique_ptr<seastar::reply>>(std::move(rep));
+      });
 }

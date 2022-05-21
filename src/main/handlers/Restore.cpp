@@ -28,9 +28,10 @@ future<std::unique_ptr<seastar::httpd::reply>> Restore::RestoreHandler::handle(
         [[maybe_unused]] std::unique_ptr<seastar::request> req,
         std::unique_ptr<seastar::httpd::reply> rep) {
 
-    auto restores = co_await parent.graph.shard.local().RestorePeered(parent.graph.GetName());
-    json_properties_builder json;
-    json.add("message", restores);
-    rep->write_body("json", seastar::sstring(json.as_json()));
-    co_return rep;
+    return parent.graph.shard.local().RestorePeered(parent.graph.GetName()).then([rep = std::move(rep)] (std::string restores) mutable {
+        json_properties_builder json;
+        json.add("message", restores);
+        rep->write_body("json", seastar::sstring(json.as_json()));
+        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    });
 }
