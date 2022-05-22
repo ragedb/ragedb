@@ -18,22 +18,22 @@
 
 namespace ragedb {
 
-    uint64_t Shard::DifferenceIdsCountViaLua(const std::vector<uint64_t> &ids1, const std::vector<uint64_t> &ids2)
+    uint64_t Shard::DifferenceIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
     {
         return DifferenceIdsCountPeered(ids1, ids2).get0();
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::DifferenceIdsViaLua(const std::vector<uint64_t> &ids1, const std::vector<uint64_t> &ids2)
+    sol::as_table_t<std::vector<uint64_t>> Shard::DifferenceIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
     {
         return sol::as_table(DifferenceIdsPeered(ids1, ids2).get0());
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::DifferenceNodesViaLua(const std::vector<uint64_t> &ids1, const std::vector<uint64_t> &ids2)
+    sol::as_table_t<std::vector<Node>> Shard::DifferenceNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
     {
         return sol::as_table(DifferenceNodesPeered(ids1, ids2).get0());
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::DifferenceRelationshipsViaLua(const std::vector<uint64_t> &ids1, const std::vector<uint64_t> &ids2)
+    sol::as_table_t<std::vector<Relationship>> Shard::DifferenceRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
     {
         return sol::as_table(DifferenceRelationshipsPeered(ids1, ids2).get0());
     }

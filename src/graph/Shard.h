@@ -19,6 +19,7 @@
 
 #define SOL_ALL_SAFETIES_ON 1
 
+#include <algorithm>
 #include <coroutine>
 #include <iostream>
 #include <fstream>
@@ -588,6 +589,12 @@ namespace ragedb {
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, uint16_t type_id);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
+        seastar::future<std::vector<uint64_t>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids);
+        seastar::future<std::vector<uint64_t>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
+        seastar::future<std::vector<uint64_t>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<uint64_t>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, uint16_t type_id);
+        seastar::future<std::vector<uint64_t>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
+
         // Traversing
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, Direction direction);
@@ -835,18 +842,18 @@ namespace ragedb {
          * Since these will most likely be called from roaring bitmaps which will be in order anyway, I'm going with number 2 for now.
          * Same deal with relationships
          */
-        sol::as_table_t<std::vector<Node>> NodesGetViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::vector<Node>> NodesGetByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<std::string>> NodesGetKeyViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, std::string>> NodesGetKeyByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<std::string>> NodesGetTypeViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, std::string>> NodesGetTypeByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<uint16_t>> NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, uint16_t>> NodesGetTypeIdByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<sol::object>> NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property);
-        sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property);
-        sol::as_table_t<std::vector<sol::object>> NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertiesByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<Node>> NodesGetViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::vector<Node>> NodesGetByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<std::string>> NodesGetKeyViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, std::string>> NodesGetKeyByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<std::string>> NodesGetTypeViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, std::string>> NodesGetTypeByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<uint16_t>> NodesGetTypeIdViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, uint16_t>> NodesGetTypeIdByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
+        sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
+        sol::as_table_t<std::vector<sol::object>> NodesGetPropertiesViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertiesByLinksViaLua(std::vector<Link> links);
 
         // Property Types
         uint8_t NodePropertyTypeAddViaLua(const std::string& node_type, const std::string& key, const std::string& type);
@@ -890,15 +897,15 @@ namespace ragedb {
 
         // Relationships
         sol::as_table_t<std::vector<Relationship>> RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
-        sol::as_table_t<std::vector<Relationship>> RelationshipsGetByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<std::string>> RelationshipsGetTypeViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, std::string>> RelationshipsGetTypeByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<uint16_t>> RelationshipsGetTypeIdViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, uint16_t>> RelationshipsGetTypeIdByLinksViaLua(const std::vector<Link>& links);
-        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property);
-        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property);
-        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertiesViaLua(const std::vector<uint64_t>& ids);
-        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertiesByLinksViaLua(const std::vector<Link>& links);
+        sol::as_table_t<std::vector<Relationship>> RelationshipsGetByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<std::string>> RelationshipsGetTypeViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, std::string>> RelationshipsGetTypeByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<uint16_t>> RelationshipsGetTypeIdViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, uint16_t>> RelationshipsGetTypeIdByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
+        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
+        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertiesViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertiesByLinksViaLua(std::vector<Link> links);
 
         // Relationship Properties
         sol::object RelationshipGetPropertyViaLua(uint64_t id, const std::string& property);
@@ -937,6 +944,14 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type);
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, uint16_t type_id);
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
+
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, uint16_t type_id);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types);
+
 
         // Traversing
         sol::as_table_t<std::vector<Link>> NodeGetLinksViaLua(const std::string& type, const std::string& key);
@@ -1000,35 +1015,35 @@ namespace ragedb {
         sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Bulk
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksViaLua(const std::vector<Link>& links);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionViaLua(const std::vector<Link>& links, Direction direction);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeViaLua(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeIdViaLua(const std::vector<Link>& links, Direction direction, uint16_t type_id);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypesViaLua(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksViaLua(std::vector<Link> links);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionViaLua(std::vector<Link> links, Direction direction);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeViaLua(const std::vector<Link>& links, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeIdViaLua(const std::vector<Link>& links, uint16_t type_id);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypesViaLua(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsViaLua(const std::vector<Link>& links);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionViaLua(const std::vector<Link>& links, Direction direction);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeViaLua(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeIdViaLua(const std::vector<Link>& links, Direction direction, uint16_t type_id);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypesViaLua(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsViaLua(std::vector<Link> links);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeViaLua(const std::vector<Link>& links, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeIdViaLua(const std::vector<Link>& links, uint16_t type_id);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypesViaLua(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsViaLua(const std::vector<Link>& links);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionViaLua(const std::vector<Link>& links, Direction direction);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypeViaLua(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypeIdViaLua(const std::vector<Link>& links, Direction direction, uint16_t type_id);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypesViaLua(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsViaLua(std::vector<Link> links);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionViaLua(std::vector<Link> links, Direction direction);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypeIdViaLua(std::vector<Link> links, Direction direction, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypeViaLua(const std::vector<Link>& links, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypeIdViaLua(const std::vector<Link>& links, uint16_t type_id);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypesViaLua(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypeIdViaLua(std::vector<Link> links, uint16_t type_id);
+        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         // Connected
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
@@ -1072,24 +1087,24 @@ namespace ragedb {
         sol::as_table_t<std::vector<Relationship>> FindRelationshipsViaLua(const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
 
         // Filter
-        uint64_t FilterNodeCountViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
-        sol::as_table_t<std::vector<uint64_t>> FilterNodeIdsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
-        sol::as_table_t<std::vector<Node>> FilterNodesViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
-        uint64_t FilterRelationshipCountViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
-        sol::as_table_t<std::vector<uint64_t>> FilterRelationshipIdsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
-        sol::as_table_t<std::vector<Relationship>> FilterRelationshipsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        uint64_t FilterNodeCountViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
+        sol::as_table_t<std::vector<uint64_t>> FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<Node>> FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        uint64_t FilterRelationshipCountViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
+        sol::as_table_t<std::vector<uint64_t>> FilterRelationshipIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<Relationship>> FilterRelationshipsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
 
         // Intersect
-        sol::as_table_t<std::vector<uint64_t>> IntersectIdsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        sol::as_table_t<std::vector<Node>> IntersectNodesViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        sol::as_table_t<std::vector<Relationship>> IntersectRelationshipsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        uint64_t IntersectIdsCountViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        sol::as_table_t<std::vector<uint64_t>> IntersectIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        sol::as_table_t<std::vector<Node>> IntersectNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        sol::as_table_t<std::vector<Relationship>> IntersectRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        uint64_t IntersectIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
 
         // Difference
-        sol::as_table_t<std::vector<uint64_t>> DifferenceIdsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        sol::as_table_t<std::vector<Node>> DifferenceNodesViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        sol::as_table_t<std::vector<Relationship>> DifferenceRelationshipsViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        uint64_t DifferenceIdsCountViaLua(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        sol::as_table_t<std::vector<uint64_t>> DifferenceIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        sol::as_table_t<std::vector<Node>> DifferenceNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        sol::as_table_t<std::vector<Relationship>> DifferenceRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        uint64_t DifferenceIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
 
 
         // Partition by Shards

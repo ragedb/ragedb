@@ -182,24 +182,24 @@ namespace ragedb {
 
         // Nodes
         lua.set_function("NodesGet", sol::overload(
-            [this](const std::vector<uint64_t>& ids) { return this->NodesGetViaLua(ids); },
-            [this](const std::vector<Link>& links) { return this->NodesGetByLinksViaLua(links); }
+            [this](std::vector<uint64_t> ids) { return this->NodesGetViaLua(ids); },
+            [this](std::vector<Link> links) { return this->NodesGetByLinksViaLua(links); }
            ));
         lua.set_function("NodesGetKey", sol::overload(
-            [this](const std::vector<uint64_t>& ids) { return this->NodesGetKeyViaLua(ids); },
-            [this](const std::vector<Link>& links) { return this->NodesGetKeyByLinksViaLua(links); }
+            [this](std::vector<uint64_t> ids) { return this->NodesGetKeyViaLua(ids); },
+            [this](std::vector<Link> links) { return this->NodesGetKeyByLinksViaLua(links); }
            ));
         lua.set_function("NodesGetType", sol::overload(
-            [this](const std::vector<uint64_t>& ids) { return this->NodesGetTypeViaLua(ids); },
-            [this](const std::vector<Link>& links) { return this->NodesGetTypeByLinksViaLua(links); }
+            [this](std::vector<uint64_t> ids) { return this->NodesGetTypeViaLua(ids); },
+            [this](std::vector<Link> links) { return this->NodesGetTypeByLinksViaLua(links); }
            ));
         lua.set_function("NodesGetProperty", sol::overload(
-            [this](const std::vector<uint64_t>& ids, const std::string& property) { return this->NodesGetPropertyViaLua(ids, property); },
-            [this](const std::vector<Link>& links, const std::string& property) { return this->NodesGetPropertyByLinksViaLua(links, property); }
+            [this](std::vector<uint64_t> ids, const std::string& property) { return this->NodesGetPropertyViaLua(ids, property); },
+            [this](std::vector<Link> links, const std::string& property) { return this->NodesGetPropertyByLinksViaLua(links, property); }
            ));
         lua.set_function("NodesGetProperties", sol::overload(
-            [this](const std::vector<uint64_t>& ids) { return this->NodesGetPropertiesViaLua(ids); },
-            [this](const std::vector<Link>& links) { return this->NodesGetPropertiesByLinksViaLua(links); }
+            [this](std::vector<uint64_t> ids) { return this->NodesGetPropertiesViaLua(ids); },
+            [this](std::vector<Link> links) { return this->NodesGetPropertiesByLinksViaLua(links); }
            ));
 
         // Node Properties
@@ -251,20 +251,20 @@ namespace ragedb {
 
         // Relationships
         lua.set_function("RelationshipsGet", sol::overload(
-                                                 [this](const std::vector<uint64_t>& ids) { return this->RelationshipsGetViaLua(ids); },
-                                                 [this](const std::vector<Link>& links) { return this->RelationshipsGetByLinksViaLua(links); }
+                                                 [this](std::vector<uint64_t> ids) { return this->RelationshipsGetViaLua(ids); },
+                                                 [this](std::vector<Link> links) { return this->RelationshipsGetByLinksViaLua(links); }
                                                  ));
         lua.set_function("RelationshipsGetType", sol::overload(
-                                                 [this](const std::vector<uint64_t>& ids) { return this->RelationshipsGetTypeViaLua(ids); },
-                                                 [this](const std::vector<Link>& links) { return this->RelationshipsGetTypeByLinksViaLua(links); }
+                                                 [this](std::vector<uint64_t> ids) { return this->RelationshipsGetTypeViaLua(ids); },
+                                                 [this](std::vector<Link> links) { return this->RelationshipsGetTypeByLinksViaLua(links); }
                                                  ));
         lua.set_function("RelationshipsGetProperty", sol::overload(
-                                                 [this](const std::vector<uint64_t>& ids, const std::string& property) { return this->RelationshipsGetPropertyViaLua(ids, property); },
-                                                 [this](const std::vector<Link>& links, const std::string& property) { return this->RelationshipsGetPropertyByLinksViaLua(links, property); }
+                                                 [this](std::vector<uint64_t> ids, const std::string& property) { return this->RelationshipsGetPropertyViaLua(ids, property); },
+                                                 [this](std::vector<Link> links, const std::string& property) { return this->RelationshipsGetPropertyByLinksViaLua(links, property); }
                                                  ));
         lua.set_function("RelationshipsGetProperties", sol::overload(
-                                                 [this](const std::vector<uint64_t>& ids) { return this->RelationshipsGetPropertiesViaLua(ids); },
-                                                 [this](const std::vector<Link>& links) { return this->RelationshipsGetPropertiesByLinksViaLua(links); }
+                                                 [this](std::vector<uint64_t> ids) { return this->RelationshipsGetPropertiesViaLua(ids); },
+                                                 [this](std::vector<Link> links) { return this->RelationshipsGetPropertiesByLinksViaLua(links); }
                                                  ));
 
         // Relationship Properties
@@ -308,6 +308,15 @@ namespace ragedb {
            [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_type); },
            [this](const std::string& type, const std::string& key, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_types); }
            ));
+
+        lua.set_function("NodeIdsGetNeighborIds", sol::overload(
+             [this](std::vector<uint64_t> ids) { return this->NodeIdsGetNeighborIdsViaLua(ids); },
+             [this](std::vector<uint64_t> ids, Direction direction) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction); },
+             [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_type); },
+             [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types); },
+             [this](std::vector<uint64_t> ids, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_type); },
+             [this](std::vector<uint64_t> ids, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types); }
+             ));
 
         // Traversing
         lua.set_function("NodeGetLinks", sol::overload(
@@ -358,30 +367,30 @@ namespace ragedb {
         //Bulk
         // TODO: Nodes Get Links
         lua.set_function("LinksGetLinks", sol::overload(
-            [this](const std::vector<Link>& links) { return this->LinksGetLinksViaLua(links); },
-            [this](const std::vector<Link>& links, Direction direction) { return this->LinksGetLinksForDirectionViaLua(links, direction); },
-            [this](const std::vector<Link>& links, Direction direction, const std::string& rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, direction, rel_type); },
-            [this](const std::vector<Link>& links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](const std::vector<Link>& links, const std::string& rel_type) { return this->LinksGetLinksForTypeViaLua(links, rel_type); },
-            [this](const std::vector<Link>& links, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForTypesViaLua(links, rel_types); }
+            [this](std::vector<Link> links) { return this->LinksGetLinksViaLua(links); },
+            [this](std::vector<Link> links, Direction direction) { return this->LinksGetLinksForDirectionViaLua(links, direction); },
+            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, direction, rel_type); },
+            [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForDirectionForTypesViaLua(links, direction, rel_types); },
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetLinksForTypeViaLua(links, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForTypesViaLua(links, rel_types); }
             ));
 
         lua.set_function("LinksGetRelationships", sol::overload(
-            [this](const std::vector<Link>& links) { return this->LinksGetRelationshipsViaLua(links); },
-            [this](const std::vector<Link>& links, Direction direction) { return this->LinksGetRelationshipsForDirectionViaLua(links, direction); },
-            [this](const std::vector<Link>& links, Direction direction, const std::string& rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, direction, rel_type); },
-            [this](const std::vector<Link>& links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](const std::vector<Link>& links, const std::string& rel_type) { return this->LinksGetRelationshipsForTypeViaLua(links, rel_type); },
-            [this](const std::vector<Link>& links, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForTypesViaLua(links, rel_types); }
+            [this](std::vector<Link> links) { return this->LinksGetRelationshipsViaLua(links); },
+            [this](std::vector<Link> links, Direction direction) { return this->LinksGetRelationshipsForDirectionViaLua(links, direction); },
+            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, direction, rel_type); },
+            [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForDirectionForTypesViaLua(links, direction, rel_types); },
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetRelationshipsForTypeViaLua(links, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForTypesViaLua(links, rel_types); }
             ));
 
         lua.set_function("LinksGetNeighbors", sol::overload(
-            [this](const std::vector<Link>& links) { return this->LinksGetNeighborsViaLua(links); },
-            [this](const std::vector<Link>& links, Direction direction) { return this->LinksGetNeighborsForDirectionViaLua(links, direction); },
-            [this](const std::vector<Link>& links, Direction direction, const std::string& rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, direction, rel_type); },
-            [this](const std::vector<Link>& links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](const std::vector<Link>& links, const std::string& rel_type) { return this->LinksGetNeighborsForTypeViaLua(links, rel_type); },
-            [this](const std::vector<Link>& links, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForTypesViaLua(links, rel_types); }
+            [this](std::vector<Link> links) { return this->LinksGetNeighborsViaLua(links); },
+            [this](std::vector<Link> links, Direction direction) { return this->LinksGetNeighborsForDirectionViaLua(links, direction); },
+            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, direction, rel_type); },
+            [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForDirectionForTypesViaLua(links, direction, rel_types); },
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetNeighborsForTypeViaLua(links, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForTypesViaLua(links, rel_types); }
             ));
 
         // Connected

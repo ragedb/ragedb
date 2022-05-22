@@ -114,4 +114,24 @@ namespace ragedb {
         return sol::as_table(NodeGetNeighborsPeered(id, direction, rel_types).get0());
     }
 
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids) {
+        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids).get0());
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction) {
+        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction).get0());
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) {
+        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, rel_type).get0());
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, uint16_t type_id) {
+        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, type_id).get0());
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types) {
+        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).get0());
+    }
+
 }

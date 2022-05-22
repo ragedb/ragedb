@@ -18,27 +18,27 @@
 
 namespace ragedb {
 
-  uint64_t Shard::FilterNodeCountViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object) {
+  uint64_t Shard::FilterNodeCountViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object) {
     return FilterNodeCountPeered(ids, type, property, operation, SolObjectToProperty(object)).get0();
   }
 
-  sol::as_table_t<std::vector<uint64_t>> Shard::FilterNodeIdsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+  sol::as_table_t<std::vector<uint64_t>> Shard::FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
     return sol::as_table(FilterNodeIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
   }
 
-  sol::as_table_t<std::vector<Node>> Shard::FilterNodesViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+  sol::as_table_t<std::vector<Node>> Shard::FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
     return sol::as_table(FilterNodesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
   }
 
-  uint64_t Shard::FilterRelationshipCountViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object) {
+  uint64_t Shard::FilterRelationshipCountViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object) {
     return FilterRelationshipCountPeered(ids, type, property, operation, SolObjectToProperty(object)).get0();
   }
 
-  sol::as_table_t<std::vector<uint64_t>> Shard::FilterRelationshipIdsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+  sol::as_table_t<std::vector<uint64_t>> Shard::FilterRelationshipIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
     return sol::as_table(FilterRelationshipIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
   }
 
-  sol::as_table_t<std::vector<Relationship>> Shard::FilterRelationshipsViaLua(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+  sol::as_table_t<std::vector<Relationship>> Shard::FilterRelationshipsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
     return sol::as_table(FilterRelationshipsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
   }
 

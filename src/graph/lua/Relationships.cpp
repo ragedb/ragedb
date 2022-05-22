@@ -28,11 +28,11 @@ namespace ragedb {
       return sol::as_table(relationships);
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::RelationshipsGetByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::vector<Relationship>> Shard::RelationshipsGetByLinksViaLua(std::vector<Link> links) {
       return sol::as_table(RelationshipsGetPeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<std::string>> Shard::RelationshipsGetTypeViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<std::string>> Shard::RelationshipsGetTypeViaLua(std::vector<uint64_t> ids) {
       std::vector<std::string> properties;
       for (const auto& [id, value] : RelationshipsGetTypePeered(ids).get0()) {
         properties.emplace_back(value);
@@ -40,11 +40,11 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, std::string>> Shard::RelationshipsGetTypeByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, std::string>> Shard::RelationshipsGetTypeByLinksViaLua(std::vector<Link> links) {
       return sol::as_table( RelationshipsGetTypePeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<uint16_t>> Shard::RelationshipsGetTypeIdViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<uint16_t>> Shard::RelationshipsGetTypeIdViaLua(std::vector<uint64_t> ids) {
       std::vector<uint16_t> properties;
       for (const auto& [id, value] : RelationshipsGetTypeIdPeered(ids).get0()) {
         properties.emplace_back(value);
@@ -52,11 +52,11 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, uint16_t>> Shard::RelationshipsGetTypeIdByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, uint16_t>> Shard::RelationshipsGetTypeIdByLinksViaLua(std::vector<Link> links) {
       return sol::as_table( RelationshipsGetTypeIdPeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<sol::object>> Shard::RelationshipsGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property) {
+    sol::as_table_t<std::vector<sol::object>> Shard::RelationshipsGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property) {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
 
@@ -66,7 +66,7 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, sol::object>> Shard::RelationshipsGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property) {
+    sol::as_table_t<std::map<Link, sol::object>> Shard::RelationshipsGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property) {
       std::map<Link, sol::object> properties;
 
       for(const auto& [link, value] : RelationshipsGetPropertyPeered(links, property).get0()) {
@@ -75,7 +75,7 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::vector<sol::object>> Shard::RelationshipsGetPropertiesViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<sol::object>> Shard::RelationshipsGetPropertiesViaLua(std::vector<uint64_t> ids) {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
 
@@ -85,7 +85,7 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, sol::object>> Shard::RelationshipsGetPropertiesByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, sol::object>> Shard::RelationshipsGetPropertiesByLinksViaLua(std::vector<Link> links) {
       std::map<Link, sol::object> properties;
 
       for(const auto& [link, value] : RelationshipsGetPropertiesPeered(links).get0()) {

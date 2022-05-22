@@ -98,6 +98,166 @@ namespace ragedb {
         });
     }
 
+    seastar::future<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::vector<uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                std::vector<uint64_t> ids;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id);
+                    ids.insert(std::end(ids), std::begin(neighbor_ids), std::end(neighbor_ids));
+                }
+                return ids;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+            std::vector<uint64_t> combined;
+
+            for(const std::vector<uint64_t>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            // sort followed by unique, to remove all duplicates
+            std::ranges::sort(combined);
+            auto ret = std::ranges::unique(combined);
+            combined.erase(ret.begin(), ret.end());
+
+            return combined;
+        });
+    }
+    seastar::future<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::vector<uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction] (Shard &local_shard) {
+                std::vector<uint64_t> ids;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction);
+                    ids.insert(std::end(ids), std::begin(neighbor_ids), std::end(neighbor_ids));
+                }
+                return ids;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+            std::vector<uint64_t> combined;
+
+            for(const std::vector<uint64_t>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            // sort followed by unique, to remove all duplicates
+            std::ranges::sort(combined);
+            auto ret = std::ranges::unique(combined);
+            combined.erase(ret.begin(), ret.end());
+
+            return combined;
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::vector<uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
+                std::vector<uint64_t> ids;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_type);
+                    ids.insert(std::end(ids), std::begin(neighbor_ids), std::end(neighbor_ids));
+                }
+                return ids;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+            std::vector<uint64_t> combined;
+
+            for(const std::vector<uint64_t>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            // sort followed by unique, to remove all duplicates
+            std::ranges::sort(combined);
+            auto ret = std::ranges::unique(combined);
+            combined.erase(ret.begin(), ret.end());
+
+            return combined;
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, uint16_t type_id) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::vector<uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, type_id] (Shard &local_shard) {
+                std::vector<uint64_t> ids;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, type_id);
+                    ids.insert(std::end(ids), std::begin(neighbor_ids), std::end(neighbor_ids));
+                }
+                return ids;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+            std::vector<uint64_t> combined;
+
+            for(const std::vector<uint64_t>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            // sort followed by unique, to remove all duplicates
+            std::ranges::sort(combined);
+            auto ret = std::ranges::unique(combined);
+            combined.erase(ret.begin(), ret.end());
+
+            return combined;
+        });
+    }
+
+    seastar::future<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::vector<uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types] (Shard &local_shard) {
+                std::vector<uint64_t> ids;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id);
+                    ids.insert(std::end(ids), std::begin(neighbor_ids), std::end(neighbor_ids));
+                }
+                return ids;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::vector<uint64_t>>& results) {
+            std::vector<uint64_t> combined;
+
+            for(const std::vector<uint64_t>& sharded : results) {
+                combined.insert(std::end(combined), std::begin(sharded), std::end(sharded));
+            }
+            // sort followed by unique, to remove all duplicates
+            std::ranges::sort(combined);
+            auto ret = std::ranges::unique(combined);
+            combined.erase(ret.begin(), ret.end());
+
+            return combined;
+        });
+    }
+
+
 
     seastar::future<std::vector<Node>> Shard::NodeGetNeighborsPeered(const std::string& type, const std::string& key) {
         uint16_t node_shard_id = CalculateShardId(type, key);

@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-    sol::as_table_t<std::vector<Node>> Shard::NodesGetViaLua(const std::vector<uint64_t> &ids) {
+    sol::as_table_t<std::vector<Node>> Shard::NodesGetViaLua(std::vector<uint64_t> ids) {
       std::vector<Node> nodes = NodesGetPeered(ids).get0();
 
       sort(nodes.begin(), nodes.end(), [](const Node& a, const Node& b) {
@@ -28,11 +28,11 @@ namespace ragedb {
        return sol::as_table(nodes);
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::NodesGetByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::vector<Node>> Shard::NodesGetByLinksViaLua(std::vector<Link> links) {
       return sol::as_table(NodesGetPeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<std::string>> Shard::NodesGetKeyViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<std::string>> Shard::NodesGetKeyViaLua(std::vector<uint64_t> ids) {
       std::vector<std::string> properties;
       for (const auto& [id, value] : NodesGetKeyPeered(ids).get0()) {
         properties.emplace_back(value);
@@ -40,11 +40,11 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetKeyByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetKeyByLinksViaLua(std::vector<Link> links) {
       return sol::as_table(NodesGetKeyPeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<std::string>> Shard::NodesGetTypeViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<std::string>> Shard::NodesGetTypeViaLua(std::vector<uint64_t> ids) {
       std::vector<std::string> properties;
       for (const auto& [id, value] : NodesGetTypePeered(ids).get0()) {
         properties.emplace_back(value);
@@ -52,11 +52,11 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetTypeByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetTypeByLinksViaLua(std::vector<Link> links) {
       return sol::as_table(NodesGetTypePeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<uint16_t>> Shard::NodesGetTypeIdViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<uint16_t>> Shard::NodesGetTypeIdViaLua(std::vector<uint64_t> ids) {
       std::vector<uint16_t> properties;
       for (const auto& [id, value] : NodesGetTypeIdPeered(ids).get0()) {
         properties.emplace_back(value);
@@ -64,11 +64,11 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, uint16_t>> Shard::NodesGetTypeIdByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, uint16_t>> Shard::NodesGetTypeIdByLinksViaLua(std::vector<Link> links) {
       return sol::as_table(NodesGetTypeIdPeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<sol::object>> Shard::NodesGetPropertyViaLua(const std::vector<uint64_t>& ids, const std::string& property) {
+    sol::as_table_t<std::vector<sol::object>> Shard::NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property) {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
 
@@ -78,7 +78,7 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, sol::object>> Shard::NodesGetPropertyByLinksViaLua(const std::vector<Link>& links, const std::string& property) {
+    sol::as_table_t<std::map<Link, sol::object>> Shard::NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property) {
       std::map<Link, sol::object> properties;
 
       for(const auto& [link, value] : NodesGetPropertyPeered(links, property).get0()) {
@@ -87,7 +87,7 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::vector<sol::object>> Shard::NodesGetPropertiesViaLua(const std::vector<uint64_t>& ids) {
+    sol::as_table_t<std::vector<sol::object>> Shard::NodesGetPropertiesViaLua(std::vector<uint64_t> ids) {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
 
@@ -97,7 +97,7 @@ namespace ragedb {
       return sol::as_table(properties);
     }
 
-    sol::as_table_t<std::map<Link, sol::object>> Shard::NodesGetPropertiesByLinksViaLua(const std::vector<Link>& links) {
+    sol::as_table_t<std::map<Link, sol::object>> Shard::NodesGetPropertiesByLinksViaLua(std::vector<Link> links) {
       std::map<Link, sol::object> properties;
 
       for(const auto& [link, value] : NodesGetPropertiesPeered(links).get0()) {
