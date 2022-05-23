@@ -279,6 +279,12 @@ namespace ragedb {
 
         // Node Degree
         lua.set_function("NodeGetDegree", sol::overload(
+            [this](Node node) { return this->NodeGetDegreeByIdViaLua(node); },
+            [this](Node node, Direction direction) { return this->NodeGetDegreeByIdForDirectionViaLua(node, direction); },
+            [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeByIdForDirectionForTypeViaLua(node, direction, rel_type); },
+            [this](Node node, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetDegreeByIdForDirectionForTypesViaLua(node, direction, rel_types); },
+            [this](Node node, const std::string& rel_type) { return this->NodeGetDegreeByIdForTypeViaLua(node, rel_type); },
+            [this](Node node, const std::vector<std::string>& rel_types) { return this->NodeGetDegreeByIdForTypesViaLua(node, rel_types); },
             [this](uint64_t id) { return this->NodeGetDegreeByIdViaLua(id); },
             [this](uint64_t id, Direction direction) { return this->NodeGetDegreeByIdForDirectionViaLua(id, direction); },
             [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeByIdForDirectionForTypeViaLua(id, direction, rel_type); },
@@ -295,6 +301,12 @@ namespace ragedb {
 
         // Neighbors
         lua.set_function("NodeGetNeighborIds", sol::overload(
+           [this](Node node) { return this->NodeGetNeighborIdsViaLua(node); },
+           [this](Node node, Direction direction) { return this->NodeGetNeighborIdsViaLua(node, direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node, direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(node, direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node, Direction::BOTH, rel_type); },
+           [this](Node node, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(node, Direction::BOTH, rel_types); },
            [this](uint64_t id) { return this->NodeGetNeighborIdsViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetNeighborIdsViaLua(id, direction); },
            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(id, direction, rel_type); },
@@ -309,17 +321,34 @@ namespace ragedb {
            [this](const std::string& type, const std::string& key, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_types); }
            ));
 
+        // Cannot overload on vectors due to Sol Issue https://github.com/ThePhD/sol2/issues/1357
         lua.set_function("NodeIdsGetNeighborIds", sol::overload(
-             [this](std::vector<uint64_t> ids) { return this->NodeIdsGetNeighborIdsViaLua(ids); },
-             [this](std::vector<uint64_t> ids, Direction direction) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction); },
-             [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_type); },
-             [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types); },
-             [this](std::vector<uint64_t> ids, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_type); },
-             [this](std::vector<uint64_t> ids, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types); }
-             ));
+            [this](std::vector<uint64_t> ids) { return this->NodeIdsGetNeighborIdsViaLua(ids); },
+            [this](std::vector<uint64_t> ids, Direction direction) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_type); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types); },
+            [this](std::vector<uint64_t> ids, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_type); },
+            [this](std::vector<uint64_t> ids, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types); }
+            ));
+
+        lua.set_function("NodesGetNeighborIds", sol::overload(
+            [this](std::vector<Node> nodes) { return this->NodesGetNeighborIdsViaLua(nodes); },
+            [this](std::vector<Node> nodes) { return this->NodesGetNeighborIdsViaLua(nodes); },
+            [this](std::vector<Node> nodes, Direction direction) { return this->NodesGetNeighborIdsViaLua(nodes, direction); },
+            [this](std::vector<Node> nodes, Direction direction, const std::string& rel_type) { return this->NodesGetNeighborIdsViaLua(nodes, direction, rel_type); },
+            [this](std::vector<Node> nodes, Direction direction, const std::vector<std::string>& rel_types) { return this->NodesGetNeighborIdsViaLua(nodes, direction, rel_types); },
+            [this](std::vector<Node> nodes, const std::string& rel_type) { return this->NodesGetNeighborIdsViaLua(nodes, Direction::BOTH, rel_type); },
+            [this](std::vector<Node> nodes, const std::vector<std::string>& rel_types) { return this->NodesGetNeighborIdsViaLua(nodes, Direction::BOTH, rel_types); }
+            ));
 
         // Traversing
         lua.set_function("NodeGetLinks", sol::overload(
+           [this](Node node) { return this->NodeGetLinksByIdViaLua(node); },
+           [this](Node node, Direction direction) { return this->NodeGetLinksByIdForDirectionViaLua(node, direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetLinksByIdForDirectionForTypeViaLua(node, direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetLinksByIdForDirectionForTypesViaLua(node, direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetLinksByIdForTypeViaLua(node, rel_type); },
+           [this](Node node, const std::vector<std::string>& rel_types) { return this->NodeGetLinksByIdForTypesViaLua(node, rel_types); },
            [this](uint64_t id) { return this->NodeGetLinksByIdViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetLinksByIdForDirectionViaLua(id, direction); },
            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetLinksByIdForDirectionForTypeViaLua(id, direction, rel_type); },
@@ -335,6 +364,12 @@ namespace ragedb {
            ));
 
         lua.set_function("NodeGetRelationships", sol::overload(
+           [this](Node node) { return this->NodeGetRelationshipsByIdViaLua(node); },
+           [this](Node node, Direction direction) { return this->NodeGetRelationshipsByIdForDirectionViaLua(node, direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForDirectionForTypeViaLua(node, direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetRelationshipsByIdForDirectionForTypesViaLua(node, direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForTypeViaLua(node, rel_type); },
+           [this](Node node, const std::vector<std::string>& rel_types) { return this->NodeGetRelationshipsByIdForTypesViaLua(node, rel_types); },
            [this](uint64_t id) { return this->NodeGetRelationshipsByIdViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetRelationshipsByIdForDirectionViaLua(id, direction); },
            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForDirectionForTypeViaLua(id, direction, rel_type); },
@@ -350,6 +385,12 @@ namespace ragedb {
            ));
 
         lua.set_function("NodeGetNeighbors", sol::overload(
+           [this](Node node) { return this->NodeGetNeighborsByIdViaLua(node); },
+           [this](Node node, Direction direction) { return this->NodeGetNeighborsByIdForDirectionViaLua(node, direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsByIdForDirectionForTypeViaLua(node, direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborsByIdForDirectionForTypesViaLua(node, direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborsByIdForTypeViaLua(node, rel_type); },
+           [this](Node node, const std::vector<std::string>& rel_types) { return this->NodeGetNeighborsByIdForTypesViaLua(node, rel_types); },
            [this](uint64_t id) { return this->NodeGetNeighborsByIdViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetNeighborsByIdForDirectionViaLua(id, direction); },
            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsByIdForDirectionForTypeViaLua(id, direction, rel_type); },

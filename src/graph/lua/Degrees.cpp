@@ -68,4 +68,27 @@ namespace ragedb {
         return NodeGetDegreePeered(id, rel_types).get0();
     }
 
+    uint64_t Shard::NodeGetDegreeByIdViaLua(Node node) {
+        return NodeGetDegreePeered(node.getId()).get0();
+    }
+
+    uint64_t Shard::NodeGetDegreeByIdForDirectionViaLua(Node node, Direction direction) {
+        return NodeGetDegreePeered(node.getId(), direction).get0();
+    }
+
+    uint64_t Shard::NodeGetDegreeByIdForDirectionForTypeViaLua(Node node, Direction direction, const std::string& rel_type) {
+        return NodeGetDegreePeered(node.getId(), direction, rel_type).get0();
+    }
+
+    uint64_t Shard::NodeGetDegreeByIdForTypeViaLua(Node node, const std::string& rel_type) {
+        return NodeGetDegreePeered(node.getId(), rel_type).get0();
+    }
+
+    uint64_t Shard::NodeGetDegreeByIdForDirectionForTypesViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types) {
+        return NodeGetDegreePeered(node.getId(), direction, rel_types).get0();
+    }
+
+    uint64_t Shard::NodeGetDegreeByIdForTypesViaLua(Node node, const std::vector<std::string> &rel_types) {
+        return NodeGetDegreePeered(node.getId(), rel_types).get0();
+    }
     }

@@ -102,6 +102,11 @@ namespace ragedb {
       "AllRelationships",
       "AllRelationshipIds",
 
+      "DifferenceIds",
+      "DifferenceNodes",
+      "DifferenceRelationships",
+      "DifferenceIdsCount",
+
       "FilterNodeCount",
       "FilterNodeIds",
       "FilterNodes",
@@ -116,16 +121,25 @@ namespace ragedb {
       "FindRelationshipIds",
       "FindRelationships",
 
+      "IntersectIds",
+      "IntersectNodes",
+      "IntersectRelationships",
+      "IntersectIdsCount",
+
       "LinksGetLinks",
       "LinksGetNeighbors",
       "LinksGetRelationships",
 
+      "NodeIdsGetNeighborIds",
+
       "NodeGet",
+      "NodeGetConnected",
       "NodeGetDegree",
       "NodeGetId",
       "NodeGetKey",
       "NodeGetLinks",
       "NodeGetNeighbors",
+      "NodeGetNeighborIds",
       "NodeGetProperties",
       "NodeGetProperty",
       "NodeGetRelationships",
@@ -139,6 +153,7 @@ namespace ragedb {
       "NodesGetKey",
       "NodesGetProperties",
       "NodesGetProperty",
+      "NodesGetNeighborIds",
       "NodesGetType",
 
       "RelationshipGet",

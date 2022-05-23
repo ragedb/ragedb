@@ -18,23 +18,19 @@
 
 namespace ragedb {
 
-    uint64_t Shard::IntersectIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
-    {
+    uint64_t Shard::IntersectIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
         return IntersectIdsCountPeered(ids1, ids2).get0();
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::IntersectIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
-    {
+    sol::as_table_t<std::vector<uint64_t>> Shard::IntersectIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
         return sol::as_table(IntersectIdsPeered(ids1, ids2).get0());
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::IntersectNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
-    {
+    sol::as_table_t<std::vector<Node>> Shard::IntersectNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
         return sol::as_table(IntersectNodesPeered(ids1, ids2).get0());
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::IntersectRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2)
-    {
+    sol::as_table_t<std::vector<Relationship>> Shard::IntersectRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
         return sol::as_table(IntersectRelationshipsPeered(ids1, ids2).get0());
     }
 }

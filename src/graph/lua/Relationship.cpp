@@ -23,10 +23,6 @@ namespace ragedb {
         return RelationshipAddEmptyPeered(rel_type, type1, key1, type2, key2).get0();
     }
 
-    uint64_t Shard::RelationshipAddEmptyByTypeIdByIdsViaLua(uint16_t rel_type_id, uint64_t id1, uint64_t id2) {
-        return RelationshipAddEmptyPeered(rel_type_id, id1, id2).get0();
-    }
-
     uint64_t Shard::RelationshipAddEmptyByIdsViaLua(const std::string& rel_type, uint64_t id1, uint64_t id2) {
         return RelationshipAddEmptyPeered(rel_type, id1, id2).get0();
     }
@@ -34,10 +30,6 @@ namespace ragedb {
     uint64_t Shard::RelationshipAddViaLua(const std::string& rel_type, const std::string& type1, const std::string& key1,
                                           const std::string& type2, const std::string& key2, const std::string& properties) {
         return RelationshipAddPeered(rel_type, type1, key1, type2, key2, properties).get0();
-    }
-
-    uint64_t Shard::RelationshipAddByTypeIdByIdsViaLua(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties) {
-        return RelationshipAddPeered(rel_type_id, id1, id2, properties).get0();
     }
 
     uint64_t Shard::RelationshipAddByIdsViaLua(const std::string& rel_type, uint64_t id1, uint64_t id2, const std::string& properties) {
@@ -54,10 +46,6 @@ namespace ragedb {
 
     std::string Shard::RelationshipGetTypeViaLua(uint64_t id) {
         return RelationshipGetTypePeered(id).get0();
-    }
-
-    uint16_t Shard::RelationshipGetTypeIdViaLua(uint64_t id) {
-        return RelationshipGetTypeIdPeered(id).get0();
     }
 
     uint64_t Shard::RelationshipGetStartingNodeIdViaLua(uint64_t id) {

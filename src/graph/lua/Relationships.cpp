@@ -44,18 +44,6 @@ namespace ragedb {
       return sol::as_table( RelationshipsGetTypePeered(links).get0());
     }
 
-    sol::as_table_t<std::vector<uint16_t>> Shard::RelationshipsGetTypeIdViaLua(std::vector<uint64_t> ids) {
-      std::vector<uint16_t> properties;
-      for (const auto& [id, value] : RelationshipsGetTypeIdPeered(ids).get0()) {
-        properties.emplace_back(value);
-      }
-      return sol::as_table(properties);
-    }
-
-    sol::as_table_t<std::map<Link, uint16_t>> Shard::RelationshipsGetTypeIdByLinksViaLua(std::vector<Link> links) {
-      return sol::as_table( RelationshipsGetTypeIdPeered(links).get0());
-    }
-
     sol::as_table_t<std::vector<sol::object>> Shard::RelationshipsGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property) {
       std::vector<sol::object> properties;
       properties.reserve(ids.size());
