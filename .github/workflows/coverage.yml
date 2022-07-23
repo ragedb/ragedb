@@ -93,7 +93,7 @@ jobs:
           cd luajit
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 2.1.0-beta3-2022-7-22@
           cd ../sol2
-          CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 3.3.0-luajit@
+          CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 3.2.3-luajit@
           cd ../eve
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . v2021.10.0@
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . v2022.03.0@
