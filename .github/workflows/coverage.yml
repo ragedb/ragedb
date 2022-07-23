@@ -18,7 +18,7 @@ jobs:
     # well on Windows or Mac.  You can convert this to a matrix build if you need
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       SONAR_SCANNER_VERSION: 4.7.0.2747 # Find the latest version in the "Linux" link on this page:
                                         # https://docs.sonarcloud.io/advanced-setup/ci-based-analysis/sonarscanner-cli/
@@ -32,7 +32,6 @@ jobs:
       - name: update container base
         run: |
           export DEBIAN_FRONTEND=noninteractive
-          sudo echo "deb http://mirrors.kernel.org/ubuntu hirsute main universe" | sudo tee -a /etc/apt/sources.list
           sudo apt-get -qq update -y
           sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libcrypto++8 libcrypto++-dev
 
