@@ -19,13 +19,13 @@
 namespace ragedb {
 
     std::vector<uint64_t> DifferenceIds(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
-        std::vector<uint64_t> first = ids1;
-        std::vector<uint64_t> difference = ids2;
+        std::vector<uint64_t> first(ids1);
+        std::vector<uint64_t> second(ids2);
+        std::vector<uint64_t> difference;
         std::sort(first.begin(), first.end());
-        std::sort(difference.begin(), difference.end());
+        std::sort(second.begin(), second.end());
 
-        auto end = std::set_difference(first.begin(), first.end(), difference.begin(), difference.end(), difference.begin()); // difference is written in results
-        difference.erase(end, difference.end()); // erase redundant elements
+        std::set_difference(first.begin(), first.end(), second.begin(), second.end(), std::inserter(difference, difference.begin()));
         return difference;
     }
 
