@@ -27,9 +27,9 @@ macro(run_conan)
     roaring/0.5.0
     jfalcou-eve/v2022.03.0
     cppcodec/0.2
-    cpr/1.7.2
+    cpr/1.9.0
     reckless/3.0.3
-    benchmark/1.6.1
+    benchmark/1.6.2
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP
