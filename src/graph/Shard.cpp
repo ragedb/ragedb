@@ -181,26 +181,11 @@ namespace ragedb {
         lua.set_function("NodeGetKey", &Shard::NodeGetKeyViaLua, this);
 
         // Nodes
-        lua.set_function("NodesGet", sol::overload(
-            [this](std::vector<uint64_t> ids) { return this->NodesGetViaLua(ids); },
-            [this](std::vector<Link> links) { return this->NodesGetByLinksViaLua(links); }
-           ));
-        lua.set_function("NodesGetKey", sol::overload(
-            [this](std::vector<uint64_t> ids) { return this->NodesGetKeyViaLua(ids); },
-            [this](std::vector<Link> links) { return this->NodesGetKeyByLinksViaLua(links); }
-           ));
-        lua.set_function("NodesGetType", sol::overload(
-            [this](std::vector<uint64_t> ids) { return this->NodesGetTypeViaLua(ids); },
-            [this](std::vector<Link> links) { return this->NodesGetTypeByLinksViaLua(links); }
-           ));
-        lua.set_function("NodesGetProperty", sol::overload(
-            [this](std::vector<uint64_t> ids, const std::string& property) { return this->NodesGetPropertyViaLua(ids, property); },
-            [this](std::vector<Link> links, const std::string& property) { return this->NodesGetPropertyByLinksViaLua(links, property); }
-           ));
-        lua.set_function("NodesGetProperties", sol::overload(
-            [this](std::vector<uint64_t> ids) { return this->NodesGetPropertiesViaLua(ids); },
-            [this](std::vector<Link> links) { return this->NodesGetPropertiesByLinksViaLua(links); }
-           ));
+        lua.set_function("NodesGet", &Shard::NodesGetViaLua, this);
+        lua.set_function("NodesGetKey", &Shard::NodesGetKeyViaLua, this);
+        lua.set_function("NodesGetType", &Shard::NodesGetTypeViaLua, this);
+        lua.set_function("NodesGetProperty", &Shard::NodesGetPropertyViaLua, this);
+        lua.set_function("NodesGetProperties", &Shard::NodesGetPropertiesViaLua, this);
 
         // Node Properties
         lua.set_function("NodeGetProperty", sol::overload(
@@ -250,22 +235,10 @@ namespace ragedb {
         lua.set_function("RelationshipGetEndingNodeId", &Shard::RelationshipGetEndingNodeIdViaLua, this);
 
         // Relationships
-        lua.set_function("RelationshipsGet", sol::overload(
-                                                 [this](std::vector<uint64_t> ids) { return this->RelationshipsGetViaLua(ids); },
-                                                 [this](std::vector<Link> links) { return this->RelationshipsGetByLinksViaLua(links); }
-                                                 ));
-        lua.set_function("RelationshipsGetType", sol::overload(
-                                                 [this](std::vector<uint64_t> ids) { return this->RelationshipsGetTypeViaLua(ids); },
-                                                 [this](std::vector<Link> links) { return this->RelationshipsGetTypeByLinksViaLua(links); }
-                                                 ));
-        lua.set_function("RelationshipsGetProperty", sol::overload(
-                                                 [this](std::vector<uint64_t> ids, const std::string& property) { return this->RelationshipsGetPropertyViaLua(ids, property); },
-                                                 [this](std::vector<Link> links, const std::string& property) { return this->RelationshipsGetPropertyByLinksViaLua(links, property); }
-                                                 ));
-        lua.set_function("RelationshipsGetProperties", sol::overload(
-                                                 [this](std::vector<uint64_t> ids) { return this->RelationshipsGetPropertiesViaLua(ids); },
-                                                 [this](std::vector<Link> links) { return this->RelationshipsGetPropertiesByLinksViaLua(links); }
-                                                 ));
+        lua.set_function("RelationshipsGet", &Shard::RelationshipsGetViaLua, this);
+        lua.set_function("RelationshipsGetType", &Shard::RelationshipsGetTypeViaLua, this);
+        lua.set_function("RelationshipsGetProperty", &Shard::RelationshipsGetPropertyViaLua, this);
+        lua.set_function("RelationshipsGetProperties", &Shard::RelationshipsGetPropertiesViaLua, this);
 
         // Relationship Properties
         lua.set_function("RelationshipGetProperty", &Shard::RelationshipGetPropertyViaLua, this);
@@ -407,6 +380,17 @@ namespace ragedb {
 
         //Bulk
         // TODO: Nodes Get Links
+        lua.set_function("LinksGetNode", &Shard::NodesGetByLinksViaLua, this);
+        lua.set_function("LinksGetNodeKey", &Shard::NodesGetKeyByLinksViaLua, this);
+        lua.set_function("LinksGetNodeType", &Shard::NodesGetTypeByLinksViaLua, this);
+        lua.set_function("LinksGetNodeProperty", &Shard::NodesGetPropertyByLinksViaLua, this);
+        lua.set_function("LinksGetNodeProperties", &Shard::NodesGetPropertiesByLinksViaLua, this);
+
+        lua.set_function("LinksGetRelationship", &Shard::RelationshipsGetByLinksViaLua, this);
+        lua.set_function("LinksGetRelationshipType", &Shard::RelationshipsGetTypeByLinksViaLua, this);
+        lua.set_function("LinksGetRelationshipProperty", &Shard::RelationshipsGetPropertyByLinksViaLua, this);
+        lua.set_function("LinksGetRelationshipProperties", &Shard::RelationshipsGetPropertiesByLinksViaLua, this);
+
         lua.set_function("LinksGetLinks", sol::overload(
             [this](std::vector<Link> links) { return this->LinksGetLinksViaLua(links); },
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetLinksForDirectionViaLua(links, direction); },

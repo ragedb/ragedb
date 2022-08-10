@@ -1114,7 +1114,8 @@ namespace ragedb {
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
 
-
+        // Overload example, not used
+        sol::as_table_t<std::vector<Node>> NodesGetOverload(sol::this_state ts, sol::variadic_args args);
 
   };
 }

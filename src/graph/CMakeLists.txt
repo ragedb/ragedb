@@ -56,6 +56,6 @@ set(SOURCE_FILES
 
         shard/Ids.cpp
         peered/Restore.cpp
-        types/Date.cpp shard/NodeLinks.cpp shard/Neighbors.cpp)
+        types/Date.cpp shard/NodeLinks.cpp shard/Neighbors.cpp overload/NodesGet.cpp)
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})
