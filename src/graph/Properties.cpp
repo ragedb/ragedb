@@ -602,6 +602,12 @@ namespace ragedb {
                     }
                     break;
                 }
+                case date_type: {
+                    if (doubles.at(key).size() > index) {
+                        return doubles[key][index];
+                    }
+                    break;
+                }
                 case string_type: {
                     if (strings[key].size() > index) {
                         return strings[key][index];
@@ -622,6 +628,12 @@ namespace ragedb {
                 }
                 case double_list_type: {
                     if (doubles_list[key].size() > index) {
+                        return doubles_list[key][index];
+                    }
+                    break;
+                }
+                case date_list_type: {
+                    if (doubles_list.at(key).size() > index) {
                         return doubles_list[key][index];
                     }
                     break;
