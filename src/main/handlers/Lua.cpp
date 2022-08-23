@@ -33,6 +33,13 @@ void Lua::set_routes(seastar::routes &routes) {
     routes.add(postLuaRO, seastar::operation_type::POST);
 }
 
+bool forAll(std::string const &str) {
+    if (str.length() < 5) {
+        return false;
+    }
+    return str.compare(0,5,"--ALL") == 0;
+}
+
 seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
     // If the script is missing
     if (req->content.empty()) {
@@ -41,6 +48,24 @@ seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaHandler::han
     } else {
         parent.graph.Log(req->_method, req->get_url(), req->content);
         std::string body = req->content;
+        if(forAll(body)) {
+            body.append("\n\"Sent to All\"");
+
+            return parent.graph.shard.map([body](ragedb::Shard &local_shard) {
+                return local_shard.RunAdminLua(body);
+            }).then([] (std::vector<std::string> results) {
+                  return results[0];
+            }).then([rep = std::move(rep)] (const std::string& result) mutable {
+                  if(result.rfind(EXCEPTION,0) == 0) {
+                      rep->write_body("html", seastar::sstring(result));
+                      rep->set_status(seastar::reply::status_type::bad_request);
+                      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                  }
+
+                  rep->write_body("json", seastar::sstring(result));
+                  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+              });
+        }
         return parent.graph.shard.invoke_on(seastar::this_shard_id(), [body](ragedb::Shard &local_shard) {
             return local_shard.RunAdminLua(body);
         }).then([rep = std::move(rep)] (const std::string& result) mutable {
