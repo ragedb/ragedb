@@ -94,6 +94,7 @@ namespace ragedb {
         bool setListOfStringProperty(const std::string&, uint64_t, const std::vector<std::string>&);
 
         std::map<std::string, property_type_t> getProperties(uint64_t) const;
+        std::map<uint64_t, std::map<std::string, property_type_t>> getProperties(const std::vector<uint64_t> &external_ids, const std::vector<uint64_t> &internal_ids) const;
         property_type_t getProperty(const std::string&, uint64_t);
         bool isDeleted(const std::string&, uint64_t);
         uint64_t getDeletedCount(const std::string&);

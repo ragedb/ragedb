@@ -18,6 +18,7 @@
 #include "Roar.h"
 #include "Lua.h"
 #include "Sandbox.h"
+#include "types/Date.h"
 
 unsigned int SHARD_BITS;
 unsigned int SHARD_MASK;
@@ -31,6 +32,7 @@ namespace ragedb {
         SHARD_MASK = (1 << SHARD_BITS) - 1;
 
         lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::io, sol::lib::os, sol::lib::coroutine);
+        lua.require_script("sort", Lua::sorting_script);
         lua.require_script("json", Lua::json_script);
         lua.require_script("ftcsv", Lua::ftcsv_script);
         lua.require_script("date", Lua::date_script);
@@ -479,6 +481,9 @@ namespace ragedb {
         lua.set_function("DifferenceNodes", &Shard::DifferenceNodesViaLua, this);
         lua.set_function("DifferenceRelationships", &Shard::DifferenceRelationshipsViaLua, this);
         lua.set_function("DifferenceIdsCount", &Shard::DifferenceIdsCountViaLua, this);
+
+        // Date
+        lua.set_function("DateToISO", &Date::toISO);
 
 
         // Create a sanitized environment to restrict the user's Lua code

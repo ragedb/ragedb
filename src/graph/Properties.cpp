@@ -423,6 +423,180 @@ namespace ragedb {
         return true;
     }
 
+    std::map<uint64_t, std::map<std::string, property_type_t>> Properties::getProperties(const std::vector<uint64_t> &external_ids, const std::vector<uint64_t> &internal_ids) const {
+        // Build a temporary map of id < string, any >
+        std::map<uint64_t, std::map<std::string, property_type_t>> properties;
+        // Check if empty
+        if (external_ids.empty()) {
+            return properties;
+        }
+        for(uint64_t id : external_ids) {
+            properties.emplace(id, std::map<std::string, property_type_t>());
+        }
+
+        // Go through all the property types these Nodes or Relationships types are supposed to have
+        for (auto const&[key, type_id] : types) {
+            // Find the value based on the type and key and add it to the properties map
+            switch (type_id) {
+                case boolean_type: {
+                    if (booleans.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, booleans.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case integer_type: {
+                    if (integers.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, integers.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case double_type: {
+                    if (doubles.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, doubles.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case date_type: {
+                    if (doubles.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, doubles.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case string_type: {
+                    if (strings.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, strings.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case boolean_list_type: {
+                    if (booleans_list.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, booleans_list.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case integer_list_type: {
+                    if (integers_list.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, integers_list.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case double_list_type: {
+                    if (doubles_list.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, doubles_list.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case date_list_type: {
+                    if (doubles_list.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, doubles_list.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case string_list_type: {
+                    if (strings_list.at(key).size() > internal_ids.back()) {
+                        for (size_t i = 0; i < internal_ids.size(); i++) {
+                            properties.at(external_ids[i]).emplace(key, strings_list.at(key)[internal_ids[i]]);
+                        }
+                        if (!deleted.at(key).isEmpty()) {
+                            for (size_t i = 0; i < internal_ids.size(); i++) {
+                                if (deleted.at(key).contains(internal_ids[i])) {
+                                    properties.at(external_ids[i]).erase(key);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                default: {
+
+                }
+            }
+        }
+
+        return properties;
+    }
+
     std::map<std::string, property_type_t> Properties::getProperties(uint64_t index) const {
         // Build a temporary map of string, any
         std::map<std::string, property_type_t> properties;

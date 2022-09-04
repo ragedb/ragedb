@@ -87,6 +87,15 @@ namespace ragedb {
                && node_types.ValidNodeId(externalToTypeId(id), externalToInternal(id));
     }
 
+    bool Shard::ValidNodeIds(const std::vector<uint64_t> &ids) const {
+        for(uint64_t id : ids) {
+            if(!ValidNodeId(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool Shard::ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id) const {
       // Node must be greater than zero,
       // less than maximum node id,

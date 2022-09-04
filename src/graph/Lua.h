@@ -22,6 +22,31 @@ namespace ragedb {
   class Lua {
 
     public:
+      inline static std::string sorting_script = R"(
+        local sort = {}
+        function sort.on_values(t,...)
+            local a = {...}
+            table.sort(t, function (u,v)
+                for i = 1, #a do
+                    if u[a[i]] > v[a[i]] then return false end
+                    if u[a[i]] < v[a[i]] then return true end
+                end
+            end)
+        end
+
+        function sort.on_values_desc(t,...)
+            local a = {...}
+            table.sort(t, function (u,v)
+                for i = 1, #a do
+                    if u[a[i]] < v[a[i]] then return false end
+                    if u[a[i]] > v[a[i]] then return true end
+                end
+            end)
+        end
+
+        return sort
+    )";
+
       inline static std::string json_script = R"(
             local math = require('math')
             local string = require('string')

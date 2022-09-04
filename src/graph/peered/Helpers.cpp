@@ -125,4 +125,42 @@ namespace ragedb {
       }
       return sharded_links;
     }
+
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const {
+        std::map<uint16_t, std::vector<uint64_t>> partitioned_ids;
+        for (uint16_t i = 0; i < node_types.getSize(); i++) {
+            partitioned_ids.insert({i, std::vector<uint64_t>() });
+        }
+        for (auto id : ids) {
+            partitioned_ids[externalToTypeId(id)].emplace_back(id);
+        }
+
+        for (uint16_t i = 0; i < partitioned_ids.size(); i++) {
+            if (partitioned_ids.at(i).empty()) {
+                partitioned_ids.erase(i);
+            } else {
+                sort(partitioned_ids.at(i).begin(), partitioned_ids.at(i).end());
+            }
+        }
+        return partitioned_ids;
+    }
+
+    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionRelationshipIdsByTypeId(const std::vector<uint64_t> &ids) const {
+        std::map<uint16_t, std::vector<uint64_t>> partitioned_ids;
+        for (uint16_t i = 0; i < relationship_types.getSize(); i++) {
+            partitioned_ids.insert({i, std::vector<uint64_t>() });
+        }
+        for (auto id : ids) {
+            partitioned_ids[externalToTypeId(id)].emplace_back(id);
+        }
+
+        for (uint16_t i = 0; i < partitioned_ids.size(); i++) {
+            if (partitioned_ids.at(i).empty()) {
+                partitioned_ids.erase(i);
+            } else {
+                sort(partitioned_ids.at(i).begin(), partitioned_ids.at(i).end());
+            }
+        }
+        return partitioned_ids;
+    }
 }

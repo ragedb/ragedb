@@ -100,6 +100,7 @@ namespace ragedb {
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
         uint16_t CalculateShardId(const std::string &type, const std::string &key, const property_type_t &value) const;
         bool ValidNodeId(uint64_t id) const;
+        bool ValidNodeIds(const std::vector<uint64_t> &ids) const;
         bool ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id) const;
         bool ValidRelationshipId(uint64_t id) const;
         bool ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id) const;
@@ -1111,6 +1112,9 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinksByNodeShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinksByRelationshipShardId(const std::vector<Link> &links) const;
+
+        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const;
+        std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByTypeId(const std::vector<uint64_t> &ids) const;
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
 

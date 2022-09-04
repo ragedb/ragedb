@@ -20,6 +20,8 @@
 
 #include <cstdint>
 #include <string>
+#include <chrono>
+
 namespace ragedb {
     class Date {
 
@@ -45,7 +47,7 @@ namespace ragedb {
       }
       double value;
       static double convert(std::string s);
-
+      static std::string toISO(double value);
       friend std::ostream& operator<<(std::ostream& os, const Date& date);
     };
 }

@@ -437,6 +437,19 @@ namespace ragedb {
         return std::map<std::string, property_type_t>();
     }
 
+    std::map<uint64_t, std::map<std::string, property_type_t>> NodeTypes::getNodesProperties(uint16_t type_id, const std::vector<uint64_t> &external_ids) {
+        if(ValidTypeId(type_id)) {
+            // Get internal ids
+            std::vector<uint64_t> internal_ids;
+            internal_ids.reserve(external_ids.size());
+            for (auto id : external_ids) {
+                internal_ids.emplace_back(Shard::externalToInternal(id));
+            }
+            return properties[type_id].getProperties(external_ids, internal_ids);
+        }
+        return std::map<uint64_t, std::map<std::string, property_type_t>>();
+    }
+
     Node NodeTypes::getNode(uint64_t external_id) {
         return getNode(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), external_id);
     }

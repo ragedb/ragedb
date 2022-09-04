@@ -17,8 +17,8 @@
 #include "../Shard.h"
 
 namespace ragedb {
-
-      std::vector<Node> Shard::NodesGet(const std::vector<uint64_t>& node_ids) {
+    // TODO: The performance of all of these needs to be improved by doing real bulk operations not one at a time in a loop.
+    std::vector<Node> Shard::NodesGet(const std::vector<uint64_t>& node_ids) {
         std::vector<Node> sharded_nodes;
 
         for(uint64_t id : node_ids) {
@@ -121,9 +121,13 @@ namespace ragedb {
 
     std::map<uint64_t, std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<uint64_t> &node_ids) {
       std::map<uint64_t, std::map<std::string, property_type_t>> sharded_node_properties;
-
-      for(uint64_t id : node_ids) {
-        sharded_node_properties[id]  = NodeGetProperties(id);
+      // If the nodes are valid
+      if (ValidNodeIds(node_ids)) {
+          for (auto [type_id, ids] :  PartitionNodeIdsByTypeId(node_ids)) {
+              for (auto [id, properties] : node_types.getNodesProperties(type_id, ids)) {
+                  sharded_node_properties[id]  = properties;
+              }
+          }
       }
 
       return sharded_node_properties;

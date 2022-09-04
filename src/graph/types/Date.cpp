@@ -224,6 +224,57 @@ namespace ragedb {
       return Date(s).value;
     }
 
+    template <class Int>
+    constexpr
+      std::tuple<Int, unsigned, unsigned>
+      civil_from_days(Int z) noexcept
+    {
+        static_assert(std::numeric_limits<unsigned>::digits >= 18,
+          "This algorithm has not been ported to a 16 bit unsigned integer");
+        static_assert(std::numeric_limits<Int>::digits >= 20,
+          "This algorithm has not been ported to a 16 bit signed integer");
+        z += 719468;
+        const Int era = (z >= 0 ? z : z - 146096) / 146097;
+        const unsigned doe = static_cast<unsigned>(z - era * 146097);          // [0, 146096]
+        const unsigned yoe = (doe - doe/1460 + doe/36524 - doe/146096) / 365;  // [0, 399]
+        const Int y = static_cast<Int>(yoe) + era * 400;
+        const unsigned doy = doe - (365*yoe + yoe/4 - yoe/100);                // [0, 365]
+        const unsigned mp = (5*doy + 2)/153;                                   // [0, 11]
+        const unsigned d = doy - (153*mp+2)/5 + 1;                             // [1, 31]
+        const unsigned m = mp < 10 ? mp+3 : mp-9;                            // [1, 12]
+        return std::tuple<Int, unsigned, unsigned>(y + (m <= 2), m, d);
+    }
+
+    std::string Date::toISO(double value) {
+        std::stringstream stream;
+        std::chrono::duration<double> now = std::chrono::duration<double>(value);
+        auto today = duration_cast<std::chrono::days>(now);
+        int year;
+        unsigned month;
+        unsigned day;
+        std::tie(year, month, day) = civil_from_days(today.count());
+        now -= today;
+        auto h = duration_cast<std::chrono::hours>(now);
+        now -= h;
+        auto m = duration_cast<std::chrono::minutes>(now);
+        now -= m;
+        auto s = duration_cast<std::chrono::seconds>(now);
+        now -= s;
+        auto ml = duration_cast<std::chrono::milliseconds>(now);
+        stream.fill('0');
+//"2010-03-13T07:37:21.718+0000Z"
+        stream
+           << year << '-'
+           << std::setw(2) << month << '-'
+           << std::setw(2) << day
+           << "T" << std::setw(2) << h.count() << ':'
+           << std::setw(2) << m.count() << ':'
+           << std::setw(2) << s.count() << '.'
+           << std::setw(3) << ml.count() <<
+          "+0000Z";
+        return stream.str();
+    }
+
     std::ostream &operator<<(std::ostream &os, const Date &date) {
       os << std::fixed << std::setw(11) << std::setprecision(3) << std::setfill('0') << date.value;
       return os;
