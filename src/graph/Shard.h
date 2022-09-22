@@ -1115,6 +1115,8 @@ namespace ragedb {
 
         std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByTypeId(const std::vector<uint64_t> &ids) const;
+        std::map<uint16_t, std::vector<Link>> PartitionLinkNodeIdsByTypeId(const std::vector<Link> &links) const;
+        std::map<uint16_t, std::vector<Link>> PartitionLinkRelationshipIdsByTypeId(const std::vector<Link> &links) const;
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
 

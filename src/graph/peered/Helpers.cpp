@@ -158,6 +158,23 @@ namespace ragedb {
         return partitioned_ids;
     }
 
+    std::map<uint16_t, std::vector<Link>> Shard::PartitionLinkNodeIdsByTypeId(const std::vector<Link> &links) const {
+        std::map<uint16_t, std::vector<Link>> partitioned_ids;
+        for (uint16_t i = 0; i < node_types.getSize(); i++) {
+            partitioned_ids.insert({i, std::vector<Link>() });
+        }
+        for (auto link : links) {
+            partitioned_ids[externalToTypeId(link.node_id)].emplace_back(link);
+        }
+
+        for (uint16_t i = 0; i < partitioned_ids.size(); i++) {
+            if (partitioned_ids.at(i).empty()) {
+                partitioned_ids.erase(i);
+            }
+        }
+        return partitioned_ids;
+    }
+
     std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionRelationshipIdsByTypeId(const std::vector<uint64_t> &ids) const {
         std::map<uint16_t, std::vector<uint64_t>> partitioned_ids;
         for (uint16_t i = 0; i < relationship_types.getSize(); i++) {
@@ -172,6 +189,23 @@ namespace ragedb {
                 partitioned_ids.erase(i);
             } else {
                 sort(partitioned_ids.at(i).begin(), partitioned_ids.at(i).end());
+            }
+        }
+        return partitioned_ids;
+    }
+
+    std::map<uint16_t, std::vector<Link>> Shard::PartitionLinkRelationshipIdsByTypeId(const std::vector<Link> &links) const {
+        std::map<uint16_t, std::vector<Link>> partitioned_ids;
+        for (uint16_t i = 0; i < relationship_types.getSize(); i++) {
+            partitioned_ids.insert({i, std::vector<Link>() });
+        }
+        for (auto link : links) {
+            partitioned_ids[externalToTypeId(link.rel_id)].emplace_back(link);
+        }
+
+        for (uint16_t i = 0; i < partitioned_ids.size(); i++) {
+            if (partitioned_ids.at(i).empty()) {
+                partitioned_ids.erase(i);
             }
         }
         return partitioned_ids;

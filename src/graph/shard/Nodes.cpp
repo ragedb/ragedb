@@ -136,8 +136,24 @@ namespace ragedb {
     std::map<Link, std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<Link>& links) {
       std::map<Link, std::map<std::string, property_type_t>> sharded_node_properties;
 
-      for(Link link : links) {
-        sharded_node_properties[link] = NodeGetProperties(link.node_id);
+      std::vector<uint64_t> node_ids(links.size());
+      for (int i = 0; i < links.size(); ++i) {
+          node_ids[i] = links[i].node_id;
+      }
+
+      // If the nodes are valid
+      if (ValidNodeIds(node_ids)) {
+          for (auto [type_id, typed_links] :  PartitionLinkNodeIdsByTypeId(links)) {
+              std::vector<uint64_t> ids(typed_links.size());
+              for (int i = 0; i < typed_links.size(); ++i) {
+                  ids[i] = typed_links[i].node_id;
+              }
+
+              auto properties = node_types.getNodesProperties(type_id, ids);
+              for(int i = 0; i < ids.size(); i++){
+                  sharded_node_properties[typed_links[i]] = properties[i];
+              }
+          }
       }
 
       return sharded_node_properties;
