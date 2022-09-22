@@ -42,7 +42,10 @@ namespace ragedb {
         sharded_ids.try_emplace(i);
       }
       for (auto id : ids) {
-        sharded_ids[CalculateShardId(id)].emplace_back(id);
+        uint16_t id_shard_id = CalculateShardId(id);
+        // Insert Sorted
+        auto it = std::upper_bound(sharded_ids.at(id_shard_id).begin(), sharded_ids.at(id_shard_id).end(), id);
+        sharded_ids.at(id_shard_id).insert(it, id);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
@@ -59,7 +62,10 @@ namespace ragedb {
         sharded_nodes_ids.try_emplace(i);
       }
       for (auto link : links) {
-        sharded_nodes_ids[CalculateShardId(link.node_id)].emplace_back(link.node_id);
+        uint16_t node_shard_id = CalculateShardId(link.node_id);
+        // Insert Sorted
+        auto it = std::upper_bound(sharded_nodes_ids.at(node_shard_id).begin(), sharded_nodes_ids.at(node_shard_id).end(), link.node_id);
+        sharded_nodes_ids.at(node_shard_id).insert(it, link.node_id);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
@@ -78,7 +84,9 @@ namespace ragedb {
 
       for (Link link : links) {
         uint16_t node_shard_id = CalculateShardId(link.node_id);
-        sharded_links.at(node_shard_id).push_back(link);
+        // Insert Sorted
+        auto it = std::upper_bound(sharded_links.at(node_shard_id).begin(), sharded_links.at(node_shard_id).end(), link);
+        sharded_links.at(node_shard_id).insert(it, link);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
@@ -96,7 +104,10 @@ namespace ragedb {
         sharded_ids.insert({i, std::vector<uint64_t>() });
       }
       for (auto link : links) {
-        sharded_ids[CalculateShardId(link.rel_id)].emplace_back(link.rel_id);
+        uint16_t relationship_shard_id = CalculateShardId(link.rel_id);
+        // Insert Sorted
+        auto it = std::upper_bound(sharded_ids.at(relationship_shard_id).begin(), sharded_ids.at(relationship_shard_id).end(), link.rel_id);
+        sharded_ids.at(relationship_shard_id).insert(it, link.rel_id);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
@@ -115,7 +126,9 @@ namespace ragedb {
 
       for (Link link : links) {
         uint16_t rel_shard_id = CalculateShardId(link.rel_id);
-        sharded_links.at(rel_shard_id).push_back(link);
+        // Insert Sorted
+        auto it = std::upper_bound(sharded_links.at(rel_shard_id).begin(), sharded_links.at(rel_shard_id).end(), link);
+        sharded_links.at(rel_shard_id).insert(it, link);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {

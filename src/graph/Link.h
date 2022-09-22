@@ -38,8 +38,15 @@ namespace ragedb {
 
         [[nodiscard]] uint64_t getRelationshipId() const;
 
-        auto operator<=>(const Link &) const = default;
+        std::weak_ordering operator<=>(const Link& that) const {
+            if (auto cmp = node_id <=> that.node_id; cmp != 0)
+                return cmp;
+            return rel_id <=> that.rel_id;
+        }
 
+        bool operator==(const Link& that)const{
+            return (rel_id == that.rel_id) && (node_id == that.node_id);
+        }
         friend std::ostream& operator<<(std::ostream& os, const Link& ids);
     };
 }
