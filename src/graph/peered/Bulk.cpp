@@ -846,15 +846,21 @@ namespace ragedb {
 
       // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
         for (int i = 0; i < cpus; i++) {
           incoming_sharded_links.try_emplace(i);
         }
-        for (const auto& map_of_links: maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
+        for (const auto& map_of_links: vector_of_maps_of_links) {
+            for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                    std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                    for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                        incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                        incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                    }
+                }
+            }
         }
 
         std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
@@ -870,8 +876,11 @@ namespace ragedb {
         return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2](const std::vector<std::map<Link, std::vector<Node>>> &results) {
           std::map<Link, std::vector<Node>> combined;
 
-          for (const std::map<Link, std::vector<Node>> &sharded : results) {
-            combined.insert(std::begin(sharded), std::end(sharded));
+          for (std::map<Link, std::vector<Node>> sharded : results) {
+              for (const auto& [link, nodes] : sharded) {
+                  combined.try_emplace(link, std::vector<Node>());
+                  combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+              }
           }
           return combined;
         });
@@ -879,48 +888,60 @@ namespace ragedb {
     }
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetIncomingNeighborsPeered(const std::vector<Link>& links, const std::string& rel_type) {
-      std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
+        std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
-      std::vector<seastar::future<std::map<uint16_t, std::map<Link, std::vector<Link>>>>> futures;
-      for (const auto& [their_shard, grouped_links] : sharded_links) {
-        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
-          return local_shard.LinksGetShardedIncomingLinks(grouped_links, rel_type);
+        std::vector<seastar::future<std::map<uint16_t, std::map<Link, std::vector<Link>>>>> futures;
+        for (const auto& [their_shard, grouped_links] : sharded_links) {
+            auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
+                return local_shard.LinksGetShardedIncomingLinks(grouped_links, rel_type);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = this->cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
+            std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
+            for (int i = 0; i < cpus; i++) {
+                incoming_sharded_links.try_emplace(i);
+            }
+            // TODO: The results of this method are now correct. Need to check the others.
+            // But performance is still a problem. Need to sort the nodes by Type and internal id,
+            // get each property in ORDER so we get sequential access instead of random access
+            for (const auto& map_of_links: vector_of_maps_of_links) {
+                for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                    for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                        std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                        for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                            incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                            incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                        }
+                    }
+                }
+            }
+
+            std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
+
+            for (const auto& [their_shard, grouped_links] : incoming_sharded_links) {
+                auto future = this->container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
+                    return local_shard.LinksGetNeighbors(grouped_links);
+                });
+                futures2.push_back(std::move(future));
+            }
+
+            auto p2 = make_shared(std::move(futures2));
+            return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2](const std::vector<std::map<Link, std::vector<Node>>> &results) {
+                std::map<Link, std::vector<Node>> combined;
+
+                for (std::map<Link, std::vector<Node>> sharded : results) {
+                    for (const auto& [link, nodes] : sharded) {
+                        combined.try_emplace(link, std::vector<Node>());
+                        combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                    }
+                }
+                return combined;
+            });
         });
-        futures.push_back(std::move(future));
-      }
-
-      // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
-      auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = this->cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
-        std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
-        for (int i = 0; i < cpus; i++) {
-          incoming_sharded_links.try_emplace(i);
-        }
-        for (const auto& map_of_links: maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
-        }
-
-        std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
-
-        for (const auto& [their_shard, grouped_links] : incoming_sharded_links) {
-          auto future = this->container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
-            return local_shard.LinksGetNeighbors(grouped_links);
-          });
-          futures2.push_back(std::move(future));
-        }
-
-        auto p2 = make_shared(std::move(futures2));
-        return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2](const std::vector<std::map<Link, std::vector<Node>>> &results) {
-          std::map<Link, std::vector<Node>> combined;
-
-          for (const std::map<Link, std::vector<Node>> &sharded : results) {
-            combined.insert(std::begin(sharded), std::end(sharded));
-          }
-          return combined;
-        });
-      });
     }
 
     seastar::future<std::map<Link, std::vector<Node>>> Shard::LinksGetIncomingNeighborsPeered(const std::vector<Link>& links, uint16_t type_id) {
@@ -936,15 +957,21 @@ namespace ragedb {
 
       // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = this->cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = this->cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
         for (int i = 0; i < cpus; i++) {
           incoming_sharded_links.try_emplace(i);
         }
-        for (const auto& map_of_links: maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
+        for (const auto& map_of_links: vector_of_maps_of_links) {
+            for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                    std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                    for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                        incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                        incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                    }
+                }
+            }
         }
 
         std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
@@ -960,8 +987,11 @@ namespace ragedb {
         return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2](const std::vector<std::map<Link, std::vector<Node>>> &results) {
           std::map<Link, std::vector<Node>> combined;
 
-          for (const std::map<Link, std::vector<Node>> &sharded : results) {
-            combined.insert(std::begin(sharded), std::end(sharded));
+          for (std::map<Link, std::vector<Node>> sharded : results) {
+              for (const auto& [link, nodes] : sharded) {
+                  combined.try_emplace(link, std::vector<Node>());
+                  combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+              }
           }
           return combined;
         });
@@ -981,15 +1011,21 @@ namespace ragedb {
 
       // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = this->cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = this->cpus, sharded_links, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
         for (int i = 0; i < cpus; i++) {
           incoming_sharded_links.try_emplace(i);
         }
-        for (const auto& map_of_links: maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
+        for (const auto& map_of_links: vector_of_maps_of_links) {
+            for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                    std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                    for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                        incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                        incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                    }
+                }
+            }
         }
 
         std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
@@ -1005,8 +1041,11 @@ namespace ragedb {
         return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2](const std::vector<std::map<Link, std::vector<Node>>> &results) {
           std::map<Link, std::vector<Node>> combined;
 
-          for (const std::map<Link, std::vector<Node>> &sharded : results) {
-            combined.insert(std::begin(sharded), std::end(sharded));
+          for (std::map<Link, std::vector<Node>> sharded : results) {
+              for (const auto& [link, nodes] : sharded) {
+                  combined.try_emplace(link, std::vector<Node>());
+                  combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+              }
           }
           return combined;
         });
@@ -1155,15 +1194,21 @@ namespace ragedb {
 
       // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, rel_type, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, rel_type, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
         for (int i = 0; i < cpus; i++) {
           incoming_sharded_links.try_emplace(i);
         }
-        for (const auto& map_of_links: maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
+        for (const auto& map_of_links: vector_of_maps_of_links) {
+            for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                    std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                    for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                        incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                        incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                    }
+                }
+            }
         }
 
         std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
@@ -1190,17 +1235,20 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
-              for (const auto& [link, rels] : map_of_relationships) {
-                combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
+              for (std::map<Link, std::vector<Node>> sharded : maps_of_incoming_relationships) {
+                  for (const auto& [link, nodes] : sharded) {
+                      combined.try_emplace(link, std::vector<Node>());
+                      combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                  }
               }
-            }
 
-            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
-              for (const auto& [link, rels] : map_of_relationships) {
-                combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
+              for (std::map<Link, std::vector<Node>> sharded : maps_of_outgoing_relationships) {
+                  for (const auto& [link, nodes] : sharded) {
+                      combined.try_emplace(link, std::vector<Node>());
+                      combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                  }
               }
-            }
+
             return combined;
           });
 
@@ -1221,15 +1269,21 @@ namespace ragedb {
 
       // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, type_id, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, type_id, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
         for (int i = 0; i < cpus; i++) {
           incoming_sharded_links.try_emplace(i);
         }
-        for (const auto& map_of_links : maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
+        for (const auto& map_of_links: vector_of_maps_of_links) {
+            for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                    std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                    for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                        incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                        incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                    }
+                }
+            }
         }
 
         std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
@@ -1256,16 +1310,18 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
-              for (const auto& [link, rels] : map_of_relationships) {
-                combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
-              }
+            for (std::map<Link, std::vector<Node>> sharded : maps_of_incoming_relationships) {
+                for (const auto& [link, nodes] : sharded) {
+                    combined.try_emplace(link, std::vector<Node>());
+                    combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                }
             }
 
-            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
-              for (const auto& [link, rels] : map_of_relationships) {
-                combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
-              }
+            for (std::map<Link, std::vector<Node>> sharded : maps_of_outgoing_relationships) {
+                for (const auto& [link, nodes] : sharded) {
+                    combined.try_emplace(link, std::vector<Node>());
+                    combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                }
             }
             return combined;
           });
@@ -1287,15 +1343,21 @@ namespace ragedb {
 
       // I now have the incoming links of each Link and which shard they belong to, need to combine them by shard, and for each shard go get them.
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, rel_types, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &maps_of_links) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, cpus = cpus, sharded_links, rel_types, this] (const std::vector<std::map<uint16_t, std::map<Link, std::vector<Link>>>> &vector_of_maps_of_links) {
         std::map<uint16_t, std::map<Link, std::vector<Link>>> incoming_sharded_links;
         for (int i = 0; i < cpus; i++) {
           incoming_sharded_links.try_emplace(i);
         }
-        for (const auto& map_of_links: maps_of_links) {
-          for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
-            incoming_sharded_links.at(their_shard_id).insert(std::begin(map_of_incoming_links), std::end(map_of_incoming_links));
-          }
+        for (const auto& map_of_links: vector_of_maps_of_links) {
+            for (const auto& [their_shard_id, map_of_incoming_links] : map_of_links) {
+                for (const auto& [link, vector_of_incoming_links] : map_of_incoming_links) {
+                    std::map<uint16_t, std::vector<Link>> sharded_links_for_link = PartitionLinksByNodeShardId(vector_of_incoming_links);
+                    for (const auto& [their_shard, incoming_links] : sharded_links_for_link) {
+                        incoming_sharded_links.at(their_shard).try_emplace(link, std::vector<Link>());
+                        incoming_sharded_links.at(their_shard)[link].insert(incoming_sharded_links.at(their_shard)[link].end(), incoming_links.begin(), incoming_links.end());
+                    }
+                }
+            }
         }
 
         std::vector<seastar::future<std::map<Link, std::vector<Node>>>> futures2;
@@ -1322,16 +1384,18 @@ namespace ragedb {
           return seastar::when_all_succeed(p3->begin(), p3->end()).then([p3, maps_of_incoming_relationships](const std::vector<std::map<Link, std::vector<Node>>> &maps_of_outgoing_relationships) {
             std::map<Link, std::vector<Node>> combined;
 
-            for (const auto& map_of_relationships : maps_of_incoming_relationships) {
-              for (const auto& [link, rels] : map_of_relationships) {
-                combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
-              }
+            for (std::map<Link, std::vector<Node>> sharded : maps_of_incoming_relationships) {
+                for (const auto& [link, nodes] : sharded) {
+                    combined.try_emplace(link, std::vector<Node>());
+                    combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                }
             }
 
-            for (const auto& map_of_relationships : maps_of_outgoing_relationships) {
-              for (const auto& [link, rels] : map_of_relationships) {
-                combined[link].insert(std::end(combined[link]), std::begin(rels), std::end(rels));
-              }
+            for (std::map<Link, std::vector<Node>> sharded : maps_of_outgoing_relationships) {
+                for (const auto& [link, nodes] : sharded) {
+                    combined.try_emplace(link, std::vector<Node>());
+                    combined.at(link).insert(combined.at(link).end(), nodes.begin(), nodes.end());
+                }
             }
             return combined;
           });
