@@ -853,8 +853,8 @@ namespace ragedb {
         sol::as_table_t<std::map<Link, uint16_t>> NodesGetTypeIdByLinksViaLua(std::vector<Link> links);
         sol::as_table_t<std::vector<sol::object>> NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
         sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
-        sol::as_table_t<std::vector<sol::object>> NodesGetPropertiesViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertiesByLinksViaLua(std::vector<Link> links);
+        sol::as_table_t<std::vector<sol::table>> NodesGetPropertiesViaLua(std::vector<uint64_t> ids);
+        sol::as_table_t<std::map<Link, sol::table>> NodesGetPropertiesByLinksViaLua(std::vector<Link> links);
 
         // Property Types
         uint8_t NodePropertyTypeAddViaLua(const std::string& node_type, const std::string& key, const std::string& type);
