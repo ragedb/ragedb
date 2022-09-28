@@ -53,6 +53,7 @@ COPY --from=build /lib/x86_64-linux-gnu/libgmp.so.10 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libudev.so.1 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libffi.so.8 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/
+RUN apt-get install -y libluajit-5.1-2
 WORKDIR /ragedb
 COPY --from=build /data/rage/build/bin/ragedb ragedb
 COPY --from=build /data/rage/build/bin/public public
