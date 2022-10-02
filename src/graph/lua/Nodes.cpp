@@ -34,7 +34,7 @@ namespace ragedb {
 
     sol::table Shard::NodesGetKeyViaLua(std::vector<uint64_t> ids) {
         sol::table properties = lua.create_table(0, ids.size());
-        for (const auto& [id, value] : NodesGetKeyPeered(ids, property).get0()) {
+        for (const auto& [id, value] : NodesGetKeyPeered(ids).get0()) {
             properties.set(id, value);
         }
         return properties;
