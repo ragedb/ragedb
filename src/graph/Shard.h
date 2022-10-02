@@ -885,11 +885,11 @@ namespace ragedb {
         // Relationships
         sol::as_table_t<std::vector<Relationship>> RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
         sol::as_table_t<std::vector<Relationship>> RelationshipsGetByLinksViaLua(std::vector<Link> links);
-        sol::as_table_t<std::vector<std::string>> RelationshipsGetTypeViaLua(std::vector<uint64_t> ids);
+        sol::table RelationshipsGetTypeViaLua(std::vector<uint64_t> ids);
         sol::as_table_t<std::map<Link, std::string>> RelationshipsGetTypeByLinksViaLua(std::vector<Link> links);
-        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
+        sol::table RelationshipsGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
         sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
-        sol::as_table_t<std::vector<sol::object>> RelationshipsGetPropertiesViaLua(std::vector<uint64_t> ids);
+        sol::table RelationshipsGetPropertiesViaLua(std::vector<uint64_t> ids);
         sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertiesByLinksViaLua(std::vector<Link> links);
 
         // Relationship Properties
