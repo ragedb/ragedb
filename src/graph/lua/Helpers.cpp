@@ -78,7 +78,7 @@ namespace ragedb {
   sol::table Shard::PropertiesToSolObject(const std::map<std::string, property_type_t>& properties) {
     sol::table property_map = lua.create_table(0, properties.size());
     for (const auto& [_key, value] : properties) {
-      property_map[_key] = PropertyToSolObject(value);
+        property_map.set(_key, value);
     }
     return property_map;
   }
