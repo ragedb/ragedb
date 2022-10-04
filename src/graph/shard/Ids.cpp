@@ -105,6 +105,15 @@ namespace ragedb {
              && node_types.ValidNodeId(type_id, internal_id);
     }
 
+    bool Shard::ValidRelationshipIds(const std::vector<uint64_t> &ids) const {
+        for(uint64_t id : ids) {
+            if(!ValidRelationshipId(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool Shard::ValidRelationshipId(uint64_t id) const {
         // Relationship must be greater than zero,
         // less than maximum relationship id,
@@ -123,4 +132,33 @@ namespace ragedb {
              && relationship_types.ValidRelationshipId(type_id, internal_id);
     }
 
+    bool Shard::ValidLinks(const std::vector<Link> &links) const {
+        for(Link link : links) {
+            if(!ValidNodeId(link.node_id)) {
+                return false;
+            }
+            if(!ValidRelationshipId(link.rel_id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool Shard::ValidLinksNodeIds(const std::vector<Link> &links) const {
+        for(Link link : links) {
+            if(!ValidNodeId(link.node_id)) {
+                return false;
+            }
+         }
+        return true;
+    }
+
+    bool Shard::ValidLinksRelationshipIds(const std::vector<Link> &links) const {
+        for(Link link : links) {
+            if(!ValidRelationshipId(link.rel_id)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

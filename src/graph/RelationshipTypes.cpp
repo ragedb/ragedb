@@ -421,6 +421,32 @@ namespace ragedb {
         return std::map<std::string, property_type_t>();
     }
 
+    std::map<uint64_t, property_type_t> RelationshipTypes::getRelationshipsProperty(uint16_t type_id, const std::vector<uint64_t> &external_ids, const std::string& property) const {
+        if(ValidTypeId(type_id)) {
+            // Get internal ids
+            std::vector<uint64_t> internal_ids;
+            internal_ids.reserve(external_ids.size());
+            for (auto id : external_ids) {
+                internal_ids.emplace_back(Shard::externalToInternal(id));
+            }
+            return properties[type_id].getProperty(external_ids, internal_ids, property);
+        }
+        return std::map<uint64_t, property_type_t>();
+    }
+
+    std::map<uint64_t, std::map<std::string, property_type_t>> RelationshipTypes::getRelationshipsProperties(uint16_t type_id, const std::vector<uint64_t> &external_ids) const {
+        if(ValidTypeId(type_id)) {
+            // Get internal ids
+            std::vector<uint64_t> internal_ids;
+            internal_ids.reserve(external_ids.size());
+            for (auto id : external_ids) {
+                internal_ids.emplace_back(Shard::externalToInternal(id));
+            }
+            return properties[type_id].getProperties(external_ids, internal_ids);
+        }
+        return std::map<uint64_t, std::map<std::string, property_type_t>>();
+    }
+
     Relationship RelationshipTypes::getRelationship(uint64_t external_id) const {
         return getRelationship(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), external_id);
     }

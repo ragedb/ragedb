@@ -430,14 +430,14 @@ namespace ragedb {
         return id_to_type[0];
     }
 
-    std::map<std::string, property_type_t> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) {
+    std::map<std::string, property_type_t> NodeTypes::getNodeProperties(uint16_t type_id, uint64_t internal_id) const {
         if(ValidTypeId(type_id)) {
             return properties[type_id].getProperties(internal_id);
         }
         return std::map<std::string, property_type_t>();
     }
 
-    std::map<uint64_t, property_type_t> NodeTypes::getNodesProperty(uint16_t type_id, const std::vector<uint64_t> &external_ids, const std::string& property) {
+    std::map<uint64_t, property_type_t> NodeTypes::getNodesProperty(uint16_t type_id, const std::vector<uint64_t> &external_ids, const std::string& property) const {
         if(ValidTypeId(type_id)) {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
@@ -450,7 +450,7 @@ namespace ragedb {
         return std::map<uint64_t, property_type_t>();
     }
 
-    std::map<uint64_t, std::map<std::string, property_type_t>> NodeTypes::getNodesProperties(uint16_t type_id, const std::vector<uint64_t> &external_ids) {
+    std::map<uint64_t, std::map<std::string, property_type_t>> NodeTypes::getNodesProperties(uint16_t type_id, const std::vector<uint64_t> &external_ids) const {
         if(ValidTypeId(type_id)) {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
@@ -468,11 +468,11 @@ namespace ragedb {
     }
 
     Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id) {
-        return Node( Shard::internalToExternal(type_id, internal_id), getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
+        return Node(Shard::internalToExternal(type_id, internal_id), getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
     }
 
     Node NodeTypes::getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id) {
-        return Node( external_id, getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
+        return Node(external_id, getType(type_id), getKeys(type_id)[internal_id], getNodeProperties(type_id, internal_id));
     }
 
     property_type_t NodeTypes::getNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property) {

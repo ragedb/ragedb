@@ -103,9 +103,13 @@ namespace ragedb {
         bool ValidNodeIds(const std::vector<uint64_t> &ids) const;
         bool ValidNodeId(uint64_t id, uint16_t type_id, uint64_t internal_id) const;
         bool ValidRelationshipId(uint64_t id) const;
+        bool ValidRelationshipIds(const std::vector<uint64_t> &ids) const;
         bool ValidRelationshipId(uint64_t id, uint16_t type_id, uint64_t internal_id) const;
+        bool ValidLinks(const std::vector<Link> &links) const;
+        bool ValidLinksNodeIds(const std::vector<Link> &links) const;
+        bool ValidLinksRelationshipIds(const std::vector<Link> &links) const;
 
-        // *****************************************************************************************************************************
+          // *****************************************************************************************************************************
         //                                               Single Shard
         // *****************************************************************************************************************************
 
