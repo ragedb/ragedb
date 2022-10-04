@@ -18,18 +18,22 @@
 
 namespace ragedb {
 
-    sol::as_table_t<std::vector<Node>> Shard::NodesGetViaLua(std::vector<uint64_t> ids) {
-      std::vector<Node> nodes = NodesGetPeered(ids).get0();
+    sol::table Shard::NodesGetViaLua(std::vector<uint64_t> ids) {
+        sol::table nodes = lua.create_table(0, ids.size());
+        for (const auto& node : NodesGetPeered(ids).get0()) {
+            nodes.set(node.getId(), node);
+        }
 
-      sort(nodes.begin(), nodes.end(), [](const Node& a, const Node& b) {
-        return a.getId() < b.getId();
-      });
-
-       return sol::as_table(nodes);
+       return nodes;
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::NodesGetByLinksViaLua(std::vector<Link> links) {
-      return sol::as_table(NodesGetPeered(links).get0());
+    sol::table Shard::NodesGetByLinksViaLua(std::vector<Link> links) {
+      sol::table nodes = lua.create_table(0, links.size());
+      for (const auto& node : NodesGetPeered(links).get0()) {
+          nodes.set(node.getId(), node);
+      }
+
+      return nodes;
     }
 
     sol::table Shard::NodesGetKeyViaLua(std::vector<uint64_t> ids) {
@@ -40,8 +44,12 @@ namespace ragedb {
         return properties;
     }
 
-    sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetKeyByLinksViaLua(std::vector<Link> links) {
-      return sol::as_table(NodesGetKeyPeered(links).get0());
+    sol::table Shard::NodesGetKeyByLinksViaLua(std::vector<Link> links) {
+        sol::table properties = lua.create_table(0, links.size());
+        for (const auto& [id, value] : NodesGetKeyPeered(links).get0()) {
+            properties.set(id.node_id, value);
+        }
+        return properties;
     }
 
     sol::table Shard::NodesGetTypeViaLua(std::vector<uint64_t> ids) {
@@ -52,8 +60,12 @@ namespace ragedb {
         return properties;
     }
 
-    sol::as_table_t<std::map<Link, std::string>> Shard::NodesGetTypeByLinksViaLua(std::vector<Link> links) {
-      return sol::as_table(NodesGetTypePeered(links).get0());
+    sol::table Shard::NodesGetTypeByLinksViaLua(std::vector<Link> links) {
+        sol::table properties = lua.create_table(0, links.size());
+        for (const auto& [id, value] : NodesGetTypePeered(links).get0()) {
+            properties.set(id.node_id, value);
+        }
+        return properties;
     }
 
     sol::table Shard::NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property) {
@@ -64,13 +76,12 @@ namespace ragedb {
         return properties;
     }
 
-    sol::as_table_t<std::map<Link, sol::object>> Shard::NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property) {
-      std::map<Link, sol::object> properties;
-
-      for(const auto& [link, value] : NodesGetPropertyPeered(links, property).get0()) {
-        properties[link] = PropertyToSolObject(value);
-      }
-      return sol::as_table(properties);
+    sol::table Shard::NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property) {
+        sol::table properties = lua.create_table(0, links.size());
+        for (const auto& [id, value] : NodesGetPropertyPeered(links, property).get0()) {
+            properties.set(id.node_id, value);
+        }
+        return properties;
     }
 
     sol::table Shard::NodesGetPropertiesViaLua(std::vector<uint64_t> ids) {
@@ -85,12 +96,15 @@ namespace ragedb {
         return properties;
     }
 
-    sol::as_table_t<std::map<Link, sol::table>> Shard::NodesGetPropertiesByLinksViaLua(std::vector<Link> links) {
-      std::map<Link, sol::table> properties;
-
-      for(const auto& [link, value] : NodesGetPropertiesPeered(links).get0()) {
-        properties[link] = PropertiesToSolObject(value);
-      }
-      return sol::as_table(properties);
+    sol::table Shard::NodesGetPropertiesByLinksViaLua(std::vector<Link> links) {
+        sol::table properties = lua.create_table(0, links.size());
+        for (const auto& [id, node_properties] : NodesGetPropertiesPeered(links).get0()) {
+            sol::table property_map = lua.create_table();
+            for (const auto& [_key, property] : node_properties) {
+                property_map.set(_key, property);
+            }
+            properties.set(id.node_id, property_map);
+        }
+        return properties;
     }
 }

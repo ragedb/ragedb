@@ -834,16 +834,16 @@ namespace ragedb {
         std::string NodeGetKeyViaLua(uint64_t id);
 
         // Nodes
-        sol::as_table_t<std::vector<Node>> NodesGetViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::vector<Node>> NodesGetByLinksViaLua(std::vector<Link> links);
+        sol::table NodesGetViaLua(std::vector<uint64_t> ids);
+        sol::table NodesGetByLinksViaLua(std::vector<Link> links);
         sol::table NodesGetKeyViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::map<Link, std::string>> NodesGetKeyByLinksViaLua(std::vector<Link> links);
+        sol::table NodesGetKeyByLinksViaLua(std::vector<Link> links);
         sol::table NodesGetTypeViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::map<Link, std::string>> NodesGetTypeByLinksViaLua(std::vector<Link> links);
+        sol::table NodesGetTypeByLinksViaLua(std::vector<Link> links);
         sol::table NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
-        sol::as_table_t<std::map<Link, sol::object>> NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
+        sol::table NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
         sol::table NodesGetPropertiesViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::map<Link, sol::table>> NodesGetPropertiesByLinksViaLua(std::vector<Link> links);
+        sol::table NodesGetPropertiesByLinksViaLua(std::vector<Link> links);
 
         // Property Types
         uint8_t NodePropertyTypeAddViaLua(const std::string& node_type, const std::string& key, const std::string& type);
@@ -883,14 +883,14 @@ namespace ragedb {
         uint64_t RelationshipGetEndingNodeIdViaLua(uint64_t id);
 
         // Relationships
-        sol::as_table_t<std::vector<Relationship>> RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
-        sol::as_table_t<std::vector<Relationship>> RelationshipsGetByLinksViaLua(std::vector<Link> links);
+        sol::table RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
+        sol::table RelationshipsGetByLinksViaLua(std::vector<Link> links);
         sol::table RelationshipsGetTypeViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::map<Link, std::string>> RelationshipsGetTypeByLinksViaLua(std::vector<Link> links);
+        sol::table RelationshipsGetTypeByLinksViaLua(std::vector<Link> links);
         sol::table RelationshipsGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
-        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
+        sol::table RelationshipsGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
         sol::table RelationshipsGetPropertiesViaLua(std::vector<uint64_t> ids);
-        sol::as_table_t<std::map<Link, sol::object>> RelationshipsGetPropertiesByLinksViaLua(std::vector<Link> links);
+        sol::table RelationshipsGetPropertiesByLinksViaLua(std::vector<Link> links);
 
         // Relationship Properties
         sol::object RelationshipGetPropertyViaLua(uint64_t id, const std::string& property);
@@ -1108,9 +1108,6 @@ namespace ragedb {
         std::map<uint16_t, std::vector<Link>> PartitionLinkRelationshipIdsByTypeId(const std::vector<Link> &links) const;
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
-
-        // Overload example, not used
-        sol::as_table_t<std::vector<Node>> NodesGetOverload(sol::this_state ts, sol::variadic_args args);
 
   };
 }
