@@ -102,8 +102,12 @@ namespace ragedb {
     std::map<uint64_t, property_type_t> Shard::NodesGetProperty(const std::vector<uint64_t> &node_ids, const std::string& property) {
       std::map<uint64_t, property_type_t> sharded_node_properties;
 
-      for(uint64_t id : node_ids) {
-        sharded_node_properties[id] = NodeGetProperty(id, property);
+      if (ValidNodeIds(node_ids)) {
+          for (auto [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
+              for (auto [id, properties] : node_types.getNodesProperty(type_id, ids, property)) {
+                  sharded_node_properties[id] = properties;
+              }
+          }
       }
       
       return sharded_node_properties;
@@ -121,7 +125,7 @@ namespace ragedb {
 
     std::map<uint64_t, std::map<std::string, property_type_t>> Shard::NodesGetProperties(const std::vector<uint64_t> &node_ids) {
       std::map<uint64_t, std::map<std::string, property_type_t>> sharded_node_properties;
-      // If the nodes are valid
+
       if (ValidNodeIds(node_ids)) {
           for (auto [type_id, ids] :  PartitionNodeIdsByTypeId(node_ids)) {
               for (auto [id, properties] : node_types.getNodesProperties(type_id, ids)) {

@@ -64,16 +64,16 @@ namespace ragedb {
         return map;
     }
 
-    uint8_t Properties::getPropertyTypeId(const std::string& key) {
+    uint8_t Properties::getPropertyTypeId(const std::string& key) const {
         if (types.find(key) != types.end()) {
-            return types[key];
+            return types.at(key);
         }
         return 0;
     }
 
-    std::string Properties::getPropertyType(const std::string &key){
+    std::string Properties::getPropertyType(const std::string &key) const {
       if (types.find(key) != types.end()) {
-        return allowed_types[types[key]];
+        return allowed_types[types.at(key)];
       }
       return "";
     }
@@ -423,6 +423,111 @@ namespace ragedb {
         return true;
     }
 
+    std::map<uint64_t, property_type_t> Properties::getProperty(const std::vector<uint64_t> &external_ids, const std::vector<uint64_t> &internal_ids, const std::string &key) const {
+        std::map<uint64_t, property_type_t> properties;
+        // Check if empty
+        if (external_ids.empty()) {
+            return properties;
+        }
+
+        auto type_id = getPropertyTypeId(key);
+        switch (type_id) {
+        case boolean_type: {
+            if (booleans.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], booleans.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case integer_type: {
+            if (integers.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], integers.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case double_type: {
+            if (doubles.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i],  doubles.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case date_type: {
+            if (doubles.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], doubles.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case string_type: {
+            if (strings.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], strings.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case boolean_list_type: {
+            if (booleans_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i],  booleans_list.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case integer_list_type: {
+            if (integers_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], integers_list.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case double_list_type: {
+            if (doubles_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], doubles_list.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case date_list_type: {
+            if (doubles_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], doubles_list.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        case string_list_type: {
+            if (strings_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    properties.emplace(external_ids[i], strings_list.at(key)[internal_ids[i]]);
+                }
+            }
+            break;
+        }
+        default: {
+
+        }
+        }
+
+        if (!deleted.at(key).isEmpty()) {
+            for (size_t i = 0; i < internal_ids.size(); i++) {
+                if (deleted.at(key).contains(internal_ids[i])) {
+                    properties.erase(external_ids[i]);
+                }
+            }
+        }
+
+        return properties;
+    }
+
     std::map<uint64_t, std::map<std::string, property_type_t>> Properties::getProperties(const std::vector<uint64_t> &external_ids, const std::vector<uint64_t> &internal_ids) const {
         // Build a temporary map of id < string, any >
         std::map<uint64_t, std::map<std::string, property_type_t>> properties;
@@ -443,13 +548,6 @@ namespace ragedb {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, booleans.at(key)[internal_ids[i]]);
                         }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
-                        }
                     }
                     break;
                 }
@@ -457,13 +555,6 @@ namespace ragedb {
                     if (integers.at(key).size() > internal_ids.back()) {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, integers.at(key)[internal_ids[i]]);
-                        }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
                         }
                     }
                     break;
@@ -473,13 +564,6 @@ namespace ragedb {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, doubles.at(key)[internal_ids[i]]);
                         }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
-                        }
                     }
                     break;
                 }
@@ -487,13 +571,6 @@ namespace ragedb {
                     if (doubles.at(key).size() > internal_ids.back()) {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, doubles.at(key)[internal_ids[i]]);
-                        }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
                         }
                     }
                     break;
@@ -503,13 +580,6 @@ namespace ragedb {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, strings.at(key)[internal_ids[i]]);
                         }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
-                        }
                     }
                     break;
                 }
@@ -517,13 +587,6 @@ namespace ragedb {
                     if (booleans_list.at(key).size() > internal_ids.back()) {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, booleans_list.at(key)[internal_ids[i]]);
-                        }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
                         }
                     }
                     break;
@@ -533,13 +596,6 @@ namespace ragedb {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, integers_list.at(key)[internal_ids[i]]);
                         }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
-                        }
                     }
                     break;
                 }
@@ -547,13 +603,6 @@ namespace ragedb {
                     if (doubles_list.at(key).size() > internal_ids.back()) {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, doubles_list.at(key)[internal_ids[i]]);
-                        }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
                         }
                     }
                     break;
@@ -563,13 +612,6 @@ namespace ragedb {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, doubles_list.at(key)[internal_ids[i]]);
                         }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
-                        }
                     }
                     break;
                 }
@@ -578,18 +620,18 @@ namespace ragedb {
                         for (size_t i = 0; i < internal_ids.size(); i++) {
                             properties.at(external_ids[i]).emplace(key, strings_list.at(key)[internal_ids[i]]);
                         }
-                        if (!deleted.at(key).isEmpty()) {
-                            for (size_t i = 0; i < internal_ids.size(); i++) {
-                                if (deleted.at(key).contains(internal_ids[i])) {
-                                    properties.at(external_ids[i]).erase(key);
-                                }
-                            }
-                        }
                     }
                     break;
                 }
                 default: {
 
+                }
+            }
+            if (!deleted.at(key).isEmpty()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    if (deleted.at(key).contains(internal_ids[i])) {
+                        properties.at(external_ids[i]).erase(key);
+                    }
                 }
             }
         }

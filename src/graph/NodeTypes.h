@@ -162,6 +162,7 @@ namespace ragedb {
         std::string getNodeKey(uint16_t type_id, uint64_t internal_id) const;
         std::map<std::string, property_type_t> getNodeProperties(uint16_t type_id, uint64_t internal_id);
         std::map<uint64_t, std::map<std::string, property_type_t>> getNodesProperties(uint16_t type_id, const std::vector<uint64_t> &external_ids);
+        std::map<uint64_t, property_type_t> getNodesProperty(uint16_t type_id, const std::vector<uint64_t> &external_ids, const std::string& property);
         Node getNode(uint64_t external_id);
         Node getNode(uint16_t type_id, uint64_t internal_id);
         Node getNode(uint16_t type_id, uint64_t internal_id, uint64_t external_id);
