@@ -157,6 +157,7 @@ namespace ragedb {
       "NodeGetNeighborIds",
       "NodeGetProperties",
       "NodeGetProperty",
+      "NodesGetPropertyRaw",
       "NodeGetRelationships",
       "NodeGetType",
       "NodeTypeGet",

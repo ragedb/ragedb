@@ -845,6 +845,7 @@ namespace ragedb {
         sol::table NodesGetTypeViaLua(std::vector<uint64_t> ids);
         sol::table NodesGetTypeByLinksViaLua(std::vector<Link> links);
         sol::table NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property);
+        std::map<uint64_t, property_type_t> NodesGetPropertyViaLuaRaw(std::vector<uint64_t> ids, const std::string& property);
         sol::table NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property);
         sol::table NodesGetPropertiesViaLua(std::vector<uint64_t> ids);
         sol::table NodesGetPropertiesByLinksViaLua(std::vector<Link> links);

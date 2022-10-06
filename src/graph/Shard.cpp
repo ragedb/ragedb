@@ -187,6 +187,7 @@ namespace ragedb {
         lua.set_function("NodesGetKey", &Shard::NodesGetKeyViaLua, this);
         lua.set_function("NodesGetType", &Shard::NodesGetTypeViaLua, this);
         lua.set_function("NodesGetProperty", &Shard::NodesGetPropertyViaLua, this);
+        lua.set_function("NodesGetPropertyRaw", &Shard::NodesGetPropertyViaLuaRaw, this);
         lua.set_function("NodesGetProperties", &Shard::NodesGetPropertiesViaLua, this);
 
         // Node Properties

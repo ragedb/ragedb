@@ -17,12 +17,15 @@
 #include "../Shard.h"
 
 namespace ragedb {
-    // TODO: The performance of all of these needs to be improved by doing real bulk operations not one at a time in a loop.
+
     std::vector<Node> Shard::NodesGet(const std::vector<uint64_t>& node_ids) {
         std::vector<Node> sharded_nodes;
 
-        for(uint64_t id : node_ids) {
-            sharded_nodes.emplace_back(NodeGet(id));
+        if (ValidNodeIds(node_ids)) {
+            for (auto [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
+                auto nodes = node_types.getNodes(type_id, ids);
+                sharded_nodes.insert(sharded_nodes.end(), std::begin(nodes), std::end(nodes));
+            }
         }
 
         return sharded_nodes;
@@ -31,8 +34,11 @@ namespace ragedb {
     std::vector<Node> Shard::NodesGet(const std::vector<Link>& links) {
       std::vector<Node> sharded_nodes;
 
-      for(Link link : links) {
-        sharded_nodes.emplace_back(NodeGet(link.node_id));
+      if (ValidLinksNodeIds(links)) {
+          for (auto [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
+              auto nodes = node_types.getNodes(type_id, typed_links);
+              sharded_nodes.insert(sharded_nodes.end(), std::begin(nodes), std::end(nodes));
+          }
       }
 
       return sharded_nodes;

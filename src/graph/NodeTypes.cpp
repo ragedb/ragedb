@@ -463,6 +463,33 @@ namespace ragedb {
         return std::map<uint64_t, std::map<std::string, property_type_t>>();
     }
 
+    std::vector<Node> NodeTypes::getNodes(uint16_t type_id, const std::vector<Link> &links) const {
+        std::vector<uint64_t> external_ids;
+        external_ids.reserve(links.size());
+        for (auto link : links) {
+            external_ids.emplace_back(link.node_id);
+        }
+        return getNodes(type_id, external_ids);
+    }
+
+    std::vector<Node> NodeTypes::getNodes(uint16_t type_id, const std::vector<uint64_t> &external_ids) const {
+        std::vector<Node> nodes;
+        if(ValidTypeId(type_id)) {
+            auto type = getType(type_id);
+            // Get internal ids
+            std::vector<uint64_t> internal_ids;
+            internal_ids.reserve(external_ids.size());
+            for (auto id : external_ids) {
+                internal_ids.emplace_back(Shard::externalToInternal(id));
+            }
+            auto nodes_properties = properties[type_id].getProperties(external_ids, internal_ids);
+            for (auto [id, props] : nodes_properties) {
+                nodes.emplace_back(Node(id, type, getNodeKey(type_id, Shard::externalToInternal(id)), props));
+            }
+        }
+        return nodes;
+    }
+
     Node NodeTypes::getNode(uint64_t external_id) {
         return getNode(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id), external_id);
     }
@@ -725,7 +752,7 @@ namespace ragedb {
         return properties.at(type_id).deleteProperties(internal_id);
     }
 
-    std::vector<std::string>& NodeTypes::getKeys(uint16_t type_id) {
+    std::vector<std::string> &NodeTypes::getKeys(uint16_t type_id) {
         return keys.at(type_id);
     }
 

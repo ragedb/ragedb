@@ -76,6 +76,10 @@ namespace ragedb {
         return properties;
     }
 
+    std::map<uint64_t, property_type_t> Shard::NodesGetPropertyViaLuaRaw(std::vector<uint64_t> ids, const std::string& property) {
+        return NodesGetPropertyPeered(ids, property).get0();
+    }
+
     sol::table Shard::NodesGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property) {
         sol::table properties = lua.create_table(0, links.size());
         for (const auto& [id, value] : NodesGetPropertyPeered(links, property).get0()) {

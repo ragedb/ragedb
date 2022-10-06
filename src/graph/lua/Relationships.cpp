@@ -63,7 +63,7 @@ namespace ragedb {
     sol::table Shard::RelationshipsGetPropertyByLinksViaLua(std::vector<Link> links, const std::string& property) {
         sol::table properties = lua.create_table(0, links.size());
         for (const auto& [id, value] : RelationshipsGetPropertyPeered(links, property).get0()) {
-            properties.set(id.node_id, value);
+            properties.set(id.rel_id, value);
         }
         return properties;
     }
