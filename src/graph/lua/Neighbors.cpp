@@ -138,60 +138,66 @@ namespace ragedb {
         return sol::as_table(NodeGetNeighborsPeered(type, key, direction, rel_types).get0());
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids) {
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids).get0());
+    sol::table Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids) {
+        sol::table neighbors = lua.create_table(0, ids.size());
+        for (const auto& [node_id, neighbor_ids] : NodeIdsGetNeighborIdsPeered(ids).get0()) {
+            neighbors.set(node_id, neighbor_ids);
+        }
+        return neighbors;
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction) {
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction).get0());
+    sol::table Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction) {
+        sol::table neighbors = lua.create_table(0, ids.size());
+        for (const auto& [node_id, neighbor_ids] : NodeIdsGetNeighborIdsPeered(ids, direction).get0()) {
+            neighbors.set(node_id, neighbor_ids);
+        }
+        return neighbors;
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) {
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, rel_type).get0());
+    sol::table Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) {
+        sol::table neighbors = lua.create_table(0, ids.size());
+        for (const auto& [node_id, neighbor_ids] : NodeIdsGetNeighborIdsPeered(ids, direction, rel_type).get0()) {
+            neighbors.set(node_id, neighbor_ids);
+        }
+        return neighbors;
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types) {
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).get0());
+    sol::table Shard::NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types) {
+        sol::table neighbors = lua.create_table(0, ids.size());
+        for (const auto& [node_id, neighbor_ids] : NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).get0()) {
+            neighbors.set(node_id, neighbor_ids);
+        }
+        return neighbors;
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes) {
+// TODO: Fix all these to return a map with Node ID - Neighbors
+// TODO: Add NodesGetNeighbors
+    sol::table Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes) {
         std::vector<uint64_t> ids;
         ids.reserve(nodes.size());
-
-        for (auto id : nodes | std::views::transform(&Node::getId)) {
-            ids.emplace_back(id);
-        }
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids).get0());
+        std::transform(begin(nodes), end(nodes), back_inserter(ids), std::mem_fn(&Node::getId));
+        return NodeIdsGetNeighborIdsViaLua(ids);
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction) {
+    sol::table Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction) {
         std::vector<uint64_t> ids;
         ids.reserve(nodes.size());
-
-        for (auto id : nodes | std::views::transform(&Node::getId)) {
-            ids.emplace_back(id);
-        }
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction).get0());
+        std::transform(begin(nodes), end(nodes), back_inserter(ids), std::mem_fn(&Node::getId));
+        return NodeIdsGetNeighborIdsViaLua(ids, direction);
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type) {
+    sol::table Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type) {
         std::vector<uint64_t> ids;
         ids.reserve(nodes.size());
-
-        for (auto id : nodes | std::views::transform(&Node::getId)) {
-            ids.emplace_back(id);
-        }
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, rel_type).get0());
+        std::transform(begin(nodes), end(nodes), back_inserter(ids), std::mem_fn(&Node::getId));
+        return NodeIdsGetNeighborIdsViaLua(ids, direction, rel_type);
     }
 
-    sol::as_table_t<std::vector<uint64_t>> Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types) {
+    sol::table Shard::NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types) {
         std::vector<uint64_t> ids;
         ids.reserve(nodes.size());
-
-        for (auto id : nodes | std::views::transform(&Node::getId)) {
-            ids.emplace_back(id);
-        }
-        return sol::as_table(NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).get0());
+        std::transform(begin(nodes), end(nodes), back_inserter(ids), std::mem_fn(&Node::getId));
+        return NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types);
     }
 
 }

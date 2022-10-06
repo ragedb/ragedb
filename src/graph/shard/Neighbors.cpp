@@ -57,11 +57,10 @@ namespace ragedb {
         auto out_ids = node_types.getOutgoingRelationships(type_id).at(internal_id).at(internal_id).node_ids();
         std::ranges::copy(out_ids, std::back_inserter(ids));
 
-        auto in_ids = node_types.getOutgoingRelationships(type_id).at(internal_id).at(internal_id).node_ids();
+        auto in_ids = node_types.getIncomingRelationships(type_id).at(internal_id).at(internal_id).node_ids();
         std::ranges::copy(in_ids, std::back_inserter(ids));
 
         return ids;
-    
     }
     
     std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction) {
@@ -80,7 +79,7 @@ namespace ragedb {
         }
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::OUT) {
-            auto in_ids = node_types.getOutgoingRelationships(node_type_id).at(internal_id).at(internal_id).node_ids();
+            auto in_ids = node_types.getIncomingRelationships(node_type_id).at(internal_id).at(internal_id).node_ids();
             std::ranges::copy(in_ids, std::back_inserter(ids));
         }
         return ids;
