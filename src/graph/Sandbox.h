@@ -146,6 +146,7 @@ namespace ragedb {
       "LinksGetRelationshipProperties",
 
       "NodeIdsGetNeighborIds",
+      "NodeIdsGetNeighbors",
 
       "NodeGet",
       "NodeGetConnected",
@@ -159,6 +160,7 @@ namespace ragedb {
       "NodeGetProperty",
       "NodesGetPropertyRaw",
       "NodeGetRelationships",
+      "NodesGetNeighbors",
       "NodeGetType",
       "NodeTypeGet",
       "NodeTypeGetType",

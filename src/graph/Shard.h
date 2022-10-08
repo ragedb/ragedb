@@ -23,6 +23,7 @@
 #include <coroutine>
 #include <iostream>
 #include <fstream>
+#include <unordered_set>
 #include <seastar/core/sharded.hh>
 #include <seastar/core/rwlock.hh>
 #include <seastar/core/when_all.hh>
@@ -117,14 +118,12 @@ namespace ragedb {
 
         // Node Types
         uint16_t NodeTypesGetCount() const;
-        uint64_t NodeTypesGetCount(uint16_t type_id) const;
         uint64_t NodeTypesGetCount(const std::string& type) const;
         std::set<std::string> NodeTypesGet();
         std::map<std::string, std::string> NodeTypeGet(const std::string& type);
 
         // Relationship Types
         uint16_t RelationshipTypesGetCount() const;
-        uint64_t RelationshipTypesGetCount(uint16_t type_id) const;
         uint64_t RelationshipTypesGetCount(const std::string& type) const;
         std::set<std::string> RelationshipTypesGet();
         std::map<std::string, std::string> RelationshipTypeGet(const std::string& type);
@@ -262,109 +261,89 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
-        std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, uint16_t type_id);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // NodeLinks
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key);
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, Direction direction);
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
         std::vector<Link> NodeGetLinks(uint64_t id);
         std::vector<Link> NodeGetLinks(uint64_t id, Direction direction);
         std::vector<Link> NodeGetLinks(uint64_t id, Direction direction, const std::string& rel_type);
-        std::vector<Link> NodeGetLinks(uint64_t id, Direction direction, uint16_t type_id);
         std::vector<Link> NodeGetLinks(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Relationships Between Two Given Nodes
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, uint64_t id2);
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, uint64_t id2, Direction direction);
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, uint64_t id2, Direction direction, const std::string& rel_type);
-        std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, uint64_t id2, Direction direction, uint16_t type_id);
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
         std::vector<Link> NodeGetLinks(uint64_t id, uint64_t id2);
         std::vector<Link> NodeGetLinks(uint64_t id, uint64_t id2, Direction direction);
         std::vector<Link> NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
-        std::vector<Link> NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id);
         std::vector<Link> NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // Traversing
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(uint64_t id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(uint64_t id, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(uint64_t id, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedRelationshipIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(const std::string& type, const std::string& key);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(const std::string& type, const std::string& key, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(const std::string& type, const std::string& key, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(uint64_t id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(uint64_t id, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(uint64_t id, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedNodeIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         std::vector<Relationship> NodeGetOutgoingRelationships(const std::string& type, const std::string& key);
         std::vector<Relationship> NodeGetOutgoingRelationships(const std::string& type, const std::string& key, const std::string& rel_type);
-        std::vector<Relationship> NodeGetOutgoingRelationships(const std::string& type, const std::string& key, uint16_t type_id);
         std::vector<Relationship> NodeGetOutgoingRelationships(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         std::vector<Relationship> NodeGetOutgoingRelationships(uint64_t id);
         std::vector<Relationship> NodeGetOutgoingRelationships(uint64_t id, const std::string& rel_type);
-        std::vector<Relationship> NodeGetOutgoingRelationships(uint64_t id, uint16_t type_id);
         std::vector<Relationship> NodeGetOutgoingRelationships(uint64_t id, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(const std::string& type, const std::string& key);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(const std::string& type, const std::string& key, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(const std::string& type, const std::string& key, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(uint64_t id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(uint64_t id, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(uint64_t id, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingRelationshipIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(const std::string& type, const std::string& key);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(const std::string& type, const std::string& key, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(const std::string& type, const std::string& key, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(uint64_t id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(uint64_t id, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(uint64_t id, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedIncomingNodeIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(const std::string& type, const std::string& key);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(const std::string& type, const std::string& key, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(const std::string& type, const std::string& key, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, const std::string& rel_type);
-        std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, uint16_t type_id);
         std::map<uint16_t, std::vector<uint64_t>> NodeGetShardedOutgoingNodeIDs(uint64_t id, const std::vector<std::string> &rel_types);
 
         // Bulk
         std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links);
         std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction);
         std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction, uint16_t type_id);
         std::map<Link, std::vector<Link>> LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
 
         std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links);
         std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::string& rel_type);
-        std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, uint16_t type_id);
         std::map<uint16_t, std::map<Link, std::vector<Link>>> LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         std::map<Link, std::vector<Relationship>> LinksGetRelationships(const std::map<Link, std::vector<Link>>& links);
@@ -586,12 +565,10 @@ namespace ragedb {
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(const std::string& type, const std::string& key);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, uint16_t type_id);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids);
@@ -599,138 +576,112 @@ namespace ragedb {
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
 
+        seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>&maps_of_incoming_nodes);
+        seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction);
+        seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
+        seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
+
         // Traversing
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, Direction direction);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
-
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, const std::string& rel_type);
-        seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, uint16_t type_id);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, Direction direction);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
-
         seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, const std::string& rel_type);
-        seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, uint16_t type_id);
         seastar::future<std::vector<Link>> NodeGetLinksPeered(uint64_t id, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, Direction direction);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, Direction direction);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetRelationshipsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, const std::string& rel_type);
-        seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, uint16_t type_id);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, const std::string& rel_type);
-        seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, uint16_t type_id);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, Direction direction);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, Direction direction);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Node>> NodeGetNeighborsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Bulk Helpers
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetIncomingRelationshipsPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetIncomingRelationshipsPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetIncomingRelationshipsPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetIncomingRelationshipsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetOutgoingRelationshipsPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetOutgoingRelationshipsPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetOutgoingRelationshipsPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetOutgoingRelationshipsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetIncomingNeighborsPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetIncomingNeighborsPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Node>>> LinksGetIncomingNeighborsPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetIncomingNeighborsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetOutgoingNeighborsPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetOutgoingNeighborsPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Node>>> LinksGetOutgoingNeighborsPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetOutgoingNeighborsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         // Bulk
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, Direction direction);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, Direction direction, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
-
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Link>>> LinksGetLinksPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, Direction direction);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, Direction direction, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
-
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, Direction direction);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, Direction direction, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, Direction direction, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types);
-
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, const std::string& rel_type);
-        seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, uint16_t type_id);
         seastar::future<std::map<Link, std::vector<Node>>> LinksGetNeighborsPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types);
 
         // Connected
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
@@ -801,25 +752,19 @@ namespace ragedb {
           // Relationship Types
         uint16_t RelationshipTypesGetCountViaLua() const;
         uint64_t RelationshipTypesGetCountByTypeViaLua(const std::string& type);
-        uint64_t RelationshipTypesGetCountByIdViaLua(uint16_t type_id);
         sol::as_table_t<std::set<std::string>> RelationshipTypesGetViaLua();
         sol::as_table_t<std::map<std::string, std::string>> RelationshipTypeGetViaLua(const std::string& type);
 
         // Relationship Type
-        std::string RelationshipTypeGetTypeViaLua(uint16_t type_id) const;
-        uint16_t RelationshipTypeGetTypeIdViaLua(const std::string& type) const;
         uint16_t RelationshipTypeInsertViaLua(const std::string& type);
 
         // Node Types
         uint16_t NodeTypesGetCountViaLua() const;
         uint64_t NodeTypesGetCountByTypeViaLua(const std::string& type);
-        uint64_t NodeTypesGetCountByIdViaLua(uint16_t type_id);
         sol::as_table_t<std::set<std::string>> NodeTypesGetViaLua();
         sol::as_table_t<std::map<std::string, std::string>> NodeTypeGetViaLua(const std::string& type);
 
         // Node Type
-        std::string NodeTypeGetTypeViaLua(uint16_t type_id) const;
-        uint16_t NodeTypeGetTypeIdViaLua(const std::string& type) const;
         uint16_t NodeTypeInsertViaLua(const std::string& type);
 
         //Node
@@ -832,7 +777,6 @@ namespace ragedb {
         Node NodeGetByIdViaLua(uint64_t id);
         bool NodeRemoveViaLua(const std::string& type, const std::string& key);
         bool NodeRemoveByIdViaLua(uint64_t id);
-        uint16_t NodeGetTypeIdViaLua(uint64_t id);
         std::string NodeGetTypeViaLua(uint64_t id);
         std::string NodeGetKeyViaLua(uint64_t id);
 
@@ -954,6 +898,16 @@ namespace ragedb {
         sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
         sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
 
+        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids);
+        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction);
+        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type);
+        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types);
+
+        // TODO
+        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes);
+        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction);
+        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
+        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
 
         // Traversing
         sol::as_table_t<std::vector<Link>> NodeGetLinksViaLua(const std::string& type, const std::string& key);
@@ -1096,7 +1050,6 @@ namespace ragedb {
         sol::as_table_t<std::vector<Node>> DifferenceNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
         sol::as_table_t<std::vector<Relationship>> DifferenceRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
         uint64_t DifferenceIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
-
 
         // Partition by Shards
         std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const;

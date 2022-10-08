@@ -33,11 +33,6 @@ namespace ragedb {
         return NodeGetLinks(id, direction, rel_type);
     }
 
-    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, Direction direction, uint16_t type_id) {
-        uint64_t id = NodeGetID(type, key);
-        return NodeGetLinks(id, direction, type_id);
-    }
-
     std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetLinks(id, direction, rel_types);
@@ -55,11 +50,6 @@ namespace ragedb {
     std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction, const std::string &rel_type) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetLinks(id, id2, direction, rel_type);
-    }
-
-    std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction, uint16_t type_id) {
-        uint64_t id = NodeGetID(type, key);
-        return NodeGetLinks(id, id2, direction, type_id);
     }
 
     std::vector<Link> Shard::NodeGetLinks(const std::string &type, const std::string &key, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
@@ -116,38 +106,6 @@ namespace ragedb {
         uint16_t node_type_id = externalToTypeId(id);
         uint16_t type_id = relationship_types.getTypeId(rel_type);
         uint64_t internal_id = externalToInternal(id);
-        std::vector<Link> ids;
-
-        // Use the two ifs to handle ALL for a direction
-        if (direction != Direction::IN) {
-            auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
-              [type_id](const Group &g) { return g.rel_type_id == type_id; });
-
-            if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(out_group->links.size());
-                std::ranges::copy(out_group->links, std::back_inserter(ids));
-            }
-        }
-
-        if (direction != Direction::OUT) {
-            auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
-              [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-            if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(ids.size() + in_group->links.size());
-                std::ranges::copy(in_group->links, std::back_inserter(ids));
-            }
-        }
-        return ids;
-    }
-
-    std::vector<Link> Shard::NodeGetLinks(uint64_t id, Direction direction, uint16_t type_id) {
-        if (!ValidNodeId(id)) {
-            return std::vector<Link>();
-        }
-        uint16_t node_type_id = externalToTypeId(id);
-        uint64_t internal_id = externalToInternal(id);
-
         std::vector<Link> ids;
 
         // Use the two ifs to handle ALL for a direction
@@ -279,45 +237,6 @@ namespace ragedb {
         if (direction != Direction::OUT) {
             std::ranges::copy_if(in_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
-        return ids;
-    }
-
-    std::vector<Link> Shard::NodeGetLinks(uint64_t id, uint64_t id2, Direction direction, uint16_t type_id) {
-        if (!ValidNodeId(id)) {
-            return std::vector<Link>();
-        }
-
-        uint16_t node_type_id = externalToTypeId(id);
-        uint64_t internal_id = externalToInternal(id);
-        if (direction == Direction::IN) {
-            auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
-              [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-            if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                return in_group->links;
-            }
-        }
-
-        if (direction == Direction::OUT) {
-            auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
-              [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-            if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                return out_group->links;
-            }
-        }
-
-        std::vector<Link> ids;
-
-        auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
-          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-        auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
-          [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-
-        std::ranges::copy_if(out_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
-        std::ranges::copy_if(in_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
-
         return ids;
     }
 

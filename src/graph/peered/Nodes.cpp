@@ -282,4 +282,240 @@ namespace ragedb {
       });
     }
 
+    seastar::future<std::map<uint64_t, std::vector<Node>>> Shard::NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        // Steps:
+        // 1 - Partition the nodes by their shard id
+        // 2 - Go to each shard and get the Links of each node
+        // I don't want to get nodes multiple times, so group them
+        // 3 - call NodesGetPeered, create map of node_id, vector position
+        // 4 - For each node Id, create a vector of their results
+        // 5 - gather and return
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<Link>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<Link>> node_links;
+                for (auto id : grouped_node_ids) {
+                    node_links.emplace(id, local_shard.NodeGetLinks(id));
+                }
+                return node_links;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        // I now have the links of each Node, need to combine them and go get them.
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, sharded_nodes_ids, this] (const std::vector<std::map<uint64_t, std::vector<Link>>> &maps_of_links) {
+            std::vector<uint64_t> combined_ids;
+
+            for (const auto& map_of_links: maps_of_links) {
+                for (const auto& [node_id, links] : map_of_links) {
+                    for (auto link : links) {
+                        combined_ids.emplace_back(link.node_id);
+                    }
+                }
+            }
+            // Make the node ids unique to avoid getting them multiple times
+            std::unordered_set<uint64_t> s;
+            for (auto id : combined_ids) {
+                s.insert(id);
+            }
+            combined_ids.assign(s.begin(), s.end());
+            sort(combined_ids.begin(), combined_ids.end());
+
+            return NodesGetPeered(combined_ids).then([maps_of_links](const std::vector<Node> &nodes) {
+                std::map<uint64_t, std::vector<Node>> results;
+                std::map<uint64_t, int> map_of_node_positions;
+                for (auto i = 0; i < nodes.size(); i++) {
+                    map_of_node_positions.emplace(nodes[i].getId(), i);
+                }
+
+                for (const auto& map_of_links: maps_of_links) {
+                    for (const auto& [node_id, links] : map_of_links) {
+                        std::vector<Node> my_nodes;
+                        my_nodes.reserve(links.size());
+                        for (auto link : links) {
+                            my_nodes.emplace_back(nodes[map_of_node_positions[link.node_id]]);
+                        }
+                        results.emplace(node_id, my_nodes);
+                    }
+                }
+
+                return results;
+            });
+        });
+    }
+    seastar::future<std::map<uint64_t, std::vector<Node>>> Shard::NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<Link>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [direction, grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<Link>> node_links;
+                for (auto id : grouped_node_ids) {
+                    node_links.emplace(id, local_shard.NodeGetLinks(id, direction));
+                }
+                return node_links;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        // I now have the links of each Node, need to combine them and go get them.
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, sharded_nodes_ids, this] (const std::vector<std::map<uint64_t, std::vector<Link>>> &maps_of_links) {
+            std::vector<uint64_t> combined_ids;
+
+            for (const auto& map_of_links: maps_of_links) {
+                for (const auto& [node_id, links] : map_of_links) {
+                    for (auto link : links) {
+                        combined_ids.emplace_back(link.node_id);
+                    }
+                }
+            }
+            // Make the node ids unique to avoid getting them multiple times
+            std::unordered_set<uint64_t> s;
+            for (auto id : combined_ids) {
+                s.insert(id);
+            }
+            combined_ids.assign(s.begin(), s.end());
+            sort(combined_ids.begin(), combined_ids.end());
+
+            return NodesGetPeered(combined_ids).then([maps_of_links](const std::vector<Node> &nodes) {
+                std::map<uint64_t, std::vector<Node>> results;
+                std::map<uint64_t, int> map_of_node_positions;
+                for (auto i = 0; i < nodes.size(); i++) {
+                    map_of_node_positions.emplace(nodes[i].getId(), i);
+                }
+
+                for (const auto& map_of_links: maps_of_links) {
+                    for (const auto& [node_id, links] : map_of_links) {
+                        std::vector<Node> my_nodes;
+                        my_nodes.reserve(links.size());
+                        for (auto link : links) {
+                            my_nodes.emplace_back(nodes[map_of_node_positions[link.node_id]]);
+                        }
+                        results.emplace(node_id, my_nodes);
+                    }
+                }
+
+                return results;
+            });
+        });
+    }
+    seastar::future<std::map<uint64_t, std::vector<Node>>> Shard::NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<Link>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [direction, rel_type, grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<Link>> node_links;
+                for (auto id : grouped_node_ids) {
+                    node_links.emplace(id, local_shard.NodeGetLinks(id, direction, rel_type));
+                }
+                return node_links;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        // I now have the links of each Node, need to combine them and go get them.
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, sharded_nodes_ids, this] (const std::vector<std::map<uint64_t, std::vector<Link>>> &maps_of_links) {
+            std::vector<uint64_t> combined_ids;
+
+            for (const auto& map_of_links: maps_of_links) {
+                for (const auto& [node_id, links] : map_of_links) {
+                    for (auto link : links) {
+                        combined_ids.emplace_back(link.node_id);
+                    }
+                }
+            }
+            // Make the node ids unique to avoid getting them multiple times
+            std::unordered_set<uint64_t> s;
+            for (auto id : combined_ids) {
+                s.insert(id);
+            }
+            combined_ids.assign(s.begin(), s.end());
+            sort(combined_ids.begin(), combined_ids.end());
+
+            return NodesGetPeered(combined_ids).then([maps_of_links](const std::vector<Node> &nodes) {
+                std::map<uint64_t, std::vector<Node>> results;
+                std::map<uint64_t, int> map_of_node_positions;
+                for (auto i = 0; i < nodes.size(); i++) {
+                    map_of_node_positions.emplace(nodes[i].getId(), i);
+                }
+
+                for (const auto& map_of_links: maps_of_links) {
+                    for (const auto& [node_id, links] : map_of_links) {
+                        std::vector<Node> my_nodes;
+                        my_nodes.reserve(links.size());
+                        for (auto link : links) {
+                            my_nodes.emplace_back(nodes[map_of_node_positions[link.node_id]]);
+                        }
+                        results.emplace(node_id, my_nodes);
+                    }
+                }
+
+                return results;
+            });
+        });
+    }
+    seastar::future<std::map<uint64_t, std::vector<Node>>> Shard::NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<Link>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [direction, rel_types, grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<Link>> node_links;
+                for (auto id : grouped_node_ids) {
+                    node_links.emplace(id, local_shard.NodeGetLinks(id, direction, rel_types));
+                }
+                return node_links;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        // I now have the links of each Node, need to combine them and go get them.
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, sharded_nodes_ids, this] (const std::vector<std::map<uint64_t, std::vector<Link>>> &maps_of_links) {
+            std::vector<uint64_t> combined_ids;
+
+            for (const auto& map_of_links: maps_of_links) {
+                for (const auto& [node_id, links] : map_of_links) {
+                    for (auto link : links) {
+                        combined_ids.emplace_back(link.node_id);
+                    }
+                }
+            }
+            // Make the node ids unique to avoid getting them multiple times
+            std::unordered_set<uint64_t> s;
+            for (auto id : combined_ids) {
+                s.insert(id);
+            }
+            combined_ids.assign(s.begin(), s.end());
+            sort(combined_ids.begin(), combined_ids.end());
+
+            return NodesGetPeered(combined_ids).then([maps_of_links](const std::vector<Node> &nodes) {
+                std::map<uint64_t, std::vector<Node>> results;
+                std::map<uint64_t, int> map_of_node_positions;
+                for (auto i = 0; i < nodes.size(); i++) {
+                    map_of_node_positions.emplace(nodes[i].getId(), i);
+                }
+
+                for (const auto& map_of_links: maps_of_links) {
+                    for (const auto& [node_id, links] : map_of_links) {
+                        std::vector<Node> my_nodes;
+                        my_nodes.reserve(links.size());
+                        for (auto link : links) {
+                            my_nodes.emplace_back(nodes[map_of_node_positions[link.node_id]]);
+                        }
+                        results.emplace(node_id, my_nodes);
+                    }
+                }
+
+                return results;
+            });
+        });
+    }
 }

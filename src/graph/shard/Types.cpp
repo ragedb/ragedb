@@ -22,13 +22,9 @@ namespace ragedb {
       return node_types.getTypeIds().size();
     }
 
-    uint64_t Shard::NodeTypesGetCount(uint16_t type_id) const {
-        return node_types.getCount(type_id);
-    }
-
     uint64_t Shard::NodeTypesGetCount(const std::string &type) const {
         uint16_t type_id = node_types.getTypeId(type);
-        return NodeTypesGetCount(type_id);
+        return node_types.getCount(type_id);
     }
 
     std::set<std::string> Shard::NodeTypesGet() {
@@ -44,17 +40,13 @@ namespace ragedb {
       return relationship_types.getTypeIds().size();
     }
 
-    uint64_t Shard::RelationshipTypesGetCount(uint16_t type_id) const {
+    uint64_t Shard::RelationshipTypesGetCount(const std::string &type) const {
+        uint16_t type_id = relationship_types.getTypeId(type);
         if (relationship_types.ValidTypeId(type_id)) {
             return relationship_types.getCount(type_id);
         }
         // Not a valid Relationship Type
         return 0;
-    }
-
-    uint64_t Shard::RelationshipTypesGetCount(const std::string &type) const {
-        uint16_t type_id = relationship_types.getTypeId(type);
-        return RelationshipTypesGetCount(type_id);
     }
 
     std::set<std::string> Shard::RelationshipTypesGet() {

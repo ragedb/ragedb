@@ -22,16 +22,6 @@ namespace ragedb {
         return node_types.getSize();
     }
 
-    seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(uint16_t type_id) {
-        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (const Shard &local) {
-            return local.NodeTypesGetCount(type_id);
-        });
-
-        return v.then([] (std::vector<uint64_t> counts) {
-            return accumulate(std::begin(counts), std::end(counts), uint64_t(0));
-        });
-    }
-
     seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(const std::string &type) {
         seastar::future<std::vector<uint64_t>> v = container().map([type] (const Shard &local) {
             return local.NodeTypesGetCount(type);
@@ -56,16 +46,6 @@ namespace ragedb {
 
     uint16_t Shard::RelationshipTypesGetCountPeered() const {
         return relationship_types.getSize();
-    }
-
-    seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(uint16_t type_id) {
-        seastar::future<std::vector<uint64_t>> v = container().map([type_id] (const Shard &local) {
-            return local.RelationshipTypesGetCount(type_id);
-        });
-
-        return v.then([] (std::vector<uint64_t> counts) {
-            return accumulate(std::begin(counts), std::end(counts), uint64_t(0));
-        });
     }
 
     seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(const std::string &type) {

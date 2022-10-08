@@ -50,10 +50,6 @@ namespace ragedb {
         return NodeRemovePeered(id).get0();
     }
 
-    uint16_t Shard::NodeGetTypeIdViaLua(uint64_t id) {
-        return NodeGetTypeIdPeered(id).get0();
-    }
-
     std::string Shard::NodeGetTypeViaLua(uint64_t id) {
         return NodeGetTypePeered(id).get0();
     }

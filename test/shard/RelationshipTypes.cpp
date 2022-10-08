@@ -120,21 +120,12 @@ SCENARIO( "Shard can handle Relationship Types", "[relationship_types]" ) {
             }
         }
 
-        WHEN("we get the count of an invalid relationship type id") {
-            THEN("it should be zero") {
-                uint64_t count = shard.RelationshipTypesGetCount(99);
-                REQUIRE(count == 0);
-            }
-        }
-
         WHEN("add a relationship") {
             shard.RelationshipTypeInsert("LOVES", 1);
             shard.RelationshipAddEmptySameShard(1, node1id, node2id);
 
             THEN("request the count of the relationship type") {
-                uint64_t count_by_id = shard.RelationshipTypesGetCount(1);
                 uint64_t count_by_type = shard.RelationshipTypesGetCount("LOVES");
-                REQUIRE(count_by_id == 1);
                 REQUIRE(count_by_type == 1);
             }
         }
@@ -148,13 +139,9 @@ SCENARIO( "Shard can handle Relationship Types", "[relationship_types]" ) {
 
             THEN("request the count of the relationship types") {
                 uint64_t likes_count = shard.RelationshipTypesGetCount("LOVES");
-                uint64_t likes_count_by_id = shard.RelationshipTypesGetCount(1);
                 uint64_t hates_count = shard.RelationshipTypesGetCount("HATES");
-                uint64_t hates_count_by_id = shard.RelationshipTypesGetCount(2);
                 REQUIRE(likes_count == 2);
-                REQUIRE(likes_count_by_id == 2);
                 REQUIRE(hates_count == 1);
-                REQUIRE(hates_count_by_id == 1);
             }
         }
 

@@ -27,10 +27,6 @@ namespace ragedb {
         return RelationshipTypesGetCountPeered(type).get0();
     }
 
-    uint64_t Shard::RelationshipTypesGetCountByIdViaLua(uint16_t type_id) {
-        return RelationshipTypesGetCountPeered(type_id).get0();
-    }
-
     sol::as_table_t<std::set<std::string>> Shard::RelationshipTypesGetViaLua() {
         return sol::as_table(RelationshipTypesGetPeered());
     }
@@ -40,14 +36,6 @@ namespace ragedb {
     }
 
     // Relationship Type
-    std::string Shard::RelationshipTypeGetTypeViaLua(uint16_t type_id) const {
-        return RelationshipTypeGetTypePeered(type_id);
-    }
-
-    uint16_t Shard::RelationshipTypeGetTypeIdViaLua(const std::string& type) const {
-        return RelationshipTypeGetTypeIdPeered(type);
-    }
-
     uint16_t Shard::RelationshipTypeInsertViaLua(const std::string& type) {
         return RelationshipTypeInsertPeered(type).get0();
     }
@@ -61,10 +49,6 @@ namespace ragedb {
         return NodeTypesGetCountPeered(type).get0();
     }
 
-    uint64_t Shard::NodeTypesGetCountByIdViaLua(uint16_t type_id) {
-        return NodeTypesGetCountPeered(type_id).get0();
-    }
-
     sol::as_table_t<std::set<std::string>> Shard::NodeTypesGetViaLua() {
         return sol::as_table(NodeTypesGetPeered());
     }
@@ -74,14 +58,6 @@ namespace ragedb {
     }
 
     // Node Type
-    std::string Shard::NodeTypeGetTypeViaLua(uint16_t type_id) const {
-        return NodeTypeGetTypePeered(type_id);
-    }
-
-    uint16_t Shard::NodeTypeGetTypeIdViaLua(const std::string& type) const {
-        return NodeTypeGetTypeIdPeered(type);
-    }
-
     uint16_t Shard::NodeTypeInsertViaLua(const std::string& type) {
         return NodeTypeInsertPeered(type).get0();
     }

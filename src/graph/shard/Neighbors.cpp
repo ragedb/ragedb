@@ -36,11 +36,6 @@ namespace ragedb {
         return NodeGetNeighborIds(id, direction, rel_type);
     }
     
-    std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, Direction direction, uint16_t type_id) {
-        uint64_t id = NodeGetID(type, key);
-        return NodeGetNeighborIds(id, direction, type_id);
-    }
-    
     std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetNeighborIds(id, direction, rel_types);
@@ -116,39 +111,7 @@ namespace ragedb {
         }
         return ids;
     }
-    
-    std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, uint16_t type_id) {
-        if (!ValidNodeId(id)) {
-            return std::vector<uint64_t>();
-        }
-        uint16_t node_type_id = externalToTypeId(id);
-        uint64_t internal_id = externalToInternal(id);
-    
-        std::vector<uint64_t> ids;
-    
-        // Use the two ifs to handle ALL for a direction
-        if (direction != Direction::IN) {
-            auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
-              [type_id](const Group &g) { return g.rel_type_id == type_id; });
-    
-            if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(out_group->links.size());
-                std::ranges::copy(out_group->node_ids(), std::back_inserter(ids));
-            }
-        }
-    
-        if (direction != Direction::OUT) {
-            auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
-              [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
-    
-            if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(ids.size() + in_group->links.size());
-                std::ranges::copy(in_group->node_ids(), std::back_inserter(ids));
-            }
-        }
-        return ids;
-    }
-    
+
     std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
         if (!ValidNodeId(id)) {
             return std::vector<uint64_t>();

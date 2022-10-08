@@ -117,22 +117,13 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
             }
         }
 
-        WHEN("we get the count of an invalid node type id") {
-            THEN("it should be zero") {
-                uint64_t count = shard.NodeTypesGetCount(99);
-                REQUIRE(count == 0);
-            }
-        }
-
         WHEN("add a node") {
             shard.NodeTypeInsert("Person", 2);
             shard.NodeAddEmpty( 2, "four");
 
             THEN("request the count of the node type") {
-                uint64_t count_by_id = shard.NodeTypesGetCount(2);
                 uint64_t count_by_type = shard.NodeTypesGetCount("Person");
-                REQUIRE(count_by_id == 1);
-                REQUIRE(count_by_type == 1);
+                  REQUIRE(count_by_type == 1);
             }
         }
 
@@ -145,13 +136,9 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
 
             THEN("request the count of the node types") {
                 uint64_t user_count = shard.NodeTypesGetCount("User");
-                uint64_t user_count_by_id = shard.NodeTypesGetCount(2);
                 uint64_t thing_count = shard.NodeTypesGetCount("Thing");
-                uint64_t thing_count_by_id = shard.NodeTypesGetCount(3);
                 REQUIRE(user_count == 1);
-                REQUIRE(user_count_by_id == 1);
                 REQUIRE(thing_count == 2);
-                REQUIRE(thing_count_by_id == 2);
             }
         }
 
@@ -160,9 +147,7 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
 
             THEN("it should ignore it") {
                 uint64_t node_count = shard.NodeTypesGetCount("Node");
-                uint64_t node_count_by_id = shard.NodeTypesGetCount(1);
                 REQUIRE(node_count == 3);
-                REQUIRE(node_count_by_id == 3);
 
                 REQUIRE(node1id == shard.NodeGetID("Node", "one"));
                 REQUIRE(node2id == shard.NodeGetID("Node", "two"));
