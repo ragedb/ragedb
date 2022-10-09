@@ -121,6 +121,44 @@ namespace ragedb {
     });
   }
 
+  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      uint16_t type_id = node_types.getTypeId(type);
+      return FilterNodePropertiesPeered(ids, type_id, property, operation, value, skip, limit);
+  }
+
+  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+
+      uint64_t max = skip + limit;
+
+      std::vector<seastar::future<std::vector<std::map<std::string, property_type_t>>>> futures;
+      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+          auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type_id, property, operation, value, max] (Shard &local_shard) {
+              return local_shard.FilterNodeProperties(grouped_node_ids, type_id, property, operation, value, 0, max);
+          });
+          futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<std::map<std::string, property_type_t>>>& results) {
+          uint64_t current = 0;
+
+          std::vector<std::map<std::string, property_type_t>> nodes;
+
+          for (const auto& result : results) {
+              for(const auto& node : result) {
+                  if (++current > skip) {
+                      nodes.push_back(node);
+                  }
+                  if (current >= max) {
+                      return nodes;
+                  }
+              }
+          }
+          return nodes;
+      });
+  }
+
   seastar::future<uint64_t> Shard::FilterRelationshipCountPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value) {
     uint16_t type_id = relationship_types.getTypeId(type);
     return FilterRelationshipCountPeered(ids, type_id, property, operation, value);

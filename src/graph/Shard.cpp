@@ -305,7 +305,6 @@ namespace ragedb {
 
         lua.set_function("NodesGetNeighborIds", sol::overload(
             [this](std::vector<Node> nodes) { return this->NodesGetNeighborIdsViaLua(nodes); },
-            [this](std::vector<Node> nodes) { return this->NodesGetNeighborIdsViaLua(nodes); },
             [this](std::vector<Node> nodes, Direction direction) { return this->NodesGetNeighborIdsViaLua(nodes, direction); },
             [this](std::vector<Node> nodes, Direction direction, const std::string& rel_type) { return this->NodesGetNeighborIdsViaLua(nodes, direction, rel_type); },
             [this](std::vector<Node> nodes, Direction direction, const std::vector<std::string>& rel_types) { return this->NodesGetNeighborIdsViaLua(nodes, direction, rel_types); },
@@ -414,8 +413,17 @@ namespace ragedb {
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetLinksForDirectionViaLua(links, direction); },
             [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, direction, rel_type); },
             [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetLinksForTypeViaLua(links, rel_type); },
-            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForTypesViaLua(links, rel_types); }
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, Direction::BOTH, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetLinksForDirectionForTypesViaLua(links, Direction::BOTH, rel_types); }
+            ));
+
+        lua.set_function("LinksGetNeighborIds", sol::overload(
+            [this](std::vector<Link> links) { return this->LinksGetNeighborIdsViaLua(links); },
+            [this](std::vector<Link> links, Direction direction) { return this->LinksGetNeighborIdsViaLua(links, direction); },
+            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetNeighborIdsViaLua(links, direction, rel_type); },
+            [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborIdsViaLua(links, direction, rel_types); },
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetNeighborIdsViaLua(links, Direction::BOTH, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborIdsViaLua(links, Direction::BOTH, rel_types); }
             ));
 
         lua.set_function("LinksGetRelationships", sol::overload(
@@ -423,8 +431,8 @@ namespace ragedb {
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetRelationshipsForDirectionViaLua(links, direction); },
             [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, direction, rel_type); },
             [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetRelationshipsForTypeViaLua(links, rel_type); },
-            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForTypesViaLua(links, rel_types); }
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, Direction::BOTH, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetRelationshipsForDirectionForTypesViaLua(links, Direction::BOTH, rel_types); }
             ));
 
         lua.set_function("LinksGetNeighbors", sol::overload(
@@ -432,8 +440,8 @@ namespace ragedb {
             [this](std::vector<Link> links, Direction direction) { return this->LinksGetNeighborsForDirectionViaLua(links, direction); },
             [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, direction, rel_type); },
             [this](std::vector<Link> links, Direction direction, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetNeighborsForTypeViaLua(links, rel_type); },
-            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForTypesViaLua(links, rel_types); }
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, Direction::BOTH, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string>& rel_types) { return this->LinksGetNeighborsForDirectionForTypesViaLua(links, Direction::BOTH, rel_types); }
             ));
 
         // Connected
@@ -482,6 +490,7 @@ namespace ragedb {
         lua.set_function("FilterNodeCount", &Shard::FilterNodeCountViaLua, this);
         lua.set_function("FilterNodeIds", &Shard::FilterNodeIdsViaLua, this);
         lua.set_function("FilterNodes", &Shard::FilterNodesViaLua, this);
+        lua.set_function("FilterNodeProperties", &Shard::FilterNodePropertiesViaLua, this);
         lua.set_function("FilterRelationshipCount", &Shard::FilterRelationshipCountViaLua, this);
         lua.set_function("FilterRelationshipIds", &Shard::FilterRelationshipIdsViaLua, this);
         lua.set_function("FilterRelationships", &Shard::FilterRelationshipsViaLua, this);
@@ -500,6 +509,7 @@ namespace ragedb {
 
         // Date
         lua.set_function("DateToISO", &Date::toISO);
+        lua.set_function("DateToDouble", &Date::value);
 
 
         // Create a sanitized environment to restrict the user's Lua code

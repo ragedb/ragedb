@@ -29,8 +29,8 @@ namespace ragedb {
         uint16_t rel_type_id;
         std::vector<Link> links;
 
-        std::vector<uint64_t> node_ids();
-        std::vector<uint64_t> rel_ids();
+        std::vector<uint64_t> node_ids() const;
+        std::vector<uint64_t> rel_ids() const;
     };
 }
 

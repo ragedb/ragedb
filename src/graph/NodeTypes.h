@@ -134,9 +134,21 @@ namespace ragedb {
         std::vector<Node> filterDoubleListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
         std::vector<Node> filterStringListNodes(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
 
+        std::vector<std::map<std::string, property_type_t>> filterNullNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterNotNullNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterBooleanNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterIntegerNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterDoubleNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterStringNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterBooleanListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterIntegerListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterDoubleListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterStringListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+
         uint64_t filterCount(const std::vector<uint64_t>& unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value);
         std::vector<uint64_t> filterIds(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
         std::vector<Node> filterNodes(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
+        std::vector<std::map<std::string, property_type_t>> filterNodeProperties(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit);
 
         std::vector<uint64_t> getDeletedIds() const;
         bool hasDeleted(uint16_t type_id);
@@ -160,6 +172,7 @@ namespace ragedb {
         uint64_t getNodeId(uint16_t type_id, const std::string &key);
         uint64_t getNodeId(const std::string &type, const std::string &key);
         std::string getNodeKey(uint16_t type_id, uint64_t internal_id) const;
+        std::map<std::string, property_type_t> getNodeProperties(uint64_t external_id) const;
         std::map<std::string, property_type_t> getNodeProperties(uint16_t type_id, uint64_t internal_id) const;
         std::map<uint64_t, std::map<std::string, property_type_t>> getNodesProperties(uint16_t type_id, const std::vector<uint64_t> &external_ids) const;
         std::map<uint64_t, property_type_t> getNodesProperty(uint16_t type_id, const std::vector<uint64_t> &external_ids, const std::string& property) const;

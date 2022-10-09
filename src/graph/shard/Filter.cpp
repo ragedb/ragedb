@@ -62,7 +62,16 @@ namespace ragedb {
   std::vector<Node> Shard::FilterNodes(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     return node_types.filterNodes(ids, type_id, property, operation, value, skip, limit);
   }
-  
+
+  std::vector<std::map<std::string, property_type_t>> Shard::FilterNodeProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      uint16_t type_id = node_types.getTypeId(type);
+      return FilterNodeProperties(ids, type_id, property, operation, value, skip, limit);
+  }
+
+  std::vector<std::map<std::string, property_type_t>> Shard::FilterNodeProperties(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      return node_types.filterNodeProperties(ids, type_id, property, operation, value, skip, limit);
+  }
+
   std::vector<Relationship> Shard::FilterRelationships(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
     uint16_t type_id = relationship_types.getTypeId(type);
     return FilterRelationships(ids, type_id, property, operation, value, skip, limit);

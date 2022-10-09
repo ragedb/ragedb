@@ -18,7 +18,7 @@
 #include "../Shard.h"
 
 namespace ragedb {
-
+//todo: add RelationshipProperties and check for ints in filter doubles
   void RelationshipTypes::removeDeletedIds(uint16_t type_id, std::vector<uint64_t> &list) {
       std::erase_if(list, [deleted = deleted_ids[type_id] ](auto id) {
           return deleted.contains(Shard::externalToInternal(id));
@@ -30,7 +30,7 @@ namespace ragedb {
           return deleted.contains(Shard::externalToInternal(id));
       });
   }
-  
+
   uint64_t RelationshipTypes::filterCountBooleans(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value) {
     uint64_t count = 0;
     if (Properties::isBooleanProperty(value)) {

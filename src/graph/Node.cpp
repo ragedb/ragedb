@@ -47,71 +47,56 @@ namespace ragedb {
         return properties;
     }
 
-    sol::object Node::getPropertyLua(const std::string& property, sol::this_state ts) const {
-      property_type_t value = getProperty(property);
-      sol::state_view lua = ts;
-
-      switch (value.index()) {
-      case 0:
-        return sol::lua_nil;
-      case 1:
-        return sol::make_object(lua, get<bool>(value));
-      case 2:
-        return sol::make_object(lua, get<int64_t>(value));
-      case 3:
-        return sol::make_object(lua, get<double>(value));
-      case 4:
-        return sol::make_object(lua, get<std::string>(value));
-      case 5:
-        return sol::make_object(lua, sol::as_table(get<std::vector<bool>>(value)));
-      case 6:
-        return sol::make_object(lua, sol::as_table(get<std::vector<int64_t>>(value)));
-      case 7:
-        return sol::make_object(lua, sol::as_table(get<std::vector<double>>(value)));
-      case 8:
-        return sol::make_object(lua, sol::as_table(get<std::vector<std::string>>(value)));
-      default:
-        return sol::lua_nil;
-      }
+    sol::lua_value Node::getPropertyLua(const std::string& property, sol::this_state ts) const {
+      return getProperty(property);
     }
 
     sol::table Node::getPropertiesLua(sol::this_state ts) const {
         sol::state_view lua = ts;
-        sol::table property_map = lua.create_table();
-        for (auto [_key, value] : getProperties()) {
-          switch (value.index()) {
-            case 0:
-              property_map[_key] = sol::lua_nil;
-              break;
-            case 1:
-              property_map[_key] = sol::make_object(lua.lua_state(), get<bool>(value));
-              break;
-            case 2:
-              property_map[_key] = sol::make_object(lua.lua_state(), get<int64_t>(value));
-              break;
-            case 3:
-              property_map[_key] = sol::make_object(lua.lua_state(), get<double>(value));
-              break;
-            case 4:
-              property_map[_key] = sol::make_object(lua.lua_state(), get<std::string>(value));
-              break;
-            case 5:
-              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<bool>>(value)));
-              break;
-            case 6:
-              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<int64_t>>(value)));
-              break;
-            case 7:
-              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<double>>(value)));
-              break;
-            case 8:
-              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<std::string>>(value)));
-              break;
-            }
-          }
-
-        return sol::as_table(property_map);
+        sol::table node_properties = lua.create_table(0, properties.size());
+        for (const auto& [_key, property] : properties) {
+            node_properties.set(_key, property);
+        }
+        return node_properties;
     }
+
+//    sol::table Node::getPropertiesLua(sol::this_state ts) const {
+//        sol::state_view lua = ts;
+//        sol::table property_map = lua.create_table();
+//        for (auto [_key, value] : getProperties()) {
+//          switch (value.index()) {
+//            case 0:
+//              property_map[_key] = sol::lua_nil;
+//              break;
+//            case 1:
+//              property_map[_key] = sol::make_object(lua.lua_state(), get<bool>(value));
+//              break;
+//            case 2:
+//              property_map[_key] = sol::make_object(lua.lua_state(), get<int64_t>(value));
+//              break;
+//            case 3:
+//              property_map[_key] = sol::make_object(lua.lua_state(), get<double>(value));
+//              break;
+//            case 4:
+//              property_map[_key] = sol::make_object(lua.lua_state(), get<std::string>(value));
+//              break;
+//            case 5:
+//              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<bool>>(value)));
+//              break;
+//            case 6:
+//              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<int64_t>>(value)));
+//              break;
+//            case 7:
+//              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<double>>(value)));
+//              break;
+//            case 8:
+//              property_map[_key] = sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<std::string>>(value)));
+//              break;
+//            }
+//          }
+//
+//        return sol::as_table(property_map);
+//    }
 
     property_type_t Node::getProperty(const std::string& property) const {
         if (auto it = properties.find(property); it != std::end(properties)) {

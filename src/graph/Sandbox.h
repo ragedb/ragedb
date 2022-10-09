@@ -104,6 +104,7 @@ namespace ragedb {
       "AllRelationshipIds",
 
       "DateToISO",
+      "DateToDouble",
 
       "DifferenceIds",
       "DifferenceNodes",
@@ -113,9 +114,11 @@ namespace ragedb {
       "FilterNodeCount",
       "FilterNodeIds",
       "FilterNodes",
+      "FilterNodeProperties",
       "FilterRelationshipCount",
       "FilterRelationshipIds",
       "FilterRelationships",
+      "FilterRelationshipProperties",
 
       "FindNodeCount",
       "FindNodeIds",
@@ -131,7 +134,9 @@ namespace ragedb {
 
       "LinksGetLinks",
       "LinksGetNeighbors",
+      "LinksGetNeighborIds",
       "LinksGetRelationships",
+      "LinksGetRelationshipsIds",
 
         // TODO: Replace these with overloads once Sol allows vector overloads
       "LinksGetNode",

@@ -53,7 +53,9 @@ namespace ragedb {
 
         [[nodiscard]] property_type_t getProperty(const std::string& property) const;
 
-        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state) const;
+//        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state) const;
+
+        [[nodiscard]] sol::lua_value getPropertyLua(const std::string& property, sol::this_state) const;
 
         friend std::ostream& operator<<(std::ostream& os, const Node& node);
 

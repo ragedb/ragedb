@@ -91,5 +91,54 @@ namespace ragedb {
     sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types) {
       return sol::as_table(LinksGetNeighborsPeered(links, rel_types).get0());
     }
-    
+
+
+    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links) {
+        sol::table neighbors = lua.create_table(0, links.size());
+        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links).get0() ) {
+            sol::table node_ids = lua.create_table(link_ids.size(), 0);
+            for (const auto link : link_ids) {
+                node_ids.add(link.node_id);
+            }
+            neighbors.set(node_id, node_ids);
+        }
+        return neighbors;
+    }
+
+    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction){
+        sol::table neighbors = lua.create_table(0, links.size());
+        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links, direction).get0() ) {
+            sol::table node_ids = lua.create_table(link_ids.size(), 0);
+            for (const auto link : link_ids) {
+                node_ids.add(link.node_id);
+            }
+            neighbors.set(node_id, node_ids);
+        }
+        return neighbors;
+    }
+
+    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+        sol::table neighbors = lua.create_table(0, links.size());
+        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links, direction, rel_type).get0() ) {
+            sol::table node_ids = lua.create_table(link_ids.size(), 0);
+            for (const auto link : link_ids) {
+                node_ids.add(link.node_id);
+            }
+            neighbors.set(node_id, node_ids);
+        }
+        return neighbors;
+    }
+
+    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+        sol::table neighbors = lua.create_table(0, links.size());
+        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links, direction, rel_types).get0() ) {
+            sol::table node_ids = lua.create_table(link_ids.size(), 0);
+            for (const auto link : link_ids) {
+                node_ids.add(link.node_id);
+            }
+            neighbors.set(node_id, node_ids);
+        }
+        return neighbors;
+    }
+
 }

@@ -84,6 +84,21 @@ namespace ragedb {
         }
         count++;
       }
+      return count;
+    }
+    if (Properties::isIntegerProperty(value)) {
+        const double typedValue = static_cast<double>(get<int64_t>(value));
+        const roaring::Roaring64Map blank = getBlanks(type_id, property);
+        for(auto id : ids) {
+            // If the node or property has been deleted, ignore it
+            if (blank.contains(Shard::externalToInternal(id))) {
+                continue;
+            }
+            if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                continue;
+            }
+            count++;
+        }
     }
     return count;
   }
@@ -333,6 +348,26 @@ namespace ragedb {
         }
         current++;
       }
+      return ids;
+    }
+    if (Properties::isIntegerProperty(value)) {
+        const double typedValue = static_cast<double>(get<int64_t>(value));
+        for (auto id : list) {
+            // If we reached our limit, return
+            if (current > (skip + limit)) {
+                return ids;
+            }
+
+            if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                continue;
+            }
+            // If it is true add it if we are over the skip, otherwise ignore it
+            if (current > skip) {
+                ids.emplace_back(id);
+            }
+            current++;
+        }
+        return ids;
     }
     return ids;
   }
@@ -599,7 +634,27 @@ namespace ragedb {
         }
         current++;
       }
+      return nodes;
     }
+    if (Properties::isIntegerProperty(value)) {
+        const double typedValue = static_cast<double>(get<int64_t>(value));
+        for (auto id : list) {
+            // If we reached our limit, return
+            if (current > (skip + limit)) {
+                return nodes;
+            }
+
+            if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                continue;
+            }
+            // If it is true add it if we are over the skip, otherwise ignore it
+            if (current > skip) {
+                nodes.emplace_back(getNode(id));
+            }
+            current++;
+        }
+    }
+
     return nodes;
   }
 
@@ -760,6 +815,290 @@ namespace ragedb {
       default:
         return std::vector<Node>();
     }
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterNullNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      uint64_t current = 1;
+      for (auto id : list) {
+          if (current > (skip + limit)) {
+              break;
+          }
+
+          if (properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
+              if (current++ > skip ) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterNotNullNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      uint64_t current = 1;
+      for (auto id : list) {
+          if (current > (skip + limit)) {
+              break;
+          }
+
+          if (!properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
+              if (current++ > skip ) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterBooleanNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isBooleanProperty(value)) {
+          const bool typedValue = get<bool>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+              if (!Expression::Evaluate<bool>(operation, properties[type_id].getBooleanProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterIntegerNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isIntegerProperty(value)) {
+          const int64_t typedValue = get<int64_t>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+
+              if (!Expression::Evaluate<int64_t>(operation, properties[type_id].getIntegerProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterDoubleNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isDoubleProperty(value)) {
+          const double typedValue = get<double>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+
+              if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+          return nodes;
+      }
+      if (Properties::isIntegerProperty(value)) {
+          const double typedValue = static_cast<double>(get<int64_t>(value));
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+
+              if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterStringNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isStringProperty(value)) {
+          const std::string typedValue = get<std::string>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+
+              if (!Expression::Evaluate<std::string>(operation, properties[type_id].getStringProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterBooleanListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isBooleanListProperty(value)) {
+          const std::vector<bool> typedValue = get<std::vector<bool>>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+              if (!Expression::Evaluate<std::vector<bool>>(operation, properties[type_id].getListOfBooleanProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterIntegerListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isBooleanListProperty(value)) {
+          const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+              if (!Expression::Evaluate<std::vector<int64_t>>(operation, properties[type_id].getListOfIntegerProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterDoubleListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isBooleanListProperty(value)) {
+          const std::vector<double> typedValue = get<std::vector<double>>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+              if (!Expression::Evaluate<std::vector<double>>(operation, properties[type_id].getListOfDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterStringListNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+      std::vector<std::map<std::string, property_type_t>> nodes;
+      int current = 1;
+      if (Properties::isBooleanListProperty(value)) {
+          const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
+          for (auto id : list) {
+              // If we reached our limit, return
+              if (current > (skip + limit)) {
+                  return nodes;
+              }
+              if (!Expression::Evaluate<std::vector<std::string>>(operation, properties[type_id].getListOfStringProperty(property,  Shard::externalToInternal(id)), typedValue)) {
+                  continue;
+              }
+              // If it is true add it if we are over the skip, otherwise ignore it
+              if (current > skip) {
+                  nodes.emplace_back(getNodeProperties(id));
+              }
+              current++;
+          }
+      }
+      return nodes;
+  }
+
+  std::vector<std::map<std::string, property_type_t>> NodeTypes::filterNodeProperties(std::vector<uint64_t> unfiltered, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+
+      // If the type is invalid, we can't filter any so return an empty array
+      if (!ValidTypeId(type_id)) return std::vector<std::map<std::string, property_type_t>>();
+
+      // Deleted Nodes will never return from a filter
+      removeDeletedIds(type_id, unfiltered);
+
+      if(operation == Operation::IS_NULL) {
+          return filterNullNodeProperties(unfiltered, type_id, property, skip, limit);
+      }
+
+      if(operation == Operation::NOT_IS_NULL) {
+          return filterNotNullNodeProperties(unfiltered, type_id, property, skip, limit);
+      }
+
+      const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
+      switch (property_type_id) {
+      case Properties::boolean_type:
+          return filterBooleanNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::integer_type:
+          return filterIntegerNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::double_type:
+          return filterDoubleNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::date_type:
+          return filterDoubleNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::string_type:
+          return filterStringNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::boolean_list_type:
+          return filterBooleanListNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::integer_list_type:
+          return filterIntegerListNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::double_list_type:
+          return filterDoubleListNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::date_list_type:
+          return filterDoubleListNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      case Properties::string_list_type:
+          return filterStringListNodeProperties(unfiltered, type_id, property, operation, value, skip, limit);
+      default:
+          return std::vector<std::map<std::string, property_type_t>>();
+      }
   }
 
 }
