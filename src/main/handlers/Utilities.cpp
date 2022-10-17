@@ -173,7 +173,27 @@ void Utilities::convert_property_to_json(std::unique_ptr<seastar::httpd::reply> 
       rep->write_body("json", seastar::json::stream_object(get<std::vector<std::string>>(property)));
       break;
   }
+}
 
+double Utilities::convert_parameter_to_double(const seastar::sstring &parameter, const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep) {
+    if (!req->param.exists(parameter)) {
+        rep->write_body("json", seastar::json::stream_object("Invalid parameter: " + parameter));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
+    }
+
+    double d;
+
+    try {
+        d = std::stod(req->param[parameter]);
+    } catch (const std::invalid_argument&) {
+        rep->write_body("json", seastar::json::stream_object("Invalid parameter value: " + parameter + " " + req->param[parameter]));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
+        throw;
+    } catch (const std::out_of_range&) {
+        rep->write_body("json", seastar::json::stream_object("Parameter out of range for a double: " + parameter + " " + req->param[parameter]));
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
+    }
+    return d;
 }
 
 std::vector<simdjson::dom::parser> Utilities::parsers;

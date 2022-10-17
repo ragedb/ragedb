@@ -57,6 +57,7 @@ public:
     static bool validate_combination(const ragedb::Operation& operation, const ragedb::property_type_t &property);
     static bool validate_allowed_data_type(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
     static void convert_property_to_json(std::unique_ptr<seastar::httpd::reply> &rep, const ragedb::property_type_t &property);
+    static double convert_parameter_to_double(const seastar::sstring& parameter, const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
 
 };
 

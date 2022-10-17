@@ -122,7 +122,7 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Connected.cpp src/main/handlers/Connected.h
         src/main/handlers/Management.cpp src/main/handlers/Management.h
         src/main/Database.cpp src/main/Database.h
-        src/main/Databases.cpp src/main/Databases.h)
+        src/main/Databases.cpp src/main/Databases.h src/main/handlers/ldbc/LDBC.cpp src/main/handlers/ldbc/LDBC.h)
 
 target_link_libraries(
         Graph
