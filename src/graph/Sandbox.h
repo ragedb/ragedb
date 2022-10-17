@@ -57,13 +57,14 @@ namespace ragedb {
 
 
     inline static const std::vector<std::string> ALLOWED_GRAPH_OBJECTS = {
+      "Date",
       "Direction",
       "Link",
       "Node",
       "Operation",
       "Relationship",
       "Roar",
-      "Date"
+      "Sort"
     };
 
 

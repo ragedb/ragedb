@@ -45,6 +45,12 @@ namespace ragedb {
           "OUT", Direction::OUT
         );
 
+        lua.new_enum("Sort",
+          "NONE", Sort::NONE,
+          "ASC", Sort::ASC,
+          "DESC", Sort::DESC
+        );
+
         lua.new_enum("Operation",
           "EQ", Operation::EQ,              // A == B
           "NEQ", Operation::NEQ,             // A != B

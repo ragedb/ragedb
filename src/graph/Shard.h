@@ -42,6 +42,7 @@
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
 #include "eve/CollectIndexes.h"
+#include "Sort.h"
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
 
@@ -403,8 +404,8 @@ namespace ragedb {
         std::vector<Node> FilterNodes(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         std::vector<Node> FilterNodes(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
 
-        std::vector<std::map<std::string, property_type_t>> FilterNodeProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        std::vector<std::map<std::string, property_type_t>> FilterNodeProperties(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        std::vector<std::map<std::string, property_type_t>> FilterNodeProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
+        std::vector<std::map<std::string, property_type_t>> FilterNodeProperties(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
 
         uint64_t FilterRelationshipCount(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
         uint64_t FilterRelationshipCount(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
@@ -725,8 +726,8 @@ namespace ragedb {
         seastar::future<std::vector<Node>> FilterNodesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<Node>> FilterNodesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         // TODO: Add ASC/DESC option to FilterNodeProperties to return in order by property
-        seastar::future<std::vector<std::map<std::string, property_type_t>>> FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
-        seastar::future<std::vector<std::map<std::string, property_type_t>>> FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);
+        seastar::future<std::vector<std::map<std::string, property_type_t>>> FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
+        seastar::future<std::vector<std::map<std::string, property_type_t>>> FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT, Sort sortOrder = Sort::NONE);
         seastar::future<uint64_t> FilterRelationshipCountPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
         seastar::future<uint64_t> FilterRelationshipCountPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value);
         seastar::future<std::vector<uint64_t>> FilterRelationshipIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip = SKIP, uint64_t limit = LIMIT);

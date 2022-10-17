@@ -121,41 +121,56 @@ namespace ragedb {
     });
   }
 
-  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sort) {
       uint16_t type_id = node_types.getTypeId(type);
-      return FilterNodePropertiesPeered(ids, type_id, property, operation, value, skip, limit);
+      return FilterNodePropertiesPeered(ids, type_id, property, operation, value, skip, limit, sort);
   }
 
-  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
       std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       uint64_t max = skip + limit;
 
       std::vector<seastar::future<std::vector<std::map<std::string, property_type_t>>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-          auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type_id, property, operation, value, max] (Shard &local_shard) {
-              return local_shard.FilterNodeProperties(grouped_node_ids, type_id, property, operation, value, 0, max);
+          auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type_id, property, operation, value, max, sortOrder] (Shard &local_shard) {
+              return local_shard.FilterNodeProperties(grouped_node_ids, type_id, property, operation, value, max, sortOrder);
           });
           futures.push_back(std::move(future));
       }
 
       auto p = make_shared(std::move(futures));
-      return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<std::map<std::string, property_type_t>>>& results) {
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, property, sortOrder] (const std::vector<std::vector<std::map<std::string, property_type_t>>>& results) {
           uint64_t current = 0;
 
           std::vector<std::map<std::string, property_type_t>> nodes;
-
           for (const auto& result : results) {
-              for(const auto& node : result) {
-                  if (++current > skip) {
-                      nodes.push_back(node);
-                  }
-                  if (current >= max) {
-                      return nodes;
-                  }
+              for (const auto &node : result) {
+                  nodes.push_back(node);
               }
           }
-          return nodes;
+          if(sortOrder == Sort::ASC) {
+              sort(nodes.begin(), nodes.end(), [&, property](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
+                  if (k1.at(property) > k2.at(property)) {
+                      return true;
+                  }
+                  return false;
+              });
+          }
+          if(sortOrder == Sort::DESC) {
+              sort(nodes.begin(), nodes.end(), [&, property](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
+                  if (k1.at(property) < k2.at(property)) {
+                      return true;
+                  }
+                  return false;
+              });
+          }
+
+          long limit_or_less = std::min(max, results.size());
+          long skip_or_less = std::min(skip, results.size());
+
+          std::vector<std::map<std::string, property_type_t>> smaller = {nodes.begin() + skip_or_less, nodes.begin() + limit_or_less};
+          return smaller;
       });
   }
 
