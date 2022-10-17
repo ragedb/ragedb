@@ -106,28 +106,10 @@ future<std::unique_ptr<seastar::httpd::reply>> LDBC::Query2Handler::handle([[may
                                         results.push_back(pq.top());
                                         pq.pop();
                                     }
+                                   // Need top reverse the order since we want dates descending
                                     std::vector<std::map<std::string, property_type_t>> smaller;
                                     smaller.reserve(results.size());
-                                    //auto twenty_or_less = std::min(20UL, results.size());
-                                    //smaller.reserve(twenty_or_less);
-                                    //std::vector<std::map<std::string, property_type_t>> smaller = {results.begin(),  results.begin() + static_cast<long>(twenty_or_less)};
-
                                     std::reverse_copy(results.begin(), results.end(), std::back_inserter(smaller));
-                                    // I don't need sort? Maybe
-
-//                                   sort(results.begin(), results.end(), [&](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
-//                                       if (k1.at("message.creationDate") > k2.at("message.creationDate")) {
-//                                           return true;
-//                                       }
-//                                       if (k1.at("message.creationDate") == k2.at("message.creationDate")) {
-//                                           return k1.at("message.id") < k2.at("message.id");
-//                                       }
-//                                       return false;
-//                                   });
-
-                                   // Take top 20 - TODO use a priority queue
-                                   //auto twenty_or_less = std::min(20UL, results.size());
-                                   //std::vector<std::map<std::string, property_type_t>> smaller = {results.begin(),  results.begin() + static_cast<long>(twenty_or_less)};
 
                                    // convert creation date, fill in friend properties
                                    for(auto& result : smaller) {
@@ -153,11 +135,10 @@ future<std::unique_ptr<seastar::httpd::reply>> LDBC::Query2Handler::handle([[may
                            });
 
                        });
-                      });
                 });
-
-          } else {
-              rep->set_status(seastar::httpd::reply::status_type::bad_request);
+          });
+    } else {
+        rep->set_status(seastar::httpd::reply::status_type::bad_request);
     }
 
     return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
