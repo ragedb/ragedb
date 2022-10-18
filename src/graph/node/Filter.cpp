@@ -892,26 +892,6 @@ namespace ragedb {
       return nodes;
   }
 
-   class PropertyAscendingComparator {
-      const std::string name;
-    public:
-
-      bool operator()(const std::map<std::string, property_type_t> &p1, const std::map<std::string, property_type_t> &p2) {
-          return p1.at(name) < p2.at(name);
-      }
-      explicit PropertyAscendingComparator(std::string name_) : name(name_){}
-  };
-
-  class PropertyDescendingComparator {
-      const std::string name;
-    public:
-
-      bool operator()(const std::map<std::string, property_type_t> &p1, const std::map<std::string, property_type_t> &p2) {
-          return p1.at(name) > p2.at(name);
-      }
-     explicit PropertyDescendingComparator(std::string name_) : name(name_){}
-  };
-
   std::vector<std::map<std::string, property_type_t>> NodeTypes::filterDoubleNodeProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t limit, Sort sortOrder) {
       std::vector<std::map<std::string, property_type_t>> nodes;
       int current = 1;
@@ -940,55 +920,7 @@ namespace ragedb {
               nodes.emplace_back(getNodeProperties(id));
               current++;
           }
-      } else if (sortOrder == Sort::ASC) {
-          auto comp = PropertyAscendingComparator(property);
-          std::priority_queue<std::map<std::string, property_type_t>, std::vector<std::map<std::string, property_type_t>>, decltype(comp)> pq(comp);
-
-          std::map<std::string, property_type_t> result;
-          std::vector<uint64_t> internal_ids;
-          internal_ids.reserve(list.size());
-          for (auto id : list) {
-              internal_ids.emplace_back(Shard::externalToInternal(id));
-          }
-          for (const auto& [key, property_value] : properties[type_id].getProperty(list, internal_ids, property) ) {
-              if (!Expression::Evaluate<double>(operation, get<double>(property_value), typedValue)) {
-                  continue;
-              }
-              if (pq.size() < limit) {
-                  pq.push(getNodeProperties(key));
-              } else {
-                  result.emplace(property, property_value);
-                  if (pq.top() > result) {
-                      pq.pop();
-                      pq.push(getNodeProperties(key));
-                  }
-              }
-          }
-
-//          for (auto id : list) {
-//              if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
-//                  continue;
-//              }
-//              if (pq.size() < limit) {
-//                  pq.push(getNodeProperties(id));
-//              } else {
-//                  result.emplace(property, getNodeProperty(id, property));
-//                  if (pq.top() > result) {
-//                      pq.pop();
-//                      pq.push(getNodeProperties(id));
-//                  }
-//              }
-//          }
-
-          nodes.reserve(pq.size());
-          while (!pq.empty()) {
-              nodes.push_back(pq.top());
-              pq.pop();
-          }
       } else {
-          auto comp = PropertyDescendingComparator(property);
-          std::priority_queue<std::map<std::string, property_type_t>, std::vector<std::map<std::string, property_type_t>>, decltype(comp)> pq(comp);
-          std::map<std::string, property_type_t> result;
           std::vector<uint64_t> internal_ids;
           internal_ids.reserve(list.size());
           for (auto id : list) {
@@ -997,66 +929,30 @@ namespace ragedb {
 
           // Declare vector of pairs
           std::vector<std::pair<uint64_t, double>> vec;
-          for (const auto& [key, property_value] : properties[type_id].getProperty(list, internal_ids, property) ) {
-              vec.emplace_back(key, get<double>(property_value));
-          }
-
-            auto comparator = [](const std::pair<uint64_t, double>& a, const std::pair<uint64_t, double>& b ) -> bool {
-                return a.second > b.second;
-            };
-
-          // Sort using comparator function
-          sort(vec.begin(), vec.end(), comparator);
-          for (const auto& [key, property_value] : vec) {
-              if (!Expression::Evaluate<double>(operation, property_value, typedValue)) {
-                  continue;
+          for (const auto &[key, property_value] : properties[type_id].getProperty(list, internal_ids, property)) {
+              if (Expression::Evaluate<double>(operation, get<double>(property_value), typedValue)) {
+                  vec.emplace_back(key, get<double>(property_value));
               }
-            if (nodes.size() < limit) {
-                nodes.push_back(getNodeProperties(key));
-            } else {
-                return nodes;
-            }
           }
 
+          // Partial sort up to our limit
+          if (sortOrder == Sort::ASC) {
+              std::nth_element(vec.begin(), vec.begin() + limit, vec.end(), [](const std::pair<uint64_t, double> &a, const std::pair<uint64_t, double> &b) -> bool {
+                  return a.second < b.second;
+              });
+          } else {
+              std::nth_element(vec.begin(), vec.begin() + limit, vec.end(), [](const std::pair<uint64_t, double> &a, const std::pair<uint64_t, double> &b) -> bool {
+                  return a.second > b.second;
+              });
+          }
 
-//          for (const auto& [key, property_value] : properties[type_id].getProperty(list, internal_ids, property) ) {
-//              if (!Expression::Evaluate<double>(operation, get<double>(property_value), typedValue)) {
-//                  continue;
-//              }
-//              if (pq.size() < limit) {
-//                  pq.push(getNodeProperties(key));
-//              } else {
-//                  result.emplace(property, property_value);
-//                  if (pq.top() < result) {
-//                      pq.pop();
-//                      pq.push(getNodeProperties(key));
-//                  }
-//              }
-//          }
-
-
-//          for (auto id : list) {
-//              if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
-//                  continue;
-//              }
-//              if (pq.size() < limit) {
-//                  pq.push(getNodeProperties(id));
-//              } else {
-//                  result.emplace(property, getNodeProperty(id, property));
-//                  if (pq.top() < result) {
-//                      pq.pop();
-//                      pq.push(getNodeProperties(id));
-//                  }
-//              }
-//          }
-
-//          nodes.reserve(pq.size());
-//          while (!pq.empty()) {
-//              nodes.push_back(pq.top());
-//              pq.pop();
-//          }
+          for (const auto &[key, property_value] : vec) {
+              nodes.push_back(getNodeProperties(key));
+              if (current++ > limit) {
+                  return nodes;
+              }
+          }
       }
-
       return nodes;
   }
 
