@@ -927,25 +927,22 @@ namespace ragedb {
               internal_ids.emplace_back(Shard::externalToInternal(id));
           }
 
+          std::function<bool(property_type_t)> filter = [&](property_type_t property_value){ return Expression::Evaluate<double>(operation, get<double>(property_value), typedValue); };
+
           // Declare vector of pairs
-          std::vector<std::pair<uint64_t, double>> vec;
-          for (const auto &[key, property_value] : properties[type_id].getProperty(list, internal_ids, property)) {
-              if (Expression::Evaluate<double>(operation, get<double>(property_value), typedValue)) {
-                  vec.emplace_back(key, get<double>(property_value));
-              }
-          }
+          std::vector<std::pair<uint64_t, property_type_t>> vec = properties[type_id].getProperty(list, internal_ids, property, filter);
 
           // Partial sort up to our limit
           if (sortOrder == Sort::ASC) {
-              std::nth_element(vec.begin(), vec.begin() + limit, vec.end(), [](const std::pair<uint64_t, double> &a, const std::pair<uint64_t, double> &b) -> bool {
+              std::nth_element(vec.begin(), vec.begin() + limit, vec.end(), [](const std::pair<uint64_t, property_type_t> &a, const std::pair<uint64_t, property_type_t> &b) -> bool {
                   return a.second < b.second;
               });
           } else {
-              std::nth_element(vec.begin(), vec.begin() + limit, vec.end(), [](const std::pair<uint64_t, double> &a, const std::pair<uint64_t, double> &b) -> bool {
+              std::nth_element(vec.begin(), vec.begin() + limit, vec.end(), [](const std::pair<uint64_t, property_type_t> &a, const std::pair<uint64_t, property_type_t> &b) -> bool {
                   return a.second > b.second;
               });
           }
-
+          // Grab the properties up to the limit
           for (const auto &[key, property_value] : vec) {
               nodes.push_back(getNodeProperties(key));
               if (current++ > limit) {

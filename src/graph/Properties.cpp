@@ -423,6 +423,143 @@ namespace ragedb {
         return true;
     }
 
+    std::vector<std::pair<uint64_t, property_type_t>> Properties::getProperty(const std::vector<uint64_t> &external_ids, const std::vector<uint64_t> &internal_ids, const std::string &key, const std::function<bool(property_type_t)> filter) const {
+        std::vector<std::pair<uint64_t, property_type_t>> properties;
+        // Check if empty
+        if (external_ids.empty()) {
+            return properties;
+        }
+        auto type_id = getPropertyTypeId(key);
+        switch (type_id) {
+        case boolean_type: {
+            if (booleans.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = booleans.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case integer_type: {
+            if (integers.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = integers.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case double_type: {
+            if (doubles.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = doubles.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case date_type: {
+            if (doubles.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = doubles.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case string_type: {
+            if (strings.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = strings.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case boolean_list_type: {
+            if (booleans_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = booleans_list.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case integer_list_type: {
+            if (integers_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = integers_list.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case double_list_type: {
+            if (doubles_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = doubles_list.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case date_list_type: {
+            if (doubles_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = doubles_list.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        case string_list_type: {
+            if (strings_list.at(key).size() > internal_ids.back()) {
+                for (size_t i = 0; i < internal_ids.size(); i++) {
+                    auto property_value = strings_list.at(key)[internal_ids[i]];
+                    if(filter(property_value)) {
+                        properties.emplace_back(external_ids[i], property_value);
+                    }
+                }
+            }
+            break;
+        }
+        default: {
+
+        }
+        }
+
+        if (!deleted.at(key).isEmpty()) {
+            for (size_t i = 0; i < internal_ids.size(); i++) {
+                if (deleted.at(key).contains(internal_ids[i])) {
+                    properties.erase(std::remove_if(properties.begin(),
+                              properties.end(),
+                              [id = external_ids[i]](std::pair<uint64_t, property_type_t> x){ return x.first == id; }),
+                      properties.end());
+                }
+            }
+        }
+
+        return properties;
+    }
+
     std::map<uint64_t, property_type_t> Properties::getProperty(const std::vector<uint64_t> &external_ids, const std::vector<uint64_t> &internal_ids, const std::string &key) const {
         std::map<uint64_t, property_type_t> properties;
         // Check if empty
