@@ -121,9 +121,9 @@ namespace ragedb {
     });
   }
 
-  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sort) {
+  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
       uint16_t type_id = node_types.getTypeId(type);
-      return FilterNodePropertiesPeered(ids, type_id, property, operation, value, skip, limit, sort);
+      return FilterNodePropertiesPeered(ids, type_id, property, operation, value, skip, limit, sortOrder);
   }
 
   seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
@@ -141,7 +141,6 @@ namespace ragedb {
 
       auto p = make_shared(std::move(futures));
       return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, property, sortOrder] (const std::vector<std::vector<std::map<std::string, property_type_t>>>& results) {
-          uint64_t current = 0;
 
           std::vector<std::map<std::string, property_type_t>> nodes;
           for (const auto& result : results) {
@@ -149,27 +148,36 @@ namespace ragedb {
                   nodes.push_back(node);
               }
           }
+
+          // Skip more than we have
+          if (skip > nodes.size()) {
+              return std::vector<std::map<std::string, property_type_t>>();
+          }
+
+          // Sort the combined core results
           if(sortOrder == Sort::ASC) {
               sort(nodes.begin(), nodes.end(), [&, property](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
-                  if (k1.at(property) > k2.at(property)) {
-                      return true;
-                  }
-                  return false;
+                  return k1.at(property) < k2.at(property);
               });
           }
           if(sortOrder == Sort::DESC) {
               sort(nodes.begin(), nodes.end(), [&, property](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
-                  if (k1.at(property) < k2.at(property)) {
-                      return true;
-                  }
-                  return false;
+                  return k1.at(property) > k2.at(property);
               });
           }
 
-          long limit_or_less = std::min(max, results.size());
-          long skip_or_less = std::min(skip, results.size());
+          std::vector<std::map<std::string, property_type_t>> smaller;
+          uint64_t current = 1;
 
-          std::vector<std::map<std::string, property_type_t>> smaller = {nodes.begin() + skip_or_less, nodes.begin() + limit_or_less};
+          for (const auto &node : nodes) {
+              if (current++ > skip) {
+                  smaller.push_back(node);
+              }
+              if (current >= max) {
+                  return smaller;
+              }
+          }
+
           return smaller;
       });
   }
