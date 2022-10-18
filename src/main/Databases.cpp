@@ -64,7 +64,6 @@ seastar::future<bool> Databases::add(std::string key) {
     futures.emplace_back(server->set_routes([&database](routes &r) { database.lua.set_routes(r); }));
     futures.emplace_back(server->set_routes([&database](routes &r) { database.healthCheck.set_routes(r); }));
     futures.emplace_back(server->set_routes([&database](routes &r) { database.restore.set_routes(r); }));
-    futures.emplace_back(server->set_routes([&database](routes &r) { database.ldbc.set_routes(r); }));
     futures.emplace_back(databases.at(key).start());
   }
   auto p = make_shared(std::move(futures));

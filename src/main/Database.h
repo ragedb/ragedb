@@ -30,12 +30,11 @@
 #include "handlers/Connected.h"
 #include "handlers/Lua.h"
 #include "handlers/Restore.h"
-#include "handlers/ldbc/LDBC.h"
 
 class Database {
 public:
   explicit Database(std::string name): graph(name), healthCheck(graph), schema(graph), nodes(graph), relationships(graph), nodeProperties(graph), relationshipProperties(graph),
-                                        degrees(graph), neighbors(graph), connected(graph), lua(graph), restore(graph), ldbc(graph) {}
+                                        degrees(graph), neighbors(graph), connected(graph), lua(graph), restore(graph) {}
   ragedb::Graph graph;
   HealthCheck healthCheck;
   Schema schema;
@@ -48,7 +47,6 @@ public:
   Connected connected;
   Lua lua;
   Restore restore;
-  LDBC ldbc;
 
   seastar::future<> start();
 };
