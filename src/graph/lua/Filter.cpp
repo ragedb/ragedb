@@ -22,12 +22,12 @@ namespace ragedb {
     return FilterNodeCountPeered(ids, type, property, operation, SolObjectToProperty(object)).get0();
   }
 
-  sol::as_table_t<std::vector<uint64_t>> Shard::FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
-    return sol::as_table(FilterNodeIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
+  sol::as_table_t<std::vector<uint64_t>> Shard::FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
+    return sol::as_table(FilterNodeIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0());
   }
 
-  sol::as_table_t<std::vector<Node>> Shard::FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
-    return sol::as_table(FilterNodesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
+  sol::as_table_t<std::vector<Node>> Shard::FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
+    return sol::as_table(FilterNodesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0());
   }
 
   sol::table Shard::FilterNodePropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {

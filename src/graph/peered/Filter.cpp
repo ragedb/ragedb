@@ -20,11 +20,7 @@ namespace ragedb {
 
   seastar::future<uint64_t> Shard::FilterNodeCountPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value) {
     uint16_t type_id = node_types.getTypeId(type);
-    return FilterNodeCountPeered(ids, type_id, property, operation, value);
-  }
-
-  seastar::future<uint64_t> Shard::FilterNodeCountPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value) {
-      std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+    std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<uint64_t>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
@@ -45,20 +41,15 @@ namespace ragedb {
       });
   }
 
-  seastar::future<std::vector<uint64_t>> Shard::FilterNodeIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
-    uint16_t type_id = node_types.getTypeId(type);
-    return FilterNodeIdsPeered(ids, type_id, property, operation, value, skip, limit);
-  }
-
-  seastar::future<std::vector<uint64_t>> Shard::FilterNodeIdsPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  seastar::future<std::vector<uint64_t>> Shard::FilterNodeIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
     std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
     uint64_t max = skip + limit;
 
     std::vector<seastar::future<std::vector<uint64_t>>> futures;
     for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-      auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type_id, property, operation, value, max] (Shard &local_shard) {
-        return local_shard.FilterNodeIds(grouped_node_ids, type_id, property, operation, value, 0, max);
+      auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
+        return local_shard.FilterNodeIds(grouped_node_ids, type, property, operation, value, max, sortOrder);
       });
       futures.push_back(std::move(future));
     }
@@ -83,20 +74,15 @@ namespace ragedb {
     });
   }
 
-  seastar::future<std::vector<Node>> Shard::FilterNodesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
-    uint16_t type_id = node_types.getTypeId(type);
-    return FilterNodesPeered(ids, type_id, property, operation, value, skip, limit);
-  }
-
-  seastar::future<std::vector<Node>> Shard::FilterNodesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  seastar::future<std::vector<Node>> Shard::FilterNodesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
     std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
     uint64_t max = skip + limit;
 
     std::vector<seastar::future<std::vector<Node>>> futures;
     for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-      auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type_id, property, operation, value, max] (Shard &local_shard) {
-        return local_shard.FilterNodes(grouped_node_ids, type_id, property, operation, value, 0, max);
+      auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
+        return local_shard.FilterNodes(grouped_node_ids, type, property, operation, value, max, sortOrder);
       });
       futures.push_back(std::move(future));
     }
@@ -122,19 +108,14 @@ namespace ragedb {
   }
 
   seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
-      uint16_t type_id = node_types.getTypeId(type);
-      return FilterNodePropertiesPeered(ids, type_id, property, operation, value, skip, limit, sortOrder);
-  }
-
-  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterNodePropertiesPeered(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
       std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       uint64_t max = skip + limit;
 
       std::vector<seastar::future<std::vector<std::map<std::string, property_type_t>>>> futures;
       for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-          auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type_id, property, operation, value, max, sortOrder] (Shard &local_shard) {
-              return local_shard.FilterNodeProperties(grouped_node_ids, type_id, property, operation, value, max, sortOrder);
+          auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
+              return local_shard.FilterNodeProperties(grouped_node_ids, type, property, operation, value, max, sortOrder);
           });
           futures.push_back(std::move(future));
       }

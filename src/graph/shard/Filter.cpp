@@ -36,13 +36,9 @@ namespace ragedb {
     return relationship_types.filterCount(ids, type_id, property, operation, value);
   }
   
-  std::vector<uint64_t> Shard::FilterNodeIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> Shard::FilterNodeIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
     uint16_t type_id = node_types.getTypeId(type);
-    return FilterNodeIds(ids, type_id, property, operation, value, skip, limit);
-  }
-          
-  std::vector<uint64_t> Shard::FilterNodeIds(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
-    return node_types.filterIds(ids, type_id, property, operation, value, skip, limit);
+    return node_types.filterIds(ids, type_id, property, operation, value, limit, sort);
   }
   
   std::vector<uint64_t> Shard::FilterRelationshipIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
@@ -54,21 +50,13 @@ namespace ragedb {
     return relationship_types.filterIds(ids, type_id, property, operation, value, skip, limit);
   }
   
-  std::vector<Node> Shard::FilterNodes(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Node> Shard::FilterNodes(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
     uint16_t type_id = node_types.getTypeId(type);
-    return FilterNodes(ids, type_id, property, operation, value, skip, limit);
-  }
-  
-  std::vector<Node> Shard::FilterNodes(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
-    return node_types.filterNodes(ids, type_id, property, operation, value, skip, limit);
+    return node_types.filterNodes(ids, type_id, property, operation, value, limit, sort);
   }
 
   std::vector<std::map<std::string, property_type_t>> Shard::FilterNodeProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
       uint16_t type_id = node_types.getTypeId(type);
-      return FilterNodeProperties(ids, type_id, property, operation, value, limit, sort);
-  }
-
-  std::vector<std::map<std::string, property_type_t>> Shard::FilterNodeProperties(const std::vector<uint64_t>& ids, uint16_t type_id, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
       return node_types.filterNodeProperties(ids, type_id, property, operation, value, limit, sort);
   }
 
