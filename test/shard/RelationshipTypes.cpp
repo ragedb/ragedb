@@ -165,21 +165,6 @@ SCENARIO( "Shard can handle Relationship Types", "[relationship_types]" ) {
           shard.RelationshipAddSameShard(2, id2, id3, R"({ "name":"alex", "age":55, "weight":199, "active":false, "vector":[3,4] })");
 
           THEN("find the count of the relationships") {
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::EQ, 55) == 2);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::GT, 55) == 2);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::GTE, 55) == 4);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::LT, 55) == 0);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::LTE, 55) == 2);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::NEQ, 3) == 4);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::IS_NULL, 0) == 0);
-            REQUIRE(shard.FindRelationshipCount(2, "age", ragedb::Operation::NOT_IS_NULL, 0) == 4);
-            REQUIRE(shard.FindRelationshipCount(2, "name", ragedb::Operation::STARTS_WITH, "a") == 2);
-            REQUIRE(shard.FindRelationshipCount(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a") == 2);
-            REQUIRE(shard.FindRelationshipCount(2, "name", ragedb::Operation::ENDS_WITH, "x") == 4);
-            REQUIRE(shard.FindRelationshipCount(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x") == 0);
-            REQUIRE(shard.FindRelationshipCount(2, "name", ragedb::Operation::CONTAINS, "a") == 4);
-            REQUIRE(shard.FindRelationshipCount(2, "name", ragedb::Operation::NOT_CONTAINS, "l") == 2);
-
             REQUIRE(shard.FindRelationshipCount("HATES", "age", ragedb::Operation::EQ, 55) == 2);
             REQUIRE(shard.FindRelationshipCount("HATES", "age", ragedb::Operation::GT, 55) == 2);
             REQUIRE(shard.FindRelationshipCount("HATES", "age", ragedb::Operation::GTE, 55) == 4);
@@ -195,22 +180,7 @@ SCENARIO( "Shard can handle Relationship Types", "[relationship_types]" ) {
             REQUIRE(shard.FindRelationshipCount("HATES", "name", ragedb::Operation::CONTAINS, "a") == 4);
             REQUIRE(shard.FindRelationshipCount("HATES", "name", ragedb::Operation::NOT_CONTAINS, "l") == 2);
 
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::EQ, 55).size() == 2);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::GT, 55).size() == 2);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::GTE, 55).size() == 4);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::LT, 55).size() == 0);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::LTE, 55).size() == 2);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::NEQ, 3).size() == 4);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::IS_NULL, 0).size() == 0);
-            REQUIRE(shard.FindRelationshipIds(2, "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
-            REQUIRE(shard.FindRelationshipIds(2, "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
-            REQUIRE(shard.FindRelationshipIds(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
-            REQUIRE(shard.FindRelationshipIds(2, "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
-            REQUIRE(shard.FindRelationshipIds(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
-            REQUIRE(shard.FindRelationshipIds(2, "name", ragedb::Operation::CONTAINS, "a").size() == 4);
-            REQUIRE(shard.FindRelationshipIds(2, "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
-
-            REQUIRE(shard.FindRelationshipIds("HATES", "age", ragedb::Operation::EQ, 55).size() == 2);
+             REQUIRE(shard.FindRelationshipIds("HATES", "age", ragedb::Operation::EQ, 55).size() == 2);
             REQUIRE(shard.FindRelationshipIds("HATES", "age", ragedb::Operation::GT, 55).size() == 2);
             REQUIRE(shard.FindRelationshipIds("HATES", "age", ragedb::Operation::GTE, 55).size() == 4);
             REQUIRE(shard.FindRelationshipIds("HATES", "age", ragedb::Operation::LT, 55).size() == 0);
@@ -224,21 +194,6 @@ SCENARIO( "Shard can handle Relationship Types", "[relationship_types]" ) {
             REQUIRE(shard.FindRelationshipIds("HATES", "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
             REQUIRE(shard.FindRelationshipIds("HATES", "name", ragedb::Operation::CONTAINS, "a").size() == 4);
             REQUIRE(shard.FindRelationshipIds("HATES", "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
-
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::EQ, 55).size() == 2);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::GT, 55).size() == 2);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::GTE, 55).size() == 4);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::LT, 55).size() == 0);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::LTE, 55).size() == 2);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::NEQ, 3).size() == 4);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::IS_NULL, 0).size() == 0);
-            REQUIRE(shard.FindRelationships(2, "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
-            REQUIRE(shard.FindRelationships(2, "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
-            REQUIRE(shard.FindRelationships(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
-            REQUIRE(shard.FindRelationships(2, "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
-            REQUIRE(shard.FindRelationships(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
-            REQUIRE(shard.FindRelationships(2, "name", ragedb::Operation::CONTAINS, "a").size() == 4);
-            REQUIRE(shard.FindRelationships(2, "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
 
             REQUIRE(shard.FindRelationships("HATES", "age", ragedb::Operation::EQ, 55).size() == 2);
             REQUIRE(shard.FindRelationships("HATES", "age", ragedb::Operation::GT, 55).size() == 2);

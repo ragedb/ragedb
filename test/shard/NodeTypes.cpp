@@ -168,21 +168,6 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
             shard.NodeAdd(2, "four", R"({ "name":"alex", "age":55, "weight":199, "active":false, "vector":[3,4] })");
 
             THEN("find the count of the nodes") {
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::EQ, 55) == 2);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::GT, 55) == 2);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::GTE, 55) == 4);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::LT, 55) == 0);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::LTE, 55) == 2);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::NEQ, 3) == 4);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::IS_NULL, 0) == 0);
-                REQUIRE(shard.FindNodeCount(2, "age", ragedb::Operation::NOT_IS_NULL, 0) == 4);
-                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::STARTS_WITH, "a") == 2);
-                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a") == 2);
-                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::ENDS_WITH, "x") == 4);
-                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x") == 0);
-                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::CONTAINS, "a") == 4);
-                REQUIRE(shard.FindNodeCount(2, "name", ragedb::Operation::NOT_CONTAINS, "l") == 2);
-
                 REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::EQ, 55) == 2);
                 REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::GT, 55) == 2);
                 REQUIRE(shard.FindNodeCount("Person", "age", ragedb::Operation::GTE, 55) == 4);
@@ -198,22 +183,7 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
                 REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::CONTAINS, "a") == 4);
                 REQUIRE(shard.FindNodeCount("Person", "name", ragedb::Operation::NOT_CONTAINS, "l") == 2);
 
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::EQ, 55).size() == 2);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::GT, 55).size() == 2);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::GTE, 55).size() == 4);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::LT, 55).size() == 0);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::LTE, 55).size() == 2);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::NEQ, 3).size() == 4);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::IS_NULL, 0).size() == 0);
-                REQUIRE(shard.FindNodeIds(2, "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
-                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
-                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
-                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
-                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
-                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::CONTAINS, "a").size() == 4);
-                REQUIRE(shard.FindNodeIds(2, "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
-
-                REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::EQ, 55).size() == 2);
+                 REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::EQ, 55).size() == 2);
                 REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::GT, 55).size() == 2);
                 REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::GTE, 55).size() == 4);
                 REQUIRE(shard.FindNodeIds("Person", "age", ragedb::Operation::LT, 55).size() == 0);
@@ -227,21 +197,6 @@ SCENARIO( "Shard can handle Node Types", "[node_types]" ) {
                 REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
                 REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::CONTAINS, "a").size() == 4);
                 REQUIRE(shard.FindNodeIds("Person", "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
-
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::EQ, 55).size() == 2);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::GT, 55).size() == 2);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::GTE, 55).size() == 4);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::LT, 55).size() == 0);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::LTE, 55).size() == 2);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::NEQ, 3).size() == 4);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::IS_NULL, 0).size() == 0);
-                REQUIRE(shard.FindNodes(2, "age", ragedb::Operation::NOT_IS_NULL, 0).size() == 4);
-                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::STARTS_WITH, "a").size() == 2);
-                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::NOT_STARTS_WITH, "a").size() == 2);
-                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::ENDS_WITH, "x").size() == 4);
-                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::NOT_ENDS_WITH, "x").size() == 0);
-                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::CONTAINS, "a").size() == 4);
-                REQUIRE(shard.FindNodes(2, "name", ragedb::Operation::NOT_CONTAINS, "l").size() == 2);
 
                 REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::EQ, 55).size() == 2);
                 REQUIRE(shard.FindNodes("Person", "age", ragedb::Operation::GT, 55).size() == 2);
