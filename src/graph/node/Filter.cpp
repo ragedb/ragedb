@@ -302,6 +302,7 @@ namespace ragedb {
        }
        return ids;
    }
+   return ids;
   }
 
   std::vector<uint64_t> NodeTypes::filterBooleanIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t limit, Sort sortOrder) {

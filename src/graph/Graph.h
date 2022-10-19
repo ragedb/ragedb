@@ -21,9 +21,9 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <reckless/policy_log.hpp>
-#include <reckless/file_writer.hpp>
-#include <reckless/crash_handler.hpp>
+//#include <reckless/policy_log.hpp>
+//#include <reckless/file_writer.hpp>
+//#include <reckless/crash_handler.hpp>
 #include <seastar/core/sleep.hh>
 #include <seastar/core/seastar.hh>
 #include <seastar/core/coroutine.hh>
@@ -35,11 +35,11 @@
 
 #include "Shard.h"
 
-using log_t = reckless::policy_log<
-        reckless::indent<4>,       // 4 spaces of indent
-        ' ',                       // Field separator
-        reckless::timestamp_field  // Then timestamp field
->;
+//using log_t = reckless::policy_log<
+//        reckless::indent<4>,       // 4 spaces of indent
+//        ' ',                       // Field separator
+//        reckless::timestamp_field  // Then timestamp field
+//>;
 
 namespace ragedb {
 
@@ -47,12 +47,13 @@ namespace ragedb {
     private:
         std::string name;
         char log_path[260] = {0};
-        reckless::file_writer writer;
-        log_t r_logger;
+        //reckless::file_writer writer;
+        //log_t r_logger;
 
     public:
         seastar::sharded <Shard> shard;
-        explicit Graph(std::string _name) : name (std::move(_name)), writer(strcat(strncat(log_path, name.c_str(), name.size()), ".log")), r_logger(&writer) {};
+        //explicit Graph(std::string _name) : name (std::move(_name)), writer(strcat(strncat(log_path, name.c_str(), name.size()), ".log")), r_logger(&writer) {};
+        explicit Graph(std::string _name) : name (std::move(_name)){};
         std::string GetName() const;
         seastar::future<> Start();
         void StartLogging() const;

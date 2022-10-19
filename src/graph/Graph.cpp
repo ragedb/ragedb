@@ -40,15 +40,16 @@ namespace ragedb {
     }
 
     void Graph::StartLogging() const {
-        std::cout << "Logging to " << log_path <<  '\n';
-        std::filesystem::path from{log_path};
+        std::cout << "Logging disabled " << '\n';
+        //std::cout << "Logging to " << log_path <<  '\n';
+        //std::filesystem::path from{log_path};
 
         // If the log file exists, move it to restore
-        if (std::filesystem::exists(from)) {
-            std::filesystem::path to{GetName() + ".restore"};
-            copy_file(from, to, std::filesystem::copy_options::overwrite_existing);
-            std::filesystem::resize_file(from, 0);
-        }
+//        if (std::filesystem::exists(from)) {
+//            std::filesystem::path to{GetName() + ".restore"};
+//            copy_file(from, to, std::filesystem::copy_options::overwrite_existing);
+//            std::filesystem::resize_file(from, 0);
+//        }
         // TODO: crash handler expects to be called once, so we either uninstall and call for each or ???
         // reckless::install_crash_handler(&r_logger);
     }
@@ -80,11 +81,11 @@ namespace ragedb {
     constexpr char* with_body_format((char*)"%s&method=%s&body=%s");
 
     void Graph::Log(const seastar::sstring method, const seastar::sstring url) {
-        r_logger.write(format, std::string(url.c_str()), std::string(method.c_str()));
+        //r_logger.write(format, std::string(url.c_str()), std::string(method.c_str()));
     }
 
     void Graph::Log(const seastar::sstring method, const seastar::sstring url, const seastar::sstring body) {
-        r_logger.write(with_body_format, std::string(url.c_str()), std::string(method.c_str()), base64::encode(body));
+        //r_logger.write(with_body_format, std::string(url.c_str()), std::string(method.c_str()), base64::encode(body));
     }
 
 }

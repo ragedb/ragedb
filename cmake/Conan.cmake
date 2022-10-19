@@ -28,7 +28,7 @@ macro(run_conan)
     jfalcou-eve/v2022.03.0
     cppcodec/0.2
     cpr/1.9.0
-    reckless/3.0.3
+#    reckless/3.0.3  # temporarily removing logging until ARM issue is figured out
     benchmark/1.6.2
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
