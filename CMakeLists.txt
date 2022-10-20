@@ -132,7 +132,7 @@ target_link_libraries(
         CONAN_PKG::simdjson
         CONAN_PKG::roaring
         CONAN_PKG::sol2
-        CONAN_PKG::luajit
+#        CONAN_PKG::luajit
         CONAN_PKG::jfalcou-eve
         CONAN_PKG::cppcodec
         CONAN_PKG::cpr
