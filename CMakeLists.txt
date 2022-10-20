@@ -66,6 +66,9 @@ if(ENABLE_PCH)
     <utility>)
 endif()
 
+include(cmake/FindLuaJIT.cmake)
+find_package(Lua REQUIRED)
+
 # Set up some extra Conan dependencies based on our needs before loading Conan
 set(CONAN_EXTRA_REQUIRES "")
 set(CONAN_EXTRA_OPTIONS "")
