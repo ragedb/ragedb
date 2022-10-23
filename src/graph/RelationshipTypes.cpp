@@ -414,6 +414,10 @@ namespace ragedb {
         return counts;
     }
 
+    std::map<std::string, property_type_t> RelationshipTypes::getRelationshipProperties(uint64_t external_id) const {
+        return getRelationshipProperties(Shard::externalToTypeId(external_id), Shard::externalToInternal(external_id));
+    }
+
     std::map<std::string, property_type_t> RelationshipTypes::getRelationshipProperties(uint16_t type_id, uint64_t internal_id) const {
         if(ValidTypeId(type_id)) {
             return properties.at(type_id).getProperties(internal_id);

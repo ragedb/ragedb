@@ -41,36 +41,46 @@ namespace ragedb {
   }
 
   seastar::future<std::vector<uint64_t>> Shard::FilterNodeIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
-    std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
+      if (sortOrder == Sort::NONE) {
+          std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
-    uint64_t max = skip + limit;
+          uint64_t max = skip + limit;
 
-    std::vector<seastar::future<std::vector<uint64_t>>> futures;
-    for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-      auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
-        return local_shard.FilterNodeIds(grouped_node_ids, type, property, operation, value, max, sortOrder);
-      });
-      futures.push_back(std::move(future));
-    }
-
-    auto p = make_shared(std::move(futures));
-    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<uint64_t>>& results) {
-      uint64_t current = 0;
-
-      std::vector<uint64_t> node_ids;
-
-      for (const auto& result : results) {
-        for( auto id : result) {
-          if (++current > skip) {
-              node_ids.push_back(id);
+          std::vector<seastar::future<std::vector<uint64_t>>> futures;
+          for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+              auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder](Shard &local_shard) {
+                  return local_shard.FilterNodeIds(grouped_node_ids, type, property, operation, value, max, sortOrder);
+              });
+              futures.push_back(std::move(future));
           }
-          if (current >= max) {
-            return node_ids;
-          }
-        }
+
+          auto p = make_shared(std::move(futures));
+          return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max](const std::vector<std::vector<uint64_t>> &results) {
+              uint64_t current = 0;
+
+              std::vector<uint64_t> node_ids;
+
+              for (const auto &result : results) {
+                  for (auto id : result) {
+                      if (++current > skip) {
+                          node_ids.push_back(id);
+                      }
+                      if (current >= max) {
+                          return node_ids;
+                      }
+                  }
+              }
+              return node_ids;
+          });
+      } else {
+          return container().local().FilterNodesPeered(ids, type, property, operation, value, skip, limit, sortOrder).then([] (std::vector<Node> nodes) {
+              std::vector<uint64_t> ids;
+              for (const auto &node : nodes) {
+                  ids.push_back(node.getId());
+              }
+              return ids;
+          });
       }
-      return node_ids;
-    });
   }
 
   seastar::future<std::vector<Node>> Shard::FilterNodesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
@@ -87,22 +97,45 @@ namespace ragedb {
     }
 
     auto p = make_shared(std::move(futures));
-    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<Node>>& results) {
-      uint64_t current = 0;
+    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, property, sortOrder] (const std::vector<std::vector<Node>>& results) {
 
-      std::vector<Node> nodes;
-
-      for (const auto& result : results) {
-        for(const auto& node : result) {
-          if (++current > skip) {
-            nodes.push_back(node);
-          }
-          if (current >= max) {
-            return nodes;
-          }
+        std::vector<Node> nodes;
+        for (const auto& result : results) {
+            for (const auto &node : result) {
+                nodes.push_back(node);
+            }
         }
-      }
-      return nodes;
+
+        // Skip more than we have
+        if (skip > nodes.size()) {
+            return std::vector<Node>();
+        }
+
+        // Sort the combined core results
+        if(sortOrder == Sort::ASC) {
+            sort(nodes.begin(), nodes.end(), [&, property](const Node &k1, const Node &k2)-> bool {
+                return k1.getProperty(property) < k2.getProperty(property);
+            });
+        }
+        if(sortOrder == Sort::DESC) {
+            sort(nodes.begin(), nodes.end(), [&, property](const Node &k1, const Node &k2)-> bool {
+                return k1.getProperty(property) > k2.getProperty(property);
+            });
+        }
+
+        std::vector<Node> smaller;
+        uint64_t current = 1;
+
+        for (const auto &node : nodes) {
+            if (current++ > skip) {
+                smaller.push_back(node);
+            }
+            if (current >= max) {
+                return smaller;
+            }
+        }
+
+        return smaller;
     });
   }
 
@@ -184,69 +217,158 @@ namespace ragedb {
     });
   }
 
-  seastar::future<std::vector<uint64_t>> Shard::FilterRelationshipIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
-    std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids = PartitionIdsByShardId(ids);
+  seastar::future<std::vector<uint64_t>> Shard::FilterRelationshipIdsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
+      if (sortOrder == Sort::NONE) {
+          std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids = PartitionIdsByShardId(ids);
 
-    uint64_t max = skip + limit;
+          uint64_t max = skip + limit;
 
-    std::vector<seastar::future<std::vector<uint64_t>>> futures;
-    for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
-      auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max] (Shard &local_shard) {
-        return local_shard.FilterRelationshipIds(grouped_relationship_ids, type, property, operation, value, 0, max);
-      });
-      futures.push_back(std::move(future));
-    }
-
-    auto p = make_shared(std::move(futures));
-    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<uint64_t>>& results) {
-      uint64_t current = 0;
-
-      std::vector<uint64_t> relationship_ids;
-
-      for (const auto& result : results) {
-        for(auto id : result) {
-          if (++current > skip) {
-              relationship_ids.push_back(id);
+          std::vector<seastar::future<std::vector<uint64_t>>> futures;
+          for (auto const &[their_shard, grouped_relationship_ids] : sharded_relationships_ids) {
+              auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max, sortOrder](Shard &local_shard) {
+                  return local_shard.FilterRelationshipIds(grouped_relationship_ids, type, property, operation, value, max, sortOrder);
+              });
+              futures.push_back(std::move(future));
           }
-          if (current >= max) {
-            return relationship_ids;
-          }
-        }
+
+          auto p = make_shared(std::move(futures));
+          return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max](const std::vector<std::vector<uint64_t>> &results) {
+              uint64_t current = 0;
+
+              std::vector<uint64_t> relationship_ids;
+
+              for (const auto &result : results) {
+                  for (auto id : result) {
+                      if (++current > skip) {
+                          relationship_ids.push_back(id);
+                      }
+                      if (current >= max) {
+                          return relationship_ids;
+                      }
+                  }
+              }
+              return relationship_ids;
+          });
+      } else {
+          return container().local().FilterRelationshipsPeered(ids, type, property, operation, value, skip, limit, sortOrder).then([] (std::vector<Relationship> relationships) {
+              std::vector<uint64_t> ids;
+              for (const auto &relationship : relationships) {
+                  ids.push_back(relationship.getId());
+              }
+              return ids;
+          });
       }
-      return relationship_ids;
-    });
   }
 
-  seastar::future<std::vector<Relationship>> Shard::FilterRelationshipsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  seastar::future<std::vector<Relationship>> Shard::FilterRelationshipsPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
     std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids = PartitionIdsByShardId(ids);
 
     uint64_t max = skip + limit;
 
     std::vector<seastar::future<std::vector<Relationship>>> futures;
     for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
-      auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max] (Shard &local_shard) {
-        return local_shard.FilterRelationships(grouped_relationship_ids, type, property, operation, value, 0, max);
+      auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
+        return local_shard.FilterRelationships(grouped_relationship_ids, type, property, operation, value, max, sortOrder);
       });
       futures.push_back(std::move(future));
     }
 
     auto p = make_shared(std::move(futures));
-    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max] (const std::vector<std::vector<Relationship>>& results) {
-      uint64_t current = 0;
+    return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, property, sortOrder] (const std::vector<std::vector<Relationship>>& results) {
 
-      std::vector<Relationship> relationships;
-
-      for (const auto& result : results) {
-        for(const auto& relationship : result) {
-          if (++current > skip) {
-            relationships.push_back(relationship);
-          }
-          if (current >= max) {
-            return relationships;
-          }
+        std::vector<Relationship> relationships;
+        for (const auto& result : results) {
+            for (const auto &relationship : result) {
+                relationships.push_back(relationship);
+            }
         }
-      }
-      return relationships;
+
+        // Skip more than we have
+        if (skip > relationships.size()) {
+            return std::vector<Relationship>();
+        }
+
+        // Sort the combined core results
+        if(sortOrder == Sort::ASC) {
+            sort(relationships.begin(), relationships.end(), [&, property](const Relationship &k1, const Relationship &k2)-> bool {
+                return k1.getProperty(property) < k2.getProperty(property);
+            });
+        }
+        if(sortOrder == Sort::DESC) {
+            sort(relationships.begin(), relationships.end(), [&, property](const Relationship &k1, const Relationship &k2)-> bool {
+                return k1.getProperty(property) > k2.getProperty(property);
+            });
+        }
+
+        std::vector<Relationship> smaller;
+        uint64_t current = 1;
+
+        for (const auto &relationship : relationships) {
+            if (current++ > skip) {
+                smaller.push_back(relationship);
+            }
+            if (current >= max) {
+                return smaller;
+            }
+        }
+
+        return smaller;
     });
+  }
+
+  seastar::future<std::vector<std::map<std::string, property_type_t>>> Shard::FilterRelationshipPropertiesPeered(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit, Sort sortOrder) {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids = PartitionIdsByShardId(ids);
+
+      uint64_t max = skip + limit;
+
+      std::vector<seastar::future<std::vector<std::map<std::string, property_type_t>>>> futures;
+      for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
+          auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
+              return local_shard.FilterRelationshipProperties(grouped_relationship_ids, type, property, operation, value, max, sortOrder);
+          });
+          futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p, skip, max, property, sortOrder] (const std::vector<std::vector<std::map<std::string, property_type_t>>>& results) {
+
+          std::vector<std::map<std::string, property_type_t>> relationships;
+          for (const auto& result : results) {
+              for (const auto &relationship : result) {
+                  relationships.push_back(relationship);
+              }
+          }
+
+          // Skip more than we have
+          if (skip > relationships.size()) {
+              return std::vector<std::map<std::string, property_type_t>>();
+          }
+
+          // Sort the combined core results
+          if(sortOrder == Sort::ASC) {
+              sort(relationships.begin(), relationships.end(), [&, property](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
+                  return k1.at(property) < k2.at(property);
+              });
+          }
+          if(sortOrder == Sort::DESC) {
+              sort(relationships.begin(), relationships.end(), [&, property](const std::map<std::string, property_type_t> &k1, const std::map<std::string, property_type_t> &k2)-> bool {
+                  return k1.at(property) > k2.at(property);
+              });
+          }
+
+          std::vector<std::map<std::string, property_type_t>> smaller;
+          uint64_t current = 1;
+
+          for (const auto &relationship : relationships) {
+              if (current++ > skip) {
+                  smaller.push_back(relationship);
+              }
+              if (current >= max) {
+                  return smaller;
+              }
+          }
+
+          return smaller;
+      });
   }
 }

@@ -256,6 +256,7 @@ namespace ragedb {
       }
 
       if (properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
+          current++;
           ids.emplace_back(id);
       }
     }
@@ -360,7 +361,6 @@ namespace ragedb {
        }
    }
    return ids;
-
   }
   
   std::vector<uint64_t> NodeTypes::filterIntegerIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t limit, Sort sortOrder) {
@@ -418,7 +418,6 @@ namespace ragedb {
        }
    }
    return ids;
-
   }
   
   std::vector<uint64_t> NodeTypes::filterDoubleIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, Operation operation, const property_type_t& value, uint64_t limit, Sort sortOrder) {
@@ -673,6 +672,7 @@ namespace ragedb {
       }
 
       if (properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
+          current++;
           nodes.emplace_back(getNode(id));
       }
     }

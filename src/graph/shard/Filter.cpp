@@ -33,9 +33,9 @@ namespace ragedb {
     return node_types.filterIds(ids, type_id, property, operation, value, limit, sort);
   }
   
-  std::vector<uint64_t> Shard::FilterRelationshipIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<uint64_t> Shard::FilterRelationshipIds(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
     uint16_t type_id = relationship_types.getTypeId(type);
-    return relationship_types.filterIds(ids, type_id, property, operation, value, skip, limit);
+    return relationship_types.filterIds(ids, type_id, property, operation, value, limit, sort);
   }
   
   std::vector<Node> Shard::FilterNodes(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
@@ -48,8 +48,13 @@ namespace ragedb {
       return node_types.filterNodeProperties(ids, type_id, property, operation, value, limit, sort);
   }
 
-  std::vector<Relationship> Shard::FilterRelationships(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+  std::vector<Relationship> Shard::FilterRelationships(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
     uint16_t type_id = relationship_types.getTypeId(type);
-    return relationship_types.filterRelationships(ids, type_id, property, operation, value, skip, limit);
+    return relationship_types.filterRelationships(ids, type_id, property, operation, value, limit, sort);
+  }
+
+  std::vector<std::map<std::string, property_type_t>> Shard::FilterRelationshipProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit, Sort sort) {
+      uint16_t type_id = relationship_types.getTypeId(type);
+      return relationship_types.filterRelationshipProperties(ids, type_id, property, operation, value, limit, sort);
   }
 }

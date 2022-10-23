@@ -40,9 +40,9 @@ namespace ragedb {
 
   sol::table Shard::FilterNodePropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
       sol::table properties = lua.create_table(0, 0);
-      for (const auto& node : FilterNodePropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
+      for (const auto& nodes : FilterNodePropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
           sol::table node_properties = lua.create_table(0, 0);
-          for (const auto& [_key, value] : node) {
+          for (const auto& [_key, value] : nodes) {
               node_properties.set(_key, value);
           }
           properties.add(node_properties);
@@ -68,6 +68,18 @@ namespace ragedb {
           rels.add(rel);
       }
       return rels;
+  }
+
+  sol::table Shard::FilterRelationshipPropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
+      sol::table properties = lua.create_table(0, 0);
+      for (const auto& relationships : FilterRelationshipPropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
+          sol::table rel_properties = lua.create_table(0, 0);
+          for (const auto& [_key, value] : relationships) {
+              rel_properties.set(_key, value);
+          }
+          properties.add(rel_properties);
+      }
+      return properties;
   }
 
 }

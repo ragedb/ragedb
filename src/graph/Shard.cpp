@@ -500,6 +500,7 @@ namespace ragedb {
         lua.set_function("FilterRelationshipCount", &Shard::FilterRelationshipCountViaLua, this);
         lua.set_function("FilterRelationshipIds", &Shard::FilterRelationshipIdsViaLua, this);
         lua.set_function("FilterRelationships", &Shard::FilterRelationshipsViaLua, this);
+        lua.set_function("FilterRelationshipProperties", &Shard::FilterRelationshipPropertiesViaLua, this);
 
         // Intersect
         lua.set_function("IntersectIds", &Shard::IntersectIdsViaLua, this);
