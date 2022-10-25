@@ -463,7 +463,13 @@ namespace ragedb {
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_type); },
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_types); },
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, Direction::BOTH, rel_type); },
-           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, Direction::BOTH, rel_types); }
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, Direction::BOTH, rel_types); },
+           [this](Node node, Node node2) { return this->NodeGetConnectedViaLua(node.getId(), node2.getId()); },
+           [this](Node node, Node node2, Direction direction) { return this->NodeGetConnectedViaLua(node.getId(), node2.getId(), direction); },
+           [this](Node node, Node node2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(node.getId(), node2.getId(), direction, rel_type); },
+           [this](Node node, Node node2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(node.getId(), node2.getId(), direction, rel_types); },
+           [this](Node node, Node node2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(node.getId(), node2.getId(), Direction::BOTH, rel_type); },
+           [this](Node node, Node node2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(node.getId(), node2.getId(), Direction::BOTH, rel_types); }
            ));
 
         // All
