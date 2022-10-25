@@ -203,27 +203,33 @@ namespace ragedb {
            ));
         lua.set_function("NodeSetProperty", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& property, sol::object value) { return this->NodeSetPropertyViaLua(type, key, property, value); },
-           [this](uint64_t id, const std::string& property, sol::object value) { return this->NodeSetPropertyByIdViaLua(id, property, value); }
+           [this](uint64_t id, const std::string& property, sol::object value) { return this->NodeSetPropertyByIdViaLua(id, property, value); },
+           [this](Node node, const std::string& property, sol::object value) { return this->NodeSetPropertyByIdViaLua(node.getId(), property, value); }
            ));
         lua.set_function("NodeSetPropertiesFromJson", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& properties) { return this->NodeSetPropertiesFromJsonViaLua(type, key, properties); },
-           [this](uint64_t id, const std::string& properties) { return this->NodeSetPropertiesFromJsonByIdViaLua(id, properties); }
+           [this](uint64_t id, const std::string& properties) { return this->NodeSetPropertiesFromJsonByIdViaLua(id, properties); },
+           [this](Node node, const std::string& properties) { return this->NodeSetPropertiesFromJsonByIdViaLua(node.getId(), properties); }
            ));
         lua.set_function("NodeSetPropertyFromJson", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonViaLua(type, key, property, value); },
-           [this](uint64_t id, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonByIdViaLua(id, property, value); }
+           [this](uint64_t id, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonByIdViaLua(id, property, value); },
+           [this](Node node, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonByIdViaLua(node.getId(), property, value); }
            ));
         lua.set_function("NodeResetPropertiesFromJson", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& properties) { return this->NodeResetPropertiesFromJsonViaLua(type, key, properties); },
-           [this](uint64_t id, const std::string& properties) { return this->NodeResetPropertiesFromJsonByIdViaLua(id, properties); }
+           [this](uint64_t id, const std::string& properties) { return this->NodeResetPropertiesFromJsonByIdViaLua(id, properties); },
+           [this](Node node, const std::string& properties) { return this->NodeResetPropertiesFromJsonByIdViaLua(node.getId(), properties); }
            ));
         lua.set_function("NodeDeleteProperty", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& property) { return this->NodeDeletePropertyViaLua(type, key, property); },
-           [this](uint64_t id, const std::string& property) { return this->NodeDeletePropertyByIdViaLua(id, property); }
+           [this](uint64_t id, const std::string& property) { return this->NodeDeletePropertyByIdViaLua(id, property); },
+           [this](Node node, const std::string& property) { return this->NodeDeletePropertyByIdViaLua(node.getId(), property); }
            ));
         lua.set_function("NodeDeleteProperties", sol::overload(
            [this](const std::string& type, const std::string& key) { return this->NodeDeletePropertiesViaLua(type, key); },
-           [this](uint64_t id) { return this->NodeDeletePropertiesByIdViaLua(id); }
+           [this](uint64_t id) { return this->NodeDeletePropertiesByIdViaLua(id); },
+           [this](Node node) { return this->NodeDeletePropertiesByIdViaLua(node.getId()); }
            ));
 
         // Relationship
