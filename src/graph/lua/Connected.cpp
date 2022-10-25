@@ -24,24 +24,8 @@ namespace ragedb {
         return NodeGetConnectedPeered(type, key, type2, key2).get0();
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::NodeGetConnectedViaLua(const std::string &type, const std::string &key, const std::string &type2, const std::string &key2, const std::string &rel_type) {
-        return NodeGetConnectedPeered(type, key, type2, key2, rel_type).get0();
-    }
-
-    sol::as_table_t<std::vector<Relationship>> Shard::NodeGetConnectedViaLua(const std::string &type, const std::string &key, const std::string &type2, const std::string &key2, const std::vector<std::string> &rel_types) {
-        return NodeGetConnectedPeered(type, key, type2, key2, rel_types).get0();
-    }
-
     sol::as_table_t<std::vector<Relationship>> Shard::NodeGetConnectedViaLua(uint64_t id, uint64_t id2) {
         return NodeGetConnectedPeered(id, id2).get0();
-    }
-
-    sol::as_table_t<std::vector<Relationship>> Shard::NodeGetConnectedViaLua(uint64_t id, uint64_t id2, const std::string &rel_type) {
-        return NodeGetConnectedPeered(id, id2, rel_type).get0();
-    }
-
-    sol::as_table_t<std::vector<Relationship>> Shard::NodeGetConnectedViaLua(uint64_t id, uint64_t id2, const std::vector<std::string> &rel_types) {
-        return NodeGetConnectedPeered(id, id2, rel_types).get0();
     }
 
     sol::as_table_t<std::vector<Relationship>> Shard::NodeGetConnectedViaLua(const std::string &type, const std::string &key, const std::string &type2, const std::string &key2, Direction direction) {

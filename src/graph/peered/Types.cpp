@@ -62,14 +62,6 @@ namespace ragedb {
         return relationship_types.getTypes();
     }
 
-    std::string Shard::NodeTypeGetTypePeered(uint16_t type_id) const {
-        return node_types.getType(type_id);
-    }
-
-    uint16_t Shard::NodeTypeGetTypeIdPeered(const std::string &type) const {
-        return node_types.getTypeId(type);
-    }
-
     seastar::future<uint16_t> Shard::NodeTypeInsertPeered(const std::string &type) {
         uint16_t type_id = node_types.getTypeId(type);
         if (type_id == 0) {
@@ -105,14 +97,6 @@ namespace ragedb {
         }
 
         return seastar::make_ready_future<bool>(false);
-    }
-
-    std::string Shard::RelationshipTypeGetTypePeered(uint16_t type_id) const {
-        return relationship_types.getType(type_id);
-    }
-
-    uint16_t Shard::RelationshipTypeGetTypeIdPeered(const std::string &type) const {
-        return relationship_types.getTypeId(type);
     }
 
     seastar::future<uint16_t> Shard::RelationshipTypeInsertPeered(const std::string &type) {

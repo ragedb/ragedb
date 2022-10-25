@@ -456,14 +456,14 @@ namespace ragedb {
            [this](uint64_t id, uint64_t id2, Direction direction) { return this->NodeGetConnectedViaLua(id, id2, direction); },
            [this](uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, direction, rel_type); },
            [this](uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, direction, rel_types); },
-           [this](uint64_t id, uint64_t id2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, rel_type); },
-           [this](uint64_t id, uint64_t id2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, rel_types); },
+           [this](uint64_t id, uint64_t id2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(id, id2, Direction::BOTH, rel_type); },
+           [this](uint64_t id, uint64_t id2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(id, id2, Direction::BOTH, rel_types); },
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2) { return this->NodeGetConnectedViaLua(type, key, type2, key2); },
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction); },
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_type); },
            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, direction, rel_types); },
-           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, rel_type); },
-           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, rel_types); }
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type) { return this->NodeGetConnectedViaLua(type, key, type2, key2, Direction::BOTH, rel_type); },
+           [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string>& rel_types) { return this->NodeGetConnectedViaLua(type, key, type2, key2, Direction::BOTH, rel_types); }
            ));
 
         // All

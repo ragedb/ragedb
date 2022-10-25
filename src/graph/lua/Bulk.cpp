@@ -34,14 +34,6 @@ namespace ragedb {
       return sol::as_table(LinksGetLinksPeered(links, direction, rel_types).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
-      return sol::as_table(LinksGetLinksPeered(links, rel_type).get0());
-    }
-
-    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types) {
-      return sol::as_table(LinksGetLinksPeered(links, rel_types).get0());
-    }
-
     sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsViaLua(std::vector<Link> links) {
       return sol::as_table(LinksGetRelationshipsPeered(links).get0());
     }
@@ -58,16 +50,6 @@ namespace ragedb {
       return sol::as_table(LinksGetRelationshipsPeered(links, direction, rel_types).get0());
     }
 
-
-    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
-      return sol::as_table(LinksGetRelationshipsPeered(links, rel_type).get0());
-    }
-
-    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types) {
-      return sol::as_table(LinksGetRelationshipsPeered(links, rel_types).get0());
-    }
-
-
     sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsViaLua(std::vector<Link> links) {
       return sol::as_table(LinksGetNeighborsPeered(links).get0());
     }
@@ -83,15 +65,6 @@ namespace ragedb {
     sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       return sol::as_table(LinksGetNeighborsPeered(links, direction, rel_types).get0());
     }
-
-    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForTypeViaLua(std::vector<Link> links, const std::string& rel_type) {
-      return sol::as_table(LinksGetNeighborsPeered(links, rel_type).get0());
-    }
-
-    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types) {
-      return sol::as_table(LinksGetNeighborsPeered(links, rel_types).get0());
-    }
-
 
     sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links) {
         sol::table neighbors = lua.create_table(0, links.size());

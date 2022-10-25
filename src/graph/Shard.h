@@ -406,27 +406,21 @@ namespace ragedb {
 
         // Node Types
         uint16_t NodeTypesGetCountPeered() const;
-        seastar::future<uint64_t> NodeTypesGetCountPeered(uint16_t type_id);
         seastar::future<uint64_t> NodeTypesGetCountPeered(const std::string& type);
         std::set<std::string> NodeTypesGetPeered();
         std::map<std::string, std::string> NodeTypeGetPeered(const std::string& type);
 
         // Relationship Types
         uint16_t RelationshipTypesGetCountPeered() const ;
-        seastar::future<uint64_t> RelationshipTypesGetCountPeered(uint16_t type_id);
         seastar::future<uint64_t> RelationshipTypesGetCountPeered(const std::string& type);
         std::set<std::string> RelationshipTypesGetPeered();
         std::map<std::string, std::string> RelationshipTypeGetPeered(const std::string& type);
 
         // Node Type
-        std::string NodeTypeGetTypePeered(uint16_t type_id) const;
-        uint16_t NodeTypeGetTypeIdPeered(const std::string& type) const;
         seastar::future<uint16_t> NodeTypeInsertPeered(const std::string& type);
         seastar::future<bool> DeleteNodeTypePeered(const std::string& type);
 
         // Relationship Type
-        std::string RelationshipTypeGetTypePeered(uint16_t type_id) const;
-        uint16_t RelationshipTypeGetTypeIdPeered(const std::string& type) const;
         seastar::future<uint16_t> RelationshipTypeInsertPeered(const std::string& type);
         seastar::future<bool> DeleteRelationshipTypePeered(const std::string& type);
 
@@ -442,7 +436,6 @@ namespace ragedb {
         seastar::future<bool> NodeRemovePeered(uint64_t id);
         seastar::future<bool> NodeRemovePeeredIncoming(uint16_t node_shard_id, uint64_t external_id);
         seastar::future<bool> NodeRemovePeeredOutgoing(uint16_t node_shard_id, uint64_t external_id);
-        seastar::future<uint16_t> NodeGetTypeIdPeered(uint64_t id);
         seastar::future<std::string> NodeGetTypePeered(uint64_t id);
         seastar::future<std::string> NodeGetKeyPeered(uint64_t id);
 
@@ -453,8 +446,6 @@ namespace ragedb {
         seastar::future<std::map<Link, std::string>> NodesGetKeyPeered(const std::vector<Link>& links);
         seastar::future<std::map<uint64_t, std::string>> NodesGetTypePeered(const std::vector<uint64_t>&);
         seastar::future<std::map<Link, std::string>> NodesGetTypePeered(const std::vector<Link>& links);
-        seastar::future<std::map<uint64_t, uint16_t>> NodesGetTypeIdPeered(const std::vector<uint64_t>&);
-        seastar::future<std::map<Link, uint16_t>> NodesGetTypeIdPeered(const std::vector<Link>& links);
         seastar::future<std::map<uint64_t, property_type_t>> NodesGetPropertyPeered(const std::vector<uint64_t> &ids, const std::string& property);
         seastar::future<std::map<Link, property_type_t>> NodesGetPropertyPeered(const std::vector<Link>& links, const std::string& property);
         seastar::future<std::map<uint64_t, std::map<std::string, property_type_t>>> NodesGetPropertiesPeered(const std::vector<uint64_t>&);
@@ -652,17 +643,11 @@ namespace ragedb {
 
         // Connected
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string> &rel_types);
-
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, const std::string& rel_type);
-        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, const std::vector<std::string> &rel_types);
-
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
 
+        seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
@@ -961,27 +946,18 @@ namespace ragedb {
         sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction);
         sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
         sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Relationship>>> LinksGetRelationshipsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsViaLua(std::vector<Link> links);
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionViaLua(std::vector<Link> links, Direction direction);
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
         sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Node>>> LinksGetNeighborsForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         // Connected
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
-        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::string& rel_type);
-        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, const std::vector<std::string> &rel_types);
-        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2);
-        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, const std::string& rel_type);
-        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, const std::vector<std::string> &rel_types);
-
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2);
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction);
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);

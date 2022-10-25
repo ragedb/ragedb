@@ -41,58 +41,6 @@ namespace ragedb {
 
   }
 
-  seastar::future<std::vector<Relationship>> Shard::NodeGetConnectedPeered(const std::string& type1, const std::string& key1, const std::string& type2, const std::string& key2, const std::string& rel_type) {
-    uint16_t shard_id1 = CalculateShardId(type1, key1);
-    uint16_t shard_id2 = CalculateShardId(type2, key2);
-
-    // Shortcut if the shards are the same
-    if (shard_id1 == shard_id2) {
-
-      return container().invoke_on(shard_id1, [type1, key1, type2, key2, rel_type, this](Shard &local_shard) {
-        uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_type);
-        return RelationshipsGetPeered(links);
-      });
-
-    }
-    // Nodes are on different Shards, so get the node id first, then check for it
-    return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
-                        return local_shard.NodeGetID(type2, key2);
-                      }).then([this, shard_id1, type1, key1, rel_type](uint64_t node_id2) {
-        return container().invoke_on(shard_id1, [type1, key1, node_id2, rel_type, this](Shard &local_shard) {
-          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_type);
-          return RelationshipsGetPeered(links);
-        });
-      });
-
-  }
-
-  seastar::future<std::vector<Relationship>> Shard::NodeGetConnectedPeered(const std::string& type1, const std::string& key1, const std::string& type2, const std::string& key2, const std::vector<std::string> &rel_types) {
-    uint16_t shard_id1 = CalculateShardId(type1, key1);
-    uint16_t shard_id2 = CalculateShardId(type2, key2);
-
-    // Shortcut if the shards are the same
-    if (shard_id1 == shard_id2) {
-
-      return container().invoke_on(shard_id1, [type1, key1, type2, key2, rel_types, this](Shard &local_shard) {
-        uint64_t node_id2 = local_shard.NodeGetID(type2, key2);
-        std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_types);
-        return RelationshipsGetPeered(links);
-      });
-
-    }
-    // Nodes are on different Shards, so get the node id first, then check for it
-    return container().invoke_on(shard_id2, [type2, key2](Shard &local_shard) {
-                        return local_shard.NodeGetID(type2, key2);
-                      }).then([this, shard_id1, type1, key1, rel_types](uint64_t node_id2) {
-        return container().invoke_on(shard_id1, [type1, key1, node_id2, rel_types, this](Shard &local_shard) {
-          std::vector<Link> links = local_shard.NodeGetLinks(type1, key1, node_id2, Direction::BOTH, rel_types);
-          return RelationshipsGetPeered(links);
-        });
-      });
-
-  }
-
   seastar::future<std::vector<Relationship>> Shard::NodeGetConnectedPeered(const std::string& type1, const std::string& key1, const std::string& type2, const std::string& key2, Direction direction) {
     uint16_t shard_id1 = CalculateShardId(type1, key1);
     uint16_t shard_id2 = CalculateShardId(type2, key2);
@@ -176,26 +124,6 @@ namespace ragedb {
 
     return container().invoke_on(shard_id1, [id, id2, this](Shard &local_shard) {
       std::vector<Link> links = local_shard.NodeGetLinks(id, id2);
-      return RelationshipsGetPeered(links);
-    });
-
-  }
-
-  seastar::future<std::vector<Relationship>> Shard::NodeGetConnectedPeered(uint64_t id, uint64_t id2, const std::string& rel_type) {
-    uint16_t shard_id1 = CalculateShardId(id);
-
-    return container().invoke_on(shard_id1, [id, id2, rel_type, this](Shard &local_shard) {
-      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, Direction::BOTH, rel_type);
-      return RelationshipsGetPeered(links);
-    });
-
-  }
-
-  seastar::future<std::vector<Relationship>> Shard::NodeGetConnectedPeered(uint64_t id, uint64_t id2, const std::vector<std::string> &rel_types) {
-    uint16_t shard_id1 = CalculateShardId(id);
-
-    return container().invoke_on(shard_id1, [id, id2, rel_types, this](Shard &local_shard) {
-      std::vector<Link> links = local_shard.NodeGetLinks(id, id2, Direction::BOTH, rel_types);
       return RelationshipsGetPeered(links);
     });
 

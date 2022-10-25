@@ -219,11 +219,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<uint16_t> Shard::NodeGetTypeIdPeered(uint64_t id) {
-        return seastar::make_ready_future<uint16_t>(NodeGetTypeId(id));
-    }
-
-    seastar::future<std::string> Shard::NodeGetTypePeered(uint64_t id) {
+     seastar::future<std::string> Shard::NodeGetTypePeered(uint64_t id) {
         uint16_t node_shard_id = CalculateShardId(id);
 
         return container().invoke_on(node_shard_id, [id](Shard &local_shard) {

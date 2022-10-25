@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
                         std::cout << "Stopped RageDB Management" << std::endl;
                       }
                       // TODO: This is in the right place, but the install can only be done once or
-                      //  must be uninstalled and redone every time a graph a graph is created
+                      //  must be uninstalled and redone every time a graph is created
                       // reckless::uninstall_crash_handler();
                       return server->stop();
                     });
