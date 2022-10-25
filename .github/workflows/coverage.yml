@@ -159,7 +159,7 @@ jobs:
           sudo python3 setup.py install
           popd
           export COVERALLS_SERVICE_NAME="github-workflows"
-          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake --gcov /usr/bin/gcov-11 --gcov-options '\-lp' > /dev/null
+          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake -e eve -e luajit -e sol2 --gcov /usr/bin/gcov-11 --gcov-options '\-lp' > /dev/null
 
       - name: Run sonar-scanner
         env:
