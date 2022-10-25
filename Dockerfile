@@ -21,7 +21,6 @@ WORKDIR /data/sol2
 RUN conan create . 3.2.3-luajit@
 RUN git clone https://github.com/ragedb/eve-recipe.git /data/eve
 WORKDIR /data/eve
-RUN conan create . v2021.10.0@
 RUN conan create . v2022.03.0@
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
 RUN mkdir /data/rage/build
