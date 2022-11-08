@@ -84,7 +84,7 @@ namespace ragedb {
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
           [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
-        if (group != std::end(node_types.getOutgoingRelationships(type_id).at(internal_id))) {
+        if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
             for(Link link : group->links) {
                 sharded_relationships_ids.at(shard_id).emplace_back(link.rel_id);
             }
