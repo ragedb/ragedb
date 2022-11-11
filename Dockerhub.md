@@ -8,7 +8,7 @@
 
 # ARM64V8
 
-    docker build -t ragedb/ragedb:latest-arm64 --build-arg ARCH=arm64v8/ ./ARMDockerfile
+    docker build -t ragedb/ragedb:latest-arm64 --build-arg ARCH=arm64v8/ -f Dockerfile-arm64 ./ARMDockerfile
     docker push ragedb/ragedb:latest-arm64
 
 # Push to Dockerhub
