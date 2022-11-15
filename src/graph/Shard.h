@@ -18,6 +18,7 @@
 #define RAGEDB_SHARD_H
 
 #define SOL_ALL_SAFETIES_ON 1
+#define SOL_USE_INTEROP 1
 
 #include <algorithm>
 #include <coroutine>
@@ -917,20 +918,11 @@ namespace ragedb {
         sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdViaLua(uint64_t id, Direction direction, const std::string& rel_type);
         sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdViaLua(Node node);
-        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForTypeViaLua(Node node, const std::string& rel_type);
-        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForTypesViaLua(Node node, const std::vector<std::string> &rel_types);
-        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionViaLua(Node node, Direction direction);
-        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypeViaLua(Node node, Direction direction, const std::string& rel_type);
-        sol::as_table_t<std::vector<Node>> NodeGetNeighborsByIdForDirectionForTypesViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types);
-
         // Bulk
         sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksViaLua(std::vector<Link> links);
         sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionViaLua(std::vector<Link> links, Direction direction);
         sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type);
         sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypeViaLua(std::vector<Link> links, const std::string& rel_type);
-        sol::nested<std::map<Link, std::vector<Link>>> LinksGetLinksForTypesViaLua(std::vector<Link> links, const std::vector<std::string> &rel_types);
 
         sol::table LinksGetNeighborIdsViaLua(std::vector<Link> links);
         sol::table LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction);

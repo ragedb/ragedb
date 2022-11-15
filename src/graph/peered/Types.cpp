@@ -19,7 +19,7 @@
 namespace ragedb {
 
     uint16_t Shard::NodeTypesGetCountPeered() const {
-        return node_types.getSize();
+        return node_types.getSize() - 1; // Exclude type zero
     }
 
     seastar::future<uint64_t> Shard::NodeTypesGetCountPeered(const std::string &type) {
@@ -45,7 +45,7 @@ namespace ragedb {
     }
 
     uint16_t Shard::RelationshipTypesGetCountPeered() const {
-        return relationship_types.getSize();
+        return relationship_types.getSize() - 1; // Exclude type zero
     }
 
     seastar::future<uint64_t> Shard::RelationshipTypesGetCountPeered(const std::string &type) {

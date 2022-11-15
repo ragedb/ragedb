@@ -380,7 +380,7 @@ namespace ragedb {
     }
 
     uint16_t RelationshipTypes::getSize() const {
-        return id_to_type.size() - 1;
+        return id_to_type.size();
     }
 
     std::set<std::string> RelationshipTypes::getTypes() {

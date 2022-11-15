@@ -371,7 +371,7 @@ namespace ragedb {
     }
 
      uint16_t NodeTypes::getSize() const {
-        return id_to_type.size() - 1;
+        return id_to_type.size();
     }
 
     std::set<std::string> NodeTypes::getTypes() {

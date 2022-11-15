@@ -47,13 +47,17 @@ namespace ragedb {
         }
     
         uint64_t internal_id = externalToInternal(id);
-        uint16_t type_id = externalToTypeId(id);
+        uint16_t node_type_id = externalToTypeId(id);
         std::vector<uint64_t> ids;
-        auto out_ids = node_types.getOutgoingRelationships(type_id).at(internal_id).at(internal_id).node_ids();
-        std::ranges::copy(out_ids, std::back_inserter(ids));
+        for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            auto out_ids = group.node_ids();
+            std::ranges::copy(out_ids, std::back_inserter(ids));
+        }
 
-        auto in_ids = node_types.getIncomingRelationships(type_id).at(internal_id).at(internal_id).node_ids();
-        std::ranges::copy(in_ids, std::back_inserter(ids));
+        for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            auto in_ids = group.node_ids();
+            std::ranges::copy(in_ids, std::back_inserter(ids));
+        }
 
         return ids;
     }
@@ -69,13 +73,17 @@ namespace ragedb {
 
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::IN) {
-            auto out_ids = node_types.getOutgoingRelationships(node_type_id).at(internal_id).at(internal_id).node_ids();
-            std::ranges::copy(out_ids, std::back_inserter(ids));
+            for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                auto out_ids = group.node_ids();
+                std::ranges::copy(out_ids, std::back_inserter(ids));
+            }
         }
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::OUT) {
-            auto in_ids = node_types.getIncomingRelationships(node_type_id).at(internal_id).at(internal_id).node_ids();
-            std::ranges::copy(in_ids, std::back_inserter(ids));
+            for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                auto in_ids = group.node_ids();
+                std::ranges::copy(in_ids, std::back_inserter(ids));
+            }
         }
         return ids;
     }

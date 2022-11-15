@@ -193,13 +193,8 @@ namespace ragedb {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
-    std::vector<uint64_t> array;
-    array.reserve(map.cardinality());
-
-    map.toUint64Array(array.data());
-
-    for (auto element : array) {
-      links.push_back( Link({element,0}));
+    for (auto element : getIds()) {
+        links.emplace_back(element, 0);
     }
 
     return links;
@@ -213,13 +208,8 @@ namespace ragedb {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
-    std::vector<uint64_t> array;
-    array.reserve(map.cardinality());
-
-    map.toUint64Array(array.data());
-
-    for (auto element : array) {
-      links.push_back( Link({0,element}));
+    for (auto element : getIds()) {
+        links.emplace_back(0, element);
     }
 
     return links;
@@ -228,7 +218,5 @@ namespace ragedb {
   sol::as_table_t<std::vector<Link>> Roar::getRelationshipHalfLinksLua() {
     return sol::as_table(getRelationshipHalfLinks());
   }
-
-
 
   }
