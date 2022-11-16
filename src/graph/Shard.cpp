@@ -186,6 +186,13 @@ namespace ragedb {
 
         // Nodes
         lua.set_function("NodesGet", &Shard::NodesGetViaLua, this);
+        // Simplify number of Lua methods once Sol2 Exhaustive feature works.
+//        lua.set_function("NodesGet", sol::overload(
+//                                       [this](sol::exhaustive<std::vector<uint64_t>> ids) { return this->NodesGetViaLua(ids.value()); },
+//                                       [this](sol::exhaustive<std::vector<Link>> links) { return this->NodesGetByLinksViaLua(links.value()); }
+//                                       [this](sol::exhaustive_until<std::vector<uint64_t>, 1> ids) { return this->NodesGetViaLua(ids.value()); },
+//                                       [this](sol::exhaustive_until<std::vector<Link>, 1> links) { return this->NodesGetByLinksViaLua(links.value()); }
+//                                       ));
         lua.set_function("NodesGetKey", &Shard::NodesGetKeyViaLua, this);
         lua.set_function("NodesGetType", &Shard::NodesGetTypeViaLua, this);
         lua.set_function("NodesGetProperty", &Shard::NodesGetPropertyViaLua, this);
@@ -529,6 +536,9 @@ namespace ragedb {
         // Date
         lua.set_function("DateToISO", &Date::toISO);
         lua.set_function("DateToDouble", &Date::value);
+
+        // Load CSV
+        lua.set_function("LoadCSV", &Shard::LoadCSVViaLua, this);
 
 
         // Create a sanitized environment to restrict the user's Lua code

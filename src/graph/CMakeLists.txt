@@ -43,19 +43,20 @@ set(SOURCE_FILES
         lua/Find.cpp peered/Find.cpp shard/Find.cpp
         lua/Helpers.cpp peered/Helpers.cpp shard/Helpers.cpp
         lua/Intersect.cpp peered/Intersect.cpp # no shard
-        lua/Neighbors.cpp peered/Neighbors.cpp # no shard
+        lua/Neighbors.cpp peered/Neighbors.cpp shard/Neighbors.cpp
         lua/Node.cpp peered/Node.cpp shard/Node.cpp
         lua/Nodes.cpp peered/Nodes.cpp shard/Nodes.cpp
         lua/Relationship.cpp peered/Relationship.cpp shard/Relationship.cpp
         lua/Relationships.cpp peered/Relationships.cpp shard/Relationships.cpp
         lua/Traversing.cpp peered/Traversing.cpp shard/Traversing.cpp
         lua/Types.cpp peered/Types.cpp shard/Types.cpp
+        lua/LoadCSV.cpp peered/LoadCSV.cpp shard/LoadCSV.cpp
 
         node/Find.cpp relationship/Find.cpp
         node/Filter.cpp relationship/Filter.cpp
 
         shard/Ids.cpp
         peered/Restore.cpp
-        types/Date.cpp shard/NodeLinks.cpp shard/Neighbors.cpp)
+        types/Date.cpp shard/NodeLinks.cpp  )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

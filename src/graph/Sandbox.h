@@ -79,6 +79,8 @@ namespace ragedb {
     };
 
     inline static const std::vector<std::string> ALLOWED_GRAPH_WRITE_FUNCTIONS = {
+      "LoadCSV",
+
       "NodeAdd",
       "NodeDeleteProperties",
       "NodeDeleteProperty",

@@ -130,6 +130,7 @@ target_link_libraries(
         Seastar::seastar
         CONAN_PKG::tsl-sparse-map
         CONAN_PKG::simdjson
+        CONAN_PKG::rapidcsv
         CONAN_PKG::roaring
         CONAN_PKG::sol2
         CONAN_PKG::luajit

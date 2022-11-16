@@ -397,6 +397,8 @@ namespace ragedb {
         std::vector<Relationship> FilterRelationships(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
         std::vector<std::map<std::string, property_type_t>> FilterRelationshipProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
 
+        // Load CSV
+        uint64_t LoadCSVNodes(uint16_t type_id, const std::string& filename, const std::vector<size_t> rows);
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -695,6 +697,9 @@ namespace ragedb {
         seastar::future<std::vector<Node>> DifferenceNodesPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
         seastar::future<std::vector<Relationship>> DifferenceRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
 
+        // Load CSV
+        seastar::future<uint64_t> LoadCSVPeered(const std::string &type, const std::string& filename);
+
         // *****************************************************************************************************************************
         //                                                              Via Lua
         // *****************************************************************************************************************************
@@ -992,7 +997,12 @@ namespace ragedb {
         sol::as_table_t<std::vector<Relationship>> DifferenceRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
         uint64_t DifferenceIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
 
+        // Load CSV
+        uint64_t LoadCSVViaLua(const std::string &type, const std::string& filename);
+
         // Partition by Shards
+        std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename);
+
         std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionIdsByShardId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByShardId(const std::vector<Link> &links) const;

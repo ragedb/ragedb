@@ -14,9 +14,54 @@
  * limitations under the License.
  */
 
+#include <rapidcsv.h>
 #include "../Shard.h"
 
 namespace ragedb {
+
+    std::map<uint16_t, std::vector<size_t>> Shard::PartitionNodesInCSV(const std::string& type, const std::string& filename) {
+        std::map<uint16_t, std::vector<size_t>> sharded_nodes;
+        for (uint16_t i = 0; i < cpus; i++) {
+            sharded_nodes.try_emplace(i);
+        }
+
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(),
+          rapidcsv::ConverterParams(),
+          rapidcsv::LineReaderParams(false /* pSkipCommentLines */,
+            '#' /* pCommentPrefix */,
+            true /* pSkipEmptyLines */));
+
+        std::string key_column;
+        for (auto &name : doc.GetColumnNames()) {
+            if (name == "key" || name.ends_with(":key")) {
+                key_column = name;
+                break;
+            }
+        }
+
+
+        // If we found our key column
+        if (!key_column.empty()) {
+            // Distribute the rows over the shards
+            size_t row = 0;
+            for (auto &key : doc.GetColumn<std::string>(key_column)) {
+                sharded_nodes[CalculateShardId(type, key)].emplace_back(row++);
+            }
+        } else {
+            auto max_rows = doc.GetRowCount();
+            for (int row = 0; row < max_rows; row++) {
+                sharded_nodes[CalculateShardId(type, std::to_string(row))].emplace_back(row);
+            }
+        }
+
+        for (uint16_t i = 0; i < cpus; i++) {
+            if (sharded_nodes.at(i).empty()) {
+                sharded_nodes.erase(i);
+            }
+        }
+
+        return sharded_nodes;
+    }
 
     std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> Shard::PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const {
       std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> sharded_nodes;
