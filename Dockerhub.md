@@ -3,7 +3,7 @@
 
 # AMD64
 
-    docker build -t ragedb/ragedb:latest-amd64 --build-arg ARCH=amd64/ .
+    docker build -t ragedb/ragedb:latest-amd64 --build-arg .
     docker push ragedb/ragedb:latest-amd64
 
 # ARM64V8
@@ -13,5 +13,5 @@
 
 # Push to Dockerhub
 
-    docker manifest create ragedb/ragedb:latest --amend ragedb/ragedb:latest-amd64 --amend ragedb/ragedb:latest-arm64
+    docker manifest create ragedb/ragedb:latest  ragedb/ragedb:latest-amd64  ragedb/ragedb:latest-arm64
     docker manifest push ragedb/ragedb:latest
