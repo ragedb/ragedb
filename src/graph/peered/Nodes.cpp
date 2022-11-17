@@ -18,6 +18,28 @@
 
 namespace ragedb {
 
+    seastar::future<std::map<std::string, uint64_t>> Shard::NodesGetIdsPeered(const std::string& type, const std::vector<std::string>& keys) {
+        std::map<uint16_t, std::vector<std::string>> sharded_nodes_keys = PartitionNodesByNodeKeys(type, keys);
+        uint16_t type_id = node_types.getTypeId(type);
+        std::vector<seastar::future<std::map<std::string, uint64_t>>> futures;
+        for (auto const& [their_shard, grouped_node_keys] : sharded_nodes_keys ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_keys = grouped_node_keys, type_id] (Shard &local_shard) {
+                return local_shard.NodesGetIds(type_id, grouped_node_keys);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<std::string, uint64_t>>& results) {
+            std::map<std::string, uint64_t> combined;
+
+            for(const std::map<std::string, uint64_t>& sharded : results) {
+                combined.insert(std::begin(sharded), std::end(sharded));
+            }
+            return combined;
+        });
+    }
+
     seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<uint64_t> &ids) {
       std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 

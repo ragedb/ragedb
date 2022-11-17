@@ -186,6 +186,8 @@ namespace ragedb {
         std::map<uint64_t, std::map<std::string, property_type_t>> NodesGetProperties(const std::vector<uint64_t>&);
         std::map<Link, std::map<std::string, property_type_t>> NodesGetProperties(const std::vector<Link>& links);
 
+        std::map<std::string, uint64_t> NodesGetIds(uint16_t type_id, const std::vector<std::string>& keys);
+
         // Node Property
         property_type_t NodeGetProperty(uint64_t id, const std::string& property);
         bool NodeSetProperty(uint64_t id, const std::string& property, const property_type_t& value);
@@ -399,6 +401,7 @@ namespace ragedb {
 
         // Load CSV
         uint64_t LoadCSVNodes(uint16_t type_id, const std::string& filename, const std::vector<size_t> rows);
+        std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> LoadCSVRelationships(uint16_t type_id, const std::string& filename, const std::vector<size_t> rows, std::map<std::string, uint64_t> combined_to_keys_and_ids);
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -453,6 +456,8 @@ namespace ragedb {
         seastar::future<std::map<Link, property_type_t>> NodesGetPropertyPeered(const std::vector<Link>& links, const std::string& property);
         seastar::future<std::map<uint64_t, std::map<std::string, property_type_t>>> NodesGetPropertiesPeered(const std::vector<uint64_t>&);
         seastar::future<std::map<Link, std::map<std::string, property_type_t>>> NodesGetPropertiesPeered(const std::vector<Link>& links);
+
+        seastar::future<std::map<std::string, uint64_t>> NodesGetIdsPeered(const std::string& type, const std::vector<std::string>& keys);
 
         // Property Types
         seastar::future<uint8_t> NodePropertyTypeInsertPeered(uint16_t type_id, const std::string& key, const std::string& type);
@@ -999,10 +1004,13 @@ namespace ragedb {
 
         // Load CSV
         uint64_t LoadCSVViaLua(const std::string &type, const std::string& filename);
+        std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& filename);
 
-        // Partition by Shards
+          // Partition by Shards
         std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename);
+        std::map<uint16_t, std::vector<size_t>> PartitionRelationshipsInCSV(const std::string& filename);
 
+        std::map<uint16_t, std::vector<std::string>> PartitionNodesByNodeKeys(const std::string& type, const std::vector<std::string> &keys) const;
         std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionIdsByShardId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByShardId(const std::vector<Link> &links) const;
