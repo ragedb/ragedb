@@ -355,6 +355,7 @@ namespace ragedb {
         std::map<Link, std::vector<Node>> LinksGetNeighbors(const std::map<Link, std::vector<Link>>& links);
 
         // All
+        uint64_t AllNodesCount();
         std::map<uint16_t, uint64_t> NodeCounts();
         uint64_t NodeCount(const std::string& type) const;
         uint64_t NodeCount(uint16_t type_id) const;
@@ -375,9 +376,10 @@ namespace ragedb {
         std::vector<Relationship> AllRelationships(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
         std::vector<Relationship> AllRelationships(uint16_t type_id, uint64_t skip = SKIP, uint64_t limit = LIMIT) const;
 
-        std::map<uint16_t, uint64_t> AllRelationshipIdCounts() const;
-        uint64_t AllRelationshipIdCounts(const std::string& type) const;
-        uint64_t AllRelationshipIdCounts(uint16_t type_id) const;
+        uint64_t AllRelationshipsCount();
+        std::map<uint16_t, uint64_t> RelationshipCounts() const;
+        uint64_t RelationshipCount(const std::string& type) const;
+        uint64_t RelationshipCount(uint16_t type_id) const;
 
         // Find
         uint64_t FindNodeCount(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value);
@@ -662,6 +664,13 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> NodeGetConnectedPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
+        seastar::future<uint64_t> AllNodesCountPeered();
+        seastar::future<uint64_t> AllNodesCountPeered(const std::string& type);
+        seastar::future<std::map<std::string, uint64_t>> AllNodesCountsPeered();
+        seastar::future<uint64_t> AllRelationshipsCountPeered();
+        seastar::future<uint64_t> AllRelationshipsCountPeered(const std::string& type);
+        seastar::future<std::map<std::string, uint64_t>> AllRelationshipsCountsPeered();
+
         seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllNodeIdsPeered(const std::string& type, uint64_t skip = SKIP, uint64_t limit = LIMIT);
         seastar::future<std::vector<uint64_t>> AllRelationshipIdsPeered(uint64_t skip = SKIP, uint64_t limit = LIMIT);
@@ -962,7 +971,13 @@ namespace ragedb {
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
-        // TODO: AllNodesCount, AllNodesForTypeCount
+        uint64_t AllNodesCountViaLua();
+        uint64_t AllNodesCountViaLua(const std::string& type);
+        sol::table AllNodesCountsViaLua();
+        uint64_t AllRelationshipsCountViaLua();
+        uint64_t AllRelationshipsCountViaLua(const std::string& type);
+        sol::table AllRelationshipsCountsViaLua();
+
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);

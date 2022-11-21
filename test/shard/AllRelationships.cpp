@@ -38,7 +38,7 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
             shard.RelationshipAddEmptySameShard(1, "Node", "empty", "Node", "existing");
 
             THEN( "the shard should get zero relationship ids if the wrong type is asked for" ) {
-                REQUIRE(shard.AllRelationshipIdCounts("Wrong") == 0);
+                REQUIRE(shard.RelationshipCount("Wrong") == 0);
             }
         }
 
@@ -58,21 +58,21 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
             shard.RelationshipAddEmptySameShard(3, "Node", "empty", "Node", "existing");
 
             THEN( "the shard should get the right relationships counts" ) {
-                auto counts = shard.AllRelationshipIdCounts();
+                auto counts = shard.RelationshipCounts();
                 REQUIRE(counts.at(1) == 1);
                 REQUIRE(counts.at(2) == 1);
                 REQUIRE(counts.at(3) == 2);
 
-                REQUIRE(shard.AllRelationshipIdCounts(1) == 1);
-                REQUIRE(shard.AllRelationshipIdCounts(2) == 1);
-                REQUIRE(shard.AllRelationshipIdCounts(3) == 2);
+                REQUIRE(shard.RelationshipCount(1) == 1);
+                REQUIRE(shard.RelationshipCount(2) == 1);
+                REQUIRE(shard.RelationshipCount(3) == 2);
 
-                REQUIRE(shard.AllRelationshipIdCounts("KNOWS") == 1);
-                REQUIRE(shard.AllRelationshipIdCounts("LIKES") == 1);
-                REQUIRE(shard.AllRelationshipIdCounts("FRIENDS") == 2);
+                REQUIRE(shard.RelationshipCount("KNOWS") == 1);
+                REQUIRE(shard.RelationshipCount("LIKES") == 1);
+                REQUIRE(shard.RelationshipCount("FRIENDS") == 2);
 
-                REQUIRE(shard.AllRelationshipIdCounts(99) == 0);
-                REQUIRE(shard.AllRelationshipIdCounts("Wrong") == 0);
+                REQUIRE(shard.RelationshipCount(99) == 0);
+                REQUIRE(shard.RelationshipCount("Wrong") == 0);
             }
         }
 
@@ -84,7 +84,7 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
 
             THEN( "the shard should get all the relationships" ) {
                 uint64_t counter = 0;
-                for (auto [k,v] : shard.AllRelationshipIdCounts()) {
+                for (auto [k,v] : shard.RelationshipCounts()) {
                     counter += v;
                 }
                 REQUIRE(counter == 4);
@@ -145,10 +145,10 @@ SCENARIO( "Shard can handle All Relationships", "[relationship]" ) {
             shard.RelationshipAddEmptySameShard(3, "Node", "empty", "Node", "existing");
 
             THEN("the shard keeps the ids") {
-                REQUIRE(shard.AllRelationshipIdCounts("KNOWS") == 2);
-                REQUIRE(shard.AllRelationshipIdCounts("FRIENDS") == 3);
-                REQUIRE(shard.AllRelationshipIdCounts(1) == 2);
-                REQUIRE(shard.AllRelationshipIdCounts(3) == 3);
+                REQUIRE(shard.RelationshipCount("KNOWS") == 2);
+                REQUIRE(shard.RelationshipCount("FRIENDS") == 3);
+                REQUIRE(shard.RelationshipCount(1) == 2);
+                REQUIRE(shard.RelationshipCount(3) == 3);
             }
         }
 

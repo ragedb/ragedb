@@ -31,6 +31,14 @@ namespace ragedb {
         return node_types.getCount(type_id);
     }
 
+    uint64_t Shard::AllNodesCount() {
+        const auto counts = NodeCounts();
+        return std::accumulate(counts.begin(), counts.end(), uint64_t(0),
+          [](auto prev_sum, auto &entry) {
+              return prev_sum + entry.second;
+          });
+    }
+
     std::vector<uint64_t> Shard::AllNodeIds(uint64_t skip, uint64_t limit) const {
         return node_types.getIds(skip, limit);
     }
@@ -82,17 +90,24 @@ namespace ragedb {
         return relationship_types.getRelationships(type_id, skip, limit);
     }
 
-    std::map<uint16_t, uint64_t> Shard::AllRelationshipIdCounts() const {
+    std::map<uint16_t, uint64_t> Shard::RelationshipCounts() const {
         return relationship_types.getCounts();
     }
 
-    uint64_t Shard::AllRelationshipIdCounts(const std::string &type) const {
+    uint64_t Shard::RelationshipCount(const std::string &type) const {
         uint16_t type_id = relationship_types.getTypeId(type);
-        return AllRelationshipIdCounts(type_id);
+        return RelationshipCount(type_id);
     }
 
-    uint64_t Shard::AllRelationshipIdCounts(uint16_t type_id) const {
+    uint64_t Shard::RelationshipCount(uint16_t type_id) const {
         return relationship_types.getCount(type_id);
     }
 
+    uint64_t Shard::AllRelationshipsCount() {
+        const auto counts = RelationshipCounts();
+        return std::accumulate(counts.begin(), counts.end(), uint64_t(0),
+          [](auto prev_sum, auto &entry) {
+              return prev_sum + entry.second;
+          });
+    }
 }

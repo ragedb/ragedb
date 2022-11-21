@@ -171,7 +171,7 @@ namespace ragedb {
             '#' /* pCommentPrefix */,
             true /* pSkipEmptyLines */));
 
-        auto allowed_property_names_and_types = node_types.getProperties(type_id).getPropertyTypes();
+        const auto allowed_property_names_and_types = node_types.getProperties(type_id).getPropertyTypes();
         std::map<size_t, std::pair<std::string, uint8_t>> column_idx_property_name_and_type;
         size_t key_column_idx = -1;
         bool has_key_column = false;
@@ -203,7 +203,8 @@ namespace ragedb {
         }
 
         auto &properties = node_types.getProperties(type_id);
-        for (auto row_id : rows) {
+
+        for (const auto row_id : rows) {
             uint64_t internal_id = node_types.getCount(type_id);
             uint64_t external_id = 0;
 

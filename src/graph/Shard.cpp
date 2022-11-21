@@ -486,6 +486,16 @@ namespace ragedb {
            ));
 
         // All
+        lua.set_function("AllNodesCounts", &Shard::AllNodesCountsViaLua, this);
+        lua.set_function("AllNodesCount", sol::overload(
+             [this]() { return this->AllNodesCountViaLua(); },
+             [this](const std::string& type) { return this->AllNodesCountViaLua(type); }
+            ));
+        lua.set_function("AllRelationshipsCounts", &Shard::AllRelationshipsCountsViaLua, this);
+        lua.set_function("AllRelationshipsCount", sol::overload(
+            [this]() { return this->AllRelationshipsCountViaLua(); },
+            [this](const std::string& type) { return this->AllRelationshipsCountViaLua(type); }
+           ));
         lua.set_function("AllNodeIds", sol::overload(
             [this](sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) { return this->AllNodeIdsViaLua(skip, limit); },
             [this](const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) { return this->AllNodeIdsForTypeViaLua(type, skip, limit); }

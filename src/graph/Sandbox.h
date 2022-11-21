@@ -102,8 +102,12 @@ namespace ragedb {
 
     inline static const std::vector<std::string> ALLOWED_GRAPH_READ_FUNCTIONS = {
       "AllNodes",
+      "AllNodesCount",
+      "AllNodesCounts",
       "AllNodeIds",
       "AllRelationships",
+      "AllRelationshipsCount",
+      "AllRelationshipsCounts",
       "AllRelationshipIds",
 
       "DateToISO",

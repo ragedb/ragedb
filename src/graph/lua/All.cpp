@@ -19,6 +19,40 @@
 
 namespace ragedb {
 
+    uint64_t Shard::AllNodesCountViaLua() {
+        return AllNodesCountPeered().get0();
+    }
+
+    uint64_t Shard::AllNodesCountViaLua(const std::string& type) {
+        return AllNodesCountPeered(type).get0();
+    }
+
+    sol::table Shard::AllNodesCountsViaLua() {
+        sol::table counts = lua.create_table();
+        for (const auto& [type, count] : AllNodesCountsPeered().get0()) {
+            counts.set(type, count);
+        }
+
+        return counts;
+    }
+
+    uint64_t Shard::AllRelationshipsCountViaLua() {
+        return AllRelationshipsCountPeered().get0();
+    }
+
+    uint64_t Shard::AllRelationshipsCountViaLua(const std::string& type) {
+        return AllRelationshipsCountPeered(type).get0();
+    }
+
+    sol::table Shard::AllRelationshipsCountsViaLua() {
+        sol::table counts = lua.create_table();
+        for (const auto& [type, count] : AllRelationshipsCountsPeered().get0()) {
+            counts.set(type, count);
+        }
+
+        return counts;
+    }
+
     sol::as_table_t<std::vector<uint64_t>> Shard::AllNodeIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
         return sol::as_table(AllNodeIdsPeered(skip.value_or(SKIP), limit.value_or(LIMIT)).get0());
     }

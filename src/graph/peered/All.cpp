@@ -18,6 +18,120 @@
 
 namespace ragedb {
 
+    seastar::future<uint64_t> Shard::AllNodesCountPeered() {
+        std::vector<seastar::future<uint64_t>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.AllNodesCount();
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
+                return std::accumulate(results.begin(), results.end(), uint64_t(0));
+        });
+    }
+
+    seastar::future<uint64_t> Shard::AllNodesCountPeered(const std::string& type) {
+        std::vector<seastar::future<uint64_t>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [type] (Shard &local_shard) mutable {
+                return local_shard.NodeCount(type);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
+            return std::accumulate(results.begin(), results.end(), uint64_t(0));
+        });
+    }
+
+    seastar::future<std::map<std::string, uint64_t>> Shard::AllNodesCountsPeered() {
+        std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.NodeCounts();
+            });
+            futures.push_back(std::move(future));
+        }
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+            std::map<std::string, uint64_t> counts;
+
+            for(auto const& type : NodeTypesGet()) {
+                counts.emplace(type, uint64_t(0));
+            }
+
+            for (auto result : results) {
+                for (auto [type_id, count] : result) {
+                    auto current = counts[NodeTypeGetType(type_id)];
+                    counts[NodeTypeGetType(type_id)] = current + count;
+                }
+            }
+
+            return counts;
+        });
+    }
+
+    seastar::future<uint64_t> Shard::AllRelationshipsCountPeered() {
+        std::vector<seastar::future<uint64_t>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.AllRelationshipsCount();
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
+            return std::accumulate(results.begin(), results.end(), uint64_t(0));
+        });
+    }
+
+    seastar::future<uint64_t> Shard::AllRelationshipsCountPeered(const std::string& type) {
+        std::vector<seastar::future<uint64_t>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [type] (Shard &local_shard) mutable {
+                return local_shard.RelationshipCount(type);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
+            return std::accumulate(results.begin(), results.end(), uint64_t(0));
+        });
+    }
+
+    seastar::future<std::map<std::string, uint64_t>> Shard::AllRelationshipsCountsPeered() {
+        std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
+        for (int i=0; i<cpus; i++) {
+            auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
+                return local_shard.RelationshipCounts();
+            });
+            futures.push_back(std::move(future));
+        }
+        auto p = make_shared(std::move(futures));
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
+            std::map<std::string, uint64_t> counts;
+
+            for(auto const& type : RelationshipTypesGet()) {
+                counts.emplace(type, uint64_t(0));
+            }
+
+            for (auto result : results) {
+                for (auto [type_id, count] : result) {
+                    auto current = counts[RelationshipTypeGetType(type_id)];
+                    counts[RelationshipTypeGetType(type_id)] = current + count;
+                }
+            }
+
+            return counts;
+        });
+    }
+
     seastar::future<std::vector<uint64_t>> Shard::AllNodeIdsPeered(uint64_t skip, uint64_t limit) {
         uint64_t max = skip + limit;
 
@@ -272,7 +386,7 @@ namespace ragedb {
         std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
         for (int i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
-                return local_shard.AllRelationshipIdCounts();
+                return local_shard.RelationshipCounts();
             });
             futures.push_back(std::move(future));
         }
@@ -338,7 +452,7 @@ namespace ragedb {
         std::vector<seastar::future<uint64_t>> futures;
         for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [relationship_type_id] (Shard &local_shard) mutable {
-                return local_shard.AllRelationshipIdCounts(relationship_type_id);
+                return local_shard.RelationshipCount(relationship_type_id);
             });
             futures.push_back(std::move(future));
         }
@@ -397,7 +511,7 @@ namespace ragedb {
         std::vector<seastar::future<std::map<uint16_t, uint64_t>>> futures;
         for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [] (Shard &local_shard) mutable {
-                return local_shard.AllRelationshipIdCounts();
+                return local_shard.RelationshipCounts();
             });
             futures.push_back(std::move(future));
         }
@@ -463,7 +577,7 @@ namespace ragedb {
         std::vector<seastar::future<uint64_t>> futures;
         for (uint16_t i=0; i<cpus; i++) {
             auto future = container().invoke_on(i, [relationship_type_id] (Shard &local_shard) mutable {
-                return local_shard.AllRelationshipIdCounts(relationship_type_id);
+                return local_shard.RelationshipCount(relationship_type_id);
             });
             futures.push_back(std::move(future));
         }
