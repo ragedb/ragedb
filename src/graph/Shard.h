@@ -80,6 +80,7 @@ namespace ragedb {
         inline static const uint64_t LIMIT = 100;
         inline static const std::vector<std::string> READ_PATHS = {};   // No read path is valid for now
         inline static const std::vector<std::string> WRITE_PATHS = {};  // No write path is valid for now
+        inline static const char CSV_SEPARATOR = ',';
 
         static seastar::future<> stop();
         void Clear();
@@ -400,8 +401,8 @@ namespace ragedb {
         std::vector<std::map<std::string, property_type_t>> FilterRelationshipProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
 
         // Load CSV
-        uint64_t LoadCSVNodes(uint16_t type_id, const std::string& filename, const std::vector<size_t> rows);
-        std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> LoadCSVRelationships(uint16_t type_id, const std::string& filename, const std::vector<size_t> rows, std::map<std::string, uint64_t> combined_to_keys_and_ids);
+        uint64_t LoadCSVNodes(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows);
+        std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> LoadCSVRelationships(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows, std::map<std::string, uint64_t> combined_to_keys_and_ids);
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -703,7 +704,7 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> DifferenceRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
 
         // Load CSV
-        seastar::future<uint64_t> LoadCSVPeered(const std::string &type, const std::string& filename);
+        seastar::future<uint64_t> LoadCSVPeered(const std::string &type, const std::string& filename, const char csv_separator);
 
         // *****************************************************************************************************************************
         //                                                              Via Lua
@@ -961,6 +962,7 @@ namespace ragedb {
         sol::as_table_t<std::vector<Relationship>> NodeGetConnectedViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // All
+        // TODO: AllNodesCount, AllNodesForTypeCount
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<uint64_t>> AllNodeIdsForTypeViaLua(const std::string& type, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::as_table_t<std::vector<uint64_t>> AllRelationshipIdsViaLua(sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
@@ -1003,12 +1005,12 @@ namespace ragedb {
         uint64_t DifferenceIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
 
         // Load CSV
-        uint64_t LoadCSVViaLua(const std::string &type, const std::string& filename);
-        std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& filename);
+        uint64_t LoadCSVViaLua(const std::string &type, const std::string& filename, const sol::optional<char> = CSV_SEPARATOR);
+        std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& filename, const char csv_separator);
 
           // Partition by Shards
-        std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename);
-        std::map<uint16_t, std::vector<size_t>> PartitionRelationshipsInCSV(const std::string& filename);
+        std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename, const char csv_separator);
+        std::map<uint16_t, std::vector<size_t>> PartitionRelationshipsInCSV(const std::string& filename, const char csv_separator);
 
         std::map<uint16_t, std::vector<std::string>> PartitionNodesByNodeKeys(const std::string& type, const std::vector<std::string> &keys) const;
         std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const;

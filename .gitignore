@@ -1,3 +1,7 @@
+# RageDB Files
+rage.log
+rage.restore
+
 # Visual Studio
 .vscode/
 
@@ -20,6 +24,8 @@ cmake-build-debug-coverage/
 cmake-build-minsizerel/
 cmake-build-release/
 cmake-build-relwithdebinfo/
+cmake-build-release-coverage/
+test/cmake-build-release-coverage/
 
 ### C++ template
 # Prerequisites

@@ -57,10 +57,10 @@ namespace ragedb {
 
      */
 
-    std::pair<std::string, std::vector<std::string>> Shard::GetToKeysFromRelationshipsInCSV(const std::string& filename) {
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(),
+    std::pair<std::string, std::vector<std::string>> Shard::GetToKeysFromRelationshipsInCSV(const std::string& filename, const char csv_separator) {
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
           rapidcsv::ConverterParams(),
-          rapidcsv::LineReaderParams(false /* pSkipCommentLines */,
+          rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
             true /* pSkipEmptyLines */));
 
@@ -81,15 +81,15 @@ namespace ragedb {
         return std::make_pair("", std::vector<std::string>());
     }
 
-    std::map<uint16_t, std::vector<size_t>> Shard::PartitionRelationshipsInCSV(const std::string& filename) {
+    std::map<uint16_t, std::vector<size_t>> Shard::PartitionRelationshipsInCSV(const std::string& filename, const char csv_separator) {
         std::map<uint16_t, std::vector<size_t>> sharded_nodes;
         for (uint16_t i = 0; i < cpus; i++) {
             sharded_nodes.try_emplace(i);
         }
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
           rapidcsv::ConverterParams(),
-          rapidcsv::LineReaderParams(false /* pSkipCommentLines */,
+          rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
             true /* pSkipEmptyLines */));
 
@@ -121,15 +121,15 @@ namespace ragedb {
         return sharded_nodes;
     }
 
-    std::map<uint16_t, std::vector<size_t>> Shard::PartitionNodesInCSV(const std::string& type, const std::string& filename) {
+    std::map<uint16_t, std::vector<size_t>> Shard::PartitionNodesInCSV(const std::string& type, const std::string& filename, const char csv_separator) {
         std::map<uint16_t, std::vector<size_t>> sharded_nodes;
         for (uint16_t i = 0; i < cpus; i++) {
             sharded_nodes.try_emplace(i);
         }
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
           rapidcsv::ConverterParams(),
-          rapidcsv::LineReaderParams(false /* pSkipCommentLines */,
+          rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
             true /* pSkipEmptyLines */));
 
@@ -164,15 +164,15 @@ namespace ragedb {
         return sharded_nodes;
     }
 
-    seastar::future<uint64_t> Shard::LoadCSVPeered(const std::string &type, const std::string &filename) {
+    seastar::future<uint64_t> Shard::LoadCSVPeered(const std::string &type, const std::string &filename, const char csv_separator) {
         if (auto type_id = node_types.getTypeId(type); type_id > 0) {
             // We are importing Nodes
-            std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionNodesInCSV(type, filename);
+            std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionNodesInCSV(type, filename, csv_separator);
 
             std::vector<seastar::future<uint64_t>> futures;
             for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
-                auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename] (Shard &local_shard) {
-                    return local_shard.LoadCSVNodes(type_id, filename, grouped_nodes);
+                auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator] (Shard &local_shard) {
+                    return local_shard.LoadCSVNodes(type_id, filename, csv_separator, grouped_nodes);
                 });
                 futures.push_back(std::move(future));
             }
@@ -188,16 +188,16 @@ namespace ragedb {
             // We need to get the node ids of the TO nodes from their respective shard.
             // then create the relationships in the FROM nodes in their respective shard
             // then we have to add both to the incoming node id Link group.
-            std::pair<std::string, std::vector<std::string>> to_type_and_keys = GetToKeysFromRelationshipsInCSV(filename);
+            std::pair<std::string, std::vector<std::string>> to_type_and_keys = GetToKeysFromRelationshipsInCSV(filename, csv_separator);
 
-            return NodesGetIdsPeered(to_type_and_keys.first, to_type_and_keys.second).then([type_id, filename, this] (std::map<std::string, uint64_t> to_keys_and_ids) {
-                std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionRelationshipsInCSV(filename);
+            return NodesGetIdsPeered(to_type_and_keys.first, to_type_and_keys.second).then([type_id, filename, csv_separator, this] (std::map<std::string, uint64_t> to_keys_and_ids) {
+                std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionRelationshipsInCSV(filename, csv_separator);
 
                 std::vector<seastar::future<std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>>>> futures;
 
                 for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
-                    auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, to_keys_and_ids] (Shard &local_shard) {
-                        return local_shard.LoadCSVRelationships(type_id, filename, grouped_nodes, to_keys_and_ids );
+                    auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator, to_keys_and_ids] (Shard &local_shard) {
+                        return local_shard.LoadCSVRelationships(type_id, filename, csv_separator, grouped_nodes, to_keys_and_ids );
                     });
                     futures.push_back(std::move(future));
                 }
@@ -205,21 +205,38 @@ namespace ragedb {
                 auto p = make_shared(std::move(futures));
 
                 return seastar::when_all_succeed(p->begin(), p->end()).then([p, type_id, this] (const std::vector<std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>>>& results) {
-                    // TODO: add to other side
                     std::vector<seastar::future<uint64_t>> futures;
+
+                    // Combining results so on 56 cores we create 56 futures and not 3136 of them.
+                    std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> sharded_relationship_tuples;
+                    for (uint16_t i = 0; i < cpus; i++) {
+                        sharded_relationship_tuples.try_emplace(i);
+                    }
                     for (auto const& result : results) {
                         for (auto const& [their_shard, relationship_tuples] : result ) {
-                            auto future = container().invoke_on(their_shard, [type_id, relationship_tuples = relationship_tuples](Shard &local_shard) {
-                                uint64_t count = 0;
-                                for (const auto& tuple : relationship_tuples) {
-                                    local_shard.RelationshipAddToIncoming(type_id, std::get<0>(tuple), std::get<1>(tuple), std::get<2>(tuple));
-                                    count++;
-                                }
-                                return count;
-                            });
-                            futures.push_back(std::move(future));
+                            sharded_relationship_tuples.at(their_shard).insert(
+                              std::end(sharded_relationship_tuples.at(their_shard)),
+                              std::begin(relationship_tuples), std::end(relationship_tuples));
                         }
                     }
+                    for (uint16_t i = 0; i < cpus; i++) {
+                        if (sharded_relationship_tuples.at(i).empty()) {
+                            sharded_relationship_tuples.erase(i);
+                        }
+                    }
+
+                    for (auto const& [their_shard, relationship_tuples] : sharded_relationship_tuples ) {
+                        auto future = container().invoke_on(their_shard, [type_id, relationship_tuples = relationship_tuples](Shard &local_shard) {
+                            uint64_t count = 0;
+                            for (const auto& tuple : relationship_tuples) {
+                                local_shard.RelationshipAddToIncoming(type_id, std::get<0>(tuple), std::get<1>(tuple), std::get<2>(tuple));
+                                count++;
+                            }
+                            return count;
+                        });
+                        futures.push_back(std::move(future));
+                    }
+
                     auto p2 = make_shared(std::move(futures));
                     return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2] (const std::vector<uint64_t>& results) {
                         return std::reduce(results.begin(), results.end()); // sum the counts of the results

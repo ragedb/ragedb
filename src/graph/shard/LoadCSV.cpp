@@ -28,16 +28,15 @@ namespace ragedb {
     }
 
 
-    std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> Shard::LoadCSVRelationships(uint16_t rel_type_id, const std::string &filename, const std::vector<size_t> rows, std::map<std::string, uint64_t> to_keys_and_ids) {
-        // TODO: Add optional separator parameter
+    std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> Shard::LoadCSVRelationships(uint16_t rel_type_id, const std::string &filename, const char csv_separator, const std::vector<size_t> rows, std::map<std::string, uint64_t> to_keys_and_ids) {
         std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> sharded_relationships;
         for (uint16_t i = 0; i < cpus; i++) {
             sharded_relationships.try_emplace(i);
         }
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
           rapidcsv::ConverterParams(),
-          rapidcsv::LineReaderParams(false /* pSkipCommentLines */,
+          rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
             true /* pSkipEmptyLines */));
 
@@ -163,13 +162,12 @@ namespace ragedb {
         return sharded_relationships;
     }
 
-    uint64_t Shard::LoadCSVNodes(uint16_t type_id, const std::string &filename, const std::vector<size_t> rows) {
-        // TODO: Add optional separator parameter
+    uint64_t Shard::LoadCSVNodes(uint16_t type_id, const std::string &filename, const char csv_separator, const std::vector<size_t> rows) {
         uint64_t count = 0;
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
           rapidcsv::ConverterParams(),
-          rapidcsv::LineReaderParams(false /* pSkipCommentLines */,
+          rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
             true /* pSkipEmptyLines */));
 
