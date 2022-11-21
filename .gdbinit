@@ -1,0 +1,1 @@
+handle SIG35 nostop noprint
