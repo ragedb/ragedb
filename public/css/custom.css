@@ -91,8 +91,9 @@ button {
     border-radius: 6px; }
 
 body.dark button {
-
-    color: #1b191e; }
+    background-color: #1b191e;
+    border-color: #202020;
+    color: #ffffff; }
 
 body.dark .box {
     background-color: #1b191e;
