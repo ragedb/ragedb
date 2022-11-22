@@ -142,6 +142,11 @@ let permissions = "db";
 let radios = document.querySelectorAll('input[type=radio][name="permissions"]');
 radios.forEach(radio => radio.addEventListener('change', () => permissions = radio.value));
 
+const body = document.querySelector('body');
+let theme = "";
+let theme_radios = document.querySelectorAll('input[type=radio][name="theme"]');
+theme_radios.forEach(radio => radio.addEventListener('change', () => body.className = radio.value));
+
 
 async function sendscript() {
     let query = editor.getValue();

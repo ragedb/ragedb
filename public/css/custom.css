@@ -66,3 +66,39 @@ th.gridjs-th-sort .gridjs-th-content {
 th.gridjs-th .gridjs-th-content {
     text-overflow: unset;
 }
+
+body.dark {
+    background-color: #1b191e;
+    color: #ffffff; }
+
+body.dark .subtitle,
+body.dark .title {
+    color: #ffffff; }
+
+.section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center; }
+
+button {
+    cursor: pointer;
+    border: none;
+    color: #ffffff;
+    padding: .8rem;
+    background: #1b191e;
+    border-radius: 6px; }
+
+body.dark button {
+
+    color: #1b191e; }
+
+body.dark .box {
+    background-color: #1b191e;
+    color: #ffffff;
+}
+
+body.dark .navbar {
+    background-color: #1b191e;
+}
