@@ -1,22 +1,21 @@
-FROM ubuntu:22.04 as build
+FROM ${ARCH}ubuntu:22.04 as build
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update -y && apt-get -qq dist-upgrade -y
 RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
-    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl
+    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev
 RUN pip install --user conan
 RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
 WORKDIR /data/seastar
-RUN git checkout 16b0942bb84e2329866c99913f37525289cd47f5
-RUN ./configure.py --mode=release --prefix=/usr/local --c++-dialect=gnu++20 --without-tests --without-apps --without-demos
+RUN git checkout 925b4fb59488a8b855c91fb8864ceb8f72f47dd2
+RUN ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
 RUN git clone https://github.com/ragedb/luajit-recipe.git /data/luajit
 WORKDIR /data/luajit
 RUN conan create . 2.1.0-beta3-2022-7-22@
-ARG CACHEBUST=1
 RUN git clone https://github.com/ragedb/sol2-recipe.git /data/sol2
 WORKDIR /data/sol2
 RUN conan create . 3.2.3-luajit@
