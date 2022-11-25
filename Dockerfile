@@ -29,7 +29,7 @@ WORKDIR /data/rage/build
 RUN cmake .. -DCMAKE_BUILD_TYPE=Release
 RUN cmake --build . --target ragedb
 
-FROM ubuntu:22.04
+FROM ${ARCH}ubuntu:22.04
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update -y && apt-get -qq dist-upgrade -y
 COPY --from=build /lib/x86_64-linux-gnu/libboost_program_options.so.1.74.0 /lib/x86_64-linux-gnu/
@@ -39,6 +39,7 @@ COPY --from=build /lib/x86_64-linux-gnu/libfmt.so.8 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libgnutls.so.30 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libyaml-cpp.so.0.7 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libhwloc.so.15 /lib/x86_64-linux-gnu/
+COPY --from=build /lib/x86_64-linux-gnu/liburing.so.2 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libnuma.so.1 /lib/x86_64-linux-gnu/
 COPY --from=build "/lib/x86_64-linux-gnu/libstdc++.so.6" /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libm.so.6 /lib/x86_64-linux-gnu/

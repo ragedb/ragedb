@@ -473,8 +473,6 @@ To make it permanent edit /etc/sysctl.conf by adding:
     - Recovering (started)
     - Snapshots
     - Replication
-    - Bulk Loading
-    - Front End UI
     - Metrics
     - Everthing Else
     - Take over the world
