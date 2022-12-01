@@ -26,7 +26,7 @@ macro(run_conan)
     tsl-sparse-map/0.6.2
     simdjson/2.2.2
     rapidcsv/8.64
-    roaring/0.5.0
+    roaring/0.8.0
     jfalcou-eve/v2022.03.0
     cppcodec/0.2
     cpr/1.9.0
