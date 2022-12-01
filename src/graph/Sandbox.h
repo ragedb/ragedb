@@ -139,6 +139,10 @@ namespace ragedb {
       "IntersectRelationships",
       "IntersectIdsCount",
 
+      "KHopCount",
+      "KHopIds",
+      "KHopNodes",
+
       "LinksGetLinks",
       "LinksGetNeighbors",
       "LinksGetNeighborIds",

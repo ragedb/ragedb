@@ -13,3 +13,168 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "../Shard.h"
+
+namespace ragedb {
+
+    sol::table Shard::KHopIdsViaLua(uint64_t id, uint64_t hops) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(id, hops).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(id, hops, direction).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(id, hops, direction, rel_type).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(id, hops, direction, rel_types).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(type, key, hops).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(type, key, hops, direction).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(type, key, hops, direction, rel_type).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopIdsPeered(type, key, hops, direction, rel_types).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(uint64_t id, uint64_t hops) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(id, hops).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(id, hops, direction).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(id, hops, direction, rel_type).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(id, hops, direction, rel_types).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(type, key, hops).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(type, key, hops, direction).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(type, key, hops, direction, rel_type).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    sol::table Shard::KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        sol::table ids = lua.create_table();
+        for (const auto &node_id : KHopNodesPeered(type, key, hops, direction, rel_types).get0()) {
+            ids.add(node_id);
+        }
+        return ids;
+    }
+
+    uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops) {
+        return KHopIdsPeered(id, hops).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction) {
+        return KHopIdsPeered(id, hops, direction).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type) {
+        return KHopIdsPeered(id, hops, direction, rel_type).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        return KHopIdsPeered(id, hops, direction, rel_types).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops) {
+        return KHopIdsPeered(type, key, hops).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction) {
+        return KHopIdsPeered(type, key, hops, direction).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type) {
+        return KHopIdsPeered(type, key, hops, direction, rel_type).get0().size();
+    }
+
+    uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        return KHopIdsPeered(type, key, hops, direction, rel_types).get0().size();
+    }
+}

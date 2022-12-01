@@ -715,6 +715,35 @@ namespace ragedb {
         // Load CSV
         seastar::future<uint64_t> LoadCSVPeered(const std::string &type, const std::string& filename, const char csv_separator);
 
+        // K-Hop
+        seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeered(roaring::Roaring64Map seen, roaring::Roaring64Map next, roaring::Roaring64Map current, uint64_t hops);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops, Direction direction);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(const std::string& type, const std::string& key, uint64_t hops);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<uint64_t>> KHopIdsPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
+        seastar::future<std::vector<Node>> KHopNodesPeered(uint64_t id, uint64_t hops);
+        seastar::future<std::vector<Node>> KHopNodesPeered(uint64_t id, uint64_t hops, Direction direction);
+        seastar::future<std::vector<Node>> KHopNodesPeered(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<Node>> KHopNodesPeered(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::vector<Node>> KHopNodesPeered(const std::string& type, const std::string& key, uint64_t hops);
+        seastar::future<std::vector<Node>> KHopNodesPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        seastar::future<std::vector<Node>> KHopNodesPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<Node>> KHopNodesPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
+        seastar::future<uint64_t> KHopCountPeered(uint64_t id, uint64_t hops);
+        seastar::future<uint64_t> KHopCountPeered(uint64_t id, uint64_t hops, Direction direction);
+        seastar::future<uint64_t> KHopCountPeered(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<uint64_t> KHopCountPeered(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<uint64_t> KHopCountPeered(const std::string& type, const std::string& key, uint64_t hops);
+        seastar::future<uint64_t> KHopCountPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        seastar::future<uint64_t> KHopCountPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<uint64_t> KHopCountPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
         // *****************************************************************************************************************************
         //                                                              Via Lua
         // *****************************************************************************************************************************
@@ -1023,7 +1052,35 @@ namespace ragedb {
         uint64_t LoadCSVViaLua(const std::string &type, const std::string& filename, const sol::optional<char> = CSV_SEPARATOR);
         std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& filename, const char csv_separator);
 
-          // Partition by Shards
+        // K-Hop
+        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops);
+        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction);
+        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops);
+        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops);
+        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction);
+        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops);
+        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
+        uint64_t KHopCountViaLua(uint64_t id, uint64_t hops);
+        uint64_t KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction);
+        uint64_t KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        uint64_t KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops);
+        uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
+        // Partition by Shards
         std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename, const char csv_separator);
         std::map<uint16_t, std::vector<size_t>> PartitionRelationshipsInCSV(const std::string& filename, const char csv_separator);
 
