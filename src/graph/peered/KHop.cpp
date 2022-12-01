@@ -28,9 +28,10 @@ namespace ragedb {
           seen |= current; // we add the current iterator to the ids we have seen.
 
           // Convert iterator to list of ids
-          uint64_t *arr1 = new uint64_t[current.cardinality()];
-          current.toUint64Array(arr1);
-          std::vector<uint64_t> ids(arr1, arr1 + current.cardinality());
+          std::vector<uint64_t> ids;
+          ids.resize(current.cardinality());
+          uint64_t* arr = ids.data();
+          current.toUint64Array(arr);
 
           return NodeIdsGetNeighborIdsPeered(ids).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
             roaring::Roaring64Map next;
@@ -43,6 +44,9 @@ namespace ragedb {
       } else {
           uint64_t next_hop = hops - 1;
           return KHopIdsPeeredHelper(seen, current, 1).then([next_hop, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
+              if (result.second.cardinality() == 0) { // short-circuit
+                return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
+              }
               return KHopIdsPeeredHelper(result.first, result.second, next_hop);
           });
       }
@@ -58,9 +62,10 @@ namespace ragedb {
           seen |= current; // we add the current iterator to the ids we have seen.
 
           // Convert iterator to list of ids
-          uint64_t *arr1 = new uint64_t[current.cardinality()];
-          current.toUint64Array(arr1);
-          std::vector<uint64_t> ids(arr1, arr1 + current.cardinality());
+          std::vector<uint64_t> ids;
+          ids.resize(current.cardinality());
+          uint64_t* arr = ids.data();
+          current.toUint64Array(arr);
 
           return NodeIdsGetNeighborIdsPeered(ids, direction).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
               roaring::Roaring64Map next;
@@ -73,6 +78,9 @@ namespace ragedb {
       } else {
           uint64_t next_hop = hops - 1;
           return KHopIdsPeeredHelper(seen, current, 1, direction).then([next_hop, direction, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
+              if (result.second.cardinality() == 0) { // short-circuit
+                  return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
+              }
               return KHopIdsPeeredHelper(result.first, result.second, next_hop, direction);
           });
       }
@@ -88,9 +96,10 @@ namespace ragedb {
           seen |= current; // we add the current iterator to the ids we have seen.
 
           // Convert iterator to list of ids
-          uint64_t *arr1 = new uint64_t[current.cardinality()];
-          current.toUint64Array(arr1);
-          std::vector<uint64_t> ids(arr1, arr1 + current.cardinality());
+          std::vector<uint64_t> ids;
+          ids.resize(current.cardinality());
+          uint64_t* arr = ids.data();
+          current.toUint64Array(arr);
 
           return NodeIdsGetNeighborIdsPeered(ids, direction, rel_type).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
               roaring::Roaring64Map next;
@@ -103,6 +112,9 @@ namespace ragedb {
       } else {
           uint64_t next_hop = hops - 1;
           return KHopIdsPeeredHelper(seen, current, 1, direction).then([next_hop, direction, rel_type, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
+              if (result.second.cardinality() == 0) { // short-circuit
+                  return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
+              }
               return KHopIdsPeeredHelper(result.first, result.second, next_hop, direction, rel_type);
           });
       }
@@ -118,9 +130,10 @@ namespace ragedb {
           seen |= current; // we add the current iterator to the ids we have seen.
 
           // Convert iterator to list of ids
-          uint64_t *arr1 = new uint64_t[current.cardinality()];
-          current.toUint64Array(arr1);
-          std::vector<uint64_t> ids(arr1, arr1 + current.cardinality());
+          std::vector<uint64_t> ids;
+          ids.resize(current.cardinality());
+          uint64_t* arr = ids.data();
+          current.toUint64Array(arr);
 
           return NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
               roaring::Roaring64Map next;
@@ -133,6 +146,9 @@ namespace ragedb {
       } else {
           uint64_t next_hop = hops - 1;
           return KHopIdsPeeredHelper(seen, current, 1, direction, rel_types).then([next_hop, direction, rel_types, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
+              if (result.second.cardinality() == 0) { // short-circuit
+                  return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
+              }
               return KHopIdsPeeredHelper(result.first, result.second, next_hop, direction, rel_types);
           });
       }
@@ -146,9 +162,10 @@ namespace ragedb {
           result.first.remove(id);
 
           // Convert iterator to list of ids
-          uint64_t *arr1 = new uint64_t[result.first.cardinality()];
-          result.first.toUint64Array(arr1);
-          std::vector<uint64_t> ids(arr1, arr1 + result.first.cardinality());
+          std::vector<uint64_t> ids;
+          ids.resize(result.first.cardinality());
+          uint64_t* arr = ids.data();
+          result.first.toUint64Array(arr);
           return ids;
       });
     }
@@ -161,9 +178,10 @@ namespace ragedb {
             result.first.remove(id);
 
             // Convert iterator to list of ids
-            uint64_t *arr1 = new uint64_t[result.first.cardinality()];
-            result.first.toUint64Array(arr1);
-            std::vector<uint64_t> ids(arr1, arr1 + result.first.cardinality());
+            std::vector<uint64_t> ids;
+            ids.resize(result.first.cardinality());
+            uint64_t* arr = ids.data();
+            result.first.toUint64Array(arr);
             return ids;
         });
     }
@@ -176,9 +194,10 @@ namespace ragedb {
             result.first.remove(id);
 
             // Convert iterator to list of ids
-            uint64_t *arr1 = new uint64_t[result.first.cardinality()];
-            result.first.toUint64Array(arr1);
-            std::vector<uint64_t> ids(arr1, arr1 + result.first.cardinality());
+            std::vector<uint64_t> ids;
+            ids.resize(result.first.cardinality());
+            uint64_t* arr = ids.data();
+            result.first.toUint64Array(arr);
             return ids;
         });
     }
@@ -191,9 +210,10 @@ namespace ragedb {
             result.first.remove(id);
 
             // Convert iterator to list of ids
-            uint64_t *arr1 = new uint64_t[result.first.cardinality()];
-            result.first.toUint64Array(arr1);
-            std::vector<uint64_t> ids(arr1, arr1 + result.first.cardinality());
+            std::vector<uint64_t> ids;
+            ids.resize(result.first.cardinality());
+            uint64_t* arr = ids.data();
+            result.first.toUint64Array(arr);
             return ids;
         });
     }

@@ -174,14 +174,9 @@ namespace ragedb {
 
   std::vector<uint64_t> Roar::getIds() const {
     std::vector<uint64_t> ids;
-    ids.reserve(map.cardinality());
-
-    std::vector<uint64_t> array;
-    array.reserve(map.cardinality());
-
-    map.toUint64Array(array.data());
-
-    ids.assign(array.data(), array.data() + map.cardinality());
+    ids.resize(map.cardinality());
+    uint64_t* arr = ids.data();
+    map.toUint64Array(arr);
     return ids;
   }
 
