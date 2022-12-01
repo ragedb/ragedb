@@ -716,7 +716,11 @@ namespace ragedb {
         seastar::future<uint64_t> LoadCSVPeered(const std::string &type, const std::string& filename, const char csv_separator);
 
         // K-Hop
-        seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeered(roaring::Roaring64Map seen, roaring::Roaring64Map next, roaring::Roaring64Map current, uint64_t hops);
+        seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeeredHelper(roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops);
+        seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeeredHelper(roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops, Direction direction);
+        seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeeredHelper(roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeeredHelper(roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
         seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops);
         seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops, Direction direction);
         seastar::future<std::vector<uint64_t>> KHopIdsPeered(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);

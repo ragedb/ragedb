@@ -147,34 +147,34 @@ namespace ragedb {
     }
 
     uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops) {
-        return KHopIdsPeered(id, hops).get0().size();
+        return KHopCountPeered(id, hops).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction) {
-        return KHopIdsPeered(id, hops, direction).get0().size();
+        return KHopCountPeered(id, hops, direction).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type) {
-        return KHopIdsPeered(id, hops, direction, rel_type).get0().size();
+        return KHopCountPeered(id, hops, direction, rel_type).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
-        return KHopIdsPeered(id, hops, direction, rel_types).get0().size();
+        return KHopCountPeered(id, hops, direction, rel_types).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops) {
-        return KHopIdsPeered(type, key, hops).get0().size();
+        return KHopCountPeered(type, key, hops).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction) {
-        return KHopIdsPeered(type, key, hops, direction).get0().size();
+        return KHopCountPeered(type, key, hops, direction).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type) {
-        return KHopIdsPeered(type, key, hops, direction, rel_type).get0().size();
+        return KHopCountPeered(type, key, hops, direction, rel_type).get0();
     }
 
     uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
-        return KHopIdsPeered(type, key, hops, direction, rel_types).get0().size();
+        return KHopCountPeered(type, key, hops, direction, rel_types).get0();
     }
 }
