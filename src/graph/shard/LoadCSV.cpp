@@ -34,7 +34,7 @@ namespace ragedb {
             sharded_relationships.try_emplace(i);
         }
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator, true),
           rapidcsv::ConverterParams(),
           rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
@@ -165,7 +165,7 @@ namespace ragedb {
     uint64_t Shard::LoadCSVNodes(uint16_t type_id, const std::string &filename, const char csv_separator, const std::vector<size_t> rows) {
         uint64_t count = 0;
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator, true),
           rapidcsv::ConverterParams(),
           rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,

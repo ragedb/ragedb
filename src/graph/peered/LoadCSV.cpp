@@ -58,7 +58,7 @@ namespace ragedb {
      */
 
     std::pair<std::string, std::vector<std::string>> Shard::GetToKeysFromRelationshipsInCSV(const std::string& filename, const char csv_separator) {
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator, true),
           rapidcsv::ConverterParams(),
           rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
@@ -87,7 +87,7 @@ namespace ragedb {
             sharded_nodes.try_emplace(i);
         }
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator, true),
           rapidcsv::ConverterParams(),
           rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,
@@ -127,7 +127,7 @@ namespace ragedb {
             sharded_nodes.try_emplace(i);
         }
 
-        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator),
+        rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator, true),
           rapidcsv::ConverterParams(),
           rapidcsv::LineReaderParams(true /* pSkipCommentLines */,
             '#' /* pCommentPrefix */,

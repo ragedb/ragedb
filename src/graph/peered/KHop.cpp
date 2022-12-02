@@ -111,7 +111,7 @@ namespace ragedb {
           });
       } else {
           uint64_t next_hop = hops - 1;
-          return KHopIdsPeeredHelper(seen, current, 1, direction).then([next_hop, direction, rel_type, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
+          return KHopIdsPeeredHelper(seen, current, 1, direction, rel_type).then([next_hop, direction, rel_type, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
               if (result.second.cardinality() == 0) { // short-circuit
                   return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
               }
