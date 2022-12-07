@@ -54,7 +54,7 @@ namespace ragedb {
             std::ranges::copy(out_ids, std::back_inserter(ids));
         }
 
-        for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+        for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
             auto in_ids = group.node_ids();
             std::ranges::copy(in_ids, std::back_inserter(ids));
         }
@@ -80,7 +80,7 @@ namespace ragedb {
         }
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::OUT) {
-            for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 auto in_ids = group.node_ids();
                 std::ranges::copy(in_ids, std::back_inserter(ids));
             }
