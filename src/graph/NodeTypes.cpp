@@ -33,6 +33,7 @@ namespace ragedb {
         outgoing_relationships.emplace_back();
         incoming_relationships.emplace_back();
         deleted_ids.emplace_back();
+        key_to_node_id.reserve(4000000);
     }
 
     void NodeTypes::Clear() {

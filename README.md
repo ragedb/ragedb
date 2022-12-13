@@ -477,6 +477,13 @@ To make it permanent edit /etc/sysctl.conf by adding:
     - Everthing Else
     - Take over the world
 
+### Reactor Stalls
+
+    - When running KHop queries on combining the RoaringBitmaps using |=
+    - When importing data on the power of two growth of the tsl sparse_map
+    - In GetToKeysFromRelationshipsInCSV
+    - In PartitionRelationshipsInCSV 
+
 
 ### Missing Features that can be added "easily"
     - Allow Node and Relationship Type handlers to take a json map defining the property keys and data types

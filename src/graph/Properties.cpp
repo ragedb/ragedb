@@ -250,8 +250,8 @@ namespace ragedb {
             return false;
         }
 
-        if (booleans[key].size() <= index) {
-            booleans[key].resize(1 + index);
+        while (booleans[key].size() <= index) {
+            booleans[key].emplace_back();
         }
         booleans[key][index] = value;
         deleted[key].remove(index);
@@ -268,8 +268,8 @@ namespace ragedb {
             return false;
         }
 
-        if (integers[key].size() <= index) {
-            integers[key].resize(1 + index);
+        while (integers[key].size() <= index) {
+            integers[key].emplace_back();
         }
         integers[key][index] = value;
         deleted[key].remove(index);
@@ -286,8 +286,8 @@ namespace ragedb {
             return false;
         }
 
-        if (doubles[key].size() <= index) {
-            doubles[key].resize(1 + index);
+        while (doubles[key].size() <= index) {
+            doubles[key].emplace_back();
         }
         doubles[key][index] = value;
         deleted[key].remove(index);
@@ -304,8 +304,8 @@ namespace ragedb {
         return false;
       }
 
-      if (doubles[key].size() <= index) {
-        doubles[key].resize(1 + index);
+      while (doubles[key].size() <= index) {
+        doubles[key].emplace_back();
       }
       doubles[key][index] = value;
       deleted[key].remove(index);
@@ -322,8 +322,8 @@ namespace ragedb {
             return false;
         }
 
-        if (strings[key].size() <= index) {
-            strings[key].resize(1 + index);
+        while (strings[key].size() <= index) {
+            strings[key].emplace_back();
         }
         strings[key][index] = value;
         deleted[key].remove(index);
@@ -340,8 +340,8 @@ namespace ragedb {
             return false;
         }
 
-        if (booleans_list[key].size() <= index) {
-            booleans_list[key].resize(1 + index);
+        while (booleans_list[key].size() <= index) {
+            booleans_list[key].emplace_back();
         }
         booleans_list[key][index] = value;
         deleted[key].remove(index);
@@ -359,8 +359,8 @@ namespace ragedb {
             return false;
         }
 
-        if (integers_list[key].size() <= index) {
-            integers_list[key].resize(1 + index);
+        while (integers_list[key].size() <= index) {
+            integers_list[key].emplace_back();
         }
         integers_list[key][index] = value;
         deleted[key].remove(index);
@@ -377,8 +377,8 @@ namespace ragedb {
             return false;
         }
 
-        if (doubles_list[key].size() <= index) {
-            doubles_list[key].resize(1 + index);
+        while (doubles_list[key].size() <= index) {
+            doubles_list[key].emplace_back();
         }
         doubles_list[key][index] = value;
         deleted[key].remove(index);
@@ -395,8 +395,8 @@ namespace ragedb {
         return false;
       }
 
-      if (doubles_list[key].size() <= index) {
-        doubles_list[key].resize(1 + index);
+      while (doubles_list[key].size() <= index) {
+        doubles_list[key].emplace_back();
       }
       doubles_list[key][index] = value;
       deleted[key].remove(index);
@@ -414,8 +414,8 @@ namespace ragedb {
             return false;
         }
 
-        if (strings_list[key].size() <= index) {
-            strings_list[key].resize(1 + index);
+        while (strings_list[key].size() <= index) {
+            strings_list[key].emplace_back();
         }
         strings_list[key][index] = value;
         deleted[key].remove(index);

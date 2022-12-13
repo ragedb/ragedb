@@ -25,13 +25,24 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
-#include <seastar/core/sharded.hh>
-#include <seastar/core/rwlock.hh>
-#include <seastar/core/when_all.hh>
-#include <seastar/core/thread.hh>
+#include <seastar/core/alien.hh>
+#include <seastar/core/align.hh>
+#include <seastar/core/aligned_buffer.hh>
+#include <seastar/core/coroutine.hh>
 #include <seastar/core/file.hh>
 #include <seastar/core/fstream.hh>
 #include <seastar/core/io_intent.hh>
+#include <seastar/core/iostream.hh>
+#include <seastar/core/reactor.hh>
+#include <seastar/core/rwlock.hh>
+#include <seastar/core/seastar.hh>
+#include <seastar/core/sharded.hh>
+#include <seastar/core/thread.hh>
+#include <seastar/core/when_all.hh>
+#include <seastar/coroutine/maybe_yield.hh>
+#include <seastar/coroutine/parallel_for_each.hh>
+#include <seastar/coroutine/all.hh>
+#include <seastar/util/later.hh>
 #include <simdjson.h>
 #include <sol/sol.hpp>
 #include <tsl/sparse_map.h>
@@ -187,7 +198,8 @@ namespace ragedb {
         std::map<uint64_t, std::map<std::string, property_type_t>> NodesGetProperties(const std::vector<uint64_t>&);
         std::map<Link, std::map<std::string, property_type_t>> NodesGetProperties(const std::vector<Link>& links);
 
-        std::map<std::string, uint64_t> NodesGetIds(uint16_t type_id, const std::vector<std::string>& keys);
+        //std::map<std::string, uint64_t> NodesGetIds(uint16_t type_id, const std::vector<std::string>& keys);
+        seastar::future<std::map<std::string, uint64_t>> NodesGetIds(uint16_t type_id, const std::vector<std::string>& keys);
 
         // Node Property
         property_type_t NodeGetProperty(uint64_t id, const std::string& property);
@@ -262,7 +274,7 @@ namespace ragedb {
         uint64_t NodeGetDegree(uint64_t id, Direction direction, const std::string& rel_type);
         uint64_t NodeGetDegree(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
-        //Neighbors
+        // Neighbors
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
@@ -271,6 +283,11 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
+        seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids);
+        seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction);
+        seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
+        seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
 
         // NodeLinks
         std::vector<Link> NodeGetLinks(const std::string& type, const std::string& key);
@@ -403,8 +420,10 @@ namespace ragedb {
         std::vector<std::map<std::string, property_type_t>> FilterRelationshipProperties(const std::vector<uint64_t>& ids, const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t limit = LIMIT, Sort sort = Sort::NONE);
 
         // Load CSV
-        uint64_t LoadCSVNodes(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows);
-        std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> LoadCSVRelationships(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows, std::map<std::string, uint64_t> combined_to_keys_and_ids);
+        seastar::future<uint64_t> LoadCSVNodes(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows);
+        uint64_t StreamCSVNodes(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows);
+        seastar::future<std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>>> LoadCSVRelationships(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows, std::map<std::string, uint64_t> combined_to_keys_and_ids);
+        std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> StreamCSVRelationships(uint16_t type_id, const std::string& filename, const char csv_separator, const std::vector<size_t> rows, std::map<std::string, uint64_t> combined_to_keys_and_ids);
 
         // *****************************************************************************************************************************
         //                                               Peered
@@ -556,6 +575,10 @@ namespace ragedb {
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
+        seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids);
+        seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction);
+        seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::string& rel_type);
+        seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::vector<std::string> &rel_types);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
@@ -713,7 +736,10 @@ namespace ragedb {
         seastar::future<std::vector<Relationship>> DifferenceRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
 
         // Load CSV
+        seastar::future<uint64_t> LoadNodesCSVPeered(const std::string &type, const std::string &filename, const char csv_separator);
+        seastar::future<uint64_t> LoadRelationshipsCSVPeered(const std::string &type, const std::string &filename, const char csv_separator);
         seastar::future<uint64_t> LoadCSVPeered(const std::string &type, const std::string& filename, const char csv_separator);
+        seastar::future<uint64_t> StreamCSVPeered(const std::string &type, const std::string& filename, const char csv_separator);
 
         // K-Hop
         seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> KHopIdsPeeredHelper(roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops);
@@ -1054,7 +1080,8 @@ namespace ragedb {
 
         // Load CSV
         uint64_t LoadCSVViaLua(const std::string &type, const std::string& filename, const sol::optional<char> = CSV_SEPARATOR);
-        std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& filename, const char csv_separator);
+        uint64_t StreamCSVViaLua(const std::string &type, const std::string& filename, const sol::optional<char> = CSV_SEPARATOR);
+        std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& header, const char csv_separator);
 
         // K-Hop
         sol::table KHopIdsViaLua(uint64_t id, uint64_t hops);
@@ -1086,10 +1113,14 @@ namespace ragedb {
 
         // Partition by Shards
         std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename, const char csv_separator);
+        std::map<uint16_t, std::vector<size_t>> PartitionNodesInStreamCSV(const std::string& type, const std::string& filename, const char csv_separator);
+
         std::map<uint16_t, std::vector<size_t>> PartitionRelationshipsInCSV(const std::string& filename, const char csv_separator);
+        std::map<uint16_t, std::vector<size_t>> PartitionRelationshipsInStreamCSV(const std::string& filename, const char csv_separator);
 
         std::map<uint16_t, std::vector<std::string>> PartitionNodesByNodeKeys(const std::string& type, const std::vector<std::string> &keys) const;
         std::map<uint16_t, std::vector<std::tuple<std::string, std::string>>> PartitionNodesByNodeTypeKeys(const std::string& type, const std::vector<std::string> &keys, const std::vector<std::string> &properties) const;
+        seastar::future<std::map<uint16_t, std::vector<uint64_t>>> PartitionIdsByShardId(const roaring::Roaring64Map &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionIdsByShardId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByShardId(const std::vector<Link> &links) const;

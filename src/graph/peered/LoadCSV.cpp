@@ -15,7 +15,9 @@
  */
 
 #include <rapidcsv.h>
+#include <csv.hpp>
 #include "../Shard.h"
+#include "../../Templates.h"
 
 namespace ragedb {
 
@@ -164,6 +166,73 @@ namespace ragedb {
         return sharded_nodes;
     }
 
+    std::map<uint16_t, std::vector<size_t>> Shard::PartitionNodesInStreamCSV(const std::string& type, const std::string& filename, const char csv_separator) {
+        std::map<uint16_t, std::vector<size_t>> sharded_nodes;
+        for (uint16_t i = 0; i < cpus; i++) {
+            sharded_nodes.try_emplace(i);
+        }
+
+        csv::CSVFormat format;
+        format.delimiter(csv_separator).quote('"').trim({ ' ', '\t' });
+        std::ifstream infile(filename, std::ios::binary);
+        csv::CSVReader reader(infile, format);
+
+        std::string key_column;
+
+        for (auto &name : reader.get_col_names()) {
+            if (name == "key" || name.ends_with(":key")) {
+                key_column = name;
+                break;
+            }
+        }
+
+        // If we found our key column
+        if (!key_column.empty()) {
+            // Distribute the rows over the shards
+            size_t row = 0;
+            for (csv::CSVRow& csv_row: reader) {
+                std::string key = csv_row[key_column].get<>();
+                sharded_nodes[CalculateShardId(type, key)].emplace_back(row++);
+            }
+        } else {
+            size_t row = 0;
+            for (csv::CSVRow& csv_row: reader) {
+                sharded_nodes[CalculateShardId(type, std::to_string(row))].emplace_back(row);
+            }
+        }
+
+        for (uint16_t i = 0; i < cpus; i++) {
+            if (sharded_nodes.at(i).empty()) {
+                sharded_nodes.erase(i);
+            }
+        }
+
+        return sharded_nodes;
+    }
+
+    seastar::future<uint64_t> Shard::StreamCSVPeered(const std::string &type, const std::string &filename, const char csv_separator) {
+        if (auto type_id = node_types.getTypeId(type); type_id > 0) {
+            // We are importing Nodes
+            std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionNodesInStreamCSV(type, filename, csv_separator);
+
+            std::vector<seastar::future<uint64_t>> futures;
+            for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
+                auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator] (Shard &local_shard) {
+                    return local_shard.StreamCSVNodes(type_id, filename, csv_separator, grouped_nodes);
+                });
+                futures.push_back(std::move(future));
+            }
+
+            auto p = make_shared(std::move(futures));
+
+            return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
+                return std::reduce(results.begin(), results.end()); // sum the counts of the results
+            });
+        }
+        // Return zero records loaded if failed
+        return seastar::make_ready_future<uint64_t>(0);
+    }
+
     seastar::future<uint64_t> Shard::LoadCSVPeered(const std::string &type, const std::string &filename, const char csv_separator) {
         if (auto type_id = node_types.getTypeId(type); type_id > 0) {
             // We are importing Nodes
@@ -188,6 +257,8 @@ namespace ragedb {
             // We need to get the node ids of the TO nodes from their respective shard.
             // then create the relationships in the FROM nodes in their respective shard
             // then we have to add both to the incoming node id Link group.
+            // We only need to parse the first line
+
             std::pair<std::string, std::vector<std::string>> to_type_and_keys = GetToKeysFromRelationshipsInCSV(filename, csv_separator);
 
             return NodesGetIdsPeered(to_type_and_keys.first, to_type_and_keys.second).then([type_id, filename, csv_separator, this] (std::map<std::string, uint64_t> to_keys_and_ids) {
@@ -197,7 +268,7 @@ namespace ragedb {
 
                 for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
                     auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator, to_keys_and_ids] (Shard &local_shard) {
-                        return local_shard.LoadCSVRelationships(type_id, filename, csv_separator, grouped_nodes, to_keys_and_ids );
+                        return local_shard.LoadCSVRelationships(type_id, filename, csv_separator, grouped_nodes, to_keys_and_ids);
                     });
                     futures.push_back(std::move(future));
                 }

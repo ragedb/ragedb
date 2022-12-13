@@ -18,139 +18,97 @@
 
 namespace ragedb {
 
-  seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> Shard::KHopIdsPeeredHelper(
+seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> Shard::KHopIdsPeeredHelper(
   roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops) {
-      if (hops < 1) {
-          return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>();
-      }
-      if (hops == 1) {
-          current -= seen; // we remove any node ids we have seen from the current iterator
-          seen |= current; // we add the current iterator to the ids we have seen.
-
-          // Convert iterator to list of ids
-          std::vector<uint64_t> ids;
-          ids.resize(current.cardinality());
-          uint64_t* arr = ids.data();
-          current.toUint64Array(arr);
-
-          return NodeIdsGetNeighborIdsPeered(ids).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
-            roaring::Roaring64Map next;
-            for (const auto& [node_id, neighbor_ids] : id_neighbor_ids) {
-                next.addMany(neighbor_ids.size(), neighbor_ids.data());
-            }
-
-            return std::make_pair(seen, next);
-          });
-      } else {
-          uint64_t next_hop = hops - 1;
-          return KHopIdsPeeredHelper(seen, current, 1).then([next_hop, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
-              if (result.second.cardinality() == 0) { // short-circuit
-                return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
-              }
-              return KHopIdsPeeredHelper(result.first, result.second, next_hop);
-          });
-      }
-  }
+    auto pair = std::pair<roaring::Roaring64Map, roaring::Roaring64Map>();
+    if (hops < 1) {
+        co_return pair;
+    }
+    if (hops == 1) {
+        current -= seen; // we remove any node ids we have seen from the current iterator
+        seen |= current; // we add the current iterator to the ids we have seen.
+        roaring::Roaring64Map next = co_await RoaringNodeIdsGetNeighborIdsCombinedPeered(current);
+        pair = std::make_pair(seen, next);
+        co_return pair;
+    } else {
+        pair = co_await KHopIdsPeeredHelper(seen, current, 1);
+        if (pair.second.cardinality() == 0) {
+            co_return pair;
+        }
+        co_await seastar::coroutine::maybe_yield();
+        pair = co_await KHopIdsPeeredHelper(pair.first, pair.second, hops - 1);
+        co_return pair;
+    }
+}
 
   seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> Shard::KHopIdsPeeredHelper(
     roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops, Direction direction) {
+    auto pair = std::pair<roaring::Roaring64Map, roaring::Roaring64Map>();
       if (hops < 1) {
-          return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>();
+        co_return pair;
       }
       if (hops == 1) {
           current -= seen; // we remove any node ids we have seen from the current iterator
           seen |= current; // we add the current iterator to the ids we have seen.
-
-          // Convert iterator to list of ids
-          std::vector<uint64_t> ids;
-          ids.resize(current.cardinality());
-          uint64_t* arr = ids.data();
-          current.toUint64Array(arr);
-
-          return NodeIdsGetNeighborIdsPeered(ids, direction).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
-              roaring::Roaring64Map next;
-              for (const auto& [node_id, neighbor_ids] : id_neighbor_ids) {
-                  next.addMany(neighbor_ids.size(), neighbor_ids.data());
-              }
-
-              return std::make_pair(seen, next);
-          });
+          roaring::Roaring64Map next = co_await RoaringNodeIdsGetNeighborIdsCombinedPeered(current, direction);
+          pair = std::make_pair(seen, next);
+          co_return pair;
       } else {
-          uint64_t next_hop = hops - 1;
-          return KHopIdsPeeredHelper(seen, current, 1, direction).then([next_hop, direction, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
-              if (result.second.cardinality() == 0) { // short-circuit
-                  return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
-              }
-              return KHopIdsPeeredHelper(result.first, result.second, next_hop, direction);
-          });
+          pair = co_await KHopIdsPeeredHelper(seen, current, 1, direction);
+          if (pair.second.cardinality() == 0) {
+            co_return pair;
+          }
+          co_await seastar::coroutine::maybe_yield();
+          pair = co_await KHopIdsPeeredHelper(pair.first, pair.second, hops - 1, direction);
+          co_return pair;
       }
   }
 
   seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> Shard::KHopIdsPeeredHelper(
     roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops, Direction direction, const std::string& rel_type) {
+      auto pair = std::pair<roaring::Roaring64Map, roaring::Roaring64Map>();
       if (hops < 1) {
-          return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>();
+          co_return pair;
       }
       if (hops == 1) {
           current -= seen; // we remove any node ids we have seen from the current iterator
           seen |= current; // we add the current iterator to the ids we have seen.
 
-          // Convert iterator to list of ids
-          std::vector<uint64_t> ids;
-          ids.resize(current.cardinality());
-          uint64_t* arr = ids.data();
-          current.toUint64Array(arr);
-
-          return NodeIdsGetNeighborIdsPeered(ids, direction, rel_type).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
-              roaring::Roaring64Map next;
-              for (const auto& [node_id, neighbor_ids] : id_neighbor_ids) {
-                  next.addMany(neighbor_ids.size(), neighbor_ids.data());
-              }
-
-              return std::make_pair(seen, next);
-          });
+          roaring::Roaring64Map next = co_await RoaringNodeIdsGetNeighborIdsCombinedPeered(current, direction, rel_type);
+          pair = std::make_pair(seen, next);
+          co_return pair;
       } else {
-          uint64_t next_hop = hops - 1;
-          return KHopIdsPeeredHelper(seen, current, 1, direction, rel_type).then([next_hop, direction, rel_type, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
-              if (result.second.cardinality() == 0) { // short-circuit
-                  return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
-              }
-              return KHopIdsPeeredHelper(result.first, result.second, next_hop, direction, rel_type);
-          });
+          pair = co_await KHopIdsPeeredHelper(seen, current, 1, direction, rel_type);
+          if (pair.second.cardinality() == 0) {
+            co_return pair;
+          }
+          co_await seastar::coroutine::maybe_yield();
+          pair = co_await KHopIdsPeeredHelper(pair.first, pair.second, hops - 1, direction, rel_type);
+          co_return pair;
       }
   }
 
   seastar::future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>> Shard::KHopIdsPeeredHelper(
     roaring::Roaring64Map seen, roaring::Roaring64Map current, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+      auto pair = std::pair<roaring::Roaring64Map, roaring::Roaring64Map>();
       if (hops < 1) {
-          return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>();
+          co_return pair;
       }
       if (hops == 1) {
           current -= seen; // we remove any node ids we have seen from the current iterator
           seen |= current; // we add the current iterator to the ids we have seen.
 
-          // Convert iterator to list of ids
-          std::vector<uint64_t> ids;
-          ids.resize(current.cardinality());
-          uint64_t* arr = ids.data();
-          current.toUint64Array(arr);
-
-          return NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).then([seen](std::map<uint64_t, std::vector<uint64_t>> id_neighbor_ids) mutable {
-              roaring::Roaring64Map next;
-              for (const auto& [node_id, neighbor_ids] : id_neighbor_ids) {
-                  next.addMany(neighbor_ids.size(), neighbor_ids.data());
-              }
-
-              return std::make_pair(seen, next);
-          });
+          roaring::Roaring64Map next = co_await RoaringNodeIdsGetNeighborIdsCombinedPeered(current, direction, rel_types);
+          pair = std::make_pair(seen, next);
+          co_return pair;
       } else {
-          uint64_t next_hop = hops - 1;
-          return KHopIdsPeeredHelper(seen, current, 1, direction, rel_types).then([next_hop, direction, rel_types, this] (std::pair<roaring::Roaring64Map, roaring::Roaring64Map> result) {
-              if (result.second.cardinality() == 0) { // short-circuit
-                  return seastar::make_ready_future<std::pair<roaring::Roaring64Map, roaring::Roaring64Map>>(result);
-              }
-              return KHopIdsPeeredHelper(result.first, result.second, next_hop, direction, rel_types);
-          });
+          pair = co_await KHopIdsPeeredHelper(seen, current, 1, direction, rel_types);
+          if (pair.second.cardinality() == 0) {
+            co_return pair;
+          }
+          co_await seastar::coroutine::maybe_yield();
+          pair = co_await KHopIdsPeeredHelper(pair.first, pair.second, hops - 1, direction, rel_types);
+          co_return pair;
       }
   }
 

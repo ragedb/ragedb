@@ -19,7 +19,7 @@ macro(run_conan)
     catch2/2.13.9
     docopt.cpp/0.6.3
     fmt/8.0.1
-    spdlog/1.9.2
+    spdlog/1.11.0
     luajit/2.1.0-beta3-2022-7-22
 #   sol2/3.2.3-luajit
     sol2/3.3.0-exhaustive
@@ -32,7 +32,7 @@ macro(run_conan)
     cppcodec/0.2
     cpr/1.9.0
 #    reckless/3.0.3  # temporarily removing logging until ARM issue is figured out
-    benchmark/1.6.2
+    benchmark/1.7.1
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

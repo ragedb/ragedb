@@ -19,7 +19,7 @@ set(HEADER_FILES
         Shard.h
         Uniqueness.h
         types/Date.h
-        eve/CollectIndexes.h Sort.h)
+        eve/CollectIndexes.h Sort.h ../Templates.h)
 
 set(SOURCE_FILES
         Graph.cpp

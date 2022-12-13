@@ -82,6 +82,119 @@ namespace ragedb {
         });
     }
 
+    seastar::future<roaring::Roaring64Map> Shard::RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<roaring::Roaring64Map>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
+                return local_shard.NodeIdsGetNeighborIds(grouped_node_ids);
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        std::vector<roaring::Roaring64Map> results = co_await seastar::when_all_succeed(p->begin(), p->end());
+
+        auto sharded_results = new const roaring::Roaring64Map*[results.size()];
+        for (size_t i = 0; i < results.size(); ++i) {
+            sharded_results[i] = &results.data()[i];
+        }
+
+        // roaring::Roaring64Map combined = roaring::Roaring64Map::fastunion(results.size(), sharded_results); // fastunion is slower than |=, see https://github.com/RoaringBitmap/CRoaring/issues/417
+        roaring::Roaring64Map combined;
+        for(const auto& sharded : results) {
+            co_await seastar::coroutine::maybe_yield();
+            combined |= sharded;
+        }
+
+        co_return combined;
+    }
+
+    seastar::future<roaring::Roaring64Map> Shard::RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<uint64_t>> neighbors;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction);
+                    neighbors.emplace(node_id, neighbor_ids);
+                }
+                return neighbors;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        std::vector<std::map<uint64_t, std::vector<uint64_t>>> results = co_await seastar::when_all_succeed(p->begin(), p->end());
+        roaring::Roaring64Map combined;
+
+        for(const auto& sharded : results) {
+            for (const auto& [key, value] : sharded) {
+                combined.addMany(value.size(), value.data());
+            }
+        }
+        co_return combined;
+    }
+
+    seastar::future<roaring::Roaring64Map> Shard::RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::string& rel_type) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<uint64_t>> neighbors;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_type);
+                    neighbors.emplace(node_id, neighbor_ids);
+                }
+                return neighbors;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        std::vector<std::map<uint64_t, std::vector<uint64_t>>> results = co_await seastar::when_all_succeed(p->begin(), p->end());
+        roaring::Roaring64Map combined;
+
+        for(const auto& sharded : results) {
+            for (const auto& [key, value] : sharded) {
+                combined.addMany(value.size(), value.data());
+            }
+        }
+        co_return combined;
+    }
+
+    seastar::future<roaring::Roaring64Map> Shard::RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::vector<std::string> &rel_types) {
+        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
+
+        std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
+        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types] (Shard &local_shard) {
+                std::map<uint64_t, std::vector<uint64_t>> neighbors;
+                for (auto node_id : grouped_node_ids) {
+                    auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_types);
+                    neighbors.emplace(node_id, neighbor_ids);
+                }
+                return neighbors;
+            });
+            futures.push_back(std::move(future));
+        }
+
+        auto p = make_shared(std::move(futures));
+        std::vector<std::map<uint64_t, std::vector<uint64_t>>> results = co_await seastar::when_all_succeed(p->begin(), p->end());
+        roaring::Roaring64Map combined;
+
+        for(const auto& sharded : results) {
+            for (const auto& [key, value] : sharded) {
+                combined.addMany(value.size(), value.data());
+            }
+        }
+        co_return combined;
+    }
+
     seastar::future<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids) {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 

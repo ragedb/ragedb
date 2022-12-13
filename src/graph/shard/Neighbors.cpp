@@ -41,6 +41,29 @@ namespace ragedb {
         return NodeGetNeighborIds(id, direction, rel_types);
     }
 
+    seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids) {
+        roaring::Roaring64Map combined;
+        for (auto id : ids) {
+            if (ValidNodeId(id)) {
+                uint64_t internal_id = externalToInternal(id);
+                uint16_t node_type_id = externalToTypeId(id);
+                for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                    auto out_ids = group.node_ids();
+                    combined.addMany(out_ids.size(), out_ids.data());
+                    co_await seastar::coroutine::maybe_yield();
+                }
+                for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+                    auto in_ids = group.node_ids();
+                    combined.addMany(in_ids.size(), in_ids.data());
+                    co_await seastar::coroutine::maybe_yield();
+                }
+
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+        co_return combined;
+    }
+
     std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id) {
         if (!ValidNodeId(id)) {
             return std::vector<uint64_t>();
@@ -61,7 +84,38 @@ namespace ragedb {
 
         return ids;
     }
-    
+
+    seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction) {
+        roaring::Roaring64Map combined;
+        for (auto id : ids) {
+            if (ValidNodeId(id)) {
+                uint64_t internal_id = externalToInternal(id);
+                uint16_t node_type_id = externalToTypeId(id);
+
+
+                // Use the two ifs to handle ALL for a direction
+                if (direction != Direction::IN) {
+                    for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                        auto out_ids = group.node_ids();
+                        combined.addMany(out_ids.size(), out_ids.data());
+                        co_await seastar::coroutine::maybe_yield();
+                    }
+                }
+                // Use the two ifs to handle ALL for a direction
+                if (direction != Direction::OUT) {
+                    for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+                        auto in_ids = group.node_ids();
+                        combined.addMany(in_ids.size(), in_ids.data());
+                        co_await seastar::coroutine::maybe_yield();
+                    }
+                }
+
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+        co_return combined;
+    }
+
     std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction) {
         if (!ValidNodeId(id)) {
             return std::vector<uint64_t>();
@@ -87,7 +141,43 @@ namespace ragedb {
         }
         return ids;
     }
-    
+
+    seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::string &rel_type) {
+        roaring::Roaring64Map combined;
+        uint16_t type_id = relationship_types.getTypeId(rel_type);
+        for (auto id : ids) {
+            if (ValidNodeId(id)) {
+                uint64_t internal_id = externalToInternal(id);
+                uint16_t node_type_id = externalToTypeId(id);
+
+                // Use the two ifs to handle ALL for a direction
+                if (direction != Direction::IN) {
+                    auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+                      [type_id](const Group &g) { return g.rel_type_id == type_id; });
+
+                    if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
+                        auto out_ids = out_group->node_ids();
+                        combined.addMany(out_ids.size(), out_ids.data());
+                        co_await seastar::coroutine::maybe_yield();
+                    }
+                }
+
+                if (direction != Direction::OUT) {
+                    auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+                      [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+
+                    if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
+                        auto in_ids = in_group->node_ids();
+                        combined.addMany(in_ids.size(), in_ids.data());
+                        co_await seastar::coroutine::maybe_yield();
+                    }
+                }
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+        co_return combined;
+    }
+
     std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, const std::string &rel_type) {
         if (!ValidNodeId(id)) {
             return std::vector<uint64_t>();
@@ -118,6 +208,53 @@ namespace ragedb {
             }
         }
         return ids;
+    }
+
+    seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
+        roaring::Roaring64Map combined;
+        for (auto id : ids) {
+            if (ValidNodeId(id)) {
+                uint64_t internal_id = externalToInternal(id);
+                uint16_t node_type_id = externalToTypeId(id);
+
+                // Use the two ifs to handle ALL for a direction
+                if (direction != Direction::IN) {
+                    for (const auto &rel_type : rel_types) {
+                        uint16_t type_id = relationship_types.getTypeId(rel_type);
+                        if (type_id == 0) {
+                            continue;
+                        }
+                        auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+                          [type_id](const Group &g) { return g.rel_type_id == type_id; });
+
+                        if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
+                            auto out_ids = out_group->node_ids();
+                            combined.addMany(out_ids.size(), out_ids.data());
+                            co_await seastar::coroutine::maybe_yield();
+                        }
+                    }
+                }
+
+                if (direction != Direction::OUT) {
+                    for (const auto &rel_type : rel_types) {
+                        uint16_t type_id = relationship_types.getTypeId(rel_type);
+                        if (type_id == 0) {
+                            continue;
+                        }
+                        auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+                          [type_id](const Group &g) { return g.rel_type_id == type_id; });
+
+                        if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
+                            auto in_ids = in_group->node_ids();
+                            combined.addMany(in_ids.size(), in_ids.data());
+                            co_await seastar::coroutine::maybe_yield();
+                        }
+                    }
+                }
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+        co_return combined;
     }
 
     std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {

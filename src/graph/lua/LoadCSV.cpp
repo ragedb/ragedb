@@ -21,4 +21,8 @@ namespace ragedb {
     uint64_t Shard::LoadCSVViaLua(const std::string &type, const std::string &filename, sol::optional<char> csv_separator) {
         return LoadCSVPeered(type, filename, csv_separator.value_or(CSV_SEPARATOR)).get0();
     }
+
+    uint64_t Shard::StreamCSVViaLua(const std::string &type, const std::string &filename, sol::optional<char> csv_separator) {
+        return StreamCSVPeered(type, filename, csv_separator.value_or(CSV_SEPARATOR)).get0();
+    }
 }

@@ -57,6 +57,26 @@ namespace ragedb {
       return sharded_nodes;
     }
 
+    seastar::future<std::map<uint16_t, std::vector<uint64_t>>> Shard::PartitionIdsByShardId(const roaring::Roaring64Map &ids) const {
+      std::map<uint16_t, std::vector<uint64_t>> sharded_ids;
+      for (uint16_t i = 0; i < cpus; i++) {
+        sharded_ids.try_emplace(i);
+      }
+      for (auto id : ids) {
+        uint16_t id_shard_id = CalculateShardId(id);
+
+        sharded_ids.at(id_shard_id).emplace_back(id);
+        co_await seastar::coroutine::maybe_yield();
+      }
+
+      for (uint16_t i = 0; i < cpus; i++) {
+        if (sharded_ids.at(i).empty()) {
+          sharded_ids.erase(i);
+        }
+      }
+      co_return sharded_ids;
+    }
+
     std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionIdsByShardId(const std::vector<uint64_t> &ids) const {
       std::map<uint16_t, std::vector<uint64_t>> sharded_ids;
       for (uint16_t i = 0; i < cpus; i++) {

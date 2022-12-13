@@ -15,6 +15,7 @@
  */
 
 #include "../Shard.h"
+#include "../../Templates.h"
 
 namespace ragedb {
 
@@ -23,21 +24,23 @@ namespace ragedb {
         uint16_t type_id = node_types.getTypeId(type);
         std::vector<seastar::future<std::map<std::string, uint64_t>>> futures;
         for (auto const& [their_shard, grouped_node_keys] : sharded_nodes_keys ) {
-            auto future = container().invoke_on(their_shard, [grouped_node_keys = grouped_node_keys, type_id] (Shard &local_shard) {
-                return local_shard.NodesGetIds(type_id, grouped_node_keys);
-            });
-            futures.push_back(std::move(future));
+            co_await seastar::coroutine::maybe_yield();
+            for (auto const& chunk : chunkVector(grouped_node_keys, 10000)) {
+                auto future = container().invoke_on(their_shard, [grouped_node_keys = chunk, type_id](Shard &local_shard) {
+                    return local_shard.NodesGetIds(type_id, grouped_node_keys);
+                });
+                futures.push_back(std::move(future));
+            }
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<std::string, uint64_t>>& results) {
-            std::map<std::string, uint64_t> combined;
+        std::vector<std::map<std::string, uint64_t>> results = co_await seastar::when_all_succeed(p->begin(), p->end());
+        std::map<std::string, uint64_t> combined;
 
-            for(const std::map<std::string, uint64_t>& sharded : results) {
-                combined.insert(std::begin(sharded), std::end(sharded));
-            }
-            return combined;
-        });
+        for(const std::map<std::string, uint64_t>& sharded : results) {
+            combined.insert(std::begin(sharded), std::end(sharded));
+        }
+        co_return combined;
     }
 
     seastar::future<std::vector<Node>> Shard::NodesGetPeered(const std::vector<uint64_t> &ids) {

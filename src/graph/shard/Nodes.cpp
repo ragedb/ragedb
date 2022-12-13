@@ -18,12 +18,16 @@
 
 namespace ragedb {
 
-    std::map<std::string, uint64_t> Shard::NodesGetIds(uint16_t type_id, const std::vector<std::string>& keys) {
+    seastar::future<std::map<std::string, uint64_t>> Shard::NodesGetIds(uint16_t type_id, const std::vector<std::string>& keys) {
         std::map<std::string, uint64_t> node_ids;
-        for (const auto& key : keys) {
-            node_ids.emplace(key, node_types.getNodeId(type_id, key));
+        if (node_types.ValidTypeId(type_id)) {
+            for (const auto& key : keys) {
+                node_ids.emplace(key, node_types.getNodeId(type_id, key));
+                co_await seastar::coroutine::maybe_yield();
+            }
         }
-        return node_ids;
+
+        co_return node_ids;
     }
 
     std::vector<Node> Shard::NodesGet(const std::vector<uint64_t>& node_ids) {

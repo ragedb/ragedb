@@ -97,7 +97,9 @@ namespace ragedb {
       "RelationshipResetPropertiesFromJson",
       "RelationshipSetPropertiesFromJson",
       "RelationshipSetProperty",
-      "RelationshipSetPropertyFromJson"
+      "RelationshipSetPropertyFromJson",
+
+      "StreamCSV"
     };
 
     inline static const std::vector<std::string> ALLOWED_GRAPH_READ_FUNCTIONS = {
