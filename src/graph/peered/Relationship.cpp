@@ -79,7 +79,7 @@ namespace ragedb {
 
         // The rel type exists, continue on
         if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-            rel_type_id > 0) {
+            rel_type_id > 0) [[likely]] {
             // if the shards are the same, then handle this special case
             if(shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2](Shard &local_shard) {
@@ -173,7 +173,7 @@ namespace ragedb {
 
         // The rel type exists, continue on
         if ( uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-            rel_type_id > 0) {
+            rel_type_id > 0) [[likely]] {
             // if the shards are the same, then handle this special case
             if(shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, type1, key1, type2, key2, properties](Shard &local_shard) {
@@ -270,7 +270,7 @@ namespace ragedb {
 
         // The rel type exists, continue on
         if (uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-            rel_type_id > 0) {
+            rel_type_id > 0) [[likely]] {
             // if the shards are the same, then handle this special case
             if (shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, id1, id2](Shard &local_shard) {
@@ -394,7 +394,7 @@ namespace ragedb {
 
         // The rel type exists, continue on
         if ( uint16_t rel_type_id = relationship_types.getTypeId(rel_type);
-            rel_type_id > 0) {
+            rel_type_id > 0) [[likely]] {
             if (shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, id1, id2, properties](Shard &local_shard) {
                     return local_shard.RelationshipAddSameShard(rel_type_id, id1, id2, properties);
@@ -475,7 +475,7 @@ namespace ragedb {
         uint16_t shard_id2 = CalculateShardId(id2);
 
         // The rel type exists, continue on
-        if (relationship_types.ValidTypeId(rel_type_id)) {
+        if (relationship_types.ValidTypeId(rel_type_id)) [[likely]] {
             if (shard_id1 == shard_id2) {
                 return container().invoke_on(shard_id1, [rel_type_id, id1, id2, properties](Shard &local_shard) {
                     return local_shard.RelationshipAddSameShard(rel_type_id, id1, id2, properties);

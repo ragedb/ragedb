@@ -66,7 +66,7 @@ namespace ragedb {
   class Shard : public seastar::peering_sharded_service<Shard> {
 
     private:
-        uint cpus;
+        const uint cpus;
         uint shard_id = seastar::this_shard_id();
 
         seastar::rwlock rel_type_lock;                  // Global lock to keep Relationship Type ids in sync

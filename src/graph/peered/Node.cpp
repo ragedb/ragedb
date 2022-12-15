@@ -23,7 +23,7 @@ namespace ragedb {
 
         // The node type exists, so continue on
         if (uint16_t type_id = node_types.getTypeId(type);
-            type_id > 0)  {
+            type_id > 0) [[likely]] {
             return container().invoke_on(node_shard_id, [type_id, key](Shard &local_shard) {
                 return local_shard.NodeAddEmpty(type_id, key);
             });
@@ -44,7 +44,7 @@ namespace ragedb {
 
         // The node type exists, so continue on
         if ( uint16_t node_type_id = node_types.getTypeId(type);
-            node_type_id > 0) {
+            node_type_id > 0) [[likely]] {
             return container().invoke_on(node_shard_id, [node_type_id, key, properties](Shard &local_shard) {
                 return local_shard.NodeAdd(node_type_id, key, properties);
             });
@@ -65,7 +65,7 @@ namespace ragedb {
 
       // The node type exists, so continue on
       if (uint16_t type_id = node_types.getTypeId(type);
-          type_id > 0) {
+          type_id > 0) [[likely]] {
         std::vector<seastar::future<std::vector<uint64_t>>> futures;
         for (const auto& [their_shard, grouped_nodes] : sharded_nodes ) {
           auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id] (Shard &local_shard) {
