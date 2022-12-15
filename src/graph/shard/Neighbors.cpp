@@ -43,7 +43,7 @@ namespace ragedb {
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids) {
         roaring::Roaring64Map combined;
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             if (ValidNodeId(id)) {
                 uint64_t internal_id = externalToInternal(id);
                 uint16_t node_type_id = externalToTypeId(id);
@@ -87,7 +87,7 @@ namespace ragedb {
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction) {
         roaring::Roaring64Map combined;
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             if (ValidNodeId(id)) {
                 uint64_t internal_id = externalToInternal(id);
                 uint16_t node_type_id = externalToTypeId(id);
@@ -145,7 +145,7 @@ namespace ragedb {
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::string &rel_type) {
         roaring::Roaring64Map combined;
         uint16_t type_id = relationship_types.getTypeId(rel_type);
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             if (ValidNodeId(id)) {
                 uint64_t internal_id = externalToInternal(id);
                 uint16_t node_type_id = externalToTypeId(id);
@@ -212,7 +212,7 @@ namespace ragedb {
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
         roaring::Roaring64Map combined;
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             if (ValidNodeId(id)) {
                 uint64_t internal_id = externalToInternal(id);
                 uint16_t node_type_id = externalToTypeId(id);

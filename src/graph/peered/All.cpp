@@ -60,12 +60,12 @@ namespace ragedb {
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             std::map<std::string, uint64_t> counts;
 
-            for(auto const& type : NodeTypesGet()) {
+            for (const auto& type : NodeTypesGet()) {
                 counts.emplace(type, uint64_t(0));
             }
 
-            for (auto result : results) {
-                for (auto [type_id, count] : result) {
+            for (const auto& result : results) {
+                for (const auto& [type_id, count] : result) {
                     auto current = counts[NodeTypeGetType(type_id)];
                     counts[NodeTypeGetType(type_id)] = current + count;
                 }
@@ -117,12 +117,12 @@ namespace ragedb {
         return seastar::when_all_succeed(p->begin(), p->end()).then([p, this] (const std::vector<std::map<uint16_t, uint64_t>>& results) {
             std::map<std::string, uint64_t> counts;
 
-            for(auto const& type : RelationshipTypesGet()) {
+            for(const auto& type : RelationshipTypesGet()) {
                 counts.emplace(type, uint64_t(0));
             }
 
-            for (auto result : results) {
-                for (auto [type_id, count] : result) {
+            for (const auto& result : results) {
+                for (const auto& [type_id, count] : result) {
                     auto current = counts[RelationshipTypeGetType(type_id)];
                     counts[RelationshipTypeGetType(type_id)] = current + count;
                 }
@@ -248,7 +248,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     ids.insert(std::end(ids), std::begin(result), std::end(result));
                 }
                 return ids;
@@ -313,7 +313,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Node>>& results) {
                 std::vector<Node> requested_nodes;
                 requested_nodes.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
                 }
                 return requested_nodes;
@@ -371,7 +371,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Node>>& results) {
                 std::vector<Node> requested_nodes;
                 requested_nodes.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
                 }
                 return requested_nodes;
@@ -436,7 +436,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     ids.insert(std::end(ids), std::begin(result), std::end(result));
                 }
                 return ids;
@@ -496,7 +496,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
                 ids.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     ids.insert(std::end(ids), std::begin(result), std::end(result));
                 }
                 return ids;
@@ -561,7 +561,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Relationship>>& results) {
                 std::vector<Relationship> requested_relationships;
                 requested_relationships.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     requested_relationships.insert(std::end(requested_relationships), std::begin(result), std::end(result));
                 }
                 return requested_relationships;
@@ -621,7 +621,7 @@ namespace ragedb {
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Relationship>>& results) {
                 std::vector<Relationship> requested_relationships;
                 requested_relationships.reserve(limit);
-                for (auto result : results) {
+                for (const auto& result : results) {
                     requested_relationships.insert(std::end(requested_relationships), std::begin(result), std::end(result));
                 }
                 return requested_relationships;

@@ -447,7 +447,7 @@ namespace ragedb {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(external_ids.size());
-            for (auto id : external_ids) {
+            for (const auto& id : external_ids) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
             return properties[type_id].getProperty(external_ids, internal_ids, property);
@@ -460,7 +460,7 @@ namespace ragedb {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(external_ids.size());
-            for (auto id : external_ids) {
+            for (const auto& id : external_ids) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
             return properties[type_id].getProperties(external_ids, internal_ids);
@@ -471,7 +471,7 @@ namespace ragedb {
     std::vector<Node> NodeTypes::getNodes(uint16_t type_id, const std::vector<Link> &links) const {
         std::vector<uint64_t> external_ids;
         external_ids.reserve(links.size());
-        for (auto link : links) {
+        for (const auto& link : links) {
             external_ids.emplace_back(link.node_id);
         }
         return getNodes(type_id, external_ids);
@@ -484,11 +484,11 @@ namespace ragedb {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(external_ids.size());
-            for (auto id : external_ids) {
+            for (const auto& id : external_ids) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
             auto nodes_properties = properties[type_id].getProperties(external_ids, internal_ids);
-            for (auto [id, props] : nodes_properties) {
+            for (const auto& [id, props] : nodes_properties) {
                 nodes.emplace_back(Node(id, type, getNodeKey(type_id, Shard::externalToInternal(id)), props));
             }
         }
@@ -730,7 +730,7 @@ namespace ragedb {
         if (!error) {
             // Add the node properties
             int valid = 0;
-            for (auto[key, value] : object) {
+            for (const auto&[key, value] : object) {
                 auto property = static_cast<std::string>(key);
                 const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
                 // If the property type exists at all

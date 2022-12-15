@@ -62,7 +62,7 @@ namespace ragedb {
       for (uint16_t i = 0; i < cpus; i++) {
         sharded_ids.try_emplace(i);
       }
-      for (auto id : ids) {
+      for (const auto& id : ids) {
         uint16_t id_shard_id = CalculateShardId(id);
 
         sharded_ids.at(id_shard_id).emplace_back(id);
@@ -82,7 +82,7 @@ namespace ragedb {
       for (uint16_t i = 0; i < cpus; i++) {
         sharded_ids.try_emplace(i);
       }
-      for (auto id : ids) {
+      for (const auto& id : ids) {
         uint16_t id_shard_id = CalculateShardId(id);
         // Insert Sorted
         auto it = std::upper_bound(sharded_ids.at(id_shard_id).begin(), sharded_ids.at(id_shard_id).end(), id);
@@ -102,7 +102,7 @@ namespace ragedb {
       for (uint16_t i = 0; i < cpus; i++) {
         sharded_nodes_ids.try_emplace(i);
       }
-      for (auto link : links) {
+      for (const auto& link : links) {
         uint16_t node_shard_id = CalculateShardId(link.node_id);
         // Insert Sorted
         auto it = std::upper_bound(sharded_nodes_ids.at(node_shard_id).begin(), sharded_nodes_ids.at(node_shard_id).end(), link.node_id);
@@ -144,7 +144,7 @@ namespace ragedb {
       for (uint16_t i = 0; i < cpus; i++) {
         sharded_ids.insert({i, std::vector<uint64_t>() });
       }
-      for (auto link : links) {
+      for (const auto& link : links) {
         uint16_t relationship_shard_id = CalculateShardId(link.rel_id);
         // Insert Sorted
         auto it = std::upper_bound(sharded_ids.at(relationship_shard_id).begin(), sharded_ids.at(relationship_shard_id).end(), link.rel_id);
@@ -186,7 +186,7 @@ namespace ragedb {
         for (uint16_t i = 0; i < max_size; i++) {
             partitioned_ids.insert({i, std::vector<uint64_t>() });
         }
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             uint16_t type_id = externalToTypeId(id);
             // Insert Sorted
             auto it = std::upper_bound(partitioned_ids.at(type_id).begin(), partitioned_ids.at(type_id).end(), id);
@@ -209,7 +209,7 @@ namespace ragedb {
         for (uint16_t i = 0; i < max_size; i++) {
             partitioned_ids.insert({i, std::vector<Link>() });
         }
-        for (auto link : links) {
+        for (const auto& link : links) {
             uint16_t type_id = externalToTypeId(link.node_id);
             // Insert Sorted
             auto it = std::upper_bound(partitioned_ids.at(type_id).begin(), partitioned_ids.at(type_id).end(), link);
@@ -230,7 +230,7 @@ namespace ragedb {
         for (uint16_t i = 0; i < max_size; i++) {
             partitioned_ids.insert({i, std::vector<uint64_t>() });
         }
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             partitioned_ids[externalToTypeId(id)].emplace_back(id);
         }
 
@@ -250,7 +250,7 @@ namespace ragedb {
         for (uint16_t i = 0; i < max_size; i++) {
             partitioned_ids.insert({i, std::vector<Link>() });
         }
-        for (auto link : links) {
+        for (const auto& link : links) {
             partitioned_ids[externalToTypeId(link.rel_id)].emplace_back(link);
         }
 

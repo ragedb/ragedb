@@ -430,7 +430,7 @@ namespace ragedb {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(external_ids.size());
-            for (auto id : external_ids) {
+            for (const auto& id : external_ids) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
             return properties[type_id].getProperty(external_ids, internal_ids, property);
@@ -443,7 +443,7 @@ namespace ragedb {
             // Get internal ids
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(external_ids.size());
-            for (auto id : external_ids) {
+            for (const auto& id : external_ids) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
             return properties[type_id].getProperties(external_ids, internal_ids);
@@ -704,7 +704,7 @@ namespace ragedb {
         if (!error) {
             // Add the relationship properties
             int valid = 0;
-            for (auto[key, value] : object) {
+            for (const auto& [key, value] : object) {
               auto property = static_cast<std::string>(key);
               const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
               // If the property type exists at all

@@ -62,8 +62,8 @@ namespace ragedb {
       std::map<uint64_t, uint16_t> sharded_relationship_type_ids;
 
       if (ValidRelationshipIds(rel_ids)) {
-          for (auto [type_id, ids] : PartitionRelationshipIdsByTypeId(rel_ids)) {
-              for (auto id : ids) {
+          for (const auto& [type_id, ids] : PartitionRelationshipIdsByTypeId(rel_ids)) {
+              for (const auto& id : ids) {
                   sharded_relationship_type_ids[id] = type_id;
               }
           }
@@ -76,8 +76,8 @@ namespace ragedb {
       std::map<Link, uint16_t> sharded_relationship_type_ids;
 
       if (ValidLinksRelationshipIds(links)) {
-          for (auto [type_id, typed_links] : PartitionLinkRelationshipIdsByTypeId(links)) {
-              for (auto link : typed_links) {
+          for (const auto& [type_id, typed_links] : PartitionLinkRelationshipIdsByTypeId(links)) {
+              for (const auto& link : typed_links) {
                   sharded_relationship_type_ids[link] = type_id;
               }
           }
@@ -90,8 +90,8 @@ namespace ragedb {
         std::map<uint64_t, property_type_t> sharded_relationship_properties;
 
         if (ValidRelationshipIds(rel_ids)) {
-            for (auto [type_id, ids] : PartitionRelationshipIdsByTypeId(rel_ids)) {
-                for (auto [id, properties] : relationship_types.getRelationshipsProperty(type_id, ids, property)) {
+            for (const auto& [type_id, ids] : PartitionRelationshipIdsByTypeId(rel_ids)) {
+                for (const auto& [id, properties] : relationship_types.getRelationshipsProperty(type_id, ids, property)) {
                     sharded_relationship_properties[id] = properties;
                 }
             }
@@ -104,7 +104,7 @@ namespace ragedb {
       std::map<Link, property_type_t> sharded_relationship_properties;
 
       if (ValidLinksRelationshipIds(links)) {
-          for (auto [type_id, typed_links] : PartitionLinkRelationshipIdsByTypeId(links)) {
+          for (const auto& [type_id, typed_links] : PartitionLinkRelationshipIdsByTypeId(links)) {
 
               std::vector<uint64_t> ids(typed_links.size());
               for (int i = 0; i < typed_links.size(); ++i) {
@@ -125,8 +125,8 @@ namespace ragedb {
       std::map<uint64_t, std::map<std::string, property_type_t>> sharded_relationship_properties;
 
       if (ValidRelationshipIds(rel_ids)) {
-          for (auto [type_id, ids] : PartitionRelationshipIdsByTypeId(rel_ids)) {
-              for (auto [id, properties] : relationship_types.getRelationshipsProperties(type_id, ids)) {
+          for (const auto& [type_id, ids] : PartitionRelationshipIdsByTypeId(rel_ids)) {
+              for (const auto& [id, properties] : relationship_types.getRelationshipsProperties(type_id, ids)) {
                   sharded_relationship_properties[id] = properties;
               }
           }
@@ -139,7 +139,7 @@ namespace ragedb {
       std::map<Link, std::map<std::string, property_type_t>> sharded_relationship_properties;
 
       if (ValidLinksRelationshipIds(links)) {
-          for (auto [type_id, typed_links] : PartitionLinkRelationshipIdsByTypeId(links)) {
+          for (const auto& [type_id, typed_links] : PartitionLinkRelationshipIdsByTypeId(links)) {
 
               std::vector<uint64_t> ids(typed_links.size());
               for (int i = 0; i < typed_links.size(); ++i) {

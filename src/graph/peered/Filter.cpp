@@ -22,7 +22,7 @@ namespace ragedb {
     std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
       std::vector<seastar::future<uint64_t>> futures;
-      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+      for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
         auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value] (Shard &local_shard) {
           return local_shard.FilterNodeCount(grouped_node_ids, type, property, operation, value);
         });
@@ -33,7 +33,7 @@ namespace ragedb {
       return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
         uint64_t count = 0;
 
-        for(auto sharded : results) {
+        for(const auto& sharded : results) {
           count += sharded;
         }
         return count;
@@ -47,7 +47,7 @@ namespace ragedb {
           uint64_t max = skip + limit;
 
           std::vector<seastar::future<std::vector<uint64_t>>> futures;
-          for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+          for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
               auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder](Shard &local_shard) {
                   return local_shard.FilterNodeIds(grouped_node_ids, type, property, operation, value, max, sortOrder);
               });
@@ -60,8 +60,8 @@ namespace ragedb {
 
               std::vector<uint64_t> node_ids;
 
-              for (const auto &result : results) {
-                  for (auto id : result) {
+              for (const auto& result : results) {
+                  for (const auto& id : result) {
                       if (++current > skip) {
                           node_ids.push_back(id);
                       }
@@ -89,7 +89,7 @@ namespace ragedb {
     uint64_t max = skip + limit;
 
     std::vector<seastar::future<std::vector<Node>>> futures;
-    for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+    for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
       auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
         return local_shard.FilterNodes(grouped_node_ids, type, property, operation, value, max, sortOrder);
       });
@@ -145,7 +145,7 @@ namespace ragedb {
       uint64_t max = skip + limit;
 
       std::vector<seastar::future<std::vector<std::map<std::string, property_type_t>>>> futures;
-      for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+      for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
           auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
               return local_shard.FilterNodeProperties(grouped_node_ids, type, property, operation, value, max, sortOrder);
           });
@@ -199,7 +199,7 @@ namespace ragedb {
     std::map<uint16_t, std::vector<uint64_t>> sharded_relationships_ids = PartitionIdsByShardId(ids);
 
     std::vector<seastar::future<uint64_t>> futures;
-    for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
+    for (const auto& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
       auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value] (Shard &local_shard) {
         return local_shard.FilterRelationshipCount(grouped_relationship_ids, type, property, operation, value);
       });
@@ -210,7 +210,7 @@ namespace ragedb {
     return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<uint64_t>& results) {
       uint64_t count = 0;
 
-      for(auto sharded : results) {
+      for (const auto& sharded : results) {
         count += sharded;
       }
       return count;
@@ -224,7 +224,7 @@ namespace ragedb {
           uint64_t max = skip + limit;
 
           std::vector<seastar::future<std::vector<uint64_t>>> futures;
-          for (auto const &[their_shard, grouped_relationship_ids] : sharded_relationships_ids) {
+          for (const auto &[their_shard, grouped_relationship_ids] : sharded_relationships_ids) {
               auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max, sortOrder](Shard &local_shard) {
                   return local_shard.FilterRelationshipIds(grouped_relationship_ids, type, property, operation, value, max, sortOrder);
               });
@@ -237,8 +237,8 @@ namespace ragedb {
 
               std::vector<uint64_t> relationship_ids;
 
-              for (const auto &result : results) {
-                  for (auto id : result) {
+              for (const auto& result : results) {
+                  for (const auto& id : result) {
                       if (++current > skip) {
                           relationship_ids.push_back(id);
                       }
@@ -266,7 +266,7 @@ namespace ragedb {
     uint64_t max = skip + limit;
 
     std::vector<seastar::future<std::vector<Relationship>>> futures;
-    for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
+    for (const auto& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
       auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
         return local_shard.FilterRelationships(grouped_relationship_ids, type, property, operation, value, max, sortOrder);
       });
@@ -322,7 +322,7 @@ namespace ragedb {
       uint64_t max = skip + limit;
 
       std::vector<seastar::future<std::vector<std::map<std::string, property_type_t>>>> futures;
-      for (auto const& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
+      for (const auto& [their_shard, grouped_relationship_ids] : sharded_relationships_ids ) {
           auto future = container().invoke_on(their_shard, [grouped_relationship_ids = grouped_relationship_ids, type, property, operation, value, max, sortOrder] (Shard &local_shard) {
               return local_shard.FilterRelationshipProperties(grouped_relationship_ids, type, property, operation, value, max, sortOrder);
           });

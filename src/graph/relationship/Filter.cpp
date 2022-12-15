@@ -189,7 +189,7 @@ namespace ragedb {
   
     if(operation == Operation::IS_NULL) {
       uint64_t count = 0;
-      for (auto id : unfiltered) {
+      for (const auto& id : unfiltered) {
         count += static_cast<uint8_t>(properties[type_id].isDeleted(property, id));
       }
       return count;
@@ -197,7 +197,7 @@ namespace ragedb {
   
     if(operation == Operation::NOT_IS_NULL) {
       uint64_t count = 0;
-      for (auto id : unfiltered) {
+      for (const auto& id : unfiltered) {
         count += (1 - static_cast<uint8_t>(properties[type_id].isDeleted(property, id)));
       }
       return count;
@@ -234,7 +234,7 @@ namespace ragedb {
   std::vector<uint64_t> RelationshipTypes::filterNullIds(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t limit) {
     std::vector<uint64_t> ids;
     uint64_t current = 1;
-    for (auto id : list) {
+    for (const auto& id : list) {
       if (current > limit) {
         break;
       }
@@ -251,7 +251,7 @@ namespace ragedb {
       std::vector<uint64_t> ids;
       uint64_t current = 1;
       if (sortOrder == Sort::NONE) {
-          for (auto id : list) {
+          for (const auto& id : list) {
               if (current > limit) {
                   break;
               }
@@ -263,7 +263,7 @@ namespace ragedb {
           }
       } else {
           std::vector<std::pair<uint64_t, property_type_t>> vec;
-          for (auto id : list) {
+          for (const auto& id : list) {
               if (!properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
                   vec.emplace_back(id, getRelationshipProperty(id, property));
               }
@@ -279,7 +279,7 @@ namespace ragedb {
                   return a.second > b.second;
               });
           }
-          for (auto id : vec) {
+          for (const auto& id : vec) {
               if (current++ > limit) {
                   return ids;
               }
@@ -301,7 +301,7 @@ namespace ragedb {
           return ids;
       }
       if (sortOrder == Sort::NONE) {
-          for (auto id : list) {
+          for (const auto& id : list) {
               // If we reached our limit, return
               if (current > limit) {
                   return ids;
@@ -317,7 +317,7 @@ namespace ragedb {
       } else {
           std::vector<uint64_t> internal_ids;
           internal_ids.reserve(list.size());
-          for (auto id : list) {
+          for (const auto& id : list) {
               internal_ids.emplace_back(Shard::externalToInternal(id));
           }
 
@@ -358,7 +358,7 @@ namespace ragedb {
       }
 
       if (sortOrder == Sort::NONE) {
-          for (auto id : list) {
+          for (const auto& id : list) {
               // If we reached our limit, return
               if (current > limit) {
                   return ids;
@@ -374,7 +374,7 @@ namespace ragedb {
       } else {
           std::vector<uint64_t> internal_ids;
           internal_ids.reserve(list.size());
-          for (auto id : list) {
+          for (const auto& id : list) {
               internal_ids.emplace_back(Shard::externalToInternal(id));
           }
 
@@ -419,7 +419,7 @@ namespace ragedb {
       }
 
       if (sortOrder == Sort::NONE) {
-          for (auto id : list) {
+          for (const auto& id : list) {
               // If we reached our limit, return
               if (current > limit) {
                   return ids;
@@ -435,7 +435,7 @@ namespace ragedb {
       } else {
           std::vector<uint64_t> internal_ids;
           internal_ids.reserve(list.size());
-          for (auto id : list) {
+          for (const auto& id : list) {
               internal_ids.emplace_back(Shard::externalToInternal(id));
           }
 
@@ -476,7 +476,7 @@ namespace ragedb {
       }
 
       if (sortOrder == Sort::NONE) {
-          for (auto id : list) {
+          for (const auto& id : list) {
               // If we reached our limit, return
               if (current > limit) {
                   return ids;
@@ -492,7 +492,7 @@ namespace ragedb {
       } else {
           std::vector<uint64_t> internal_ids;
           internal_ids.reserve(list.size());
-          for (auto id : list) {
+          for (const auto& id : list) {
               internal_ids.emplace_back(Shard::externalToInternal(id));
           }
 
@@ -527,7 +527,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<bool> typedValue = get<std::vector<bool>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return ids;
@@ -547,7 +547,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return ids;
@@ -567,7 +567,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<double> typedValue = get<std::vector<double>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return ids;
@@ -587,7 +587,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return ids;
@@ -650,7 +650,7 @@ namespace ragedb {
   std::vector<Relationship> RelationshipTypes::filterNullRelationships(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t limit) {
     std::vector<Relationship> relationships;
     uint64_t current = 1;
-    for (auto id : list) {
+    for (const auto& id : list) {
       if (current > limit) {
         break;
       }
@@ -667,7 +667,7 @@ namespace ragedb {
     std::vector<Relationship> relationships;
     uint64_t current = 1;
     if (sortOrder == Sort::NONE) {
-        for (auto id : list) {
+        for (const auto& id : list) {
             if (current > limit) {
                 break;
             }
@@ -679,7 +679,7 @@ namespace ragedb {
         }
     } else {
         std::vector<std::pair<uint64_t, property_type_t>> vec;
-        for (auto id : list) {
+        for (const auto& id : list) {
             if (!properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
                 vec.emplace_back(id, getRelationshipProperty(id, property));
             }
@@ -695,7 +695,7 @@ namespace ragedb {
                 return a.second > b.second;
             });
         }
-        for (auto id : vec) {
+        for (const auto& id : vec) {
             if (current++ > limit) {
                 return relationships;
             }
@@ -715,7 +715,7 @@ namespace ragedb {
         return relationships;
     }
     if (sortOrder == Sort::NONE) {
-        for (auto id : list) {
+        for (const auto& id : list) {
             // If we reached our limit, return
             if (current > limit) {
                 return relationships;
@@ -731,7 +731,7 @@ namespace ragedb {
     } else {
         std::vector<uint64_t> internal_ids;
         internal_ids.reserve(list.size());
-        for (auto id : list) {
+        for (const auto& id : list) {
             internal_ids.emplace_back(Shard::externalToInternal(id));
         }
 
@@ -772,7 +772,7 @@ namespace ragedb {
     }
 
     if (sortOrder == Sort::NONE) {
-        for (auto id : list) {
+        for (const auto& id : list) {
             // If we reached our limit, return
             if (current > limit) {
                 return relationships;
@@ -788,7 +788,7 @@ namespace ragedb {
     } else {
         std::vector<uint64_t> internal_ids;
         internal_ids.reserve(list.size());
-        for (auto id : list) {
+        for (const auto& id : list) {
             internal_ids.emplace_back(Shard::externalToInternal(id));
         }
 
@@ -833,7 +833,7 @@ namespace ragedb {
     }
 
     if (sortOrder == Sort::NONE) {
-        for (auto id : list) {
+        for (const auto& id : list) {
             // If we reached our limit, return
             if (current > limit) {
                 return relationships;
@@ -849,7 +849,7 @@ namespace ragedb {
     } else {
         std::vector<uint64_t> internal_ids;
         internal_ids.reserve(list.size());
-        for (auto id : list) {
+        for (const auto& id : list) {
             internal_ids.emplace_back(Shard::externalToInternal(id));
         }
 
@@ -890,7 +890,7 @@ namespace ragedb {
     }
 
     if (sortOrder == Sort::NONE) {
-        for (auto id : list) {
+        for (const auto& id : list) {
             // If we reached our limit, return
             if (current > limit) {
                 return relationships;
@@ -906,7 +906,7 @@ namespace ragedb {
     } else {
         std::vector<uint64_t> internal_ids;
         internal_ids.reserve(list.size());
-        for (auto id : list) {
+        for (const auto& id : list) {
             internal_ids.emplace_back(Shard::externalToInternal(id));
         }
 
@@ -941,7 +941,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<bool> typedValue = get<std::vector<bool>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return relationships;
@@ -961,7 +961,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return relationships;
@@ -981,7 +981,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<double> typedValue = get<std::vector<double>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return relationships;
@@ -1001,7 +1001,7 @@ namespace ragedb {
     int current = 1;
     if (Properties::isBooleanListProperty(value)) {
       const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
-      for (auto id : list) {
+      for (const auto& id : list) {
         // If we reached our limit, return
         if (current > limit) {
           return relationships;
@@ -1061,7 +1061,7 @@ namespace ragedb {
     std::vector<std::map<std::string, property_type_t>> RelationshipTypes::filterNullRelationshipProperties(const std::vector<uint64_t>& list, uint16_t type_id, const std::string &property, uint64_t limit) {
         std::vector<std::map<std::string, property_type_t>> relationships;
         uint64_t current = 1;
-        for (auto id : list) {
+        for (const auto& id : list) {
             if (current > limit) {
                 break;
             }
@@ -1078,7 +1078,7 @@ namespace ragedb {
         std::vector<std::map<std::string, property_type_t>> relationships;
         uint64_t current = 1;
         if (sortOrder == Sort::NONE) {
-            for (auto id : list) {
+            for (const auto& id : list) {
                 if (current > limit) {
                     break;
                 }
@@ -1090,7 +1090,7 @@ namespace ragedb {
             }
         } else {
             std::vector<std::pair<uint64_t, property_type_t>> vec;
-            for (auto id : list) {
+            for (const auto& id : list) {
                 if (!properties[type_id].isDeleted(property, Shard::externalToInternal(id))) {
                     vec.emplace_back(id, getRelationshipProperty(id, property));
                 }
@@ -1106,7 +1106,7 @@ namespace ragedb {
                     return a.second > b.second;
                 });
             }
-            for (auto id : vec) {
+            for (const auto& id : vec) {
                 if (current++ > limit) {
                     return relationships;
                 }
@@ -1126,7 +1126,7 @@ namespace ragedb {
             return relationships;
         }
         if (sortOrder == Sort::NONE) {
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1142,7 +1142,7 @@ namespace ragedb {
         } else {
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(list.size());
-            for (auto id : list) {
+            for (const auto& id : list) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
   
@@ -1183,7 +1183,7 @@ namespace ragedb {
         }
   
         if (sortOrder == Sort::NONE) {
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1199,7 +1199,7 @@ namespace ragedb {
         } else {
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(list.size());
-            for (auto id : list) {
+            for (const auto& id : list) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
   
@@ -1244,7 +1244,7 @@ namespace ragedb {
         }
   
         if (sortOrder == Sort::NONE) {
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1260,7 +1260,7 @@ namespace ragedb {
         } else {
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(list.size());
-            for (auto id : list) {
+            for (const auto& id : list) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
   
@@ -1301,7 +1301,7 @@ namespace ragedb {
         }
   
         if (sortOrder == Sort::NONE) {
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1317,7 +1317,7 @@ namespace ragedb {
         } else {
             std::vector<uint64_t> internal_ids;
             internal_ids.reserve(list.size());
-            for (auto id : list) {
+            for (const auto& id : list) {
                 internal_ids.emplace_back(Shard::externalToInternal(id));
             }
   
@@ -1352,7 +1352,7 @@ namespace ragedb {
         int current = 1;
         if (Properties::isBooleanListProperty(value)) {
             const std::vector<bool> typedValue = get<std::vector<bool>>(value);
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1372,7 +1372,7 @@ namespace ragedb {
         int current = 1;
         if (Properties::isBooleanListProperty(value)) {
             const std::vector<int64_t> typedValue = get<std::vector<int64_t>>(value);
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1392,7 +1392,7 @@ namespace ragedb {
         int current = 1;
         if (Properties::isBooleanListProperty(value)) {
             const std::vector<double> typedValue = get<std::vector<double>>(value);
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;
@@ -1412,7 +1412,7 @@ namespace ragedb {
         int current = 1;
         if (Properties::isBooleanListProperty(value)) {
             const std::vector<std::string> typedValue = get<std::vector<std::string>>(value);
-            for (auto id : list) {
+            for (const auto& id : list) {
                 // If we reached our limit, return
                 if (current > limit) {
                     return relationships;

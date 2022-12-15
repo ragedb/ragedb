@@ -188,7 +188,7 @@ namespace ragedb {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
-    for (auto element : getIds()) {
+    for (const auto& element : getIds()) {
         links.emplace_back(element, 0);
     }
 
@@ -203,7 +203,7 @@ namespace ragedb {
     std::vector<Link> links;
     links.reserve(map.cardinality());
 
-    for (auto element : getIds()) {
+    for (const auto& element : getIds()) {
         links.emplace_back(0, element);
     }
 

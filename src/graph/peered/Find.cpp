@@ -56,7 +56,7 @@ namespace ragedb {
             std::vector<uint64_t> ids;
 
             for (const auto& result : results) {
-                for( auto id : result) {
+                for (const auto& id : result) {
                     if (++current > skip) {
                         ids.push_back(id);
                     }
@@ -88,7 +88,7 @@ namespace ragedb {
             std::vector<uint64_t> ids;
 
             for (const auto& result : results) {
-                for( auto id : result) {
+                for (const auto& id : result) {
                     if (++current > skip) {
                         ids.push_back(id);
                     }

@@ -20,7 +20,7 @@ namespace ragedb {
 
     bool Shard::NodeRemoveDeleteIncoming(uint64_t id, const std::map<uint16_t, std::vector<uint64_t>>&grouped_relationships) {
         for (const auto& [rel_type_id, ids] : grouped_relationships) {
-            for (auto node_id : ids) {
+            for (const auto& node_id : ids) {
                 uint64_t internal_id = externalToInternal(node_id);
                 uint16_t node_type_id = externalToTypeId(node_id);
 
@@ -122,7 +122,7 @@ namespace ragedb {
 
     bool Shard::NodeRemoveDeleteOutgoing(uint64_t id, const std::map<uint16_t, std::vector<uint64_t>> &grouped_relationships) {
         for (const auto& [rel_type_id, ids] : grouped_relationships) {
-            for (auto node_id : ids) {
+            for (const auto& node_id : ids) {
                 uint64_t internal_id = externalToInternal(node_id);
                 uint16_t node_type_id = externalToTypeId(node_id);
 

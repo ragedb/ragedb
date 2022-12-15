@@ -68,7 +68,7 @@ namespace ragedb {
 
         std::string key_column;
         std::string type;
-        for (auto &name : doc.GetColumnNames()) {
+        for (const auto& name : doc.GetColumnNames()) {
             if (name.starts_with("end_key:")) {
                 key_column = name;
                 type = name.substr(name.find(":") + 1);
@@ -97,7 +97,7 @@ namespace ragedb {
 
         std::string key_column;
         std::string type;
-        for (auto &name : doc.GetColumnNames()) {
+        for (const auto&name : doc.GetColumnNames()) {
             if (name.starts_with("start_key:")) {
                 key_column = name;
                 type = name.substr(name.find(":") + 1);
@@ -109,7 +109,7 @@ namespace ragedb {
         if (!key_column.empty() && !type.empty()) {
             // Distribute the rows over the shards
             size_t row = 0;
-            for (auto &key : doc.GetColumn<std::string>(key_column)) {
+            for (const auto& key : doc.GetColumn<std::string>(key_column)) {
                 sharded_nodes[CalculateShardId(type, key)].emplace_back(row++);
             }
         }
@@ -136,7 +136,7 @@ namespace ragedb {
             true /* pSkipEmptyLines */));
 
         std::string key_column;
-        for (auto &name : doc.GetColumnNames()) {
+        for (const auto& name : doc.GetColumnNames()) {
             if (name == "key" || name.ends_with(":key")) {
                 key_column = name;
                 break;
@@ -147,7 +147,7 @@ namespace ragedb {
         if (!key_column.empty()) {
             // Distribute the rows over the shards
             size_t row = 0;
-            for (auto &key : doc.GetColumn<std::string>(key_column)) {
+            for (const auto& key : doc.GetColumn<std::string>(key_column)) {
                 sharded_nodes[CalculateShardId(type, key)].emplace_back(row++);
             }
         } else {
@@ -179,7 +179,7 @@ namespace ragedb {
 
         std::string key_column;
 
-        for (auto &name : reader.get_col_names()) {
+        for (const auto& name : reader.get_col_names()) {
             if (name == "key" || name.ends_with(":key")) {
                 key_column = name;
                 break;
@@ -216,7 +216,7 @@ namespace ragedb {
             std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionNodesInStreamCSV(type, filename, csv_separator);
 
             std::vector<seastar::future<uint64_t>> futures;
-            for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
+            for (const auto& [their_shard, grouped_nodes] : sharded_nodes ) {
                 auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator] (Shard &local_shard) {
                     return local_shard.StreamCSVNodes(type_id, filename, csv_separator, grouped_nodes);
                 });
@@ -239,7 +239,7 @@ namespace ragedb {
             std::map<uint16_t, std::vector<size_t>> sharded_nodes = PartitionNodesInCSV(type, filename, csv_separator);
 
             std::vector<seastar::future<uint64_t>> futures;
-            for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
+            for (const auto& [their_shard, grouped_nodes] : sharded_nodes ) {
                 auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator] (Shard &local_shard) {
                     return local_shard.LoadCSVNodes(type_id, filename, csv_separator, grouped_nodes);
                 });
@@ -266,7 +266,7 @@ namespace ragedb {
 
                 std::vector<seastar::future<std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>>>> futures;
 
-                for (auto const& [their_shard, grouped_nodes] : sharded_nodes ) {
+                for (const auto& [their_shard, grouped_nodes] : sharded_nodes ) {
                     auto future = container().invoke_on(their_shard, [grouped_nodes = grouped_nodes, type_id, filename, csv_separator, to_keys_and_ids] (Shard &local_shard) {
                         return local_shard.LoadCSVRelationships(type_id, filename, csv_separator, grouped_nodes, to_keys_and_ids);
                     });
@@ -283,8 +283,8 @@ namespace ragedb {
                     for (uint16_t i = 0; i < cpus; i++) {
                         sharded_relationship_tuples.try_emplace(i);
                     }
-                    for (auto const& result : results) {
-                        for (auto const& [their_shard, relationship_tuples] : result ) {
+                    for (const auto& result : results) {
+                        for (const auto& [their_shard, relationship_tuples] : result ) {
                             sharded_relationship_tuples.at(their_shard).insert(
                               std::end(sharded_relationship_tuples.at(their_shard)),
                               std::begin(relationship_tuples), std::end(relationship_tuples));
@@ -296,7 +296,7 @@ namespace ragedb {
                         }
                     }
 
-                    for (auto const& [their_shard, relationship_tuples] : sharded_relationship_tuples ) {
+                    for (const auto& [their_shard, relationship_tuples] : sharded_relationship_tuples ) {
                         auto future = container().invoke_on(their_shard, [type_id, relationship_tuples = relationship_tuples](Shard &local_shard) {
                             uint64_t count = 0;
                             for (const auto& tuple : relationship_tuples) {

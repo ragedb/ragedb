@@ -47,7 +47,7 @@ namespace ragedb {
 
 
     std::string Properties::getPropertyKey(uint8_t id) const {
-      for (auto& [type, type_id]: types) {
+      for (const auto& [type, type_id]: types) {
         if (id == type_id) {
           return type;
         }
@@ -57,7 +57,7 @@ namespace ragedb {
 
     std::map<std::string, std::string> Properties::getPropertyTypes() {
         std::map<std::string, std::string> map;
-        for (auto [type, type_id]: types) {
+        for (const auto& [type, type_id]: types) {
             map.insert({type, allowed_types[type_id]});
         }
         map.erase("");
@@ -677,7 +677,7 @@ namespace ragedb {
         }
 
         // Go through all the property types these Nodes or Relationships types are supposed to have
-        for (auto const&[key, type_id] : types) {
+        for (const auto&[key, type_id] : types) {
             // Find the value based on the type and key and add it to the properties map
             switch (type_id) {
                 case boolean_type: {
@@ -780,7 +780,7 @@ namespace ragedb {
         // Build a temporary map of string, any
         std::map<std::string, property_type_t> properties;
         // Go through all the property types this Node or Relationship type is supposed to have
-        for (auto const&[key, type_id] : types) {
+        for (const auto&[key, type_id] : types) {
             // If the entry has been deleted, then skip adding it to the map (alternatively we could add an unset Any)
             if (!deleted.at(key).contains(index)) {
                 // Find the value based on the type and key and add it to the properties map

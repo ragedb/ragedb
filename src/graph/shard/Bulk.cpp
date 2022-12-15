@@ -52,8 +52,8 @@ namespace ragedb {
 
     std::map<Link, std::vector<Relationship>> Shard::LinksGetRelationships(const std::map<Link, std::vector<Link>>& links) {
       std::map<Link, std::vector<Relationship>> link_rels;
-      for (auto const &[key, vector_of_links] : links) {
-        for (auto const link : vector_of_links) {
+      for (const auto &[key, vector_of_links] : links) {
+        for (const auto link : vector_of_links) {
           link_rels[key].push_back(RelationshipGet(link.rel_id));
         }
       }
@@ -62,8 +62,8 @@ namespace ragedb {
 
     std::map<Link, std::vector<Node>> Shard::LinksGetNeighbors(const std::map<Link, std::vector<Link>>& links) {
       std::map<Link, std::vector<Node>> link_nodes;
-      for (auto const &[key, vector_of_links] : links) {
-        for (auto const link : vector_of_links) {
+      for (const auto &[key, vector_of_links] : links) {
+        for (const auto link : vector_of_links) {
           link_nodes[key].push_back(NodeGet(link.node_id));
         }
       }
@@ -77,7 +77,7 @@ namespace ragedb {
         sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
       }
 
-      for (auto ids : links) {
+      for (const auto& ids : links) {
         uint64_t id = ids.node_id;
         if (ValidNodeId(id)) {
           uint16_t node_type_id = externalToTypeId(id);
@@ -109,7 +109,7 @@ namespace ragedb {
             sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
         }
 
-        for (auto ids : links) {
+        for (const auto& ids : links) {
             uint64_t id = ids.node_id;
             if (ValidNodeId(id)) {
               uint16_t node_type_id = externalToTypeId(id);
@@ -149,13 +149,13 @@ namespace ragedb {
               rel_type_ids.emplace_back(type_id);
           }
       }
-      for (auto ids : links) {
+      for (const auto& ids : links) {
         uint64_t id = ids.node_id;
         if (ValidNodeId(id)) {
           uint16_t node_type_id = externalToTypeId(id);
           uint64_t internal_id = externalToInternal(id);
 
-          for (auto type_id : rel_type_ids) {
+          for (const auto& type_id : rel_type_ids) {
               auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id), [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
               if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {

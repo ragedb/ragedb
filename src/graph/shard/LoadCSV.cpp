@@ -50,7 +50,7 @@ namespace ragedb {
         size_t from_key_column_idx = -1;
         size_t to_key_column_idx = -1;
 
-        for (auto &column_name : doc.GetColumnNames()) {
+        for (const auto& column_name : doc.GetColumnNames()) {
             if (column_name.ends_with("ignore")) {
                 continue ;
             }
@@ -79,7 +79,7 @@ namespace ragedb {
         if (!from_type.empty() && !to_type.empty()) {
             uint16_t id1_type_id = NodeTypeGetTypeId(from_type);
             auto &properties = relationship_types.getProperties(rel_type_id);
-            for (auto row_id : rows) {
+            for (const auto& row_id : rows) {
                 co_await seastar::coroutine::maybe_yield();
                 std::string key1 = doc.GetCell<std::string>(from_key_column_idx, row_id);
                 std::string key2 = doc.GetCell<std::string>(to_key_column_idx, row_id);
@@ -103,7 +103,7 @@ namespace ragedb {
 
                     relationship_types.addId(rel_type_id, internal_id);
 
-                    for (auto & [column_idx, name_type_pair] : column_idx_property_name_and_type) {
+                    for (const auto& [column_idx, name_type_pair] : column_idx_property_name_and_type) {
                         switch (name_type_pair.second) {
                         case Properties::boolean_type: {
                             properties.setBooleanProperty(name_type_pair.first, internal_id, doc.GetCell<bool>(column_idx, row_id));
@@ -179,7 +179,7 @@ namespace ragedb {
         size_t key_column_idx = -1;
         bool has_key_column = false;
 
-        for (auto &column_name : doc.GetColumnNames()) {
+        for (const auto& column_name : doc.GetColumnNames()) {
             if (column_name.ends_with("ignore")) {
                 continue ;
             }
@@ -237,7 +237,7 @@ namespace ragedb {
                     node_types.getIncomingRelationships(type_id).emplace_back();
                 }
                 node_types.addId(type_id, internal_id);
-                for (auto & [column_idx, name_type_pair] : column_idx_property_name_and_type) {
+                for (const auto& [column_idx, name_type_pair] : column_idx_property_name_and_type) {
                     switch (name_type_pair.second) {
                     case Properties::boolean_type: {
                         properties.setBooleanProperty(name_type_pair.first, internal_id, doc.GetCell<bool>(column_idx, row_id));
@@ -289,7 +289,7 @@ namespace ragedb {
         size_t key_column_idx = -1;
         bool has_key_column = false;
 
-        for (auto &column_name : reader.get_col_names()) {
+        for (const auto& column_name : reader.get_col_names()) {
             if (column_name.ends_with("ignore")) {
                 continue ;
             }
@@ -352,7 +352,7 @@ namespace ragedb {
                         node_types.getIncomingRelationships(type_id).emplace_back();
                     }
                     node_types.addId(type_id, internal_id);
-                    for (auto & [column_idx, name_type_pair] : column_idx_property_name_and_type) {
+                    for (const auto& [column_idx, name_type_pair] : column_idx_property_name_and_type) {
                         switch (name_type_pair.second) {
                         case Properties::boolean_type: {
                             properties.setBooleanProperty(name_type_pair.first, internal_id, csv_row[column_idx].get<bool>());

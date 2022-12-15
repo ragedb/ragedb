@@ -121,7 +121,7 @@ namespace ragedb {
                     return local_shard.NodeGetShardedRelationshipIDs(type, key); })
                 .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                     std::vector<seastar::future<std::vector<Relationship>>> futures;
-                    for (auto const& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
+                    for (const auto& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
                         auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids] (Shard &local_shard) {
                             return local_shard.RelationshipsGet(grouped_rel_ids);
                         });
@@ -147,7 +147,7 @@ namespace ragedb {
             return container().invoke_on(node_shard_id, [type, key, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(type, key, rel_type); })
                     .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_relationships_ids) {
                         std::vector<seastar::future<std::vector<Relationship>>> futures;
-                        for (auto const &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
+                        for (const auto &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
                             auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids](Shard &local_shard) {
                                 return local_shard.RelationshipsGet(grouped_rel_ids);
                             });
@@ -175,7 +175,7 @@ namespace ragedb {
         return container().invoke_on(node_shard_id, [type, key, rel_types](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(type, key, rel_types); })
                 .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_relationships_ids) {
                     std::vector<seastar::future<std::vector<Relationship>>> futures;
-                    for (auto const &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
+                    for (const auto &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
                         auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids](Shard &local_shard) {
                             return local_shard.RelationshipsGet(grouped_rel_ids);
                         });
@@ -201,7 +201,7 @@ namespace ragedb {
                     return local_shard.NodeGetShardedRelationshipIDs(external_id); })
                 .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                     std::vector<seastar::future<std::vector<Relationship>>> futures;
-                    for (auto const& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
+                    for (const auto& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
                         auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids] (Shard &local_shard) {
                             return local_shard.RelationshipsGet(grouped_rel_ids);
                         });
@@ -226,7 +226,7 @@ namespace ragedb {
             return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(external_id, rel_type); })
                     .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_relationships_ids) {
                         std::vector<seastar::future<std::vector<Relationship>>> futures;
-                        for (auto const &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
+                        for (const auto &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
                             auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids](Shard &local_shard) {
                                 return local_shard.RelationshipsGet(grouped_rel_ids);
                             });
@@ -254,7 +254,7 @@ namespace ragedb {
         return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) { return local_shard.NodeGetShardedRelationshipIDs(external_id, rel_types); })
                 .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_relationships_ids) {
                     std::vector<seastar::future<std::vector<Relationship>>> futures;
-                    for (auto const &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
+                    for (const auto &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
                         auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids](Shard &local_shard) {
                             return local_shard.RelationshipsGet(grouped_rel_ids);
                         });
@@ -286,7 +286,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                             std::vector<seastar::future<std::vector<Relationship>>> futures;
-                            for (auto const& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
+                            for (const auto& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids] (Shard &local_shard) {
                                     return local_shard.RelationshipsGet(grouped_rel_ids);
                                 });
@@ -319,7 +319,7 @@ namespace ragedb {
                     return container().invoke_on(node_shard_id, [type, key, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key, rel_type); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                                 std::vector<seastar::future<std::vector<Relationship>>> futures;
-                                for (auto const &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
+                                for (const auto &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
                                     auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids](Shard &local_shard) {
                                         return local_shard.RelationshipsGet(grouped_rel_ids);
                                     });
@@ -358,7 +358,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(type, key, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                             std::vector<seastar::future<std::vector<Relationship>>> futures;
-                            for (auto const& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
+                            for (const auto& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids] (Shard &local_shard) {
                                     return local_shard.RelationshipsGet(grouped_rel_ids);
                                 });
@@ -394,7 +394,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                             std::vector<seastar::future<std::vector<Relationship>>> futures;
-                            for (auto const& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
+                            for (const auto& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids] (Shard &local_shard) {
                                     return local_shard.RelationshipsGet(grouped_rel_ids);
                                 });
@@ -427,7 +427,7 @@ namespace ragedb {
                     return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id, rel_type); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                                 std::vector<seastar::future<std::vector<Relationship>>> futures;
-                                for (auto const &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
+                                for (const auto &[their_shard, grouped_rel_ids] : sharded_relationships_ids) {
                                     auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids](Shard &local_shard) {
                                         return local_shard.RelationshipsGet(grouped_rel_ids);
                                     });
@@ -466,7 +466,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingRelationshipIDs(external_id, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_relationships_ids) {
                             std::vector<seastar::future<std::vector<Relationship>>> futures;
-                            for (auto const& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
+                            for (const auto& [their_shard, grouped_rel_ids] : sharded_relationships_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_rel_ids = grouped_rel_ids] (Shard &local_shard) {
                                     return local_shard.RelationshipsGet(grouped_rel_ids);
                                 });

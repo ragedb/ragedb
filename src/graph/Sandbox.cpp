@@ -27,7 +27,7 @@ namespace ragedb {
 
   sol::table deepCopy(const sol::state &lua, const sol::table &table) {
     sol::table table2(lua, sol::create);
-    for (auto [key, value] : table) {
+    for (const auto& [key, value] : table) {
       table2[key] = value;
     }
     return table2;

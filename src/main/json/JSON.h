@@ -74,7 +74,7 @@ public:
 
   void add_properties(std::map<std::string, std::any> const & props) {
     bool initial = true;
-    for (auto[key, value] : props) {
+    for (const auto&[key, value] : props) {
       auto property = static_cast<std::string>(key);
 
       if(value.type() == typeid(std::string)) {
@@ -228,7 +228,7 @@ public:
     }
 
     void add_properties(std::map<std::string, property_type_t> const & props) {
-        for (auto[property, value] : props) {
+        for (const auto& [property, value] : props) {
             bool nested_initial;
 
             switch (value.index()) {

@@ -86,7 +86,7 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<roaring::Roaring64Map>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                 return local_shard.NodeIdsGetNeighborIds(grouped_node_ids);
             });
@@ -115,10 +115,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -143,10 +143,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_type);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -171,10 +171,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = co_await PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_types);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -199,10 +199,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -226,10 +226,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -253,10 +253,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_type);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -280,10 +280,10 @@ namespace ragedb {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
         std::vector<seastar::future<std::map<uint64_t, std::vector<uint64_t>>>> futures;
-        for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types] (Shard &local_shard) {
                 std::map<uint64_t, std::vector<uint64_t>> neighbors;
-                for (auto node_id : grouped_node_ids) {
+                for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetNeighborIds(node_id, direction, rel_types);
                     neighbors.emplace(node_id, neighbor_ids);
                 }
@@ -310,7 +310,7 @@ namespace ragedb {
                     return local_shard.NodeGetShardedNodeIDs(type, key); })
                 .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                     std::vector<seastar::future<std::vector<Node>>> futures;
-                    for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                    for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                         auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                             return local_shard.NodesGet(grouped_node_ids);
                         });
@@ -335,7 +335,7 @@ namespace ragedb {
             return container().invoke_on(node_shard_id, [type, key, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedNodeIDs(type, key, rel_type); })
                     .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_nodes_ids) {
                         std::vector<seastar::future<std::vector<Node>>> futures;
-                        for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                        for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                                 return local_shard.NodesGet(grouped_node_ids);
                             });
@@ -364,7 +364,7 @@ namespace ragedb {
              })
                 .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_nodes_ids) {
                     std::vector<seastar::future<std::vector<Node>>> futures;
-                    for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                    for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                         auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                             return local_shard.NodesGet(grouped_node_ids);
                         });
@@ -390,7 +390,7 @@ namespace ragedb {
                     return local_shard.NodeGetShardedNodeIDs(external_id); })
                 .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                     std::vector<seastar::future<std::vector<Node>>> futures;
-                    for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                    for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                         auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                             return local_shard.NodesGet(grouped_node_ids);
                         });
@@ -416,7 +416,7 @@ namespace ragedb {
             return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedNodeIDs(external_id, rel_type); })
                     .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_nodes_ids) {
                         std::vector<seastar::future<std::vector<Node>>> futures;
-                        for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                        for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                                 return local_shard.NodesGet(grouped_node_ids);
                             });
@@ -443,7 +443,7 @@ namespace ragedb {
         return container().invoke_on(node_shard_id, [external_id, rel_types](Shard &local_shard) { return local_shard.NodeGetShardedNodeIDs(external_id, rel_types); })
                 .then([this](const std::map<uint16_t, std::vector<uint64_t>> &sharded_nodes_ids) {
                     std::vector<seastar::future<std::vector<Node>>> futures;
-                    for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                    for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                         auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                             return local_shard.NodesGet(grouped_node_ids);
                         });
@@ -472,7 +472,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedOutgoingNodeIDs(type, key); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -495,7 +495,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingNodeIDs(type, key); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -528,7 +528,7 @@ namespace ragedb {
                         })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                                 std::vector<seastar::future<std::vector<Node>>> futures;
-                                for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                                for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                                     auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                                         return local_shard.NodesGet(grouped_node_ids);
                                     });
@@ -552,7 +552,7 @@ namespace ragedb {
                         })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                                 std::vector<seastar::future<std::vector<Node>>> futures;
-                                for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                                for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                                     auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                                         return local_shard.NodesGet(grouped_node_ids);
                                     });
@@ -587,7 +587,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedOutgoingNodeIDs(type, key, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -610,7 +610,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingNodeIDs(type, key, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -642,7 +642,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedOutgoingNodeIDs(external_id); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -665,7 +665,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingNodeIDs(external_id); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -696,7 +696,7 @@ namespace ragedb {
                     return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedOutgoingNodeIDs(external_id, rel_type); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                                 std::vector<seastar::future<std::vector<Node>>> futures;
-                                for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                                for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                                     auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                                         return local_shard.NodesGet(grouped_node_ids);
                                     });
@@ -718,7 +718,7 @@ namespace ragedb {
                     return container().invoke_on(node_shard_id, [external_id, rel_type](Shard &local_shard) { return local_shard.NodeGetShardedIncomingNodeIDs(external_id, rel_type); })
                             .then([this](const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                                 std::vector<seastar::future<std::vector<Node>>> futures;
-                                for (auto const &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
+                                for (const auto &[their_shard, grouped_node_ids] : sharded_nodes_ids) {
                                     auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids](Shard &local_shard) {
                                         return local_shard.NodesGet(grouped_node_ids);
                                     });
@@ -753,7 +753,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedOutgoingNodeIDs(external_id, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });
@@ -776,7 +776,7 @@ namespace ragedb {
                             return local_shard.NodeGetShardedIncomingNodeIDs(external_id, rel_types); })
                         .then([this] (const std::map<uint16_t, std::vector<uint64_t>>& sharded_nodes_ids) {
                             std::vector<seastar::future<std::vector<Node>>> futures;
-                            for (auto const& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
+                            for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
                                 auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
                                     return local_shard.NodesGet(grouped_node_ids);
                                 });

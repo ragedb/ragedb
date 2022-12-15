@@ -83,7 +83,7 @@ namespace ragedb {
       std::vector<uint64_t> ids;
 
       auto &keysToNodeId = node_types.getKeysToNodeId(type_id);
-      for (auto [key, properties] : nodes ) {
+      for (const auto& [key, properties] : nodes ) {
         // Check if the key exists
         if ( auto key_search = keysToNodeId.find(key);
             key_search == std::end(keysToNodeId)) {

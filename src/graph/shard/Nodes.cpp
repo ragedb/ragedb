@@ -34,7 +34,7 @@ namespace ragedb {
         std::vector<Node> sharded_nodes;
 
         if (ValidNodeIds(node_ids)) {
-            for (auto [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
+            for (const auto& [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
                 auto nodes = node_types.getNodes(type_id, ids);
                 sharded_nodes.insert(sharded_nodes.end(), std::begin(nodes), std::end(nodes));
             }
@@ -47,7 +47,7 @@ namespace ragedb {
       std::vector<Node> sharded_nodes;
 
       if (ValidLinksNodeIds(links)) {
-          for (auto [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
+          for (const auto& [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
               auto nodes = node_types.getNodes(type_id, typed_links);
               sharded_nodes.insert(sharded_nodes.end(), std::begin(nodes), std::end(nodes));
           }
@@ -100,8 +100,8 @@ namespace ragedb {
       std::map<uint64_t, uint16_t> sharded_node_type_ids;
 
       if (ValidNodeIds(node_ids)) {
-          for (auto [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
-              for (auto id : ids) {
+          for (const auto& [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
+              for (const auto& id : ids) {
                   sharded_node_type_ids[id] = type_id;
               }
           }
@@ -114,8 +114,8 @@ namespace ragedb {
       std::map<Link, uint16_t> sharded_node_type_ids;
 
       if (ValidLinksNodeIds(links)) {
-          for (auto [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
-              for (auto link : typed_links) {
+          for (const auto& [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
+              for (const auto& link : typed_links) {
                   sharded_node_type_ids[link] = type_id;
               }
           }
@@ -129,8 +129,8 @@ namespace ragedb {
       std::map<uint64_t, property_type_t> sharded_node_properties;
 
       if (ValidNodeIds(node_ids)) {
-          for (auto [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
-              for (auto [id, properties] : node_types.getNodesProperty(type_id, ids, property)) {
+          for (const auto& [type_id, ids] : PartitionNodeIdsByTypeId(node_ids)) {
+              for (const auto& [id, properties] : node_types.getNodesProperty(type_id, ids, property)) {
                   sharded_node_properties[id] = properties;
               }
           }
@@ -153,8 +153,8 @@ namespace ragedb {
       std::map<uint64_t, std::map<std::string, property_type_t>> sharded_node_properties;
 
       if (ValidNodeIds(node_ids)) {
-          for (auto [type_id, ids] :  PartitionNodeIdsByTypeId(node_ids)) {
-              for (auto [id, properties] : node_types.getNodesProperties(type_id, ids)) {
+          for (const auto& [type_id, ids] :  PartitionNodeIdsByTypeId(node_ids)) {
+              for (const auto& [id, properties] : node_types.getNodesProperties(type_id, ids)) {
                   sharded_node_properties[id] = properties;
               }
           }
@@ -173,7 +173,7 @@ namespace ragedb {
 
       // If the nodes are valid
       if (ValidNodeIds(node_ids)) {
-          for (auto [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
+          for (const auto& [type_id, typed_links] : PartitionLinkNodeIdsByTypeId(links)) {
               std::vector<uint64_t> ids(typed_links.size());
               for (int i = 0; i < typed_links.size(); ++i) {
                   ids[i] = typed_links[i].node_id;
