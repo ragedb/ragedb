@@ -33,7 +33,7 @@ jobs:
         run: |
           export DEBIAN_FRONTEND=noninteractive
           sudo apt-get -qq update -y
-          sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip luajit luajit-5.1-dev libluajit-5.1-2 libcrypto++8 libcrypto++-dev liburing-dev
+          sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip libluajit-5.1-2 libcrypto++8 libcrypto++-dev liburing-dev
 
       - name: install g++-11
         run: |
