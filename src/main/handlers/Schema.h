@@ -29,7 +29,7 @@ class Schema {
         explicit ClearGraphHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetNodeTypesHandler : public seastar::httpd::handler_base {
@@ -37,7 +37,7 @@ class Schema {
         explicit GetNodeTypesHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetRelationshipTypesHandler : public seastar::httpd::handler_base {
@@ -45,7 +45,7 @@ class Schema {
         explicit GetRelationshipTypesHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetNodeTypeHandler : public seastar::httpd::handler_base {
@@ -53,7 +53,7 @@ class Schema {
         explicit GetNodeTypeHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class PostNodeTypeHandler : public seastar::httpd::handler_base {
@@ -61,7 +61,7 @@ class Schema {
         explicit PostNodeTypeHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class DeleteNodeTypeHandler : public seastar::httpd::handler_base {
@@ -69,7 +69,7 @@ class Schema {
         explicit DeleteNodeTypeHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetRelationshipTypeHandler : public seastar::httpd::handler_base {
@@ -77,7 +77,7 @@ class Schema {
         explicit GetRelationshipTypeHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class PostRelationshipTypeHandler : public seastar::httpd::handler_base {
@@ -85,7 +85,7 @@ class Schema {
         explicit PostRelationshipTypeHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class DeleteRelationshipTypeHandler : public seastar::httpd::handler_base {
@@ -93,7 +93,7 @@ class Schema {
         explicit DeleteRelationshipTypeHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetNodeTypePropertyHandler : public seastar::httpd::handler_base {
@@ -101,7 +101,7 @@ class Schema {
         explicit GetNodeTypePropertyHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class PostNodeTypePropertyHandler : public seastar::httpd::handler_base {
@@ -109,7 +109,7 @@ class Schema {
         explicit PostNodeTypePropertyHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class DeleteNodeTypePropertyHandler : public seastar::httpd::handler_base {
@@ -117,7 +117,7 @@ class Schema {
         explicit DeleteNodeTypePropertyHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetRelationshipTypePropertyHandler : public seastar::httpd::handler_base {
@@ -125,7 +125,7 @@ class Schema {
         explicit GetRelationshipTypePropertyHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class PostRelationshipTypePropertyHandler : public seastar::httpd::handler_base {
@@ -133,7 +133,7 @@ class Schema {
         explicit PostRelationshipTypePropertyHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class DeleteRelationshipTypePropertyHandler : public seastar::httpd::handler_base {
@@ -141,7 +141,7 @@ class Schema {
         explicit DeleteRelationshipTypePropertyHandler(Schema& schema) : parent(schema) {};
     private:
         Schema& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     ragedb::Graph& graph;

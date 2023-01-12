@@ -29,7 +29,7 @@ class Management {
     explicit GetDatabasesHandler(Management & management) : parent(management) {};
   private:
     Management & parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
 
   class GetDatabaseHandler : public seastar::httpd::handler_base {
@@ -37,7 +37,7 @@ class Management {
     explicit GetDatabaseHandler(Management & management) : parent(management) {};
   private:
     Management & parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
 
   class PostDatabaseHandler : public seastar::httpd::handler_base {
@@ -45,7 +45,7 @@ class Management {
     explicit PostDatabaseHandler(Management & management) : parent(management) {};
   private:
     Management & parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
 
   class PutDatabaseHandler : public seastar::httpd::handler_base {
@@ -53,7 +53,7 @@ class Management {
     explicit PutDatabaseHandler(Management & management) : parent(management) {};
   private:
     Management & parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
 
   class DeleteDatabaseHandler : public seastar::httpd::handler_base {
@@ -61,7 +61,7 @@ class Management {
     explicit DeleteDatabaseHandler(Management & management) : parent(management) {};
   private:
     Management & parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
 
   Databases &databases;

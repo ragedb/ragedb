@@ -66,7 +66,7 @@ void RelationshipProperties::set_routes(seastar::routes &routes) {
     routes.add(deleteRelationshipPropertiesById, seastar::operation_type::DELETE);
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::GetRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::GetRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -75,14 +75,14 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::GetRelati
                     json_properties_builder json;
                     json.add_property(req->param[Utilities::PROPERTY], property);
                     rep->write_body("json", seastar::sstring(json.as_json()));
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::PutRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::PutRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
@@ -91,18 +91,18 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::PutRelati
         return parent.graph.shard.local().RelationshipSetPropertyFromJsonPeered(id, req->param[Utilities::PROPERTY], req->content.c_str())
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {
-                        rep->set_status(seastar::httpd::reply::status_type::no_content);
+                        rep->set_status(seastar::http::reply::status_type::no_content);
                     } else {
-                        rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                        rep->set_status(seastar::http::reply::status_type::not_modified);
                     }
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::DeleteRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::DeleteRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
@@ -111,18 +111,18 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::DeleteRel
         return parent.graph.shard.local().RelationshipDeletePropertyPeered(id, req->param[Utilities::PROPERTY])
                 .then([rep = std::move(rep)] (bool success) mutable {
                    if(success) {
-                       rep->set_status(seastar::httpd::reply::status_type::no_content);
+                       rep->set_status(seastar::http::reply::status_type::no_content);
                     } else {
-                       rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                       rep->set_status(seastar::http::reply::status_type::not_modified);
                     }
-                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::GetRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::GetRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -131,14 +131,14 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::GetRelati
                     json_properties_builder json;
                     json.add_properties(properties);
                     rep->write_body("json", seastar::sstring(json.as_json()));
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::PostRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::PostRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -147,19 +147,19 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::PostRelat
             return parent.graph.shard.local().RelationshipResetPropertiesFromJsonPeered(id, req->content.c_str())
                     .then([rep = std::move(rep)] (bool success) mutable {
                         if(success) {
-                            rep->set_status(seastar::httpd::reply::status_type::no_content);
+                            rep->set_status(seastar::http::reply::status_type::no_content);
                         } else {
-                            rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                            rep->set_status(seastar::http::reply::status_type::not_modified);
                         }
-                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                     });
         }
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::PutRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::PutRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -168,19 +168,19 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::PutRelati
             return parent.graph.shard.local().RelationshipSetPropertiesFromJsonPeered(id, req->content.c_str())
                     .then([rep = std::move(rep)](bool success) mutable {
                         if (success) {
-                            rep->set_status(seastar::httpd::reply::status_type::no_content);
+                            rep->set_status(seastar::http::reply::status_type::no_content);
                         } else {
-                            rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                            rep->set_status(seastar::http::reply::status_type::not_modified);
                         }
-                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                     });
         }
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::DeleteRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::DeleteRelationshipPropertiesByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -188,13 +188,13 @@ future<std::unique_ptr<seastar::httpd::reply>> RelationshipProperties::DeleteRel
         return parent.graph.shard.local().RelationshipDeletePropertiesPeered(id)
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {
-                        rep->set_status(seastar::httpd::reply::status_type::no_content);
+                        rep->set_status(seastar::http::reply::status_type::no_content);
                     } else {
-                        rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                        rep->set_status(seastar::http::reply::status_type::not_modified);
                     }
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }

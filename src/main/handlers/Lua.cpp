@@ -40,11 +40,11 @@ bool forAll(std::string const &str) {
     return str.compare(0,5,"--ALL") == 0;
 }
 
-seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+seastar::future<std::unique_ptr<seastar::http::reply>> Lua::PostLuaHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     // If the script is missing
     if (req->content.empty()) {
         rep->write_body("json", seastar::json::stream_object("Empty script"));
-        rep->set_status(seastar::reply::status_type::bad_request);
+        rep->set_status(seastar::http::reply::status_type::bad_request);
     } else {
         parent.graph.Log(req->_method, req->get_url(), req->content);
         std::string body = req->content;
@@ -58,12 +58,12 @@ seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaHandler::han
             }).then([rep = std::move(rep)] (const std::string& result) mutable {
                   if(result.rfind(EXCEPTION,0) == 0) {
                       rep->write_body("html", seastar::sstring(result));
-                      rep->set_status(seastar::reply::status_type::bad_request);
-                      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                      rep->set_status(seastar::http::reply::status_type::bad_request);
+                      return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                   }
 
                   rep->write_body("json", seastar::sstring(result));
-                  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
               });
         }
         return parent.graph.shard.invoke_on(seastar::this_shard_id(), [body](ragedb::Shard &local_shard) {
@@ -71,23 +71,23 @@ seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaHandler::han
         }).then([rep = std::move(rep)] (const std::string& result) mutable {
             if(result.rfind(EXCEPTION,0) == 0) {
                 rep->write_body("html", seastar::sstring(result));
-                rep->set_status(seastar::reply::status_type::bad_request);
-                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                rep->set_status(seastar::http::reply::status_type::bad_request);
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
             }
 
             rep->write_body("json", seastar::sstring(result));
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaRWHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+seastar::future<std::unique_ptr<seastar::http::reply>> Lua::PostLuaRWHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   // If the script is missing
   if (req->content.empty()) {
     rep->write_body("json", seastar::json::stream_object("Empty script"));
-    rep->set_status(seastar::httpd::reply::status_type::bad_request);
+    rep->set_status(seastar::http::reply::status_type::bad_request);
   } else {
     parent.graph.Log(req->_method, req->get_url(), req->content);
     std::string body = req->content;
@@ -96,23 +96,23 @@ seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaRWHandler::h
                              }).then([rep = std::move(rep)] (const std::string& result) mutable {
         if(result.rfind(EXCEPTION,0) == 0) {
           rep->write_body("html", seastar::sstring(result));
-          rep->set_status(seastar::httpd::reply::status_type::bad_request);
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          rep->set_status(seastar::http::reply::status_type::bad_request);
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         }
 
         rep->write_body("json", seastar::sstring(result));
-        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
       });
   }
 
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaROHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+seastar::future<std::unique_ptr<seastar::http::reply>> Lua::PostLuaROHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   // If the script is missing
   if (req->content.empty()) {
     rep->write_body("json", seastar::json::stream_object("Empty script"));
-    rep->set_status(seastar::httpd::reply::status_type::bad_request);
+    rep->set_status(seastar::http::reply::status_type::bad_request);
   } else {
     parent.graph.Log(req->_method, req->get_url(), req->content);
     std::string body = req->content;
@@ -121,14 +121,14 @@ seastar::future<std::unique_ptr<seastar::httpd::reply>> Lua::PostLuaROHandler::h
                              }).then([rep = std::move(rep)] (const std::string& result) mutable {
         if(result.rfind(EXCEPTION,0) == 0) {
           rep->write_body("html", seastar::sstring(result));
-          rep->set_status(seastar::httpd::reply::status_type::bad_request);
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          rep->set_status(seastar::http::reply::status_type::bad_request);
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         }
 
         rep->write_body("json", seastar::sstring(result));
-        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
       });
   }
 
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }

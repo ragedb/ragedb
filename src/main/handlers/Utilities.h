@@ -46,18 +46,18 @@ public:
     static inline const seastar::sstring OPTIONS = seastar::sstring ("options");
     static inline const std::unordered_set<std::string> allowed_types = {"boolean", "integer", "double", "string", "boolean_list", "integer_list", "double_list", "string_list"};
 
-    static bool validate_parameter(const seastar::sstring& parameter, std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep, std::string message);
-    static uint64_t validate_id(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static uint64_t validate_id2(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static uint64_t validate_limit(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static uint64_t validate_skip(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static ragedb::Operation validate_operation(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static bool validate_json(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static ragedb::property_type_t validate_json_property(const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
+    static bool validate_parameter(const seastar::sstring& parameter, std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep, std::string message);
+    static uint64_t validate_id(const std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static uint64_t validate_id2(const std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static uint64_t validate_limit(std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static uint64_t validate_skip(std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static ragedb::Operation validate_operation(std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static bool validate_json(const std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static ragedb::property_type_t validate_json_property(const std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
     static bool validate_combination(const ragedb::Operation& operation, const ragedb::property_type_t &property);
-    static bool validate_allowed_data_type(std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
-    static void convert_property_to_json(std::unique_ptr<seastar::httpd::reply> &rep, const ragedb::property_type_t &property);
-    static double convert_parameter_to_double(const seastar::sstring& parameter, const std::unique_ptr<seastar::request> &req, std::unique_ptr<seastar::httpd::reply> &rep);
+    static bool validate_allowed_data_type(std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
+    static void convert_property_to_json(std::unique_ptr<seastar::http::reply> &rep, const ragedb::property_type_t &property);
+    static double convert_parameter_to_double(const seastar::sstring& parameter, const std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep);
 
 };
 

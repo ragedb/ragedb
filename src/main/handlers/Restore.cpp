@@ -23,15 +23,15 @@ void Restore::set_routes(seastar::routes &routes) {
     routes.add(restore, seastar::operation_type::POST);
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Restore::RestoreHandler::handle(
+future<std::unique_ptr<seastar::http::reply>> Restore::RestoreHandler::handle(
         [[maybe_unused]] const seastar::sstring &path,
-        [[maybe_unused]] std::unique_ptr<seastar::request> req,
-        std::unique_ptr<seastar::httpd::reply> rep) {
+        [[maybe_unused]] std::unique_ptr<seastar::http::request> req,
+        std::unique_ptr<seastar::http::reply> rep) {
 
     return parent.graph.shard.local().RestorePeered(parent.graph.GetName()).then([rep = std::move(rep)] (std::string restores) mutable {
         json_properties_builder json;
         json.add("message", restores);
         rep->write_body("json", seastar::sstring(json.as_json()));
-        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
     });
 }

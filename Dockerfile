@@ -9,7 +9,7 @@ RUN pip install --user conan
 RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
 WORKDIR /data/seastar
-RUN git checkout 925b4fb59488a8b855c91fb8864ceb8f72f47dd2
+RUN git checkout d41af8b59237a949620a9e0b79541b934e0a5375
 RUN ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*

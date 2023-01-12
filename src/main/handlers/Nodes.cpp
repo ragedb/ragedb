@@ -65,7 +65,7 @@ void Nodes::set_routes(seastar::routes &routes) {
     routes.add(findNodesOfType, seastar::operation_type::POST);
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodesHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodesHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t skip = Utilities::validate_skip(req, rep);
     uint64_t limit = Utilities::validate_limit(req, rep);
 
@@ -77,11 +77,11 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodesHandler::handle([[
                     json_array.emplace_back(node);
                 }
                 rep->write_body("json", seastar::json::stream_object(json_array));
-                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
             });
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodesOfTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodesOfTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
@@ -97,15 +97,15 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodesOfTypeHandler::han
                             json_array.emplace_back(node);
                         }
                         rep->write_body("json", seastar::json::stream_object(json_array));
-                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                     }
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodeByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodeByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
@@ -115,18 +115,18 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodeByIdHandler::handle
             return local_shard.NodeGet(id);
         }).then([rep = std::move(rep)] (Node node) mutable {
             if (node.getId() == 0) {
-                rep->set_status(seastar::httpd::reply::status_type::not_found);
-                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                rep->set_status(seastar::http::reply::status_type::not_found);
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
             }
             rep->write_body("json", seastar::json::stream_object(node_json(node)));
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
@@ -134,17 +134,17 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::GetNodeHandler::handle([[m
         return parent.graph.shard.local().NodeGetPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
                 .then([rep = std::move(rep)](Node node) mutable {
                     if (node.getId() == 0) {
-                        rep->set_status(seastar::httpd::reply::status_type::not_found);
-                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                        rep->set_status(seastar::http::reply::status_type::not_found);
+                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                     }
                     rep->write_body("json", seastar::json::stream_object(node_json(node)));
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::PostNodeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::PostNodeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
@@ -157,12 +157,12 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::PostNodeHandler::handle([[
                         if (id > 0) {
                             Node node(id, type, key);
                             rep->write_body("json", seastar::json::stream_object(node_json(node)));
-                            rep->set_status(seastar::httpd::reply::status_type::created);
+                            rep->set_status(seastar::http::reply::status_type::created);
                         } else {
                             rep->write_body("json", seastar::json::stream_object("Invalid Request"));
-                            rep->set_status(seastar::httpd::reply::status_type::bad_request);
+                            rep->set_status(seastar::http::reply::status_type::bad_request);
                         }
-                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                     });
         }
         if (Utilities::validate_json(req, rep)) {
@@ -176,22 +176,22 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::PostNodeHandler::handle([[
                             return parent.graph.shard.local().NodeGetPeered(id).then(
                                     [rep = std::move(rep)](Node node) mutable {
                                         rep->write_body("json", seastar::json::stream_object((node_json(node))));
-                                        rep->set_status(seastar::httpd::reply::status_type::created);
-                                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                                        rep->set_status(seastar::http::reply::status_type::created);
+                                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                                     });
                         }
 
                         rep->write_body("json", seastar::json::stream_object("Invalid Request"));
-                        rep->set_status(seastar::httpd::reply::status_type::bad_request);
-                        return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                        rep->set_status(seastar::http::reply::status_type::bad_request);
+                        return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                     });
         }
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::DeleteNodeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::DeleteNodeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
@@ -199,35 +199,35 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::DeleteNodeHandler::handle(
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().NodeRemovePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(seastar::httpd::reply::status_type::no_content);
+                rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::DeleteNodeByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id >0) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().NodeRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
-                rep->set_status(seastar::httpd::reply::status_type::no_content);
+                rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Nodes::FindNodesOfTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Nodes::FindNodesOfTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
     ragedb::Operation operation = Utilities::validate_operation(req, rep);
@@ -247,10 +247,10 @@ future<std::unique_ptr<seastar::httpd::reply>> Nodes::FindNodesOfTypeHandler::ha
                     json_array.emplace_back(node);
                 }
                 rep->write_body("json", seastar::json::stream_object(json_array));
-                return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }

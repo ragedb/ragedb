@@ -57,7 +57,7 @@ jobs:
         with:
           repository: scylladb/seastar
           path: seastar
-          ref: 925b4fb59488a8b855c91fb8864ceb8f72f47dd2
+          ref: d41af8b59237a949620a9e0b79541b934e0a5375
 
       - name: install dependencies
         run: |

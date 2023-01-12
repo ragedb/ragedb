@@ -30,7 +30,7 @@ class Connected {
     //~GetConnectedHandler();
   private:
     Connected& parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
   
   class GetConnectedByIdHandler : public seastar::httpd::handler_base {
@@ -38,7 +38,7 @@ class Connected {
     explicit GetConnectedByIdHandler(Connected& connected); // : parent(connected) {};
   private:
     Connected& parent;
-    seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+    seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
   };
 
   ragedb::Graph& graph;

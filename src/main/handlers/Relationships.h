@@ -29,7 +29,7 @@ class Relationships {
         explicit GetRelationshipsHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetRelationshipsOfTypeHandler : public seastar::httpd::handler_base {
@@ -37,7 +37,7 @@ class Relationships {
         explicit GetRelationshipsOfTypeHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetRelationshipHandler : public seastar::httpd::handler_base {
@@ -45,7 +45,7 @@ class Relationships {
         explicit GetRelationshipHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class PostRelationshipHandler : public seastar::httpd::handler_base {
@@ -53,7 +53,7 @@ class Relationships {
         explicit PostRelationshipHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class PostRelationshipByIdHandler : public seastar::httpd::handler_base {
@@ -61,7 +61,7 @@ class Relationships {
         explicit PostRelationshipByIdHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class DeleteRelationshipHandler : public seastar::httpd::handler_base {
@@ -69,7 +69,7 @@ class Relationships {
         explicit DeleteRelationshipHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetNodeRelationshipsHandler : public seastar::httpd::handler_base {
@@ -77,7 +77,7 @@ class Relationships {
         explicit GetNodeRelationshipsHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetNodeRelationshipsByIdHandler : public seastar::httpd::handler_base {
@@ -85,7 +85,7 @@ class Relationships {
         explicit GetNodeRelationshipsByIdHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class FindRelationshipsOfTypeHandler : public seastar::httpd::handler_base {
@@ -93,7 +93,7 @@ class Relationships {
         explicit FindRelationshipsOfTypeHandler(Relationships& relationships) : parent(relationships) {};
     private:
         Relationships& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     ragedb::Graph& graph;

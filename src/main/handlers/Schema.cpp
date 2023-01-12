@@ -110,31 +110,31 @@ void Schema::set_routes(seastar::routes &routes) {
 
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::ClearGraphHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::ClearGraphHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     parent.graph.Log(req->_method, req->get_url());
     parent.graph.Clear();
-    rep->set_status(seastar::httpd::reply::status_type::accepted);
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    rep->set_status(seastar::http::reply::status_type::accepted);
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::GetNodeTypesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetNodeTypesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     std::set<std::string> types = parent.graph.shard.local().NodeTypesGet();
     rep->write_body("json", seastar::json::stream_object(std::vector<std::string>( types.begin(), types.end() )));
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::GetRelationshipTypesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::request> req,
-                                            std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetRelationshipTypesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::http::request> req,
+                                            std::unique_ptr<seastar::http::reply> rep) {
     std::set<std::string> types = parent.graph.shard.local().RelationshipTypesGet();
     rep->write_body("json", seastar::json::stream_object(std::vector<std::string>( types.begin(), types.end() )));
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::GetNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if (valid_type) {
@@ -142,11 +142,11 @@ Schema::GetNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path
         rep->write_body("json", seastar::json::stream_object(properties_json(type)));
     }
 
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::PostNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if (valid_type) {
@@ -157,49 +157,49 @@ Schema::PostNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &pat
         }).then(
                 [rep = std::move(rep)](bool success) mutable {
                     if (success) {
-                        rep->set_status(seastar::httpd::reply::status_type::created);
+                        rep->set_status(seastar::http::reply::status_type::created);
                     } else {
-                        rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                        rep->set_status(seastar::http::reply::status_type::not_modified);
                     }
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::DeleteNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::DeleteNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().DeleteNodeTypePeered(req->param[Utilities::TYPE]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(seastar::httpd::reply::status_type::no_content);
+                rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::GetRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                           std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                           std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
         std::map<std::string, std::string> type = parent.graph.shard.local().RelationshipTypeGet(req->param[Utilities::TYPE]);
         rep->write_body("json", seastar::json::stream_object(properties_json(type)));
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                            std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                            std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
@@ -209,38 +209,38 @@ Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstr
             return local_shard.RelationshipTypeInsertPeered(type);
         }).then([rep = std::move(rep)](bool success) mutable {
                     if (success) {
-                        rep->set_status(seastar::httpd::reply::status_type::created);
+                        rep->set_status(seastar::http::reply::status_type::created);
                     } else {
-                        rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                        rep->set_status(seastar::http::reply::status_type::not_modified);
                     }
-                    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+                    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::DeleteRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                              std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::DeleteRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                              std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().DeleteRelationshipTypePeered(req->param[Utilities::TYPE]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(seastar::httpd::reply::status_type::no_content);
+                rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::GetNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                           std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                           std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
@@ -250,12 +250,12 @@ Schema::GetNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstri
         json.add_property(req->param[Utilities::PROPERTY], data_type);
         rep->write_body("json", seastar::sstring(json.as_json()));
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                            std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                            std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
     bool valid_data_type = Utilities::validate_parameter(Utilities::DATA_TYPE, req, rep, "Invalid data type");
@@ -265,19 +265,19 @@ Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstr
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().NodePropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
             if (property_type_id > 0) {
-                rep->set_status(seastar::httpd::reply::status_type::created);
+                rep->set_status(seastar::http::reply::status_type::created);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::DeleteNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                              std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::DeleteNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                              std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
@@ -286,19 +286,19 @@ Schema::DeleteNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::ss
         return parent.graph.shard.local().NodePropertyTypeDeletePeered(req->param[Utilities::TYPE],
                                                                        req->param[Utilities::PROPERTY]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(seastar::httpd::reply::status_type::no_content);
+                rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::GetRelationshipTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                                   std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetRelationshipTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                                   std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
@@ -308,12 +308,12 @@ Schema::GetRelationshipTypePropertyHandler::handle([[maybe_unused]] const seasta
         json.add_property(req->param[Utilities::PROPERTY], data_type);
         rep->write_body("json", seastar::sstring(json.as_json()));
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                                    std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                                    std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
     bool valid_data_type = Utilities::validate_parameter(Utilities::DATA_TYPE, req, rep, "Invalid data type");
@@ -323,19 +323,19 @@ Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const seast
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
             if (property_type_id != 0) {
-                rep->set_status(seastar::httpd::reply::status_type::created);
+                rep->set_status(seastar::http::reply::status_type::created);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>>
-Schema::DeleteRelationshipTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req,
-                                                      std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>>
+Schema::DeleteRelationshipTypePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                                      std::unique_ptr<seastar::http::reply> rep) {
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
@@ -343,12 +343,12 @@ Schema::DeleteRelationshipTypePropertyHandler::handle([[maybe_unused]] const sea
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipPropertyTypeDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
-                rep->set_status(seastar::httpd::reply::status_type::no_content);
+                rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
-                rep->set_status(seastar::httpd::reply::status_type::not_modified);
+                rep->set_status(seastar::http::reply::status_type::not_modified);
             }
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
-    return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }

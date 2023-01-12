@@ -44,20 +44,20 @@ void Management::set_routes(seastar::routes &routes) {
   routes.add(deleteDatabase, seastar::operation_type::DELETE);
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Management::GetDatabasesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Management::GetDatabasesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   rep->write_body("json", seastar::json::stream_object(parent.databases.list()));
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Management::GetDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Management::GetDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
   if (valid_key && parent.databases.contains(req->param[Utilities::KEY])) {
     rep->write_body("json", seastar::sstring(parent.databases.get(req->param[Utilities::KEY])));
   }
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Management::PostDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Management::PostDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
   if (valid_key) {
     std::string key = req->param[Utilities::KEY];
@@ -67,15 +67,15 @@ future<std::unique_ptr<seastar::httpd::reply>> Management::PostDatabaseHandler::
         parent.databases.at(key).graph.Log(req->_method, req->get_url());
       } else {
         rep->write_body("json", seastar::json::stream_object("Database already exists"));
-        rep->set_status(seastar::httpd::reply::status_type::bad_request);
+        rep->set_status(seastar::http::reply::status_type::bad_request);
       }
-      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+      return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
     });
   }
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Management::PutDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Management::PutDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
   if (valid_key) {
@@ -86,28 +86,28 @@ future<std::unique_ptr<seastar::httpd::reply>> Management::PutDatabaseHandler::h
         parent.databases.at(key).graph.Log(req->_method, req->get_url());
       } else {
         rep->write_body("json", seastar::json::stream_object("Database does not exist"));
-        rep->set_status(seastar::httpd::reply::status_type::bad_request);
+        rep->set_status(seastar::http::reply::status_type::bad_request);
       }
-      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+      return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
     });
   }
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
-future<std::unique_ptr<seastar::httpd::reply>> Management::DeleteDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Management::DeleteDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
   if (valid_key) {
     std::string key = req->param[Utilities::KEY];
     return parent.databases.remove(key).then([key, req = std::move(req), rep = std::move(rep), this] (bool success) mutable {
       if (!success) {
-        rep->set_status(seastar::httpd::reply::status_type::no_content);
+        rep->set_status(seastar::http::reply::status_type::no_content);
         parent.databases.at(key).graph.Log(req->_method, req->get_url());
       } else {
         rep->write_body("json", seastar::json::stream_object("Database does not exist"));
-        rep->set_status(seastar::httpd::reply::status_type::not_modified);
+        rep->set_status(seastar::http::reply::status_type::not_modified);
       }
-      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+      return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
     });
   }
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }

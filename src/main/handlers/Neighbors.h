@@ -28,7 +28,7 @@ class Neighbors {
         explicit GetNeighborsHandler(Neighbors& neighbors) : parent(neighbors) {};
     private:
         Neighbors& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     class GetNeighborsByIdHandler : public seastar::httpd::handler_base {
@@ -36,7 +36,7 @@ class Neighbors {
         explicit GetNeighborsByIdHandler(Neighbors& neighbors) : parent(neighbors) {};
     private:
         Neighbors& parent;
-        seastar::future<std::unique_ptr<seastar::httpd::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::reply> rep) override;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
     ragedb::Graph& graph;

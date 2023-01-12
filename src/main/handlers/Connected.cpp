@@ -38,7 +38,7 @@ void Connected::set_routes(seastar::routes &routes) {
   routes.add(getConnectedById, seastar::operation_type::GET);
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
   bool valid_type2 = Utilities::validate_parameter(Utilities::TYPE2, req, rep, "Invalid type 2");
@@ -61,7 +61,7 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedHandler::h
             json_array.emplace_back(r);
           }
           rep->write_body("json", seastar::json::stream_object(json_array));
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
@@ -90,7 +90,7 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedHandler::h
             json_array.emplace_back(r);
           }
           rep->write_body("json", seastar::json::stream_object(json_array));
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     case 2: {
       // Get Node Degree with Direction and Type(s)
@@ -107,7 +107,7 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedHandler::h
               json_array.emplace_back(r);
             }
             rep->write_body("json", seastar::json::stream_object(json_array));
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
           });
       }
 
@@ -120,22 +120,22 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedHandler::h
             json_array.emplace_back(r);
           }
           rep->write_body("json", seastar::json::stream_object(json_array));
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
     default:  {
       rep->write_body("json", seastar::json::stream_object("Invalid request"));
-      rep->set_status(seastar::httpd::reply::status_type::bad_request);
-      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+      rep->set_status(seastar::http::reply::status_type::bad_request);
+      return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
     }
     }
   }
 
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
-future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::request> req, std::unique_ptr<seastar::httpd::reply> rep) {
+future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   uint64_t id = Utilities::validate_id(req, rep);
   uint64_t id2 = Utilities::validate_id2(req, rep);
 
@@ -155,7 +155,7 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedByIdHandle
             json_array.emplace_back(r);
           }
           rep->write_body("json", seastar::json::stream_object(json_array));
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
@@ -184,7 +184,7 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedByIdHandle
             json_array.emplace_back(r);
           }
           rep->write_body("json", seastar::json::stream_object(json_array));
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     case 2: {
       // Get Node Degree with Direction and Type(s)
@@ -200,7 +200,7 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedByIdHandle
               json_array.emplace_back(r);
             }
             rep->write_body("json", seastar::json::stream_object(json_array));
-            return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
           });
       }
 
@@ -213,19 +213,19 @@ future<std::unique_ptr<seastar::httpd::reply>> Connected::GetConnectedByIdHandle
             json_array.emplace_back(r);
           }
           rep->write_body("json", seastar::json::stream_object(json_array));
-          return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+          return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
     }
 
     default:  {
       rep->write_body("json", seastar::json::stream_object("Invalid request"));
-      rep->set_status(seastar::httpd::reply::status_type::bad_request);
-      return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+      rep->set_status(seastar::http::reply::status_type::bad_request);
+      return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
     }
     }
   }
 
-  return seastar::make_ready_future<std::unique_ptr<seastar::httpd::reply>>(std::move(rep));
+  return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
 
 Connected::GetConnectedHandler::GetConnectedHandler(Connected& connected) : parent(connected) {}
