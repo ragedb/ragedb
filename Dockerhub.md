@@ -2,7 +2,7 @@
 
 If updating Seastar code, use no cache in docker build command:
 
-     docker build ... --no-cache
+     docker build . --no-cache
 
 If updating Conan dependencies or RageDB code, use an argument in the Dockerfile before new code:  
 
