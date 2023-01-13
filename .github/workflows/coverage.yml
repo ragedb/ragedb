@@ -95,7 +95,7 @@ jobs:
       - name: install custom conan recipes
         run: |
           cd luajit
-          CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 2.1.0-beta3-2023-04-01@
+          CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 2.1.0-beta3-2023-01-04@
           cd ../sol2
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 3.2.3-luajit@
           CC=/usr/bin/gcc-11 CXX=/usr/bin/g++-11 conan create . 3.3.0-exhaustive@
