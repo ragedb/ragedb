@@ -20,7 +20,6 @@ macro(run_conan)
     docopt.cpp/0.6.3
     fmt/8.0.1
     spdlog/1.11.0
-    luajit/2.1.0-beta3-2022-7-22
 #   sol2/3.2.3-luajit
     sol2/3.3.0-exhaustive
     tsl-sparse-map/0.6.2
