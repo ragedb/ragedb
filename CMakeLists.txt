@@ -8,7 +8,10 @@ include(cmake/PreventInSourceBuilds.cmake)
 add_library(project_options INTERFACE)
 set(CMAKE_CXX_STANDARD 20)
 target_compile_features(project_options INTERFACE cxx_std_20)
+set_property(TARGET project_options PROPERTY CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
   option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
@@ -147,3 +150,4 @@ target_link_libraries(
         project_warnings
         Graph
 )
+
