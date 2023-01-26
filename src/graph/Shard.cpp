@@ -517,6 +517,8 @@ namespace ragedb {
         lua.set_function("FindNodeCount", &Shard::FindNodeCountViaLua, this);
         lua.set_function("FindNodeIds", &Shard::FindNodeIdsViaLua, this);
         lua.set_function("FindNodes", &Shard::FindNodesViaLua, this);
+
+        // TODO: overload these with equal as default
         lua.set_function("FindRelationshipCount", &Shard::FindRelationshipCountViaLua, this);
         lua.set_function("FindRelationshipIds", &Shard::FindRelationshipIdsViaLua, this);
         lua.set_function("FindRelationships", &Shard::FindRelationshipsViaLua, this);
