@@ -167,4 +167,4 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           export GCCOPT="'-std=gnu++20' '-v' '-dM' '-E' '-shared-libgcc' '-mtune=generic' '-march=x86-64'"
-          sonar-scanner -X --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" --define sonar.cfamily.compile-commands=build/compile_commands.json --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" --define sonar.cfamily.reportingCppStandardOverride=c++20
+          sonar-scanner -X --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" --define sonar.cfamily.compile-commands=build/compile_commands.json --define sonar.cfamily.reportingCppStandardOverride=c++20
