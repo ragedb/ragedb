@@ -136,7 +136,7 @@ namespace ragedb {
       "FindRelationshipIds",
       "FindRelationships",
 
-      "IntersectIds",
+      "IntersectUnsortedIds",
       "IntersectNodes",
       "IntersectRelationships",
       "IntersectIdsCount",

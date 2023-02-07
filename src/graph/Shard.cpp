@@ -319,7 +319,14 @@ namespace ragedb {
             [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_type); },
             [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types); },
             [this](std::vector<uint64_t> ids, const std::string& rel_type) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_type); },
-            [this](std::vector<uint64_t> ids, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types); }
+            [this](std::vector<uint64_t> ids, const std::vector<std::string>& rel_types) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types); },
+
+            [this](std::vector<uint64_t> ids, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, ids2); },
+            [this](std::vector<uint64_t> ids, Direction direction, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, ids2); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_type, ids2); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string>& rel_types, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types, ids2); },
+            [this](std::vector<uint64_t> ids, const std::string& rel_type, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_type, ids2); },
+            [this](std::vector<uint64_t> ids, const std::vector<std::string>& rel_types, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types, ids2); }
             ));
 
         lua.set_function("NodesGetNeighborIds", sol::overload(
@@ -534,7 +541,7 @@ namespace ragedb {
         lua.set_function("FilterRelationshipProperties", &Shard::FilterRelationshipPropertiesViaLua, this);
 
         // Intersect
-        lua.set_function("IntersectIds", &Shard::IntersectIdsViaLua, this);
+        lua.set_function("IntersectUnsortedIds", &Shard::IntersectIdsViaLua, this);
         lua.set_function("IntersectNodes", &Shard::IntersectNodesViaLua, this);
         lua.set_function("IntersectRelationships", &Shard::IntersectRelationshipsViaLua, this);
         lua.set_function("IntersectIdsCount", &Shard::IntersectIdsCountViaLua, this);

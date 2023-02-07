@@ -284,6 +284,15 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
+        std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
+        std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
+
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids);
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction);
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
@@ -583,6 +592,12 @@ namespace ragedb {
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
+
+        seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, const std::vector<uint64_t>& ids2);
+        seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<uint64_t>& ids2);
+        seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2);
+        seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2);
+
 
         seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>&maps_of_incoming_nodes);
         seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction);
@@ -922,10 +937,15 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types);
 
 
-        sol::table NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids);
-        sol::table NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction);
-        sol::table NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type);
-        sol::table NodeIdsGetNeighborIdsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t>& ids, const std::vector<uint64_t> &ids2);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2);
+        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2);
 
         sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes);
         sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction);
@@ -1134,6 +1154,7 @@ namespace ragedb {
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
 
+        std::vector<uint64_t> IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids_2) const;
   };
 }
 

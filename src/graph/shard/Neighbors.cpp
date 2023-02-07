@@ -21,6 +21,13 @@
 
 namespace ragedb {
 
+    std::vector<uint64_t> Shard::IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
+        std::vector<uint64_t> intersection;
+        std::set_intersection(sorted_ids.begin(), sorted_ids.end(), sorted_ids2.begin(), sorted_ids2.end(),
+          std::back_inserter(intersection));
+        return intersection;
+    }
+
     std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetNeighborIds(id);
@@ -39,6 +46,26 @@ namespace ragedb {
     std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetNeighborIds(id, direction, rel_types);
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, const std::vector<uint64_t>& ids) {
+        uint64_t id = NodeGetID(type, key);
+        return NodeGetNeighborIds(id, ids);
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::vector<uint64_t>& ids) {
+        uint64_t id = NodeGetID(type, key);
+        return NodeGetNeighborIds(id, direction, ids);
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type, const std::vector<uint64_t>& ids) {
+        uint64_t id = NodeGetID(type, key);
+        return NodeGetNeighborIds(id, direction, rel_type, ids);
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids) {
+        uint64_t id = NodeGetID(type, key);
+        return NodeGetNeighborIds(id, direction, rel_types, ids);
     }
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids) {
@@ -83,6 +110,27 @@ namespace ragedb {
         }
 
         return ids;
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, const std::vector<uint64_t>& sorted_ids) {
+        if (!ValidNodeId(id)) {
+            return std::vector<uint64_t>();
+        }
+
+        uint64_t internal_id = externalToInternal(id);
+        uint16_t node_type_id = externalToTypeId(id);
+        std::vector<uint64_t> ids;
+        for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            auto out_ids = group.node_ids();
+            std::ranges::copy(out_ids, std::back_inserter(ids));
+        }
+
+        for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+            auto in_ids = group.node_ids();
+            std::ranges::copy(in_ids, std::back_inserter(ids));
+        }
+        std::sort(ids.begin(), ids.end());
+        return IntersectIds(ids, sorted_ids);
     }
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction) {
@@ -140,6 +188,33 @@ namespace ragedb {
             }
         }
         return ids;
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<uint64_t>& sorted_ids) {
+        if (!ValidNodeId(id)) {
+            return std::vector<uint64_t>();
+        }
+
+        uint16_t node_type_id = externalToTypeId(id);
+        uint64_t internal_id = externalToInternal(id);
+        std::vector<uint64_t > ids;
+
+        // Use the two ifs to handle ALL for a direction
+        if (direction != Direction::IN) {
+            for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                auto out_ids = group.node_ids();
+                std::ranges::copy(out_ids, std::back_inserter(ids));
+            }
+        }
+        // Use the two ifs to handle ALL for a direction
+        if (direction != Direction::OUT) {
+            for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+                auto in_ids = group.node_ids();
+                std::ranges::copy(in_ids, std::back_inserter(ids));
+            }
+        }
+        std::sort(ids.begin(), ids.end());
+        return IntersectIds(ids, sorted_ids);
     }
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::string &rel_type) {
@@ -208,6 +283,39 @@ namespace ragedb {
             }
         }
         return ids;
+    }
+
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, const std::string &rel_type, const std::vector<uint64_t>& sorted_ids) {
+        if (!ValidNodeId(id)) {
+            return std::vector<uint64_t>();
+        }
+        uint16_t node_type_id = externalToTypeId(id);
+        uint16_t type_id = relationship_types.getTypeId(rel_type);
+        uint64_t internal_id = externalToInternal(id);
+        std::vector<uint64_t > ids;
+
+        // Use the two ifs to handle ALL for a direction
+        if (direction != Direction::IN) {
+            auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+              [type_id](const Group &g) { return g.rel_type_id == type_id; });
+
+            if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
+                ids.reserve(out_group->links.size());
+                std::ranges::copy(out_group->node_ids(), std::back_inserter(ids));
+            }
+        }
+
+        if (direction != Direction::OUT) {
+            auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+              [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+
+            if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
+                ids.reserve(ids.size() + in_group->links.size());
+                std::ranges::copy(in_group->node_ids(), std::back_inserter(ids));
+            }
+        }
+        std::sort(ids.begin(), ids.end());
+        return IntersectIds(ids, sorted_ids);
     }
 
     seastar::future<roaring::Roaring64Map> Shard::NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
@@ -300,4 +408,47 @@ namespace ragedb {
         return ids;
     }
 
+    std::vector<uint64_t> Shard::NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& sorted_ids) {
+        if (!ValidNodeId(id)) {
+            return std::vector<uint64_t>();
+        }
+        uint16_t node_type_id = externalToTypeId(id);
+        uint64_t internal_id = externalToInternal(id);
+        std::vector<uint64_t> ids;
+        // Use the two ifs to handle ALL for a direction
+        if (direction != Direction::IN) {
+            // For each requested type sum up the values
+            for (const auto &rel_type : rel_types) {
+                uint16_t type_id = relationship_types.getTypeId(rel_type);
+                if (type_id == 0) {
+                    continue;
+                }
+                auto out_group = std::ranges::find_if(node_types.getOutgoingRelationships(node_type_id).at(internal_id),
+                  [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+
+                if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
+                    std::ranges::copy(out_group->node_ids(), std::back_inserter(ids));
+                }
+            }
+        }
+        // Use the two ifs to handle ALL for a direction
+        if (direction != Direction::OUT) {
+            // For each requested type sum up the values
+            for (const auto &rel_type : rel_types) {
+                uint16_t type_id = relationship_types.getTypeId(rel_type);
+                if (type_id == 0) {
+                    continue;
+                }
+                auto in_group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id),
+                  [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
+
+                if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
+                    std::ranges::copy(in_group->node_ids(), std::back_inserter(ids));
+                }
+
+            }
+        }
+        std::sort(ids.begin(), ids.end());
+        return IntersectIds(ids, sorted_ids);
+    }
 }
