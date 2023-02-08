@@ -36,6 +36,7 @@ namespace ragedb {
     void addIds(std::vector<uint64_t> ids);
     void addNodeIds(std::vector<Link> links);
     void addRelationshipIds(std::vector<Link> links);
+    void addValues(std::map<uint64_t, std::vector<uint64_t>> table);
     std::vector<uint64_t> getIds() const;
     sol::as_table_t<std::vector<uint64_t>> getIdsLua();
 

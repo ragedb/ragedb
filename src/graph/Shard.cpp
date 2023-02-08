@@ -73,6 +73,7 @@ namespace ragedb {
           "addIds", &Roar::addIds,
           "addNodeIds", &Roar::addNodeIds,
           "addRelationshipIds", &Roar::addRelationshipIds,
+          "addValues", &Roar::addValues,
           "getIds", &Roar::getIdsLua,
           "getNodeHalfLinks", &Roar::getNodeHalfLinksLua,
           "getRelationshipHalfLinks", &Roar::getRelationshipHalfLinksLua,

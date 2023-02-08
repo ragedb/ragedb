@@ -157,6 +157,12 @@ namespace ragedb {
     map.addMany(links.size(), arr.data());
   }
 
+  void Roar::addValues(std::map<uint64_t, std::vector<uint64_t>> table) {
+    for (auto& [key, value] : table) {
+      map.addMany(value.size(), value.data());
+    }
+  }
+
   std::ostream &operator<<(std::ostream &os, const Roar &roar) {
     os << '[';
     bool nested_initial = true;
@@ -185,16 +191,15 @@ namespace ragedb {
   }
 
   std::vector<Link> Roar::getNodeHalfLinks() const {
+    size_t cardinality = map.cardinality();
+    uint64_t* arr = new uint64_t[cardinality];
+    map.toUint64Array(arr);
+
     std::vector<Link> links;
-    links.reserve(map.cardinality());
+    links.reserve(cardinality);
 
-    std::vector<uint64_t> array;
-    array.reserve(map.cardinality());
-
-    map.toUint64Array(array.data());
-
-    for (auto element : array) {
-      links.push_back( Link({element,0}));
+    for(int i = 0; i < cardinality; ++i) {
+      links.emplace_back(Link({arr[i], 0}));
     }
 
     return links;
@@ -205,16 +210,15 @@ namespace ragedb {
   }
 
   std::vector<Link> Roar::getRelationshipHalfLinks() const {
+    size_t cardinality = map.cardinality();
+    uint64_t* arr = new uint64_t[cardinality];
+    map.toUint64Array(arr);
+
     std::vector<Link> links;
-    links.reserve(map.cardinality());
+    links.reserve(cardinality);
 
-    std::vector<uint64_t> array;
-    array.reserve(map.cardinality());
-
-    map.toUint64Array(array.data());
-
-    for (auto element : array) {
-      links.push_back( Link({0,element}));
+    for(int i = 0; i < cardinality; ++i) {
+      links.emplace_back(Link({0, arr[i]}));
     }
 
     return links;

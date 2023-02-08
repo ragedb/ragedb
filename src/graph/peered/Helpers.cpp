@@ -74,6 +74,10 @@ namespace ragedb {
           sharded_ids.erase(i);
         }
       }
+      // Sort ids
+      for(auto& [shard, vec] : sharded_ids) {
+        std::sort(vec.begin(), vec.end());
+      }
       co_return sharded_ids;
     }
 
@@ -84,9 +88,7 @@ namespace ragedb {
       }
       for (const auto& id : ids) {
         uint16_t id_shard_id = CalculateShardId(id);
-        // Insert Sorted
-        auto it = std::upper_bound(sharded_ids.at(id_shard_id).begin(), sharded_ids.at(id_shard_id).end(), id);
-        sharded_ids.at(id_shard_id).insert(it, id);
+        sharded_ids.at(id_shard_id).emplace_back(id);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
@@ -94,6 +96,11 @@ namespace ragedb {
           sharded_ids.erase(i);
         }
       }
+      // Sort ids
+      for(auto& [shard, vec] : sharded_ids) {
+        std::sort(vec.begin(), vec.end());
+      }
+
       return sharded_ids;
     }
 
@@ -104,15 +111,17 @@ namespace ragedb {
       }
       for (const auto& link : links) {
         uint16_t node_shard_id = CalculateShardId(link.node_id);
-        // Insert Sorted
-        auto it = std::upper_bound(sharded_nodes_ids.at(node_shard_id).begin(), sharded_nodes_ids.at(node_shard_id).end(), link.node_id);
-        sharded_nodes_ids.at(node_shard_id).insert(it, link.node_id);
+        sharded_nodes_ids.at(node_shard_id).emplace_back(link.node_id);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
         if (sharded_nodes_ids.at(i).empty()) {
           sharded_nodes_ids.erase(i);
         }
+      }
+      // Sort ids
+      for(auto& [shard, vec] : sharded_nodes_ids) {
+        std::sort(vec.begin(), vec.end());
       }
       return sharded_nodes_ids;
     }
@@ -146,9 +155,7 @@ namespace ragedb {
       }
       for (const auto& link : links) {
         uint16_t relationship_shard_id = CalculateShardId(link.rel_id);
-        // Insert Sorted
-        auto it = std::upper_bound(sharded_ids.at(relationship_shard_id).begin(), sharded_ids.at(relationship_shard_id).end(), link.rel_id);
-        sharded_ids.at(relationship_shard_id).insert(it, link.rel_id);
+        sharded_ids.at(relationship_shard_id).emplace_back(link.rel_id);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
@@ -156,6 +163,11 @@ namespace ragedb {
           sharded_ids.erase(i);
         }
       }
+      // Sort ids
+      for(auto& [shard, vec] : sharded_ids) {
+        std::sort(vec.begin(), vec.end());
+      }
+
       return sharded_ids;
     }
 
@@ -189,8 +201,7 @@ namespace ragedb {
         for (const auto& id : ids) {
             uint16_t type_id = externalToTypeId(id);
             // Insert Sorted
-            auto it = std::upper_bound(partitioned_ids.at(type_id).begin(), partitioned_ids.at(type_id).end(), id);
-            partitioned_ids.at(type_id).insert(it, id);
+            partitioned_ids.at(type_id).emplace_back(id);
         }
 
         for (uint16_t i = 0; i < max_size; i++) {
@@ -200,6 +211,11 @@ namespace ragedb {
                 sort(partitioned_ids.at(i).begin(), partitioned_ids.at(i).end());
             }
         }
+        // Sort ids
+        for(auto& [shard, vec] : partitioned_ids) {
+            std::sort(vec.begin(), vec.end());
+        }
+
         return partitioned_ids;
     }
 
@@ -241,6 +257,11 @@ namespace ragedb {
                 sort(partitioned_ids.at(i).begin(), partitioned_ids.at(i).end());
             }
         }
+        // Sort ids
+        for(auto& [shard, vec] : partitioned_ids) {
+            std::sort(vec.begin(), vec.end());
+        }
+
         return partitioned_ids;
     }
 
