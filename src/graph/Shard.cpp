@@ -194,11 +194,11 @@ namespace ragedb {
 //                                       [this](sol::exhaustive_until<std::vector<uint64_t>, 1> ids) { return this->NodesGetViaLua(ids.value()); },
 //                                       [this](sol::exhaustive_until<std::vector<Link>, 1> links) { return this->NodesGetByLinksViaLua(links.value()); }
 //                                       ));
-        lua.set_function("NodesGetKey", &Shard::NodesGetKeyViaLua, this);
-        lua.set_function("NodesGetType", &Shard::NodesGetTypeViaLua, this);
-        lua.set_function("NodesGetProperty", &Shard::NodesGetPropertyViaLua, this);
-        lua.set_function("NodesGetPropertyRaw", &Shard::NodesGetPropertyViaLuaRaw, this);
-        lua.set_function("NodesGetProperties", &Shard::NodesGetPropertiesViaLua, this);
+        lua.set_function("NodeIdsGetKey", &Shard::NodesGetKeyViaLua, this);
+        lua.set_function("NodeIdsGetType", &Shard::NodesGetTypeViaLua, this);
+        lua.set_function("NodeIdsGetProperty", &Shard::NodesGetPropertyViaLua, this);
+        lua.set_function("NodeIdsGetPropertyRaw", &Shard::NodesGetPropertyViaLuaRaw, this);
+        lua.set_function("NodeIdsGetProperties", &Shard::NodesGetPropertiesViaLua, this);
 
         // Node Properties
         lua.set_function("NodeGetProperty", sol::overload(

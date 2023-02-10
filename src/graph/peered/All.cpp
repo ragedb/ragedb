@@ -198,7 +198,7 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<uint64_t>> Shard::AllNodeIdsPeered(const std::string& type, uint64_t skip, uint64_t limit) {
-        uint16_t node_type_id = relationship_types.getTypeId(type);
+        uint16_t node_type_id = node_types.getTypeId(type);
         uint64_t max = skip + limit;
 
         // Get the {Node Type Id, Count} map for each core
