@@ -880,7 +880,7 @@ namespace ragedb {
         uint64_t RelationshipGetEndingNodeIdViaLua(uint64_t id);
 
         // Relationships
-        sol::table RelationshipsGetViaLua(const std::vector<uint64_t> &ids);
+        sol::table RelationshipsGetViaLua(std::vector<uint64_t> ids);
         sol::table RelationshipsGetByLinksViaLua(std::vector<Link> links);
         sol::table RelationshipsGetTypeViaLua(std::vector<uint64_t> ids);
         sol::table RelationshipsGetTypeByLinksViaLua(std::vector<Link> links);

@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-    sol::table Shard::RelationshipsGetViaLua(const std::vector<uint64_t> &ids) {
+    sol::table Shard::RelationshipsGetViaLua(std::vector<uint64_t> ids) {
         sol::table rels = lua.create_table(0, ids.size());
         for (const auto& rel : RelationshipsGetPeered(ids).get0()) {
             rels.set(rel.getId(), rel);

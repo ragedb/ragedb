@@ -263,6 +263,7 @@ namespace ragedb {
         lua.set_function("RelationshipGetProperty", &Shard::RelationshipGetPropertyViaLua, this);
         lua.set_function("RelationshipGetProperties", &Shard::RelationshipGetPropertiesViaLua, this);
         lua.set_function("RelationshipSetProperty", &Shard::RelationshipSetPropertyViaLua, this);
+        // TODO: Add Bulk methods for Writes
         lua.set_function("RelationshipSetPropertyFromJson", &Shard::RelationshipSetPropertyFromJsonViaLua, this);
         lua.set_function("RelationshipDeleteProperty", &Shard::RelationshipDeletePropertyViaLua, this);
         lua.set_function("RelationshipSetPropertiesFromJson", &Shard::RelationshipSetPropertiesFromJsonViaLua, this);
