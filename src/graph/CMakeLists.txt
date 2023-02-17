@@ -20,7 +20,7 @@ set(HEADER_FILES
         Uniqueness.h
         types/Date.h
         eve/CollectIndexes.h Sort.h ../Templates.h
-        paths/WeightedLink.h)
+        paths/WeightedLink.h paths/Path.h paths/WeightedPath.h)
 
 set(SOURCE_FILES
         Graph.cpp
@@ -52,6 +52,7 @@ set(SOURCE_FILES
         lua/Traversing.cpp peered/Traversing.cpp shard/Traversing.cpp
         lua/Types.cpp peered/Types.cpp shard/Types.cpp
         lua/LoadCSV.cpp peered/LoadCSV.cpp shard/LoadCSV.cpp
+        lua/ShortestPath.cpp peered/ShortestPath.cpp
 
         node/Find.cpp relationship/Find.cpp
         node/Filter.cpp relationship/Filter.cpp
@@ -59,6 +60,6 @@ set(SOURCE_FILES
         shard/Ids.cpp
         peered/Restore.cpp
         types/Date.cpp shard/NodeLinks.cpp lua/KHop.cpp peered/KHop.cpp
-        paths/WeightedLink.cpp)
+        paths/WeightedLink.cpp paths/Path.cpp paths/WeightedPath.cpp )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})
