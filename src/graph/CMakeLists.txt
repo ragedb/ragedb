@@ -19,7 +19,8 @@ set(HEADER_FILES
         Shard.h
         Uniqueness.h
         types/Date.h
-        eve/CollectIndexes.h Sort.h ../Templates.h)
+        eve/CollectIndexes.h Sort.h ../Templates.h
+        paths/WeightedLink.h)
 
 set(SOURCE_FILES
         Graph.cpp
@@ -57,6 +58,7 @@ set(SOURCE_FILES
 
         shard/Ids.cpp
         peered/Restore.cpp
-        types/Date.cpp shard/NodeLinks.cpp lua/KHop.cpp peered/KHop.cpp)
+        types/Date.cpp shard/NodeLinks.cpp lua/KHop.cpp peered/KHop.cpp
+        paths/WeightedLink.cpp)
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

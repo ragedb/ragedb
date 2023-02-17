@@ -47,7 +47,7 @@ namespace ragedb {
         bool operator==(const Link& that)const{
             return (rel_id == that.rel_id) && (node_id == that.node_id);
         }
-        friend std::ostream& operator<<(std::ostream& os, const Link& ids);
+        friend std::ostream& operator<<(std::ostream& os, const Link& link);
     };
 }
 
