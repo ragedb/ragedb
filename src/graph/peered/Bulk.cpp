@@ -106,47 +106,111 @@ namespace ragedb {
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(const std::vector<Link>& links, const std::string &rel_type) {
+    seastar::future<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNodeIdsPeered(const std::vector<Link>& links) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (const auto& [their_shard, grouped_links] : sharded_links) {
-        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_type](Shard &local_shard) {
-          return local_shard.LinksGetLinks(grouped_links, Direction::BOTH, rel_type);
+        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links](Shard &local_shard) {
+            return local_shard.LinksGetLinks(grouped_links);
         });
         futures.push_back(std::move(future));
       }
 
       auto p = make_shared(std::move(futures));
       return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<Link, std::vector<Link>>> &results) {
-        std::map<Link, std::vector<Link>> combined;
+          std::map<Link, std::vector<uint64_t>> combined;
 
-        for (const std::map<Link, std::vector<Link>> &sharded : results) {
-          combined.insert(std::begin(sharded), std::end(sharded));
-        }
-        return combined;
+          for (const std::map<Link, std::vector<Link>> &sharded : results) {
+              for (const auto &[link, found_links] : sharded) {
+                  std::vector<uint64_t> node_ids;
+                  node_ids.reserve(found_links.size());
+                  std::transform(begin(found_links), end(found_links), back_inserter(node_ids), std::mem_fn(&Link::node_id));
+                  combined.emplace(link, node_ids);
+              }
+          }
+          return combined;
       });
     }
 
-    seastar::future<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksPeered(const std::vector<Link>& links, const std::vector<std::string> &rel_types) {
+    seastar::future<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNodeIdsPeered(const std::vector<Link>& links, Direction direction) {
       std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
 
       std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
       for (const auto& [their_shard, grouped_links] : sharded_links) {
-        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, rel_types](Shard &local_shard) {
-          return local_shard.LinksGetLinks(grouped_links, Direction::BOTH, rel_types);
+        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction](Shard &local_shard) {
+            return local_shard.LinksGetLinks(grouped_links, direction);
         });
         futures.push_back(std::move(future));
       }
 
       auto p = make_shared(std::move(futures));
       return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<Link, std::vector<Link>>> &results) {
-        std::map<Link, std::vector<Link>> combined;
+          std::map<Link, std::vector<uint64_t>> combined;
 
-        for (const std::map<Link, std::vector<Link>> &sharded : results) {
-          combined.insert(std::begin(sharded), std::end(sharded));
-        }
-        return combined;
+          for (const std::map<Link, std::vector<Link>> &sharded : results) {
+              for (const auto &[link, found_links] : sharded) {
+                  std::vector<uint64_t> node_ids;
+                  node_ids.reserve(found_links.size());
+                  std::transform(begin(found_links), end(found_links), back_inserter(node_ids), std::mem_fn(&Link::node_id));
+                  combined.emplace(link, node_ids);
+              }
+          }
+          return combined;
+      });
+    }
+
+    seastar::future<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNodeIdsPeered(const std::vector<Link>& links, Direction direction, const std::string &rel_type) {
+      std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
+
+      std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
+      for (const auto& [their_shard, grouped_links] : sharded_links) {
+        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction, rel_type](Shard &local_shard) {
+            return local_shard.LinksGetLinks(grouped_links, direction, rel_type);
+        });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<Link, std::vector<Link>>> &results) {
+          std::map<Link, std::vector<uint64_t>> combined;
+
+          for (const std::map<Link, std::vector<Link>> &sharded : results) {
+              for (const auto &[link, found_links] : sharded) {
+                  std::vector<uint64_t> node_ids;
+                  node_ids.reserve(found_links.size());
+                  std::transform(begin(found_links), end(found_links), back_inserter(node_ids), std::mem_fn(&Link::node_id));
+                  combined.emplace(link, node_ids);
+              }
+          }
+          return combined;
+      });
+    }
+
+    seastar::future<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNodeIdsPeered(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types) {
+      std::map<uint16_t, std::vector<Link>> sharded_links = PartitionLinksByNodeShardId(links);
+
+      std::vector<seastar::future<std::map<Link, std::vector<Link>>>> futures;
+      for (const auto& [their_shard, grouped_links] : sharded_links) {
+        auto future = container().invoke_on(their_shard, [grouped_links = grouped_links, direction, rel_types](Shard &local_shard) {
+            return local_shard.LinksGetLinks(grouped_links, direction, rel_types);
+        });
+        futures.push_back(std::move(future));
+      }
+
+      auto p = make_shared(std::move(futures));
+      return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<Link, std::vector<Link>>> &results) {
+          std::map<Link, std::vector<uint64_t>> combined;
+
+          for (const std::map<Link, std::vector<Link>> &sharded : results) {
+              for (const auto &[link, found_links] : sharded) {
+                  std::vector<uint64_t> node_ids;
+                  node_ids.reserve(found_links.size());
+                  std::transform(begin(found_links), end(found_links), back_inserter(node_ids), std::mem_fn(&Link::node_id));
+                  combined.emplace(link, node_ids);
+              }
+          }
+          return combined;
       });
     }
 

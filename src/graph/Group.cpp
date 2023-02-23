@@ -15,30 +15,23 @@
  */
 
 #include <ranges>
+#include <functional>
 #include "Group.h"
 
 namespace ragedb {
     Group::Group(uint16_t rel_type_id, std::vector<Link> ids) : rel_type_id(rel_type_id), links(std::move(ids)) {}
 
     std::vector<uint64_t> Group::node_ids() const {
-        std::vector<uint64_t> ids{};
+        std::vector<uint64_t> ids;
         ids.reserve(links.size());
-
-        for (auto id : links | std::views::transform(&Link::to_tuple) | std::views::elements<0>) {
-            ids.emplace_back(id);
-        }
-
+        std::transform(begin(links), end(links), back_inserter(ids), std::mem_fn(&Link::node_id));
         return ids;
     }
 
     std::vector<uint64_t> Group::rel_ids() const{
-        std::vector<uint64_t> ids{};
+        std::vector<uint64_t> ids;
         ids.reserve(links.size());
-
-        for (auto id : links | std::views::transform(&Link::to_tuple) | std::views::elements<1>) {
-            ids.emplace_back(id);
-        }
-
+        std::transform(begin(links), end(links), back_inserter(ids), std::mem_fn(&Link::rel_id));
         return ids;
     }
 }

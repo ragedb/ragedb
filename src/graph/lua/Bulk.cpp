@@ -66,53 +66,20 @@ namespace ragedb {
       return sol::as_nested(LinksGetNeighborsPeered(links, direction, rel_types).get0());
     }
 
-    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links) {
-        sol::table neighbors = lua.create_table(0, links.size());
-        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links).get0() ) {
-            sol::table node_ids = lua.create_table(link_ids.size(), 0);
-            for (const auto& link : link_ids) {
-                node_ids.add(link.node_id);
-            }
-            neighbors.set(node_id, node_ids);
-        }
-        return neighbors;
+    sol::nested<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links) {
+        return LinksGetNodeIdsPeered(links).get0();
     }
 
-    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction){
-        sol::table neighbors = lua.create_table(0, links.size());
-        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links, direction).get0() ) {
-            sol::table node_ids = lua.create_table(link_ids.size(), 0);
-            for (const auto& link : link_ids) {
-                node_ids.add(link.node_id);
-            }
-            neighbors.set(node_id, node_ids);
-        }
-        return neighbors;
+    sol::nested<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction){
+       return LinksGetNodeIdsPeered(links, direction).get0();
     }
 
-    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
-        sol::table neighbors = lua.create_table(0, links.size());
-        for (const auto& [node_id, link_ids] : LinksGetLinksPeered(links, direction, rel_type).get0() ) {
-            sol::table node_ids = lua.create_table(link_ids.size(), 0);
-            for (const auto& link : link_ids) {
-                node_ids.add(link.node_id);
-            }
-            neighbors.set(node_id, node_ids);
-        }
-        return neighbors;
+    sol::nested<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+        return LinksGetNodeIdsPeered(links, direction, rel_type).get0();
     }
 
-    sol::table Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
-        sol::table neighbors = lua.create_table(0, links.size());
-        std::vector<uint64_t> links_node_ids;
-        for (const auto & link : links) {
-            links_node_ids.emplace_back(link.node_id);
-        }
-        auto node_ids = NodeIdsGetNeighborIdsPeered(links_node_ids, direction, rel_types).get0();
-        for (const auto & link : links) {
-            neighbors.set(link, node_ids[link.node_id]);
-        }
-        return neighbors;
+    sol::nested<std::map<Link, std::vector<uint64_t>>> Shard::LinksGetNeighborIdsViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+        return LinksGetNodeIdsPeered(links, direction, rel_types).get0();
     }
 
 }
