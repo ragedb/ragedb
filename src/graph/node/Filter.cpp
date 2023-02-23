@@ -1260,31 +1260,53 @@ namespace ragedb {
           }
       }
 
+      std::vector<uint64_t> internal_ids = Shard::externalToInternal(list);
+      sort(internal_ids.begin(), internal_ids.end());
+      std::vector<double> node_properties = properties[type_id].getDoubleProperties(property, internal_ids);
+      std::vector<std::uint64_t> indexes;
+
+      switch(operation) {
+      case Operation::EQ:
+          ragedb::collect_indexes(node_properties, [typedValue](auto x) { return x == typedValue; }, indexes);
+          break;
+      case Operation::NEQ:
+          ragedb::collect_indexes(node_properties, [typedValue](auto x) { return x != typedValue; }, indexes);
+          break;
+      case Operation::GT:
+          ragedb::collect_indexes(node_properties, [typedValue](auto x) { return x > typedValue; }, indexes);
+          break;
+      case Operation::GTE:
+          ragedb::collect_indexes(node_properties, [typedValue](auto x) { return x >= typedValue; }, indexes);
+          break;
+      case Operation::LT:
+          ragedb::collect_indexes(node_properties, [typedValue](auto x) { return x < typedValue; }, indexes);
+          break;
+      case Operation::LTE:
+          ragedb::collect_indexes(node_properties, [typedValue](auto x) { return x <= typedValue; }, indexes);
+          break;
+      default:
+          break;
+      }
+
       if (sortOrder == Sort::NONE) {
-          for (const auto& id : list) {
+          for(auto idx : indexes) {
               // If we reached our limit, return
               if (current > limit) {
                   return nodes;
               }
 
-              if (!Expression::Evaluate<double>(operation, properties[type_id].getDoubleProperty(property,  Shard::externalToInternal(id)), typedValue)) {
-                  continue;
-              }
-
-              nodes.emplace_back(getNodeProperties(id));
+              nodes.emplace_back(getNodeProperties(type_id, internal_ids[idx]));
               current++;
           }
+
       } else {
-          std::vector<uint64_t> internal_ids;
-          internal_ids.reserve(list.size());
-          for (const auto& id : list) {
-              internal_ids.emplace_back(Shard::externalToInternal(id));
-          }
-
-          std::function<bool(property_type_t)> filter = [&](property_type_t property_value){ return Expression::Evaluate<double>(operation, get<double>(property_value), typedValue); };
-
           // Declare vector of pairs
-          std::vector<std::pair<uint64_t, property_type_t>> vec = properties[type_id].getProperty(list, internal_ids, property, filter);
+          std::vector<std::pair<uint64_t, property_type_t>> vec;
+          vec.reserve(indexes.size());
+
+          for(auto idx : indexes) {
+              vec.emplace_back(internal_ids[idx], node_properties[idx]);
+          }
 
           // Partial sort up to our limit
           if (sortOrder == Sort::ASC) {
@@ -1297,11 +1319,11 @@ namespace ragedb {
               });
           }
           // Grab the properties up to the limit
-          for (const auto &[key, property_value] : vec) {
+          for (const auto &[internal_id, property_value] : vec) {
               if (current++ > limit) {
                   return nodes;
               }
-              nodes.push_back(getNodeProperties(key));
+              nodes.push_back(getNodeProperties(type_id, internal_id));
           }
       }
       return nodes;

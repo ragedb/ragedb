@@ -31,6 +31,15 @@ namespace ragedb {
         return (id >> (TYPE_BITS + SHARD_BITS));
     }
 
+    std::vector<uint64_t> Shard::externalToInternal(const std::vector<uint64_t> &ids) {
+        std::vector<uint64_t> internal_ids;
+        internal_ids.reserve(ids.size());
+        for (auto id : ids) {
+            internal_ids.emplace_back((id >> (TYPE_BITS + SHARD_BITS)));
+        }
+        return internal_ids;
+    }
+
     uint16_t Shard::externalToTypeId(uint64_t id) {
         return (uint16_t)((id & TYPE_MASK ) >> SHARD_BITS);
     }

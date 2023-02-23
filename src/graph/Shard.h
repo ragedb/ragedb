@@ -110,6 +110,7 @@ namespace ragedb {
           // Ids
         static uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id);
         static uint64_t externalToInternal(uint64_t id);
+        static std::vector<uint64_t> externalToInternal(const std::vector<uint64_t> &ids);
         static uint16_t externalToTypeId(uint64_t id);
         static uint16_t CalculateShardId(uint64_t id);
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
