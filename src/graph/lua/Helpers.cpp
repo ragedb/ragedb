@@ -51,16 +51,12 @@ namespace ragedb {
         return sol::lua_nil;
       case 1:
         return sol::make_object(lua.lua_state(), get<bool>(value));
-        //return sol::object(lua, sol::in_place_type<bool>, get<bool>(value));
       case 2:
         return sol::make_object(lua.lua_state(), get<int64_t>(value));
-        //return sol::object(lua, sol::in_place_type<int64_t>, get<int64_t>(value));
       case 3:
         return sol::make_object(lua.lua_state(), get<double>(value));
-        //return sol::object(lua, sol::in_place_type<double>, get<double>(value));
       case 4:
         return sol::make_object(lua.lua_state(), get<std::string>(value));
-        //return sol::object(lua, sol::in_place_type<std::string>, get<std::string>(value));
       case 5:
         return sol::make_object(lua.lua_state(), sol::as_table(get<std::vector<bool>>(value)));
       case 6:
@@ -78,7 +74,31 @@ namespace ragedb {
   sol::table Shard::PropertiesToSolObject(const std::map<std::string, property_type_t>& properties) {
     sol::table property_map = lua.create_table(0, properties.size());
     for (const auto& [_key, value] : properties) {
-        property_map.set(_key, value);
+          switch (value.index()) {
+          case 0:
+              property_map.set(_key, sol::lua_nil);
+              break;
+          case 1:
+          case 2:
+          case 3:
+          case 4:
+              property_map.set(_key, value);
+              break;
+          case 5:
+              property_map.set(_key, sol::as_table(get<std::vector<bool>>(value)));
+              break;
+          case 6:
+              property_map.set(_key, sol::as_table(get<std::vector<int64_t>>(value)));
+              break;
+          case 7:
+              property_map.set(_key, sol::as_table(get<std::vector<double>>(value)));
+              break;
+          case 8:
+              property_map.set(_key, sol::as_table(get<std::vector<std::string>>(value)));
+              break;
+          default:
+              property_map.set(_key, sol::lua_nil);
+          }
     }
     return property_map;
   }

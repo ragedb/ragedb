@@ -68,6 +68,7 @@ namespace ragedb {
         return properties;
     }
 
+    //TODO: Deal with vector properties, see PropertiesToSolObject
     sol::table Shard::NodesGetPropertyViaLua(std::vector<uint64_t> ids, const std::string& property) {
         sol::table properties = lua.create_table(0, ids.size());
         for (const auto& [id, value] : NodesGetPropertyPeered(ids, property).get0()) {
@@ -91,11 +92,7 @@ namespace ragedb {
     sol::table Shard::NodesGetPropertiesViaLua(std::vector<uint64_t> ids) {
         sol::table properties = lua.create_table(0, ids.size());
         for (const auto& [id, node_properties] : NodesGetPropertiesPeered(ids).get0()) {
-            sol::table property_map = lua.create_table();
-            for (const auto& [_key, property] : node_properties) {
-                property_map.set(_key, property);
-            }
-            properties.set(id, property_map);
+            properties.set(id, PropertiesToSolObject(node_properties));
         }
         return properties;
     }
@@ -103,11 +100,7 @@ namespace ragedb {
     sol::table Shard::NodesGetPropertiesByLinksViaLua(std::vector<Link> links) {
         sol::table properties = lua.create_table(0, links.size());
         for (const auto& [id, node_properties] : NodesGetPropertiesPeered(links).get0()) {
-            sol::table property_map = lua.create_table();
-            for (const auto& [_key, property] : node_properties) {
-                property_map.set(_key, property);
-            }
-            properties.set(id.node_id, property_map);
+            properties.set(id.node_id, PropertiesToSolObject(node_properties));
         }
         return properties;
     }

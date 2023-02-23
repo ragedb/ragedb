@@ -22,31 +22,19 @@ namespace ragedb {
     return FilterNodeCountPeered(ids, type, property, operation, SolObjectToProperty(object)).get0();
   }
 
-  sol::table Shard::FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
-      sol::table node_ids = lua.create_table(0, 0);
-      for (const auto& id : FilterNodeIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0()) {
-          node_ids.add(id);
-      }
-      return node_ids;
+  sol::as_table_t<std::vector<uint64_t>> Shard::FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
+      return FilterNodeIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0();
   }
 
-  sol::table Shard::FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
-      sol::table nodes = lua.create_table(0, 0);
-      for (const auto& node : FilterNodesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0()) {
-          nodes.add(node);
-      }
-      return nodes;
+  sol::as_table_t<std::vector<Node>> Shard::FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
+      return FilterNodesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0();
   }
 
   sol::table Shard::FilterNodePropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
       sol::table properties = lua.create_table(0, 0);
-      for (const auto& nodes : FilterNodePropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
-          sol::table node_properties = lua.create_table(0, 0);
-          for (const auto& [_key, value] : nodes) {
-              node_properties.set(_key, value);
-          }
-          properties.add(node_properties);
-      }
+      for (const auto& node_properties : FilterNodePropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
+          properties.add(PropertiesToSolObject(node_properties));
+       }
       return properties;
   }
 
@@ -54,30 +42,18 @@ namespace ragedb {
     return FilterRelationshipCountPeered(ids, type, property, operation, SolObjectToProperty(object)).get0();
   }
 
-  sol::table Shard::FilterRelationshipIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
-      sol::table rel_ids = lua.create_table(0, 0);
-      for (const auto& id : FilterRelationshipIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0()) {
-          rel_ids.add(id);
-      }
-      return rel_ids;
+  sol::as_table_t<std::vector<uint64_t>> Shard::FilterRelationshipIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+      return FilterRelationshipIdsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0();
   }
 
-  sol::table Shard::FilterRelationshipsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
-      sol::table rels = lua.create_table(0, 0);
-      for (const auto& rel : FilterRelationshipsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0()) {
-          rels.add(rel);
-      }
-      return rels;
+  sol::as_table_t<std::vector<Relationship>>  Shard::FilterRelationshipsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit) {
+     return FilterRelationshipsPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT)).get0();
   }
 
   sol::table Shard::FilterRelationshipPropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder) {
       sol::table properties = lua.create_table(0, 0);
-      for (const auto& relationships : FilterRelationshipPropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
-          sol::table rel_properties = lua.create_table(0, 0);
-          for (const auto& [_key, value] : relationships) {
-              rel_properties.set(_key, value);
-          }
-          properties.add(rel_properties);
+      for (const auto& relationship_properties : FilterRelationshipPropertiesPeered(ids, type, property, operation, SolObjectToProperty(object), skip.value_or(SKIP), limit.value_or(LIMIT), sortOrder.value_or(Sort::NONE)).get0() ) {
+          properties.add(PropertiesToSolObject(relationship_properties));
       }
       return properties;
   }

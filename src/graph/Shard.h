@@ -1081,12 +1081,12 @@ namespace ragedb {
 
         // Filter
         uint64_t FilterNodeCountViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
-        sol::table FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder);
-        sol::table FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder);
+        sol::as_table_t<std::vector<uint64_t>> FilterNodeIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder);
+        sol::as_table_t<std::vector<Node>> FilterNodesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder);
         sol::table FilterNodePropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder);
         uint64_t FilterRelationshipCountViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const sol::object& object);
-        sol::table FilterRelationshipIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
-        sol::table FilterRelationshipsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<uint64_t>> FilterRelationshipIdsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
+        sol::as_table_t<std::vector<Relationship>> FilterRelationshipsViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit);
         sol::table FilterRelationshipPropertiesViaLua(std::vector<uint64_t> ids, const std::string& type, const std::string& property, const Operation& operation, const  sol::object& object, sol::optional<uint64_t> skip, sol::optional<uint64_t> limit, sol::optional<Sort> sortOrder);
 
         // Intersect
@@ -1107,23 +1107,23 @@ namespace ragedb {
         std::pair<std::string, std::vector<std::string>> GetToKeysFromRelationshipsInCSV(const std::string& header, const char csv_separator);
 
         // K-Hop
-        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops);
-        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction);
-        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
-        sol::table KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
-        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops);
-        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
-        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
-        sol::table KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(uint64_t id, uint64_t hops);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<uint64_t>> KHopIdsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops);
-        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction);
-        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
-        sol::table KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
-        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops);
-        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
-        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
-        sol::table KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(uint64_t id, uint64_t hops);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<Node>> KHopNodesViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
 
         uint64_t KHopCountViaLua(uint64_t id, uint64_t hops);
         uint64_t KHopCountViaLua(uint64_t id, uint64_t hops, Direction direction);

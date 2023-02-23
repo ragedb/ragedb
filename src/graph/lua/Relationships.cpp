@@ -70,24 +70,16 @@ namespace ragedb {
 
     sol::table Shard::RelationshipsGetPropertiesViaLua(std::vector<uint64_t> ids) {
         sol::table properties = lua.create_table(0, ids.size());
-        for (const auto& [id, node_properties] : RelationshipsGetPropertiesPeered(ids).get0()) {
-            sol::table property_map = lua.create_table();
-            for (const auto& [_key, property] : node_properties) {
-                property_map.set(_key, property);
-            }
-            properties.set(id, property_map);
+        for (const auto& [id, rel_properties] : RelationshipsGetPropertiesPeered(ids).get0()) {
+            properties.set(id, PropertiesToSolObject(rel_properties));
         }
         return properties;
     }
 
     sol::table Shard::RelationshipsGetPropertiesByLinksViaLua(std::vector<Link> links) {
         sol::table properties = lua.create_table(0, links.size());
-        for (const auto& [id, node_properties] : RelationshipsGetPropertiesPeered(links).get0()) {
-            sol::table property_map = lua.create_table();
-            for (const auto& [_key, property] : node_properties) {
-                property_map.set(_key, property);
-            }
-            properties.set(id.rel_id, property_map);
+        for (const auto& [id, rel_properties] : RelationshipsGetPropertiesPeered(links).get0()) {
+            properties.set(id.rel_id, PropertiesToSolObject(rel_properties));
         }
         return properties;
     }
