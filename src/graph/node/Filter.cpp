@@ -1275,11 +1275,8 @@ namespace ragedb {
               current++;
           }
       } else {
-          std::vector<uint64_t> internal_ids;
-          internal_ids.reserve(list.size());
-          for (const auto& id : list) {
-              internal_ids.emplace_back(Shard::externalToInternal(id));
-          }
+          std::vector<uint64_t> internal_ids = Shard::externalToInternal(list);
+          sort(internal_ids.begin(), internal_ids.end());
 
           std::function<bool(property_type_t)> filter = [&](property_type_t property_value){ return Expression::Evaluate<double>(operation, get<double>(property_value), typedValue); };
 

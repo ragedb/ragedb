@@ -134,15 +134,17 @@ namespace ragedb {
 
       for (Link link : links) {
         uint16_t node_shard_id = CalculateShardId(link.node_id);
-        // Insert Sorted
-        auto it = std::upper_bound(sharded_links.at(node_shard_id).begin(), sharded_links.at(node_shard_id).end(), link);
-        sharded_links.at(node_shard_id).insert(it, link);
+        sharded_links.at(node_shard_id).emplace_back(link);
       }
 
       for (uint16_t i = 0; i < cpus; i++) {
         if (sharded_links.at(i).empty()) {
           sharded_links.erase(i);
         }
+      }
+      // Sort ids
+      for(auto& [shard, vec] : sharded_links) {
+        std::sort(vec.begin(), vec.end());
       }
       return sharded_links;
     }

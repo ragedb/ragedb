@@ -116,6 +116,11 @@ namespace ragedb {
         double getDoubleProperty(const std::string&, uint64_t);
         std::string getStringProperty(const std::string&, uint64_t);
 
+        std::vector<bool> getBooleanProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids);
+        std::vector<int64_t> getIntegerProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids);
+        std::vector<double> getDoubleProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids);
+        std::vector<std::string> getStringProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids);
+
         std::vector<bool> getListOfBooleanProperty(const std::string&, uint64_t);
         std::vector<int64_t> getListOfIntegerProperty(const std::string&, uint64_t);
         std::vector<double> getListOfDoubleProperty(const std::string&, uint64_t);

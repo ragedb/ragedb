@@ -110,6 +110,7 @@ namespace ragedb {
           // Ids
         static uint64_t internalToExternal(uint16_t type_id, uint64_t internal_id);
         static uint64_t externalToInternal(uint64_t id);
+        static std::vector<uint64_t> externalToInternal(const std::vector<uint64_t> &ids);
         static uint16_t externalToTypeId(uint64_t id);
         static uint16_t CalculateShardId(uint64_t id);
         uint16_t CalculateShardId(const std::string &type, const std::string &key) const;
@@ -937,31 +938,31 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types);
 
 
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids);
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t>& ids, const std::vector<uint64_t> &ids2);
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2);
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2);
-        sol::table NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t>& ids, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2);
 
-        sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes);
-        sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction);
-        sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
-        sol::table NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodesGetNeighborIdsViaLua(std::vector<Node> nodes);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids);
-        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction);
-        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type);
-        sol::table NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<uint64_t, std::vector<Node>>>  NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types);
 
         // TODO
-        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes);
-        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction);
-        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
-        sol::table NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodesGetNeighborsViaLua(std::vector<Node> nodes);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodesGetNeighborsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
 
         // Traversing
         sol::as_table_t<std::vector<Link>> NodeGetLinksViaLua(const std::string& type, const std::string& key);

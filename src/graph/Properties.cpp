@@ -1033,6 +1033,50 @@ namespace ragedb {
         return tombstone_string;
     }
 
+    std::vector<bool> Properties::getBooleanProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids) {
+        std::vector<bool> properties;
+        if (booleans.contains(key) && sorted_internal_ids.back() < booleans[key].size() ) {
+             properties.reserve(sorted_internal_ids.size());
+             for (auto id : sorted_internal_ids) {
+                    properties.emplace_back(booleans[key][id]);
+             }
+        }
+        return properties;
+    }
+
+    std::vector<int64_t> Properties::getIntegerProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids) {
+        std::vector<int64_t> properties;
+        if (integers.contains(key) && sorted_internal_ids.back() < integers[key].size() ) {
+             properties.reserve(sorted_internal_ids.size());
+             for (auto id : sorted_internal_ids) {
+                    properties.emplace_back(integers[key][id]);
+             }
+        }
+        return properties;
+    }
+
+    std::vector<double> Properties::getDoubleProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids) {
+        std::vector<double> properties;
+        if (doubles.contains(key) && sorted_internal_ids.back() < doubles[key].size() ) {
+             properties.reserve(sorted_internal_ids.size());
+             for (auto id : sorted_internal_ids) {
+                    properties.emplace_back(doubles[key][id]);
+             }
+        }
+        return properties;
+    }
+
+    std::vector<std::string> Properties::getStringProperties(const std::string& key, std::vector<uint64_t> sorted_internal_ids){
+        std::vector<std::string> properties;
+        if (strings.contains(key) && sorted_internal_ids.back() < strings[key].size() ) {
+             properties.reserve(sorted_internal_ids.size());
+             for (auto id : sorted_internal_ids) {
+                    properties.emplace_back(strings[key][id]);
+             }
+        }
+        return properties;
+    }
+
     std::vector<bool> Properties::getListOfBooleanProperty(const std::string& key, uint64_t index) {
          if (booleans_list.contains(key) && index < booleans_list[key].size() ) {
              return booleans_list[key][index];

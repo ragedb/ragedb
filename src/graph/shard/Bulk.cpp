@@ -44,7 +44,7 @@ namespace ragedb {
 
     std::map<Link, std::vector<Link>> Shard::LinksGetLinks(const std::vector<Link>& links, Direction direction, const std::vector<std::string> &rel_types) {
       std::map<Link, std::vector<Link>> link_rels;
-      for (Link link : links) {
+      for (const auto &link : links) {
         link_rels[link] = NodeGetLinks(link.node_id, direction, rel_types);
       }
       return link_rels;
