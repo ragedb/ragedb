@@ -31,6 +31,7 @@ namespace ragedb {
 
   public:
     Roar();
+    Roar(const roaring::Roaring64Map &roar);
     Roar(const Roar &roar) = default;
     Roar (Roar && roar) noexcept = default;
     void addIds(std::vector<uint64_t> ids);

@@ -55,6 +55,7 @@
 #include "RelationshipTypes.h"
 #include "eve/CollectIndexes.h"
 #include "Sort.h"
+#include "Roar.h"
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
 
@@ -589,6 +590,7 @@ namespace ragedb {
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction);
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::string& rel_type);
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::vector<std::string> &rel_types);
+
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
@@ -956,10 +958,16 @@ namespace ragedb {
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::string& rel_type);
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodesGetNeighborIdsViaLua(std::vector<Node> nodes, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<uint64_t, std::vector<Node>>>  NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids);
+        sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids);
         sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction);
         sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::string& rel_type);
         sol::nested<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsViaLua(std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<uint64_t>> NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
+
 
         // TODO
         sol::nested<std::map<uint64_t, std::vector<Node>>> NodesGetNeighborsViaLua(std::vector<Node> nodes);

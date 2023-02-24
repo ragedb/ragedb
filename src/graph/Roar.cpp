@@ -18,6 +18,9 @@
 
 namespace ragedb {
   Roar::Roar() {}
+  Roar::Roar(const roaring::Roaring64Map &roar) {
+      map = roar;
+  }
 
   void Roar::add(uint64_t x) {
     map.add(x);

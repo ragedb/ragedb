@@ -359,6 +359,16 @@ namespace ragedb {
             [this](std::vector<Node> nodes, const std::vector<std::string> rel_types) { return this->NodesGetNeighborsViaLua(nodes, Direction::BOTH, rel_types); }
             ));
 
+        // Unique Neighbors
+        lua.set_function("NodeIdsGetUniqueNeighborIds", sol::overload(
+            [this](std::vector<uint64_t> ids) { return this->NodeIdsGetUniqueNeighborIdsViaLua(ids); },
+            [this](std::vector<uint64_t> ids, Direction direction) { return this->NodeIdsGetUniqueNeighborIdsViaLua(ids, direction); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) { return this->NodeIdsGetUniqueNeighborIdsViaLua(ids, direction, rel_type); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> rel_types) { return this->NodeIdsGetUniqueNeighborIdsViaLua(ids, direction, rel_types); },
+            [this](std::vector<uint64_t> ids, const std::string& rel_type) { return this->NodeIdsGetUniqueNeighborIdsViaLua(ids, Direction::BOTH, rel_type); },
+            [this](std::vector<uint64_t> ids, const std::vector<std::string> rel_types) { return this->NodeIdsGetUniqueNeighborIdsViaLua(ids, Direction::BOTH, rel_types); }
+            ));
+
         // Traversing
         lua.set_function("NodeGetLinks", sol::overload(
            [this](Node node) { return this->NodeGetLinksByIdViaLua(node); },

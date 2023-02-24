@@ -15,6 +15,7 @@
  */
 
 #include "../Shard.h"
+#include "../Roar.h"
 
 namespace ragedb {
 
@@ -112,6 +113,50 @@ namespace ragedb {
 
     sol::nested<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types) {
         return NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids) {
+        roaring::Roaring64Map ids_map(ids.size(), ids.data());
+        roaring::Roaring64Map neighbor_ids_map = RoaringNodeIdsGetNeighborIdsCombinedPeered(ids_map).get0();
+        // Convert to list of ids
+        std::vector<uint64_t> neighbor_ids;
+        neighbor_ids.resize(neighbor_ids_map.cardinality());
+        uint64_t* arr = neighbor_ids.data();
+        neighbor_ids_map.toUint64Array(arr);
+        return neighbor_ids;
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction) {
+        roaring::Roaring64Map ids_map(ids.size(), ids.data());
+        roaring::Roaring64Map neighbor_ids_map = RoaringNodeIdsGetNeighborIdsCombinedPeered(ids_map, direction).get0();
+        // Convert to list of ids
+        std::vector<uint64_t> neighbor_ids;
+        neighbor_ids.resize(neighbor_ids_map.cardinality());
+        uint64_t* arr = neighbor_ids.data();
+        neighbor_ids_map.toUint64Array(arr);
+        return neighbor_ids;
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type) {
+        roaring::Roaring64Map ids_map(ids.size(), ids.data());
+        roaring::Roaring64Map neighbor_ids_map = RoaringNodeIdsGetNeighborIdsCombinedPeered(ids_map, direction, rel_type).get0();
+        // Convert to list of ids
+        std::vector<uint64_t> neighbor_ids;
+        neighbor_ids.resize(neighbor_ids_map.cardinality());
+        uint64_t* arr = neighbor_ids.data();
+        neighbor_ids_map.toUint64Array(arr);
+        return neighbor_ids;
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::NodeIdsGetUniqueNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types) {
+        roaring::Roaring64Map ids_map(ids.size(), ids.data());
+        roaring::Roaring64Map neighbor_ids_map = RoaringNodeIdsGetNeighborIdsCombinedPeered(ids_map, direction, rel_types).get0();
+        // Convert to list of ids
+        std::vector<uint64_t> neighbor_ids;
+        neighbor_ids.resize(neighbor_ids_map.cardinality());
+        uint64_t* arr = neighbor_ids.data();
+        neighbor_ids_map.toUint64Array(arr);
+        return neighbor_ids;
     }
 
     sol::nested<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, const std::vector<uint64_t> &ids2) {
