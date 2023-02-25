@@ -160,18 +160,30 @@ namespace ragedb {
     }
 
     sol::nested<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, const std::vector<uint64_t> &ids2) {
+        if (ids.empty() || ids2.empty()) {
+            return std::map<uint64_t, std::vector<uint64_t>>();
+        }
         return NodeIdsGetNeighborIdsPeered(ids, ids2).get0();
     }
 
     sol::nested<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2) {
+        if (ids.empty() || ids2.empty()) {
+            return std::map<uint64_t, std::vector<uint64_t>>();
+        }
         return NodeIdsGetNeighborIdsPeered(ids, direction, ids2).get0();
     }
 
     sol::nested<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2) {
+        if (ids.empty() || ids2.empty()) {
+            return std::map<uint64_t, std::vector<uint64_t>>();
+        }
         return NodeIdsGetNeighborIdsPeered(ids, direction, rel_type, ids2).get0();
     }
 
     sol::nested<std::map<uint64_t, std::vector<uint64_t>>> Shard::NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2) {
+        if (ids.empty() || ids2.empty()) {
+            return std::map<uint64_t, std::vector<uint64_t>>();
+        }
         return NodeIdsGetNeighborIdsPeered(ids, direction, rel_types, ids2).get0();
     }
 
