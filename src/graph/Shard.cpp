@@ -558,11 +558,18 @@ namespace ragedb {
         lua.set_function("IntersectRelationships", &Shard::IntersectRelationshipsViaLua, this);
         lua.set_function("IntersectIdsCount", &Shard::IntersectIdsCountViaLua, this);
 
+        // Invert
+        lua.set_function("Invert", &Shard::InvertViaLua, this);
+
         // Difference
         lua.set_function("DifferenceIds", &Shard::DifferenceIdsViaLua, this);
         lua.set_function("DifferenceNodes", &Shard::DifferenceNodesViaLua, this);
         lua.set_function("DifferenceRelationships", &Shard::DifferenceRelationshipsViaLua, this);
         lua.set_function("DifferenceIdsCount", &Shard::DifferenceIdsCountViaLua, this);
+
+        // Join
+        lua.set_function("JoinCount", &Shard::JoinCountViaLua, this);
+        lua.set_function("Join", &Shard::JoinViaLua, this);
 
         // Date
         lua.set_function("DateToISO", &Date::toISO);

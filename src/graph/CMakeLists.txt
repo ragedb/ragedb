@@ -3,6 +3,7 @@ set(HEADER_FILES
         Expression.h
         Graph.h
         Group.h
+        Join.h
         Link.h
         Lua.h
         Node.h
@@ -44,6 +45,7 @@ set(SOURCE_FILES
         lua/Find.cpp peered/Find.cpp shard/Find.cpp
         lua/Helpers.cpp peered/Helpers.cpp shard/Helpers.cpp
         lua/Intersect.cpp peered/Intersect.cpp # no shard
+        lua/Invert.cpp # no peered, no shard
         lua/Neighbors.cpp peered/Neighbors.cpp shard/Neighbors.cpp
         lua/Node.cpp peered/Node.cpp shard/Node.cpp
         lua/Nodes.cpp peered/Nodes.cpp shard/Nodes.cpp
@@ -60,6 +62,6 @@ set(SOURCE_FILES
         shard/Ids.cpp
         peered/Restore.cpp
         types/Date.cpp shard/NodeLinks.cpp lua/KHop.cpp peered/KHop.cpp
-        paths/WeightedLink.cpp paths/Path.cpp paths/WeightedPath.cpp )
+        paths/WeightedLink.cpp paths/Path.cpp paths/WeightedPath.cpp lua/Join.cpp )
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

@@ -18,6 +18,13 @@
 
 namespace ragedb {
 
+    std::vector<uint64_t> Shard::IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
+        std::vector<uint64_t> intersection;
+        std::set_intersection(sorted_ids.begin(), sorted_ids.end(), sorted_ids2.begin(), sorted_ids2.end(),
+          std::back_inserter(intersection));
+        return intersection;
+    }
+
     std::vector<uint64_t> IntersectUnsortedIds(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
         std::vector<uint64_t> first(ids1);
         std::vector<uint64_t> second(ids2);

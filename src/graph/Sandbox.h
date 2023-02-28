@@ -141,6 +141,8 @@ namespace ragedb {
       "IntersectRelationships",
       "IntersectIdsCount",
 
+      "Invert"
+
       "KHopCount",
       "KHopIds",
       "KHopNodes",

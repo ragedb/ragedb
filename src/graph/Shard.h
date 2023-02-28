@@ -1103,6 +1103,13 @@ namespace ragedb {
         sol::as_table_t<std::vector<Relationship>> IntersectRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
         uint64_t IntersectIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
 
+        // Invert
+        sol::nested<std::map<uint64_t, std::vector<uint64_t>>> InvertViaLua(const std::map<uint64_t, std::vector<uint64_t>> &map);
+
+        // Join
+        uint64_t JoinCountViaLua(std::vector<std::vector<uint64_t>> ids) ;
+        sol::as_table_t<std::vector<uint64_t>> JoinViaLua(std::vector<std::vector<uint64_t>> ids);
+
         // Difference
         sol::as_table_t<std::vector<uint64_t>> DifferenceIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
         sol::as_table_t<std::vector<Node>> DifferenceNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);

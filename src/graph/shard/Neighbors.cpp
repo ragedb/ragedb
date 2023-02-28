@@ -21,13 +21,6 @@
 
 namespace ragedb {
 
-    std::vector<uint64_t> Shard::IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
-        std::vector<uint64_t> intersection;
-        std::set_intersection(sorted_ids.begin(), sorted_ids.end(), sorted_ids2.begin(), sorted_ids2.end(),
-          std::back_inserter(intersection));
-        return intersection;
-    }
-
     std::vector<uint64_t> Shard::NodeGetNeighborIds(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetNeighborIds(id);

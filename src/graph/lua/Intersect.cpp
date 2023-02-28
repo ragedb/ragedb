@@ -19,6 +19,7 @@
 namespace ragedb {
 
     uint64_t Shard::IntersectIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
+        return IntersectIds(ids1, ids2).size();
         return IntersectIdsCountPeered(ids1, ids2).get0();
     }
 
