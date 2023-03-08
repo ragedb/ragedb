@@ -38,12 +38,9 @@ namespace ragedb {
         [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
       if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-          auto rel_to_delete = std::ranges::find_if(group->links, [external_id](Link entry) {
-          return entry.rel_id == external_id;
+        std::erase_if(group->link_map, [external_id](auto entry) {
+            return entry.second == external_id;
         });
-        if (rel_to_delete != std::end(group->links)) {
-          group->links.erase(rel_to_delete);
-        }
       }
 
       // Clear the relationship
@@ -63,12 +60,9 @@ namespace ragedb {
       auto group = std::ranges::find_if(node_types.getIncomingRelationships(id2_type_id).at(internal_id2),
         [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
-      auto rel_to_delete = std::ranges::find_if(group->links, [external_id](Link entry) {
-        return entry.rel_id == external_id;
+      std::erase_if(group->link_map, [external_id](auto entry) {
+          return entry.second == external_id;
       });
-      if (rel_to_delete != std::end(group->links)) {
-        group->links.erase(rel_to_delete);
-      }
 
       return true;
     }

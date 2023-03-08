@@ -161,10 +161,10 @@ namespace ragedb {
             node_types.deleteProperties(node_type_id, internal_id);
 
             // Go through all the outgoing relationships and delete them and their counterparts that I own
-            for (const auto& [rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+            for (const auto& [rel_type_id, link_map] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
-                for (Link link : links) {
-                    uint64_t internal_relationship_id = externalToInternal(link.rel_id);
+                for (auto link : link_map) {
+                    uint64_t internal_relationship_id = externalToInternal(link.second);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
                     relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
@@ -173,15 +173,40 @@ namespace ragedb {
                     relationship_types.removeId(rel_type_id, internal_relationship_id);
 
                     // Remove relationship from other node that I own
-                    if (CalculateShardId(link.node_id) == shard_id) {
-                        uint64_t other_internal_id = externalToInternal(link.node_id);
-                        uint16_t other_node_type_id = externalToTypeId(link.node_id);
+                    if (CalculateShardId(link.first) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.first);
+                        uint16_t other_node_type_id = externalToTypeId(link.first);
+
+                        for (auto &other_types : node_types.getIncomingRelationships(other_node_type_id).at(
+                               other_internal_id)) {
+                            if (other_types.rel_type_id == rel_type_id) {
+                                std::erase_if(other_types.link_map, [link](auto entry) {
+                                    return entry.second == link.second;
+                                });
+                            }
+                        }
+                    }
+
+                }
+                for (auto link : link_map) {
+                    uint64_t internal_relationship_id = externalToInternal(link.second);
+                    // Clear the relationship properties and meta properties
+                    relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
+                    relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
+                    relationship_types.setEndingNodeId(rel_type_id, internal_relationship_id, 0);
+                    // Add the relationship to be recycled
+                    relationship_types.removeId(rel_type_id, internal_relationship_id);
+
+                    // Remove relationship from other node that I own
+                    if (CalculateShardId(link.first) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.first);
+                        uint16_t other_node_type_id = externalToTypeId(link.first);
 
                         for (auto &other_types : node_types.getIncomingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
                             if (other_types.rel_type_id == rel_type_id) {
-                                std::erase_if(other_types.links, [link](Link entry) {
-                                    return entry.rel_id == link.rel_id;
+                                std::erase_if(other_types.link_map, [link](auto entry) {
+                                    return entry.second == link.second;
                                 });
                             }
                         }
@@ -193,10 +218,10 @@ namespace ragedb {
             node_types.getOutgoingRelationships(node_type_id).at(internal_id).clear();
 
             // Go through all the incoming relationships and delete them and their counterpart
-            for (const auto &[rel_type_id, links] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+            for (const auto &[rel_type_id, link_map] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
-                for (Link link : links) {
-                    uint64_t internal_relationship_id = externalToInternal(link.rel_id);
+                for (auto link : link_map) {
+                    uint64_t internal_relationship_id = externalToInternal(link.second);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
                     relationship_types.setStartingNodeId(rel_type_id, internal_relationship_id, 0);
@@ -205,15 +230,15 @@ namespace ragedb {
                     relationship_types.removeId(rel_type_id, internal_relationship_id);
 
                     // Remove relationship from other node that I own
-                    if (CalculateShardId(link.node_id) == shard_id) {
-                        uint64_t other_internal_id = externalToInternal(link.node_id);
-                        uint16_t other_node_type_id = externalToTypeId(link.node_id);
+                    if (CalculateShardId(link.first) == shard_id) {
+                        uint64_t other_internal_id = externalToInternal(link.first);
+                        uint16_t other_node_type_id = externalToTypeId(link.first);
 
                         for (auto &other_types : node_types.getOutgoingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
                             if (other_types.rel_type_id == rel_type_id) {
-                                std::erase_if(other_types.links, [link](Link entry) {
-                                    return entry.rel_id == link.rel_id;
+                                std::erase_if(other_types.link_map, [link](auto entry) {
+                                    return entry.second == link.second;
                                 });
                             }
                         }

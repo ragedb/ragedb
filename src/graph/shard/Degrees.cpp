@@ -84,7 +84,7 @@ namespace ragedb {
                       [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                     if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                        count += group->links.size();
+                        count += group->size();
                     }
                 }
                 if (direction != Direction::OUT) {
@@ -92,7 +92,7 @@ namespace ragedb {
                       [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                     if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                        count += group->links.size();
+                        count += group->size();
                     }
                 }
                 return count;
@@ -117,7 +117,7 @@ namespace ragedb {
                           [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                         if (group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                            count += group->links.size();
+                            count += group->size();
                         }
                     }
                 }
@@ -131,7 +131,7 @@ namespace ragedb {
                           [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                         if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                            count += group->links.size();
+                            count += group->size();
                         }
                     }
                 }

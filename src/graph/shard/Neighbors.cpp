@@ -261,7 +261,7 @@ namespace ragedb {
               [type_id](const Group &g) { return g.rel_type_id == type_id; });
     
             if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(out_group->links.size());
+                ids.reserve(out_group->size());
                 std::ranges::copy(out_group->node_ids(), std::back_inserter(ids));
             }
         }
@@ -271,7 +271,7 @@ namespace ragedb {
               [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
     
             if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(ids.size() + in_group->links.size());
+                ids.reserve(ids.size() + in_group->size());
                 std::ranges::copy(in_group->node_ids(), std::back_inserter(ids));
             }
         }
@@ -293,7 +293,7 @@ namespace ragedb {
               [type_id](const Group &g) { return g.rel_type_id == type_id; });
 
             if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(out_group->links.size());
+                ids.reserve(out_group->size());
                 std::ranges::copy(out_group->node_ids(), std::back_inserter(ids));
             }
         }
@@ -303,7 +303,7 @@ namespace ragedb {
               [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
             if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(ids.size() + in_group->links.size());
+                ids.reserve(ids.size() + in_group->size());
                 std::ranges::copy(in_group->node_ids(), std::back_inserter(ids));
             }
         }

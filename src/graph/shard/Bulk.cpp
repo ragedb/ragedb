@@ -84,7 +84,7 @@ namespace ragedb {
           uint64_t internal_id = externalToInternal(id);
 
           for (const auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
-            for (Link link : types.links) {
+            for (const auto &link : types.links()) {
               uint16_t node_shard_id = CalculateShardId(link.node_id);
               sharded_link_links.at(node_shard_id)[ids].push_back(link);
             }
@@ -119,7 +119,7 @@ namespace ragedb {
               auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id), [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
               if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                for(Link link : group->links) {
+                for(const auto &link : group->links()) {
                   uint16_t node_shard_id = CalculateShardId(link.node_id);
                   sharded_link_links.at(node_shard_id)[ids].push_back(link);
                 }
@@ -159,7 +159,7 @@ namespace ragedb {
               auto group = std::ranges::find_if(node_types.getIncomingRelationships(node_type_id).at(internal_id), [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
               if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                for (Link link : group->links) {
+                for (const auto &link : group->links()) {
                   uint16_t node_shard_id = CalculateShardId(link.node_id);
                   sharded_link_links.at(node_shard_id)[ids].push_back(link);
                 }

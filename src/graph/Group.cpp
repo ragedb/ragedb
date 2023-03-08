@@ -19,19 +19,41 @@
 #include "Group.h"
 
 namespace ragedb {
-    Group::Group(uint16_t rel_type_id, std::vector<Link> ids) : rel_type_id(rel_type_id), links(std::move(ids)) {}
+    Group::Group(uint16_t rel_type_id, std::unordered_multimap<uint64_t, uint64_t> ids) : rel_type_id(rel_type_id), link_map(std::move(ids)) {}
+
+    size_t Group::size() {
+        return link_map.size();
+    }
+
+    std::vector<Link> Group::links() const {
+        std::vector<Link> ids;
+        ids.reserve(link_map.size());
+        std::transform(begin(link_map), end(link_map), back_inserter(ids), [] (const std::pair<uint64_t, uint64_t>& pair) { return  Link(pair.first, pair.second); });
+        return ids;
+    }
+
+    std::vector<uint64_t> Group::unique_node_ids() const {
+        std::vector<uint64_t> ids;
+        ids.reserve(link_map.size());
+        for (auto it = link_map.cbegin(), end = link_map.cend(); it != end; it = link_map.equal_range(it->first).second) {
+            ids.emplace_back(it->first);
+        }
+
+        std::transform(begin(link_map), end(link_map), back_inserter(ids), [] (const std::pair<uint64_t, uint64_t>& pair) { return pair.first; });
+        return ids;
+    }
 
     std::vector<uint64_t> Group::node_ids() const {
         std::vector<uint64_t> ids;
-        ids.reserve(links.size());
-        std::transform(begin(links), end(links), back_inserter(ids), std::mem_fn(&Link::node_id));
+        ids.reserve(link_map.size());
+        std::transform(begin(link_map), end(link_map), back_inserter(ids), [] (const std::pair<uint64_t, uint64_t>& pair) { return pair.first; });
         return ids;
     }
 
     std::vector<uint64_t> Group::rel_ids() const{
         std::vector<uint64_t> ids;
-        ids.reserve(links.size());
-        std::transform(begin(links), end(links), back_inserter(ids), std::mem_fn(&Link::rel_id));
+        ids.reserve(link_map.size());
+        std::transform(begin(link_map), end(link_map), back_inserter(ids), [] (const std::pair<uint64_t, uint64_t>& pair) { return pair.second; });
         return ids;
     }
 }

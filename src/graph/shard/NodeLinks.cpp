@@ -65,11 +65,11 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         uint16_t type_id = externalToTypeId(id);
         std::vector<Link> ids;
-        for (const auto &[type, list] : node_types.getOutgoingRelationships(type_id).at(internal_id)) {
-            std::ranges::copy(list, std::back_inserter(ids));
+        for (const auto &group : node_types.getOutgoingRelationships(type_id).at(internal_id)) {
+            std::ranges::copy(group.links(), std::back_inserter(ids));
         }
-        for (const auto &[type, list] : node_types.getIncomingRelationships(type_id).at(internal_id)) {
-            std::ranges::copy(list, std::back_inserter(ids));
+        for (const auto &group : node_types.getIncomingRelationships(type_id).at(internal_id)) {
+            std::ranges::copy(group.links(), std::back_inserter(ids));
         }
         return ids;
 
@@ -85,14 +85,14 @@ namespace ragedb {
         std::vector<Link> ids;
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::IN) {
-            for (const auto &[type, list] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
-                std::ranges::copy(list, std::back_inserter(ids));
+            for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                std::ranges::copy(group.links(), std::back_inserter(ids));
             }
         }
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::OUT) {
-            for (const auto &[type, list] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
-                std::ranges::copy(list, std::back_inserter(ids));
+            for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+                std::ranges::copy(group.links(), std::back_inserter(ids));
             }
         }
         return ids;
@@ -114,8 +114,8 @@ namespace ragedb {
               [type_id](const Group &g) { return g.rel_type_id == type_id; });
 
             if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(out_group->links.size());
-                std::ranges::copy(out_group->links, std::back_inserter(ids));
+                ids.reserve(out_group->size());
+                std::ranges::copy(out_group->links(), std::back_inserter(ids));
             }
         }
 
@@ -124,8 +124,8 @@ namespace ragedb {
               [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
             if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                ids.reserve(ids.size() + in_group->links.size());
-                std::ranges::copy(in_group->links, std::back_inserter(ids));
+                ids.reserve(ids.size() + in_group->size());
+                std::ranges::copy(in_group->links(), std::back_inserter(ids));
             }
         }
         return ids;
@@ -150,7 +150,7 @@ namespace ragedb {
                   [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                 if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                    std::ranges::copy(out_group->links, std::back_inserter(ids));
+                    std::ranges::copy(out_group->links(), std::back_inserter(ids));
                 }
             }
         }
@@ -166,7 +166,7 @@ namespace ragedb {
                   [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                 if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                    std::ranges::copy(in_group->links, std::back_inserter(ids));
+                    std::ranges::copy(in_group->links(), std::back_inserter(ids));
                 }
 
             }
@@ -182,11 +182,11 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(id);
         uint16_t type_id = externalToTypeId(id);
         std::vector<Link> ids;
-        for (const auto &[type, list] : node_types.getOutgoingRelationships(type_id).at(internal_id)) {
-            std::ranges::copy_if(list, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+        for (const auto &group : node_types.getOutgoingRelationships(type_id).at(internal_id)) {
+            std::ranges::copy_if(group.links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
-        for (const auto &[type, list] : node_types.getIncomingRelationships(type_id).at(internal_id)) {
-            std::ranges::copy_if(list, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+        for (const auto &group : node_types.getIncomingRelationships(type_id).at(internal_id)) {
+            std::ranges::copy_if(group.links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
         return ids;
     }
@@ -201,14 +201,14 @@ namespace ragedb {
         std::vector<Link> ids;
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::IN) {
-            for (const auto &[type, list] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
-                std::ranges::copy_if(list, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+            for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
+                std::ranges::copy_if(group.links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
             }
         }
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::OUT) {
-            for (const auto &[type, list] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
-                std::ranges::copy_if(list, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+            for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
+                std::ranges::copy_if(group.links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
             }
         }
         return ids;
@@ -232,10 +232,10 @@ namespace ragedb {
 
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::IN) {
-            std::ranges::copy_if(out_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+            std::ranges::copy_if(out_group->links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
         if (direction != Direction::OUT) {
-            std::ranges::copy_if(in_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+            std::ranges::copy_if(in_group->links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
         }
         return ids;
     }
@@ -260,7 +260,7 @@ namespace ragedb {
                   [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                 if (out_group != std::end(node_types.getOutgoingRelationships(node_type_id).at(internal_id))) {
-                    std::ranges::copy_if(out_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+                    std::ranges::copy_if(out_group->links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
                 }
 
             }
@@ -277,7 +277,7 @@ namespace ragedb {
                   [type_id] (const Group& g) { return g.rel_type_id == type_id; } );
 
                 if (in_group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
-                    std::ranges::copy_if(in_group->links, std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
+                    std::ranges::copy_if(in_group->links(), std::back_inserter(ids), [id2](Link link) { return link.node_id == id2; });
                 }
 
             }

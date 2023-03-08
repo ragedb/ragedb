@@ -27,7 +27,7 @@ namespace ragedb {
                 std::ranges::for_each(node_types.getIncomingRelationships(node_type_id).at(internal_id),
                   [rel_type_id = rel_type_id, id] (Group& g) {
                       if (g.rel_type_id == rel_type_id) {
-                          std::erase_if(g.links, [id](auto entry) { return entry.node_id == id; });
+                          g.link_map.erase(id);
                       }
                   });
             }
@@ -49,7 +49,7 @@ namespace ragedb {
             // Get the Relationship Type of the list
             uint16_t rel_type = types.rel_type_id;
 
-            for (Link link : types.links) {
+            for (Link link : types.links()) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
                 for (uint16_t i = 0; i < cpus; i++) {
                     node_ids.try_emplace(i, std::vector<uint64_t>());
@@ -90,7 +90,7 @@ namespace ragedb {
             // Get the Relationship Type of the list
             uint16_t rel_type = group.rel_type_id;
 
-            for (Link link : group.links) {
+            for (Link link : group.links()) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
                 for (uint16_t i = 0; i < cpus; i++) {
                     node_ids.try_emplace(i, std::vector<uint64_t>());
@@ -130,9 +130,9 @@ namespace ragedb {
                   [rel_type_id = rel_type_id, id, this] (Group& g) {
                       // Look in the relationship chain for any relationships of the node to be removed and delete them.
                       if (g.rel_type_id == rel_type_id) {
-                          std::erase_if(g.links, [id, &rel_type_id, this](auto entry) {
-                              if (entry.node_id == id) {
-                                  uint64_t other_internal_id = externalToInternal(entry.rel_id);
+                          std::erase_if(g.link_map, [id, &rel_type_id, this](auto entry) {
+                              if (entry.first == id) {
+                                  uint64_t other_internal_id = externalToInternal(entry.second);
                                   // Update the relationship type counts
                                   relationship_types.removeId(rel_type_id, other_internal_id);
                                   relationship_types.setStartingNodeId(rel_type_id, other_internal_id, 0);
