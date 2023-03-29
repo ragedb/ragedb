@@ -294,12 +294,12 @@ namespace ragedb {
 
         // Neighbors
         lua.set_function("NodeGetNeighborIds", sol::overload(
-           [this](Node node) { return this->NodeGetNeighborIdsViaLua(node); },
-           [this](Node node, Direction direction) { return this->NodeGetNeighborIdsViaLua(node, direction); },
-           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node, direction, rel_type); },
-           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node, direction, rel_types); },
-           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node, Direction::BOTH, rel_type); },
-           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node, Direction::BOTH, rel_types); },
+           [this](Node node) { return this->NodeGetNeighborIdsViaLua(node.getId()); },
+           [this](Node node, Direction direction) { return this->NodeGetNeighborIdsViaLua(node.getId(), direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node.getId(), direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node.getId(), direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node.getId(), Direction::BOTH, rel_type); },
+           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node.getId(), Direction::BOTH, rel_types); },
            [this](uint64_t id) { return this->NodeGetNeighborIdsViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetNeighborIdsViaLua(id, direction); },
            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(id, direction, rel_type); },
@@ -313,6 +313,28 @@ namespace ragedb {
            [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_type); },
            [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(type, key, Direction::BOTH, rel_types); }
            ));
+
+        // Distinct
+        lua.set_function("NodeGetDistinctNeighborIds", sol::overload(
+            [this](Node node) { return this->NodeGetDistinctNeighborIdsViaLua(node.getId()); },
+            [this](Node node, Direction direction) { return this->NodeGetDistinctNeighborIdsViaLua(node.getId(), direction); },
+            [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetDistinctNeighborIdsViaLua(node.getId(), direction, rel_type); },
+            [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDistinctNeighborIdsViaLua(node.getId(), direction, rel_types); },
+            [this](Node node, const std::string& rel_type) { return this->NodeGetDistinctNeighborIdsViaLua(node.getId(), Direction::BOTH, rel_type); },
+            [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetDistinctNeighborIdsViaLua(node.getId(), Direction::BOTH, rel_types); },
+            [this](uint64_t id) { return this->NodeGetDistinctNeighborIdsViaLua(id); },
+            [this](uint64_t id, Direction direction) { return this->NodeGetDistinctNeighborIdsViaLua(id, direction); },
+            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetDistinctNeighborIdsViaLua(id, direction, rel_type); },
+            [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDistinctNeighborIdsViaLua(id, direction, rel_types); },
+            [this](uint64_t id, const std::string& rel_type) { return this->NodeGetDistinctNeighborIdsViaLua(id, Direction::BOTH, rel_type); },
+            [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetDistinctNeighborIdsViaLua(id, Direction::BOTH, rel_types); },
+            [this](const std::string& type, const std::string& key) { return this->NodeGetDistinctNeighborIdsViaLua(type, key); },
+            [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetDistinctNeighborIdsViaLua(type, key, direction); },
+            [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetDistinctNeighborIdsViaLua(type, key, direction, rel_type); },
+            [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDistinctNeighborIdsViaLua(type, key, direction, rel_types); },
+            [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetDistinctNeighborIdsViaLua(type, key, Direction::BOTH, rel_type); },
+            [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetDistinctNeighborIdsViaLua(type, key, Direction::BOTH, rel_types); }
+            ));
 
         // Cannot overload on vectors due to Sol Issue https://github.com/ThePhD/sol2/issues/1357
         lua.set_function("NodeIdsGetNeighborIds", sol::overload(
@@ -329,6 +351,23 @@ namespace ragedb {
             [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> rel_types, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, direction, rel_types, ids2); },
             [this](std::vector<uint64_t> ids, const std::string& rel_type, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_type, ids2); },
             [this](std::vector<uint64_t> ids, const std::vector<std::string> rel_types, std::vector<uint64_t> ids2) { return this->NodeIdsGetNeighborIdsViaLua(ids, Direction::BOTH, rel_types, ids2); }
+            ));
+
+        lua.set_function("NodeIdsGetDistinctNeighborIds", sol::overload(
+            [this](std::vector<uint64_t> ids) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids); },
+            [this](std::vector<uint64_t> ids, Direction direction) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, direction); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, direction, rel_type); },
+            [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> rel_types) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, direction, rel_types); },
+            [this](std::vector<uint64_t> ids, const std::string& rel_type) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, Direction::BOTH, rel_type); },
+            [this](std::vector<uint64_t> ids, const std::vector<std::string> rel_types) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, Direction::BOTH, rel_types); },
+
+            [this](std::vector<uint64_t> ids, std::vector<uint64_t> ids2) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, ids2); }
+                                                            //,
+//            [this](std::vector<uint64_t> ids, Direction direction, std::vector<uint64_t> ids2) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, direction, ids2); },
+//            [this](std::vector<uint64_t> ids, Direction direction, const std::string& rel_type, std::vector<uint64_t> ids2) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, direction, rel_type, ids2); },
+//            [this](std::vector<uint64_t> ids, Direction direction, const std::vector<std::string> rel_types, std::vector<uint64_t> ids2) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, direction, rel_types, ids2); },
+//            [this](std::vector<uint64_t> ids, const std::string& rel_type, std::vector<uint64_t> ids2) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, Direction::BOTH, rel_type, ids2); },
+//            [this](std::vector<uint64_t> ids, const std::vector<std::string> rel_types, std::vector<uint64_t> ids2) { return this->NodeIdsGetDistinctNeighborIdsViaLua(ids, Direction::BOTH, rel_types, ids2); }
             ));
 
         lua.set_function("NodesGetNeighborIds", sol::overload(
@@ -560,6 +599,10 @@ namespace ragedb {
 
         // Invert
         lua.set_function("Invert", &Shard::InvertViaLua, this);
+
+        // MM Test
+        lua.set_function("mmtest", &Shard::mmtest, this);
+        lua.set_function("mmtest2", &Shard::mmtest2, this);
 
         // Difference
         lua.set_function("DifferenceIds", &Shard::DifferenceIdsViaLua, this);

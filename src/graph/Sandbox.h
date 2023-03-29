@@ -141,7 +141,7 @@ namespace ragedb {
       "IntersectRelationships",
       "IntersectIdsCount",
 
-      "Invert"
+      "Invert",
 
       "KHopCount",
       "KHopIds",
@@ -171,6 +171,7 @@ namespace ragedb {
       "NodeIdsGetProperty",
       "NodeIdsGetType",
       "NodeIdsGetNeighborIds",
+      "NodeIdsGetDistinctNeighborIds",
       "NodeIdsGetUniqueNeighborIds",
       "NodeIdsGetNeighbors",
 
@@ -182,6 +183,7 @@ namespace ragedb {
       "NodeGetLinks",
       "NodeGetNeighbors",
       "NodeGetNeighborIds",
+      "NodeGetDistinctNeighborIds",
       "NodeGetProperties",
       "NodeGetProperty",
       "NodesGetPropertyRaw",
@@ -194,6 +196,7 @@ namespace ragedb {
       "NodeTypesGetCount",
 
       "NodesGetNeighborIds",
+      "NodesGetDistinctNeighborIds",
 
       "RelationshipGet",
       "RelationshipGetEndingNodeId",

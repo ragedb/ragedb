@@ -286,6 +286,16 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
+        // Distinct
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, const std::vector<uint64_t>& ids);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<uint64_t>& ids);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
@@ -294,6 +304,12 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<uint64_t>& ids);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
+
+        // TODO: Not sure this makes sense. Maybe pass in a map instead of a vector?
+        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, const std::vector<uint64_t>& ids);
+//        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<uint64_t>& ids);
+//        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
+//        std::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
 
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids);
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction);
@@ -586,6 +602,16 @@ namespace ragedb {
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type);
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
+        // Distinct
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type);
+        seastar::future<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids);
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction);
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction, const std::string& rel_type);
@@ -601,6 +627,15 @@ namespace ragedb {
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2);
 
+        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids);
+        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
+        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
+        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
+
+        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, const std::vector<uint64_t>& ids2);
+//        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<uint64_t>& ids2);
+//        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2);
+//        seastar::future<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2);
 
         seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>&maps_of_incoming_nodes);
         seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction);
@@ -937,11 +972,26 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction);
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type);
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction, const std::string& rel_type);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types);
 
+        // Distinct
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids);
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t>& ids, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, std::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2);
 
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids);
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
@@ -1105,6 +1155,17 @@ namespace ragedb {
 
         // Invert
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> InvertViaLua(const std::map<uint64_t, std::vector<uint64_t>> &map);
+
+        // MultiMap Test
+        sol::nested<std::unordered_multimap<uint64_t, uint64_t>> mmtest() {
+            std::unordered_multimap<uint64_t, uint64_t> result = {{4,15}, {4,11}, {9,20}, {3,30}, {3,31}, {15451,79}, {15451,77}};
+            return result;
+        }
+
+        sol::as_table_t<std::unordered_multimap<uint64_t, uint64_t>> mmtest2() {
+            std::unordered_multimap<uint64_t, uint64_t> result = {{4,10}, {4,11}, {9,20}, {3,38}, {3,31}, {15451,79}, {15451,77}};
+            return result;
+        }
 
         // Join
         uint64_t JoinCountViaLua(std::vector<std::vector<uint64_t>> ids) ;
