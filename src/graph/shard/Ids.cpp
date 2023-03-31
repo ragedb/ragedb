@@ -34,7 +34,7 @@ namespace ragedb {
     std::vector<uint64_t> Shard::externalToInternal(const std::vector<uint64_t> &ids) {
         std::vector<uint64_t> internal_ids;
         internal_ids.reserve(ids.size());
-        for (auto id : ids) {
+        for (const auto& id : ids) {
             internal_ids.emplace_back((id >> (TYPE_BITS + SHARD_BITS)));
         }
         return internal_ids;
@@ -115,7 +115,7 @@ namespace ragedb {
     }
 
     bool Shard::ValidRelationshipIds(const std::vector<uint64_t> &ids) const {
-        for(uint64_t id : ids) {
+        for(const auto& id : ids) {
             if(!ValidRelationshipId(id)) {
                 return false;
             }
@@ -142,7 +142,7 @@ namespace ragedb {
     }
 
     bool Shard::ValidLinks(const std::vector<Link> &links) const {
-        for(Link link : links) {
+        for(const auto& link : links) {
             if(!ValidNodeId(link.node_id)) {
                 return false;
             }
@@ -154,7 +154,7 @@ namespace ragedb {
     }
 
     bool Shard::ValidLinksNodeIds(const std::vector<Link> &links) const {
-        for(Link link : links) {
+        for(const auto& link : links) {
             if(!ValidNodeId(link.node_id)) {
                 return false;
             }
@@ -163,7 +163,7 @@ namespace ragedb {
     }
 
     bool Shard::ValidLinksRelationshipIds(const std::vector<Link> &links) const {
-        for(Link link : links) {
+        for(const auto& link : links) {
             if(!ValidRelationshipId(link.rel_id)) {
                 return false;
             }

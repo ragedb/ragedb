@@ -144,6 +144,7 @@ namespace ragedb {
                     // See if the relationship type is already there
                     if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
                         group->links.emplace_back(id2, external_id);
+                        sort(group->links.begin(), group->links.end());
                         // TODO - Consider: insert_sorted(id2, external_id, group->links);
                     } else {
                         // otherwise create a new type with the links

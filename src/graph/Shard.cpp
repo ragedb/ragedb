@@ -294,12 +294,12 @@ namespace ragedb {
 
         // Neighbors
         lua.set_function("NodeGetNeighborIds", sol::overload(
-           [this](Node node) { return this->NodeGetNeighborIdsViaLua(node); },
-           [this](Node node, Direction direction) { return this->NodeGetNeighborIdsViaLua(node, direction); },
-           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node, direction, rel_type); },
-           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node, direction, rel_types); },
-           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node, Direction::BOTH, rel_type); },
-           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node, Direction::BOTH, rel_types); },
+           [this](Node node) { return this->NodeGetNeighborIdsViaLua(node.getId()); },
+           [this](Node node, Direction direction) { return this->NodeGetNeighborIdsViaLua(node.getId(), direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node.getId(), direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node.getId(), direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(node.getId(), Direction::BOTH, rel_type); },
+           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetNeighborIdsViaLua(node.getId(), Direction::BOTH, rel_types); },
            [this](uint64_t id) { return this->NodeGetNeighborIdsViaLua(id); },
            [this](uint64_t id, Direction direction) { return this->NodeGetNeighborIdsViaLua(id, direction); },
            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborIdsViaLua(id, direction, rel_type); },

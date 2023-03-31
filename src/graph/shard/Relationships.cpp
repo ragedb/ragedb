@@ -21,7 +21,7 @@ namespace ragedb {
     std::vector<Relationship> Shard::RelationshipsGet(const std::vector<Link>& links) {
       std::vector<Relationship> sharded_relationships;
 
-      for(Link link : links) {
+      for(const auto& link : links) {
         sharded_relationships.emplace_back(RelationshipGet(link.rel_id));
       }
 
@@ -31,7 +31,7 @@ namespace ragedb {
     std::vector<Relationship> Shard::RelationshipsGet(const std::vector<uint64_t>& rel_ids) {
         std::vector<Relationship> sharded_relationships;
 
-        for(uint64_t id : rel_ids) {
+        for(const auto& id : rel_ids) {
             sharded_relationships.emplace_back(RelationshipGet(id));
         }
 
@@ -41,7 +41,7 @@ namespace ragedb {
     std::map<uint64_t, std::string> Shard::RelationshipsGetType(const std::vector<uint64_t>& rel_ids) {
       std::map<uint64_t, std::string> sharded_relationship_types;
 
-      for(uint64_t id : rel_ids) {
+      for(const auto& id : rel_ids) {
         sharded_relationship_types[id] = RelationshipGetType(id);
       }
 
@@ -51,7 +51,7 @@ namespace ragedb {
     std::map<Link, std::string> Shard::RelationshipsGetType(const std::vector<Link>& links) {
       std::map<Link, std::string> sharded_relationship_types;
 
-      for(Link link : links) {
+      for(const auto& link : links) {
         sharded_relationship_types[link] = RelationshipGetType(link.rel_id);
       }
 

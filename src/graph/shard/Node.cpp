@@ -163,7 +163,7 @@ namespace ragedb {
             // Go through all the outgoing relationships and delete them and their counterparts that I own
             for (const auto& [rel_type_id, links] : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
-                for (Link link : links) {
+                for (const auto& link : links) {
                     uint64_t internal_relationship_id = externalToInternal(link.rel_id);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
@@ -195,7 +195,7 @@ namespace ragedb {
             // Go through all the incoming relationships and delete them and their counterpart
             for (const auto &[rel_type_id, links] : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
                 // Get the Relationship Type of the list
-                for (Link link : links) {
+                for (const auto& link : links) {
                     uint64_t internal_relationship_id = externalToInternal(link.rel_id);
                     // Clear the relationship properties and meta properties
                     relationship_types.deleteProperties(rel_type_id, internal_relationship_id);
@@ -221,7 +221,7 @@ namespace ragedb {
                 }
             }
 
-            // Empty outgoing relationships
+            // Empty incoming relationships
             node_types.getIncomingRelationships(node_type_id).at(internal_id).clear();
             return true;
         }

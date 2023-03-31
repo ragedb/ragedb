@@ -937,11 +937,6 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction);
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type);
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction, const std::string& rel_type);
-        sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types);
-
 
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids);
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);

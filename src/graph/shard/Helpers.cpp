@@ -49,7 +49,7 @@ namespace ragedb {
             // Get the Relationship Type of the list
             uint16_t rel_type = types.rel_type_id;
 
-            for (Link link : types.links) {
+            for (const auto& link : types.links) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
                 for (uint16_t i = 0; i < cpus; i++) {
                     node_ids.try_emplace(i, std::vector<uint64_t>());
@@ -90,7 +90,7 @@ namespace ragedb {
             // Get the Relationship Type of the list
             uint16_t rel_type = group.rel_type_id;
 
-            for (Link link : group.links) {
+            for (const auto& link : group.links) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
                 for (uint16_t i = 0; i < cpus; i++) {
                     node_ids.try_emplace(i, std::vector<uint64_t>());
