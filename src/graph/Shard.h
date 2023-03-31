@@ -58,6 +58,7 @@
 #include "Roar.h"
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
+#include <boost/container/flat_map.hpp>
 
 extern unsigned int SHARD_BITS;
 extern unsigned int SHARD_MASK;
@@ -287,14 +288,14 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Distinct
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string& rel_type);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, const std::vector<uint64_t>& ids);
         std::vector<uint64_t> NodeGetNeighborIds(const std::string& type, const std::string& key, Direction direction, const std::vector<uint64_t>& ids);
@@ -306,10 +307,10 @@ namespace ragedb {
         std::vector<uint64_t> NodeGetNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
 
         // TODO: Not sure this makes sense. Maybe pass in a map instead of a vector?
-        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, const std::vector<uint64_t>& ids);
-//        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<uint64_t>& ids);
-//        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
-//        boost::unordered_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
+        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, const std::vector<uint64_t>& ids);
+//        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<uint64_t>& ids);
+//        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids);
+//        boost::container::flat_multimap<uint64_t, uint64_t> NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids);
 
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids);
         seastar::future<roaring::Roaring64Map> NodeIdsGetNeighborIds(const std::vector<uint64_t>& ids, Direction direction);
@@ -603,14 +604,14 @@ namespace ragedb {
         seastar::future<std::vector<uint64_t>> NodeGetNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Distinct
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type);
-        seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type);
+        seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids);
         seastar::future<roaring::Roaring64Map> RoaringNodeIdsGetNeighborIdsCombinedPeered(const roaring::Roaring64Map& ids, Direction direction);
@@ -627,15 +628,15 @@ namespace ragedb {
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2);
         seastar::future<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2);
 
-        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids);
-        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
-        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
-        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids);
+        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction);
+        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type);
+        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types);
 
-        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, const std::vector<uint64_t>& ids2);
-//        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<uint64_t>& ids2);
-//        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2);
-//        seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2);
+        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, const std::vector<uint64_t>& ids2);
+//        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<uint64_t>& ids2);
+//        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2);
+//        seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2);
 
         seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>&maps_of_incoming_nodes);
         seastar::future<std::map<uint64_t, std::vector<Node>>> NodeIdsGetNeighborsPeered(const std::vector<uint64_t>& ids, Direction direction);
@@ -974,24 +975,24 @@ namespace ragedb {
         sol::as_table_t<std::vector<uint64_t>> NodeGetNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
         // Distinct
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type);
-        sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type);
+        sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids);
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t>& ids, const std::vector<uint64_t> &ids2);
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2);
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2);
-        sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t>& ids, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2);
+        sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2);
 
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids);
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> NodeIdsGetNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction);
@@ -1157,13 +1158,13 @@ namespace ragedb {
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> InvertViaLua(const std::map<uint64_t, std::vector<uint64_t>> &map);
 
         // MultiMap Test
-        sol::nested<boost::unordered_multimap<uint64_t, uint64_t>> mmtest() {
-            boost::unordered_multimap<uint64_t, uint64_t> result = {{4,15}, {4,11}, {9,20}, {3,38}, {3,39}, {15451,79}, {15451,77}};
+        sol::nested<boost::container::flat_multimap<uint64_t, uint64_t>> mmtest() {
+            boost::container::flat_multimap<uint64_t, uint64_t> result = {{4,15}, {4,11}, {9,20}, {3,38}, {3,39}, {15451,79}, {15451,77}};
             return result;
         }
 
         uint64_t mmtest2();// {
-//            boost::unordered_multimap<uint64_t, uint64_t> result = {{4,15}, {4,11}, {9,20}, {3,38}, {3,39}, {15451,79}, {15451,77}};
+//            boost::container::flat_multimap<uint64_t, uint64_t> result = {{4,15}, {4,11}, {9,20}, {3,38}, {3,39}, {15451,79}, {15451,77}};
 //            sol::table map = lua.create_table();
 //             for (auto it = result.begin(); it != result.end(); it++ ) { // avoid equal_range call
 //            //for (auto it = result.cbegin(), end = result.cend(); it != end; it = result.equal_range(it->first).second) {

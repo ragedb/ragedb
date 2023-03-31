@@ -19,7 +19,7 @@
 #include "Group.h"
 
 namespace ragedb {
-    Group::Group(uint16_t rel_type_id, boost::unordered_multimap<uint64_t, uint64_t> ids) : rel_type_id(rel_type_id), link_map(std::move(ids)) {}
+    Group::Group(uint16_t rel_type_id, boost::container::flat_multimap<uint64_t, uint64_t> ids) : rel_type_id(rel_type_id), link_map(std::move(ids)) {}
 
     size_t Group::size() {
         return link_map.size();

@@ -180,16 +180,16 @@ namespace ragedb {
                         for (auto &other_types : node_types.getIncomingRelationships(other_node_type_id).at(
                                other_internal_id)) {
                             if (other_types.rel_type_id == rel_type_id) {
-                                auto node = other_types.link_map.extract(id);
-                                while (!node.empty()) {
-                                    uint64_t rel_internal_id = externalToInternal(node.mapped());
+                                for (auto itr = other_types.link_map.find(id); itr != other_types.link_map.end(); itr++) {
+                                    auto node = *itr;
+                                    uint64_t rel_internal_id = externalToInternal(node.second);
                                     // Update the relationship type counts
-                                    relationship_types.removeId(rel_type_id, rel_internal_id);
-                                    relationship_types.setStartingNodeId(rel_type_id, rel_internal_id, 0);
-                                    relationship_types.setEndingNodeId(rel_type_id, rel_internal_id, 0);
-                                    relationship_types.deleteProperties(rel_type_id, rel_internal_id);
-                                    node = other_types.link_map.extract(id);
+                                    relationship_types.removeId(rel_type_id, other_internal_id);
+                                    relationship_types.setStartingNodeId(rel_type_id, other_internal_id, 0);
+                                    relationship_types.setEndingNodeId(rel_type_id, other_internal_id, 0);
+                                    relationship_types.deleteProperties(rel_type_id, other_internal_id);
                                 }
+                                other_types.link_map.erase(id);
                             }
                         }
                     }
@@ -219,16 +219,17 @@ namespace ragedb {
                         for (auto &other_types : node_types.getOutgoingRelationships(other_node_type_id).at(
                                 other_internal_id)) {
                             if (other_types.rel_type_id == rel_type_id) {
-                                auto node = other_types.link_map.extract(id);
-                                while (!node.empty()) {
-                                    uint64_t rel_internal_id = externalToInternal(node.mapped());
+
+                                for (auto itr = other_types.link_map.find(id); itr != other_types.link_map.end(); itr++) {
+                                    auto node = *itr;
+                                    uint64_t rel_internal_id = externalToInternal(node.second);
                                     // Update the relationship type counts
-                                    relationship_types.removeId(rel_type_id, rel_internal_id);
-                                    relationship_types.setStartingNodeId(rel_type_id, rel_internal_id, 0);
-                                    relationship_types.setEndingNodeId(rel_type_id, rel_internal_id, 0);
-                                    relationship_types.deleteProperties(rel_type_id, rel_internal_id);
-                                    node = other_types.link_map.extract(id);
+                                    relationship_types.removeId(rel_type_id, other_internal_id);
+                                    relationship_types.setStartingNodeId(rel_type_id, other_internal_id, 0);
+                                    relationship_types.setEndingNodeId(rel_type_id, other_internal_id, 0);
+                                    relationship_types.deleteProperties(rel_type_id, other_internal_id);
                                 }
+                                other_types.link_map.erase(id);
                             }
                         }
                     }

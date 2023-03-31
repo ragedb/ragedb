@@ -82,7 +82,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key](Shard &local_shard) {
@@ -90,7 +90,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction](Shard &local_shard) {
@@ -98,7 +98,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction, rel_type](Shard &local_shard) {
@@ -106,7 +106,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types) {
         uint16_t node_shard_id = CalculateShardId(type, key);
 
         return container().invoke_on(node_shard_id, [type, key, direction, rel_types](Shard &local_shard) {
@@ -114,7 +114,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id) {
         uint16_t node_shard_id = CalculateShardId(id);
 
         return container().invoke_on(node_shard_id, [id](Shard &local_shard) {
@@ -122,7 +122,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction) {
         uint16_t node_shard_id = CalculateShardId(id);
 
         return container().invoke_on(node_shard_id, [id, direction](Shard &local_shard) {
@@ -130,7 +130,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::string& rel_type) {
         uint16_t node_shard_id = CalculateShardId(id);
 
         return container().invoke_on(node_shard_id, [id, direction, rel_type](Shard &local_shard) {
@@ -138,7 +138,7 @@ namespace ragedb {
         });
     }
 
-    seastar::future<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsPeered(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
         uint16_t node_shard_id = CalculateShardId(id);
 
         return container().invoke_on(node_shard_id, [id, direction, rel_types](Shard &local_shard) {
@@ -367,13 +367,13 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids) {
+    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids) {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
-        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids] (Shard &local_shard) {
-                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
                 for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id);
                     neighbors.emplace(node_id, neighbor_ids);
@@ -384,23 +384,23 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 
-            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
                 combined.insert(std::begin(sharded), std::end(sharded));
             }
             return combined;
         });
     }
 
-    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction) {
+    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction) {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
-        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction] (Shard &local_shard) {
-                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
                 for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction);
                     neighbors.emplace(node_id, neighbor_ids);
@@ -411,23 +411,23 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 
-            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
                 combined.insert(std::begin(sharded), std::end(sharded));
             }
             return combined;
         });
     }
 
-    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type) {
+    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type) {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
-        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
-                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
                 for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction, rel_type);
                     neighbors.emplace(node_id, neighbor_ids);
@@ -438,10 +438,10 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 
-            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
                 combined.insert(std::begin(sharded), std::end(sharded));
             }
             return combined;
@@ -457,10 +457,10 @@ namespace ragedb {
 //        //    end
 //        //    return t1
 //        // end
-//        std::vector<seastar::future<std::unordered_map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+//        std::vector<seastar::future<std::unordered_map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
 //        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
 //            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
-//                std::unordered_map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+//                std::unordered_map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
 //                for (const auto& node_id : grouped_node_ids) {
 //                    auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction, rel_type);
 //                    neighbors.emplace(node_id, neighbor_ids);
@@ -471,10 +471,10 @@ namespace ragedb {
 //        }
 //
 //        auto p = make_shared(std::move(futures));
-//        return seastar::when_all_succeed(p->begin(), p->end()).then([p, this] (const std::vector<std::unordered_map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-////            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+//        return seastar::when_all_succeed(p->begin(), p->end()).then([p, this] (const std::vector<std::unordered_map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+////            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 ////
-////            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+////            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
 ////                combined.insert(std::begin(sharded), std::end(sharded));
 ////            }
 ////            return combined;
@@ -496,13 +496,13 @@ namespace ragedb {
 //        });
 //    }
 
-    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types) {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
-        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types] (Shard &local_shard) {
-                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
                 for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction, rel_types);
                     neighbors.emplace(node_id, neighbor_ids);
@@ -513,10 +513,10 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 
-            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
                 combined.insert(std::begin(sharded), std::end(sharded));
             }
             return combined;
@@ -631,13 +631,13 @@ namespace ragedb {
         });
     }
 
-    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, const std::vector<uint64_t>& ids2) {
+    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, const std::vector<uint64_t>& ids2) {
         std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 
-        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
             auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, ids2] (Shard &local_shard) {
-                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
                 for (const auto& node_id : grouped_node_ids) {
                     auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, ids2);
                     neighbors.emplace(node_id, neighbor_ids);
@@ -648,23 +648,23 @@ namespace ragedb {
         }
 
         auto p = make_shared(std::move(futures));
-        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 
-            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
                 combined.insert(std::begin(sharded), std::end(sharded));
             }
             return combined;
         });
     }
 
-//    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<uint64_t>& ids2) {
+//    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<uint64_t>& ids2) {
 //        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 //
-//        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+//        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
 //        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
 //            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, ids2] (Shard &local_shard) {
-//                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+//                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
 //                for (const auto& node_id : grouped_node_ids) {
 //                    auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction, ids2);
 //                    neighbors.emplace(node_id, neighbor_ids);
@@ -675,23 +675,23 @@ namespace ragedb {
 //        }
 //
 //        auto p = make_shared(std::move(futures));
-//        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-//            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+//        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+//            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 //
-//            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+//            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
 //                combined.insert(std::begin(sharded), std::end(sharded));
 //            }
 //            return combined;
 //        });
 //    }
 //
-//    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2) {
+//    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t>& ids2) {
 //        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 //
-//        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+//        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
 //        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
 //            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type, ids2] (Shard &local_shard) {
-//                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+//                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
 //                for (const auto& node_id : grouped_node_ids) {
 //                    auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction, rel_type, ids2);
 //                    neighbors.emplace(node_id, neighbor_ids);
@@ -702,23 +702,23 @@ namespace ragedb {
 //        }
 //
 //        auto p = make_shared(std::move(futures));
-//        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-//            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+//        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+//            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 //
-//            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+//            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
 //                combined.insert(std::begin(sharded), std::end(sharded));
 //            }
 //            return combined;
 //        });
 //    }
 //
-//    seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2) {
+//    seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsPeered(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t>& ids2) {
 //        std::map<uint16_t, std::vector<uint64_t>> sharded_nodes_ids = PartitionIdsByShardId(ids);
 //
-//        std::vector<seastar::future<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>> futures;
+//        std::vector<seastar::future<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>> futures;
 //        for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
 //            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types, ids2] (Shard &local_shard) {
-//                std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> neighbors;
+//                std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> neighbors;
 //                for (const auto& node_id : grouped_node_ids) {
 //                    auto neighbor_ids = local_shard.NodeGetDistinctNeighborIds(node_id, direction, rel_types, ids2);
 //                    neighbors.emplace(node_id, neighbor_ids);
@@ -729,10 +729,10 @@ namespace ragedb {
 //        }
 //
 //        auto p = make_shared(std::move(futures));
-//        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>>& results) {
-//            std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>> combined;
+//        return seastar::when_all_succeed(p->begin(), p->end()).then([p] (const std::vector<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>>& results) {
+//            std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>> combined;
 //
-//            for(const std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>& sharded : results) {
+//            for(const std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>& sharded : results) {
 //                combined.insert(std::begin(sharded), std::end(sharded));
 //            }
 //            return combined;

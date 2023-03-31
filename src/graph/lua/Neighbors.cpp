@@ -83,35 +83,35 @@ namespace ragedb {
         return sol::as_table(NodeGetNeighborsPeered(type, key, direction, rel_types).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(type, key).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(type, key, direction).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(type, key, direction, rel_type).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> &rel_types){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(type, key, direction, rel_types).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(id).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(id, direction).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::string& rel_type){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(id, direction, rel_type).get0());
     }
 
-    sol::as_table_t<boost::unordered_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types){
+    sol::as_table_t<boost::container::flat_multimap<uint64_t, uint64_t>> Shard::NodeGetDistinctNeighborIdsViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types){
         return sol::as_table(NodeGetDistinctNeighborIdsPeered(id, direction, rel_types).get0());
     }
 
@@ -131,19 +131,19 @@ namespace ragedb {
         return NodeIdsGetNeighborIdsPeered(ids, direction, rel_types).get0();
     }
 
-    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids) {
+    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids) {
         return NodeIdsGetDistinctNeighborIdsPeered(ids).get0();
     }
 
-    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction) {
+    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction) {
         return NodeIdsGetDistinctNeighborIdsPeered(ids, direction).get0();
     }
 
-    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type) {
+    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type) {
         return NodeIdsGetDistinctNeighborIdsPeered(ids, direction, rel_type).get0();
     }
 
-    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types) {
+    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<std::string> &rel_types) {
         return NodeIdsGetDistinctNeighborIdsPeered(ids, direction, rel_types).get0();
     }
 
@@ -219,30 +219,30 @@ namespace ragedb {
         return NodeIdsGetNeighborIdsPeered(ids, direction, rel_types, ids2).get0();
     }
 
-    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, const std::vector<uint64_t> &ids2) {
+    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, const std::vector<uint64_t> &ids2) {
         if (ids.empty() || ids2.empty()) {
-            return std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>();
+            return std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>();
         }
         return NodeIdsGetDistinctNeighborIdsPeered(ids, ids2).get0();
     }
 
-//    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2) {
+//    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::vector<uint64_t> &ids2) {
 //        if (ids.empty() || ids2.empty()) {
-//            return std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>();
+//            return std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>();
 //        }
 //        return NodeIdsGetDistinctNeighborIdsPeered(ids, direction, ids2).get0();
 //    }
 //
-//    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2) {
+//    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t> &ids, Direction direction, const std::string& rel_type, const std::vector<uint64_t> &ids2) {
 //        if (ids.empty() || ids2.empty()) {
-//            return std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>();
+//            return std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>();
 //        }
 //        return NodeIdsGetDistinctNeighborIdsPeered(ids, direction, rel_type, ids2).get0();
 //    }
 //
-//    sol::nested<std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2) {
+//    sol::nested<std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>> Shard::NodeIdsGetDistinctNeighborIdsViaLua(const std::vector<uint64_t>& ids, Direction direction, const std::vector<std::string> &rel_types, const std::vector<uint64_t> &ids2) {
 //        if (ids.empty() || ids2.empty()) {
-//            return std::map<uint64_t, boost::unordered_multimap<uint64_t, uint64_t>>();
+//            return std::map<uint64_t, boost::container::flat_multimap<uint64_t, uint64_t>>();
 //        }
 //        return NodeIdsGetDistinctNeighborIdsPeered(ids, direction, rel_types, ids2).get0();
 //    }

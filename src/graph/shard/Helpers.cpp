@@ -130,16 +130,16 @@ namespace ragedb {
                   [rel_type_id = rel_type_id, id, this] (Group& g) {
                       // Look in the relationship chain for any relationships of the node to be removed and delete them.
                       if (g.rel_type_id == rel_type_id) {
-                          auto node = g.link_map.extract(id);
-                          while (!node.empty()) {
-                              uint64_t other_internal_id = externalToInternal(node.mapped());
+                          for (auto itr = g.link_map.find(id); itr != g.link_map.end(); itr++) {
+                              auto node = *itr;
+                              uint64_t other_internal_id = externalToInternal(node.second);
                               // Update the relationship type counts
                               relationship_types.removeId(rel_type_id, other_internal_id);
                               relationship_types.setStartingNodeId(rel_type_id, other_internal_id, 0);
                               relationship_types.setEndingNodeId(rel_type_id, other_internal_id, 0);
                               relationship_types.deleteProperties(rel_type_id, other_internal_id);
-                              node = g.link_map.extract(id);
                           }
+                          g.link_map.erase(id);
                       }
                   });
             }
