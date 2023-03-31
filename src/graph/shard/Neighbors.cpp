@@ -61,22 +61,22 @@ namespace ragedb {
         return NodeGetNeighborIds(id, direction, rel_types, ids);
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetDistinctNeighborIds(id);
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key, Direction direction) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key, Direction direction) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetDistinctNeighborIds(id, direction);
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::string &rel_type) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetDistinctNeighborIds(id, direction, rel_type);
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(const std::string &type, const std::string &key, Direction direction, const std::vector<std::string> &rel_types) {
         uint64_t id = NodeGetID(type, key);
         return NodeGetDistinctNeighborIds(id, direction, rel_types);
     }
@@ -125,14 +125,14 @@ namespace ragedb {
         return ids;
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id) {
         if (!ValidNodeId(id)) {
-            return std::unordered_multimap<uint64_t, uint64_t>();
+            return boost::unordered_multimap<uint64_t, uint64_t>();
         }
 
         uint64_t internal_id = externalToInternal(id);
         uint16_t node_type_id = externalToTypeId(id);
-        std::unordered_multimap<uint64_t, uint64_t> ids;
+        boost::unordered_multimap<uint64_t, uint64_t> ids;
         for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
             auto out_ids = group.link_map;
             ids.insert(out_ids.begin(), out_ids.end());
@@ -146,14 +146,14 @@ namespace ragedb {
         return ids;
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, const std::vector<uint64_t>& allowed_ids) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, const std::vector<uint64_t>& allowed_ids) {
         if (!ValidNodeId(id)) {
-            return std::unordered_multimap<uint64_t, uint64_t>();
+            return boost::unordered_multimap<uint64_t, uint64_t>();
         }
 
         uint64_t internal_id = externalToInternal(id);
         uint16_t node_type_id = externalToTypeId(id);
-        std::unordered_multimap<uint64_t, uint64_t> ids;
+        boost::unordered_multimap<uint64_t, uint64_t> ids;
         for (const auto &group : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
             auto out_ids = group.link_map;
             for (const auto allowed_id : allowed_ids) {
@@ -259,14 +259,14 @@ namespace ragedb {
         return ids;
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, Direction direction) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, Direction direction) {
         if (!ValidNodeId(id)) {
-            return std::unordered_multimap<uint64_t, uint64_t>();
+            return boost::unordered_multimap<uint64_t, uint64_t>();
         }
 
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
-        std::unordered_multimap<uint64_t, uint64_t> ids;
+        boost::unordered_multimap<uint64_t, uint64_t> ids;
 
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::IN) {
@@ -377,17 +377,18 @@ namespace ragedb {
                 std::ranges::copy(in_group->node_ids(), std::back_inserter(ids));
             }
         }
+        std::sort(ids.begin(), ids.end());
         return ids;
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string &rel_type) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::string &rel_type) {
         if (!ValidNodeId(id)) {
-            return std::unordered_multimap<uint64_t, uint64_t>();
+            return boost::unordered_multimap<uint64_t, uint64_t>();
         }
         uint16_t node_type_id = externalToTypeId(id);
         uint16_t type_id = relationship_types.getTypeId(rel_type);
         uint64_t internal_id = externalToInternal(id);
-        std::unordered_multimap<uint64_t, uint64_t> ids;
+        boost::unordered_multimap<uint64_t, uint64_t> ids;
 
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::BOTH) {
@@ -555,13 +556,13 @@ namespace ragedb {
         return ids;
     }
 
-    std::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
+    boost::unordered_multimap<uint64_t, uint64_t> Shard::NodeGetDistinctNeighborIds(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
         if (!ValidNodeId(id)) {
-            return std::unordered_multimap<uint64_t, uint64_t>();
+            return boost::unordered_multimap<uint64_t, uint64_t>();
         }
         uint16_t node_type_id = externalToTypeId(id);
         uint64_t internal_id = externalToInternal(id);
-        std::unordered_multimap<uint64_t, uint64_t> ids;
+        boost::unordered_multimap<uint64_t, uint64_t> ids;
         // Use the two ifs to handle ALL for a direction
         if (direction != Direction::IN) {
             // For each requested type sum up the values

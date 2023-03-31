@@ -164,6 +164,8 @@ namespace ragedb {
       "LinksGetRelationshipType",
       "LinksGetRelationshipProperty",
       "LinksGetRelationshipProperties",
+        "mmtest",
+        "mmtest2",
 
       "NodeIdsGet",
       "NodeIdsGetKey",

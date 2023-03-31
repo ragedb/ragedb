@@ -16,9 +16,9 @@ macro(run_conan)
   conan_cmake_run(
     REQUIRES
     ${CONAN_EXTRA_REQUIRES}
-    catch2/2.13.9
+    catch2/2.13.10
     docopt.cpp/0.6.3
-    fmt/8.0.1
+    fmt/9.1.0
     spdlog/1.11.0
 #   sol2/3.2.3-luajit
     sol2/3.3.0-exhaustive
@@ -29,7 +29,8 @@ macro(run_conan)
     roaring/0.8.0
     jfalcou-eve/v2022.09.1
     cppcodec/0.2
-    cpr/1.9.0
+    cpr/1.10.1
+    boost/1.81.0
 #    reckless/3.0.3  # temporarily removing logging until ARM issue is figured out
     benchmark/1.7.1
     OPTIONS

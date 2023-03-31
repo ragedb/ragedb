@@ -38,9 +38,14 @@ namespace ragedb {
         [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
       if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
-        std::erase_if(group->link_map, [external_id](auto entry) {
-            return entry.second == external_id;
-        });
+
+        // Find the entries for the outgoing node id and erase the one that matches the relationship
+        auto range = group->link_map.equal_range(id2);
+        for (auto i = range.first; i != range.second; ++i) {
+            if (i->second == external_id) {
+                group->link_map.erase(i);
+            }
+        }
       }
 
       // Clear the relationship
@@ -57,12 +62,19 @@ namespace ragedb {
       uint64_t internal_id2 = externalToInternal(node_id);
       uint16_t id2_type_id = externalToTypeId(node_id);
 
+      uint64_t internal_id = externalToInternal(external_id);
+      uint64_t id1 = relationship_types.getStartingNodeId(rel_type_id, internal_id);
+
       auto group = std::ranges::find_if(node_types.getIncomingRelationships(id2_type_id).at(internal_id2),
         [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
 
-      std::erase_if(group->link_map, [external_id](auto entry) {
-          return entry.second == external_id;
-      });
+      // Find the entries for the outgoing node id and erase the one that matches the relationship
+      auto range = group->link_map.equal_range(id1);
+      for (auto i = range.first; i != range.second; ++i) {
+        if (i->second == external_id) {
+            group->link_map.erase(i);
+        }
+      }
 
       return true;
     }

@@ -25,16 +25,16 @@ namespace ragedb {
         return intersection;
     }
 
-    std::vector<uint64_t> IntersectUnsortedIds(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
-        std::vector<uint64_t> first(ids1);
-        std::vector<uint64_t> second(ids2);
-        std::vector<uint64_t> intersection;
-        std::sort(first.begin(), first.end());
-        std::sort(second.begin(), second.end());
-
-        std::set_intersection(first.begin(), first.end(), second.begin(), second.end(), std::inserter(intersection, intersection.begin()));
-        return intersection;
-    }
+//    std::vector<uint64_t> IntersectUnsortedIds(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
+//        std::vector<uint64_t> first(ids1);
+//        std::vector<uint64_t> second(ids2);
+//        std::vector<uint64_t> intersection;
+//        std::sort(first.begin(), first.end());
+//        std::sort(second.begin(), second.end());
+//
+//        std::set_intersection(first.begin(), first.end(), second.begin(), second.end(), std::inserter(intersection, intersection.begin()));
+//        return intersection;
+//    }
 
     seastar::future<std::vector<uint64_t>> Shard::IntersectIdsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
           return seastar::make_ready_future<std::vector<uint64_t>>(IntersectIds(ids1, ids2));

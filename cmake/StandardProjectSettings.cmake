@@ -41,3 +41,4 @@ else()
   message(STATUS "No colored compiler diagnostic set for '${CMAKE_CXX_COMPILER_ID}' compiler.")
 endif()
 
+add_compile_options(-fno-omit-frame-pointer)

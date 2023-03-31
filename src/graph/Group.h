@@ -19,15 +19,16 @@
 
 #include <vector>
 #include <cstdint>
+#include <boost/unordered/unordered_map.hpp>
 #include "Link.h"
 
 namespace ragedb {
 
     class Group {
     public:
-        Group(uint16_t rel_type_id, std::unordered_multimap<uint64_t, uint64_t> links);
+        Group(uint16_t rel_type_id, boost::unordered_multimap<uint64_t, uint64_t> links);
         uint16_t rel_type_id;
-        std::unordered_multimap<uint64_t, uint64_t> link_map;
+        boost::unordered_multimap<uint64_t, uint64_t> link_map;
         size_t size();
         std::vector<Link> links() const;
         std::vector<uint64_t> unique_node_ids() const;
