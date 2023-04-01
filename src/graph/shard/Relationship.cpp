@@ -18,7 +18,7 @@
 
 namespace ragedb {
 
-[[maybe_unused]] void Shard::insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &links) const {
+    void Shard::insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &links) const {
       auto link = Link(id1, external_id);
       links.insert(std::ranges::upper_bound(links, link), link);
     }

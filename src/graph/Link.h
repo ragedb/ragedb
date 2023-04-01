@@ -38,12 +38,13 @@ namespace ragedb {
 
         [[nodiscard]] uint64_t getRelationshipId() const;
 
-        std::weak_ordering operator<=>(const Link& that) const {
-            if (auto cmp = node_id <=> that.node_id; cmp != 0)
+        std::strong_ordering operator<=>(const Link& that) const {
+            if (auto cmp = node_id <=> that.node_id; cmp != 0) {
                 return cmp;
+            }
+
             return rel_id <=> that.rel_id;
         }
-
         bool operator==(const Link& that)const{
             return (rel_id == that.rel_id) && (node_id == that.node_id);
         }
