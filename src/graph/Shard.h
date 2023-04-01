@@ -1144,6 +1144,9 @@ namespace ragedb {
         uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
         uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
 
+        uint64_t TriangleCount(const std::string& rel_type);
+        uint64_t TriangleCount(const std::vector<std::string> &rel_types);
+
         sol::table ShortestPathViaLua(uint64_t id, uint64_t id2);
         sol::table ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction);
         sol::table ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);

@@ -210,6 +210,7 @@ namespace ragedb {
       "RelationshipsGetProperties",
       "RelationshipsGetProperty",
       "RelationshipsGetType",
+      "TriangleCount"
     };
 
     inline static const std::vector<std::string> ALLOWED_LUA_FUNCTIONS = {

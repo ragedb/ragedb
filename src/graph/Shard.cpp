@@ -642,6 +642,10 @@ namespace ragedb {
             [this](const std::string& type, const std::string& key, uint64_t hops, const std::vector<std::string> rel_types) { return this->KHopCountViaLua(type, key, hops, Direction::BOTH, rel_types); }
             ));
 
+        lua.set_function("TriangleCount", sol::overload(
+            [this](const std::string& type) { return this->TriangleCount(type); },
+            [this](const std::vector<std::string> rel_types) { return this->TriangleCount(rel_types); }
+        ));
 
         // Create a sanitized environment to restrict the user's Lua code
         lua.set_function("loadstring", &Shard::loadstring, this);
