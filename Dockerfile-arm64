@@ -6,11 +6,11 @@ RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
     libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev
-RUN pip install --user conan
+RUN pip install --user conan -v "conan==1.59.0"
 RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
 WORKDIR /data/seastar
-RUN git checkout d41af8b59237a949620a9e0b79541b934e0a5375
+RUN git checkout 597e9f5de034cf68aaf52bb929f1427749ec277b
 RUN ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
