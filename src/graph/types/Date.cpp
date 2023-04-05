@@ -262,7 +262,6 @@ namespace ragedb {
         now -= s;
         auto ml = duration_cast<std::chrono::milliseconds>(now);
         stream.fill('0');
-//"2010-03-13T07:37:21.718+0000Z"
         stream
            << year << '-'
            << std::setw(2) << month << '-'

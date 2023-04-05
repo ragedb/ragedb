@@ -161,7 +161,7 @@ namespace ragedb {
                     next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.try_emplace(core_id, pair);
+                        threaded_requests.try_emplace(core_id, std::move(pair));
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -169,7 +169,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.try_emplace(current_shard_id, threaded_requests);
+                    requests.try_emplace(current_shard_id, std::move(threaded_requests));
                 }
                 current_shard_id++;
             }
@@ -289,7 +289,7 @@ namespace ragedb {
                     uint64_t next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.try_emplace(core_id, pair);
+                        threaded_requests.try_emplace(core_id, std::move(pair));
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -297,7 +297,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.try_emplace(current_shard_id, threaded_requests);
+                    requests.try_emplace(current_shard_id, std::move(threaded_requests));
                 }
                 current_shard_id++;
             }
@@ -412,7 +412,7 @@ namespace ragedb {
                     next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.try_emplace(core_id, pair);
+                        threaded_requests.try_emplace(core_id, std::move(pair));
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -420,7 +420,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.try_emplace(current_shard_id, threaded_requests);
+                    requests.try_emplace(current_shard_id, std::move(threaded_requests));
                 }
                 current_shard_id++;
             }
@@ -537,7 +537,7 @@ namespace ragedb {
                     next = current + request_count;
                     if (next > skip) {
                         std::pair<uint64_t, uint64_t> pair = std::make_pair((skip > current) ? skip - current : 0, limit - current);
-                        threaded_requests.try_emplace(core_id, pair);
+                        threaded_requests.try_emplace(core_id, std::move(pair));
                         if (next > max) {
                             break; // We have everything we need
                         }
@@ -545,7 +545,7 @@ namespace ragedb {
                     current = next;
                 }
                 if(!threaded_requests.empty()) {
-                    requests.try_emplace(current_shard_id, threaded_requests);
+                    requests.try_emplace(current_shard_id, std::move(threaded_requests));
                 }
                 current_shard_id++;
             }
