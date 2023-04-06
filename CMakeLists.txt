@@ -141,6 +141,8 @@ target_link_libraries(
         CONAN_PKG::jfalcou-eve
         CONAN_PKG::cppcodec
         CONAN_PKG::cpr
+        CONAN_PKG::boost
+        CONAN_PKG::unordered_dense
 #        CONAN_PKG::reckless # temporarily removing logging until ARM issue is figured out
 )
 

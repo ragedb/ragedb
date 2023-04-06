@@ -73,10 +73,6 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links) {
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
-      for (uint16_t i = 0; i < cpus; i++) {
-        sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
-      }
-
       for (const auto& ids : links) {
         uint64_t id = ids.node_id;
         if (ValidNodeId(id)) {
@@ -86,15 +82,9 @@ namespace ragedb {
           for (const auto &types : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
             for (Link link : types.links) {
               uint16_t node_shard_id = CalculateShardId(link.node_id);
-              sharded_link_links.at(node_shard_id)[ids].push_back(link);
+              sharded_link_links[node_shard_id][ids].push_back(link);
             }
           }
-        }
-      }
-
-      for (uint16_t i = 0; i < cpus; i++) {
-        if(sharded_link_links.at(i).empty()) {
-          sharded_link_links.erase(i);
         }
       }
 
@@ -104,10 +94,6 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::string& rel_type){
         uint16_t type_id = relationship_types.getTypeId(rel_type);
         std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
-
-        for (uint16_t i = 0; i < cpus; i++) {
-            sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
-        }
 
         for (const auto& ids : links) {
             uint64_t id = ids.node_id;
@@ -121,17 +107,11 @@ namespace ragedb {
               if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for(Link link : group->links) {
                   uint16_t node_shard_id = CalculateShardId(link.node_id);
-                  sharded_link_links.at(node_shard_id)[ids].push_back(link);
+                  sharded_link_links[node_shard_id][ids].push_back(link);
                 }
               }
             }
         }
-
-      for (uint16_t i = 0; i < cpus; i++) {
-        if(sharded_link_links.at(i).empty()) {
-          sharded_link_links.erase(i);
-        }
-      }
 
       return sharded_link_links;
     }
@@ -139,9 +119,6 @@ namespace ragedb {
     std::map<uint16_t, std::map<Link, std::vector<Link>>> Shard::LinksGetShardedIncomingLinks(const std::vector<Link>& links, const std::vector<std::string> &rel_types) {
       std::map<uint16_t, std::map<Link, std::vector<Link>>> sharded_link_links;
 
-      for (uint16_t i = 0; i < cpus; i++) {
-        sharded_link_links.insert({i, std::map<Link, std::vector<Link>>() });
-      }
       std::vector<uint16_t> rel_type_ids;
       for (const auto& rel_type : rel_types) {
           uint16_t type_id = relationship_types.getTypeId(rel_type);
@@ -161,17 +138,11 @@ namespace ragedb {
               if (group != std::end(node_types.getIncomingRelationships(node_type_id).at(internal_id))) {
                 for (Link link : group->links) {
                   uint16_t node_shard_id = CalculateShardId(link.node_id);
-                  sharded_link_links.at(node_shard_id)[ids].push_back(link);
+                  sharded_link_links[node_shard_id][ids].push_back(link);
                 }
               }
 
           }
-        }
-      }
-
-      for (uint16_t i = 0; i < cpus; i++) {
-        if(sharded_link_links.at(i).empty()) {
-          sharded_link_links.erase(i);
         }
       }
 

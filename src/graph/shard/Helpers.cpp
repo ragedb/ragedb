@@ -40,9 +40,6 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(external_id);
         uint16_t node_type_id = externalToTypeId(external_id);
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> relationships_to_delete;
-        for (uint16_t i = 0; i < cpus; i++) {
-            relationships_to_delete.try_emplace(i, std::map<uint16_t, std::vector<uint64_t>>());
-        }
 
         // Go through all the outgoing relationships and return the counterparts that I do not own
         for (const auto &types : node_types.getOutgoingRelationships(node_type_id).at(internal_id)) {
@@ -62,14 +59,14 @@ namespace ragedb {
                 }
 
                 for (uint16_t i = 0; i < cpus; i++) {
-                    if(!node_ids.at(i).empty()) {
+                    if (!node_ids.at(i).empty()) {
                         relationships_to_delete[i].try_emplace(rel_type, node_ids.at(i));
                     }
                 }
             }
         }
         for (uint16_t i = 0; i < cpus; i++) {
-            if(relationships_to_delete[i].empty()) {
+            if (relationships_to_delete[i].empty()) {
                 relationships_to_delete.erase(i);
             }
         }
@@ -81,9 +78,6 @@ namespace ragedb {
         uint64_t internal_id = externalToInternal(external_id);
         uint16_t node_type_id = externalToTypeId(external_id);
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> relationships_to_delete;
-        for (uint16_t i = 0; i < cpus; i++) {
-            relationships_to_delete.try_emplace(i, std::map<uint16_t, std::vector<uint64_t>>());
-        }
 
         // Go through all the incoming relationships and return the counterparts that I do not own
         for (const auto &group : node_types.getIncomingRelationships(node_type_id).at(internal_id)) {
@@ -92,28 +86,20 @@ namespace ragedb {
 
             for (const auto& link : group.links) {
                 std::map<uint16_t, std::vector<uint64_t>> node_ids;
-                for (uint16_t i = 0; i < cpus; i++) {
-                    node_ids.try_emplace(i, std::vector<uint64_t>());
-                }
 
                 // Remove relationship from other node that I own
 
                 if (uint16_t node_shard_id = CalculateShardId(link.node_id);
                     node_shard_id != shard_id) {
-                    node_ids.at(node_shard_id).push_back(link.node_id);
+                    node_ids[node_shard_id].push_back(link.node_id);
                 }
 
                 for (uint16_t i = 0; i < cpus; i++) {
-                    if(!node_ids.at(i).empty()) {
-                        relationships_to_delete[i].try_emplace(rel_type, node_ids.at(i));
+                    if (node_ids.contains(i)) {
+                        relationships_to_delete[i].try_emplace(rel_type, node_ids[i]);
                     }
                 }
 
-            }
-        }
-        for (uint16_t i = 0; i < cpus; i++) {
-            if(relationships_to_delete[i].empty()) {
-                relationships_to_delete.erase(i);
             }
         }
 

@@ -32,9 +32,6 @@ namespace ragedb {
 
     seastar::future<std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>>> Shard::LoadCSVRelationships(uint16_t rel_type_id, const std::string &filename, const char csv_separator, const std::vector<size_t> rows, std::map<std::string, uint64_t> to_keys_and_ids) {
         std::map<uint16_t, std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>> sharded_relationships;
-        for (uint16_t i = 0; i < cpus; i++) {
-            sharded_relationships.try_emplace(i);
-        }
 
         rapidcsv::Document doc(filename, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(csv_separator, true),
           rapidcsv::ConverterParams(),
@@ -151,13 +148,6 @@ namespace ragedb {
 
                     sharded_relationships[CalculateShardId(id2)].emplace_back(external_id, id1, id2);
                 }
-            }
-        }
-
-
-        for (uint16_t i = 0; i < cpus; i++) {
-            if (sharded_relationships.at(i).empty()) {
-                sharded_relationships.erase(i);
             }
         }
 
