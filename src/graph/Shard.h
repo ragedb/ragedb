@@ -1183,7 +1183,7 @@ namespace ragedb {
         std::map<uint16_t, std::vector<Link>> PartitionLinksByNodeShardId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinksByRelationshipShardId(const std::vector<Link> &links) const;
 
-        std::map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const;
+        std::unordered_map<uint16_t, std::vector<uint64_t>> PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<uint64_t>> PartitionRelationshipIdsByTypeId(const std::vector<uint64_t> &ids) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinkNodeIdsByTypeId(const std::vector<Link> &links) const;
         std::map<uint16_t, std::vector<Link>> PartitionLinkRelationshipIdsByTypeId(const std::vector<Link> &links) const;
@@ -1191,6 +1191,8 @@ namespace ragedb {
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
 
         std::vector<uint64_t> IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids_2) const;
+        size_t IntersectIdsCount(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const;
+        size_t IntersectIdsCount(const uint64_t *A, const size_t lenA, const uint64_t *B, const size_t lenB) const;
   };
 }
 

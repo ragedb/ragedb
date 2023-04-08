@@ -29,7 +29,7 @@ namespace ragedb {
             auto cs = ins[node_a];
             for (const auto &node_b : bs) {
                 auto cs2 = outs[node_b];
-                count += IntersectIds(cs, cs2).size();
+                count += IntersectIdsCount(cs.data(), cs.size(), cs2.data(), cs2.size());
             }
         }
 
@@ -48,7 +48,7 @@ namespace ragedb {
             auto cs = ins[node_a];
             for (const auto &node_b : bs) {
                 auto cs2 = outs[node_b];
-                count += IntersectIds(cs, cs2).size();
+                count += IntersectIdsCount(cs.data(), cs.size(), cs2.data(), cs2.size());
             }
         }
 

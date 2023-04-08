@@ -18,6 +18,41 @@
 
 namespace ragedb {
 
+    size_t Shard::IntersectIdsCount(const uint64_t *A, const size_t lenA, const uint64_t *B, const size_t lenB) const {
+        size_t count = 0;
+        if (lenA == 0 || lenB == 0) {
+            return 0;
+        }
+
+        const uint64_t *endA = A + lenA;
+        const uint64_t *endB = B + lenB;
+
+        while (1) {
+            while (*A < *B) {
+            SKIP_FIRST_COMPARE:
+                if (++A == endA) {
+                    return count;
+                }
+            }
+            while (*A > *B) {
+                if (++B == endB) {
+                    return count;
+                }
+            }
+            if (*A == *B) {
+                count++;
+                if (++A == endA || ++B == endB)
+                    return count;
+            } else {
+                goto SKIP_FIRST_COMPARE;
+            }
+        }
+    }
+
+    size_t Shard::IntersectIdsCount(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
+        return IntersectIdsCount(sorted_ids.data(), sorted_ids.size(), sorted_ids2.data(), sorted_ids2.size());
+    }
+
     std::vector<uint64_t> Shard::IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
         std::vector<uint64_t> intersection;
         intersection.reserve(std::min(sorted_ids.size(), sorted_ids2.size()));
