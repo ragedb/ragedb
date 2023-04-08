@@ -194,25 +194,14 @@ namespace ragedb {
       return sharded_links;
     }
 
-    std::map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const {
-        std::map<uint16_t, std::vector<uint64_t>> partitioned_ids;
-        auto max_size = node_types.getSize();
-        for (uint16_t i = 0; i < max_size; i++) {
-            partitioned_ids.insert({i, std::vector<uint64_t>() });
-        }
+    std::unordered_map<uint16_t, std::vector<uint64_t>> Shard::PartitionNodeIdsByTypeId(const std::vector<uint64_t> &ids) const {
+        std::unordered_map<uint16_t, std::vector<uint64_t>> partitioned_ids;
+
         for (const auto& id : ids) {
             uint16_t type_id = externalToTypeId(id);
-            // Insert Sorted
-            partitioned_ids.at(type_id).emplace_back(id);
+            partitioned_ids[type_id].emplace_back(id);
         }
 
-        for (uint16_t i = 0; i < max_size; i++) {
-            if (partitioned_ids.at(i).empty()) {
-                partitioned_ids.erase(i);
-            } else {
-                sort(partitioned_ids.at(i).begin(), partitioned_ids.at(i).end());
-            }
-        }
         // Sort ids
         for(auto& [shard, vec] : partitioned_ids) {
             std::sort(vec.begin(), vec.end());
