@@ -31,7 +31,7 @@ macro(run_conan)
     cppcodec/0.2
     cpr/1.10.1
     boost/1.81.0
-    unordered_dense/3.1.1
+    unordered_dense/4.0.0
 #    reckless/3.0.3  # temporarily removing logging until ARM issue is figured out
     benchmark/1.7.1
     OPTIONS
