@@ -136,7 +136,7 @@ namespace ragedb {
                     external_id = internalToExternal(rel_type_id, internal_id);
 
                     // Add the relationship to the outgoing node
-                    auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
+                    auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id)[internal_id1],
                       [rel_type_id] (const Group& g) { return g.rel_type_id == rel_type_id; } );
                     // See if the relationship type is already there
                     if (group != std::end(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1))) {
