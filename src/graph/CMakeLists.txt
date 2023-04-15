@@ -10,6 +10,7 @@ set(HEADER_FILES
         NodeTypes.h
         Operation.h
         Order.h
+
         Permission.h
         Properties.h
         PropertyType.h
@@ -21,7 +22,8 @@ set(HEADER_FILES
         Uniqueness.h
         types/Date.h
         eve/CollectIndexes.h Sort.h ../Templates.h
-        paths/WeightedLink.h paths/Path.h paths/WeightedPath.h)
+        paths/WeightedLink.h paths/Path.h paths/WeightedPath.h
+        overload/Disambiguate.h )
 
 set(SOURCE_FILES
         Graph.cpp
@@ -62,6 +64,9 @@ set(SOURCE_FILES
         shard/Ids.cpp
         peered/Restore.cpp
         types/Date.cpp shard/NodeLinks.cpp lua/KHop.cpp peered/KHop.cpp
-        paths/WeightedLink.cpp paths/Path.cpp paths/WeightedPath.cpp lua/Join.cpp lua/Triangles.cpp)
+        paths/WeightedLink.cpp paths/Path.cpp paths/WeightedPath.cpp lua/Join.cpp lua/Triangles.cpp
+
+        overload/Neighbors.cpp overload/Node.cpp overload/Key.cpp overload/Type.cpp
+        overload/Property.cpp overload/Properties.cpp overload/Relationships.cpp overload/Relationship.cpp overload/RelationshipType.cpp overload/RelationshipProperties.cpp overload/RelationshipProperty.cpp overload/Disambiguate.cpp)
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})

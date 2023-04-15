@@ -22,73 +22,50 @@ namespace ragedb {
         return NodeGetDegreePeered(type, key).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeForDirectionViaLua(const std::string& type, const std::string& key, Direction direction) {
+    uint64_t Shard::NodeGetDegreeViaLua(const std::string& type, const std::string& key, Direction direction) {
         return NodeGetDegreePeered(type, key, direction).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeForDirectionForTypeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
+    uint64_t Shard::NodeGetDegreeViaLua(const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) {
         return NodeGetDegreePeered(type, key, direction, rel_type).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeForTypeViaLua(const std::string& type, const std::string& key, const std::string& rel_type) {
+    uint64_t Shard::NodeGetDegreeViaLua(const std::string& type, const std::string& key, const std::string& rel_type) {
         return NodeGetDegreePeered(type, key, rel_type).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeForDirectionForTypesViaLua(const std::string& type, const std::string& key, Direction direction,
+    uint64_t Shard::NodeGetDegreeViaLua(const std::string& type, const std::string& key, Direction direction,
                                                             const std::vector<std::string>& rel_types) {
         return NodeGetDegreePeered(type, key, direction, rel_types).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeForTypesViaLua(const std::string& type, const std::string& key,
+    uint64_t Shard::NodeGetDegreeViaLua(const std::string& type, const std::string& key,
                                                 const std::vector<std::string>& rel_types) {
         return NodeGetDegreePeered(type, key, rel_types).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdViaLua(uint64_t id) {
+    uint64_t Shard::NodeGetDegreeViaLua(uint64_t id) {
         return NodeGetDegreePeered(id).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdForDirectionViaLua(uint64_t id, Direction direction) {
+    uint64_t Shard::NodeGetDegreeViaLua(uint64_t id, Direction direction) {
         return NodeGetDegreePeered(id, direction).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdForDirectionForTypeViaLua(uint64_t id, Direction direction, const std::string& rel_type) {
+    uint64_t Shard::NodeGetDegreeViaLua(uint64_t id, Direction direction, const std::string& rel_type) {
         return NodeGetDegreePeered(id, direction, rel_type).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdForTypeViaLua(uint64_t id, const std::string& rel_type) {
+    uint64_t Shard::NodeGetDegreeViaLua(uint64_t id, const std::string& rel_type) {
         return NodeGetDegreePeered(id, rel_type).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdForDirectionForTypesViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
+    uint64_t Shard::NodeGetDegreeViaLua(uint64_t id, Direction direction, const std::vector<std::string> &rel_types) {
         return NodeGetDegreePeered(id, direction, rel_types).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdForTypesViaLua(uint64_t id, const std::vector<std::string> &rel_types) {
+    uint64_t Shard::NodeGetDegreeViaLua(uint64_t id, const std::vector<std::string> &rel_types) {
         return NodeGetDegreePeered(id, rel_types).get0();
     }
 
-    uint64_t Shard::NodeGetDegreeByIdViaLua(Node node) {
-        return NodeGetDegreePeered(node.getId()).get0();
-    }
-
-    uint64_t Shard::NodeGetDegreeByIdForDirectionViaLua(Node node, Direction direction) {
-        return NodeGetDegreePeered(node.getId(), direction).get0();
-    }
-
-    uint64_t Shard::NodeGetDegreeByIdForDirectionForTypeViaLua(Node node, Direction direction, const std::string& rel_type) {
-        return NodeGetDegreePeered(node.getId(), direction, rel_type).get0();
-    }
-
-    uint64_t Shard::NodeGetDegreeByIdForTypeViaLua(Node node, const std::string& rel_type) {
-        return NodeGetDegreePeered(node.getId(), rel_type).get0();
-    }
-
-    uint64_t Shard::NodeGetDegreeByIdForDirectionForTypesViaLua(Node node, Direction direction, const std::vector<std::string> &rel_types) {
-        return NodeGetDegreePeered(node.getId(), direction, rel_types).get0();
-    }
-
-    uint64_t Shard::NodeGetDegreeByIdForTypesViaLua(Node node, const std::vector<std::string> &rel_types) {
-        return NodeGetDegreePeered(node.getId(), rel_types).get0();
-    }
-    }
+}

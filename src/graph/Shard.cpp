@@ -176,88 +176,64 @@ namespace ragedb {
         lua.set_function("NodeGetId", &Shard::NodeGetIdViaLua, this);
         lua.set_function("NodeGet", sol::overload(
             [this](const std::string& type, const std::string& key) { return this->NodeGetViaLua(type, key); },
-            [this](uint64_t id) { return this->NodeGetByIdViaLua(id); }
+            [this](uint64_t id) { return this->NodeGetViaLua(id); }
            ));
         lua.set_function("NodeRemove", sol::overload(
             [this](const std::string& type, const std::string& key) { return this->NodeRemoveViaLua(type, key); },
-            [this](uint64_t id) { return this->NodeRemoveByIdViaLua(id); }
+            [this](uint64_t id) { return this->NodeRemoveViaLua(id); }
            ));
-        lua.set_function("NodeGetType", &Shard::NodeGetTypeViaLua, this);
-        lua.set_function("NodeGetKey", &Shard::NodeGetKeyViaLua, this);
-
-        // Nodes
-        lua.set_function("NodesGet", &Shard::NodesGetViaLua, this);
-        // Simplify number of Lua methods once Sol2 Exhaustive feature works.
-//        lua.set_function("NodesGet", sol::overload(
-//                                       [this](sol::exhaustive<std::vector<uint64_t>> ids) { return this->NodesGetViaLua(ids.value()); },
-//                                       [this](sol::exhaustive<std::vector<Link>> links) { return this->NodesGetByLinksViaLua(links.value()); }
-//                                       [this](sol::exhaustive_until<std::vector<uint64_t>, 1> ids) { return this->NodesGetViaLua(ids.value()); },
-//                                       [this](sol::exhaustive_until<std::vector<Link>, 1> links) { return this->NodesGetByLinksViaLua(links.value()); }
-//                                       ));
-        lua.set_function("NodeIdsGetKey", &Shard::NodesGetKeyViaLua, this);
-        lua.set_function("NodeIdsGetType", &Shard::NodesGetTypeViaLua, this);
-        lua.set_function("NodeIdsGetProperty", &Shard::NodesGetPropertyViaLua, this);
-        lua.set_function("NodeIdsGetPropertyRaw", &Shard::NodesGetPropertyViaLuaRaw, this);
-        lua.set_function("NodeIdsGetProperties", &Shard::NodesGetPropertiesViaLua, this);
 
         // Node Properties
-        lua.set_function("NodeGetProperty", sol::overload(
-           [this](const std::string& type, const std::string& key, const std::string& property) { return this->NodeGetPropertyViaLua(type, key, property); },
-           [this](uint64_t id, const std::string& property) { return this->NodeGetPropertyByIdViaLua(id, property); }
-           ));
         lua.set_function("NodeGetProperties", sol::overload(
            [this](const std::string& type, const std::string& key) { return this->NodeGetPropertiesViaLua(type, key); },
-           [this](uint64_t id) { return this->NodeGetPropertiesByIdViaLua(id); }
+           [this](uint64_t id) { return this->NodeGetPropertiesViaLua(id); }
            ));
         lua.set_function("NodeSetProperty", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& property, sol::object value) { return this->NodeSetPropertyViaLua(type, key, property, value); },
-           [this](uint64_t id, const std::string& property, sol::object value) { return this->NodeSetPropertyByIdViaLua(id, property, value); },
-           [this](Node node, const std::string& property, sol::object value) { return this->NodeSetPropertyByIdViaLua(node.getId(), property, value); }
+           [this](uint64_t id, const std::string& property, sol::object value) { return this->NodeSetPropertyViaLua(id, property, value); },
+           [this](Node node, const std::string& property, sol::object value) { return this->NodeSetPropertyViaLua(node.getId(), property, value); }
            ));
         lua.set_function("NodeSetPropertiesFromJson", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& properties) { return this->NodeSetPropertiesFromJsonViaLua(type, key, properties); },
-           [this](uint64_t id, const std::string& properties) { return this->NodeSetPropertiesFromJsonByIdViaLua(id, properties); },
-           [this](Node node, const std::string& properties) { return this->NodeSetPropertiesFromJsonByIdViaLua(node.getId(), properties); }
+           [this](uint64_t id, const std::string& properties) { return this->NodeSetPropertiesFromJsonViaLua(id, properties); },
+           [this](Node node, const std::string& properties) { return this->NodeSetPropertiesFromJsonViaLua(node.getId(), properties); }
            ));
         lua.set_function("NodeSetPropertyFromJson", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonViaLua(type, key, property, value); },
-           [this](uint64_t id, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonByIdViaLua(id, property, value); },
-           [this](Node node, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonByIdViaLua(node.getId(), property, value); }
+           [this](uint64_t id, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonViaLua(id, property, value); },
+           [this](Node node, const std::string& property, const std::string& value) { return this->NodeSetPropertyFromJsonViaLua(node.getId(), property, value); }
            ));
         lua.set_function("NodeResetPropertiesFromJson", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& properties) { return this->NodeResetPropertiesFromJsonViaLua(type, key, properties); },
-           [this](uint64_t id, const std::string& properties) { return this->NodeResetPropertiesFromJsonByIdViaLua(id, properties); },
-           [this](Node node, const std::string& properties) { return this->NodeResetPropertiesFromJsonByIdViaLua(node.getId(), properties); }
+           [this](uint64_t id, const std::string& properties) { return this->NodeResetPropertiesFromJsonViaLua(id, properties); },
+           [this](Node node, const std::string& properties) { return this->NodeResetPropertiesFromJsonViaLua(node.getId(), properties); }
            ));
         lua.set_function("NodeDeleteProperty", sol::overload(
            [this](const std::string& type, const std::string& key, const std::string& property) { return this->NodeDeletePropertyViaLua(type, key, property); },
-           [this](uint64_t id, const std::string& property) { return this->NodeDeletePropertyByIdViaLua(id, property); },
-           [this](Node node, const std::string& property) { return this->NodeDeletePropertyByIdViaLua(node.getId(), property); }
+           [this](uint64_t id, const std::string& property) { return this->NodeDeletePropertyViaLua(id, property); },
+           [this](Node node, const std::string& property) { return this->NodeDeletePropertyViaLua(node.getId(), property); }
            ));
         lua.set_function("NodeDeleteProperties", sol::overload(
            [this](const std::string& type, const std::string& key) { return this->NodeDeletePropertiesViaLua(type, key); },
-           [this](uint64_t id) { return this->NodeDeletePropertiesByIdViaLua(id); },
-           [this](Node node) { return this->NodeDeletePropertiesByIdViaLua(node.getId()); }
+           [this](uint64_t id) { return this->NodeDeletePropertiesViaLua(id); },
+           [this](Node node) { return this->NodeDeletePropertiesViaLua(node.getId()); }
            ));
 
         // Relationship
         lua.set_function("RelationshipAdd", sol::overload(
            [this](const std::string& rel_type, const std::string& type1, const std::string& key1, const std::string& type2, const std::string& key2) { return this->RelationshipAddEmptyViaLua(rel_type, type1, key1, type2, key2); },
-           [this](const std::string& rel_type, uint64_t id1, uint64_t id2) { return this->RelationshipAddEmptyByIdsViaLua(rel_type, id1, id2); },
+           [this](const std::string& rel_type, uint64_t id1, uint64_t id2) { return this->RelationshipAddEmptyViaLua(rel_type, id1, id2); },
            [this](const std::string& rel_type, const std::string& type1, const std::string& key1, const std::string& type2, const std::string& key2, const std::string& properties) { return this->RelationshipAddViaLua(rel_type, type1, key1, type2, key2, properties); },
-           [this](const std::string& rel_type, uint64_t id1, uint64_t id2, const std::string& properties) { return this->RelationshipAddByIdsViaLua(rel_type, id1, id2, properties); }
+           [this](const std::string& rel_type, uint64_t id1, uint64_t id2, const std::string& properties) { return this->RelationshipAddViaLua(rel_type, id1, id2, properties); }
            ));
-        lua.set_function("RelationshipGet", &Shard::RelationshipGetViaLua, this);
+
+
         lua.set_function("RelationshipRemove", &Shard::RelationshipRemoveViaLua, this);
         lua.set_function("RelationshipGetType", &Shard::RelationshipGetTypeViaLua, this);
         lua.set_function("RelationshipGetStartingNodeId", &Shard::RelationshipGetStartingNodeIdViaLua, this);
         lua.set_function("RelationshipGetEndingNodeId", &Shard::RelationshipGetEndingNodeIdViaLua, this);
 
-        // Relationships
-        lua.set_function("RelationshipsGet", &Shard::RelationshipsGetViaLua, this);
-        lua.set_function("RelationshipsGetType", &Shard::RelationshipsGetTypeViaLua, this);
-        lua.set_function("RelationshipsGetProperty", &Shard::RelationshipsGetPropertyViaLua, this);
-        lua.set_function("RelationshipsGetProperties", &Shard::RelationshipsGetPropertiesViaLua, this);
+
 
         // Relationship Properties
         lua.set_function("RelationshipGetProperty", &Shard::RelationshipGetPropertyViaLua, this);
@@ -272,24 +248,24 @@ namespace ragedb {
 
         // Node Degree
         lua.set_function("NodeGetDegree", sol::overload(
-            [this](Node node) { return this->NodeGetDegreeByIdViaLua(node); },
-            [this](Node node, Direction direction) { return this->NodeGetDegreeByIdForDirectionViaLua(node, direction); },
-            [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeByIdForDirectionForTypeViaLua(node, direction, rel_type); },
-            [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDegreeByIdForDirectionForTypesViaLua(node, direction, rel_types); },
-            [this](Node node, const std::string& rel_type) { return this->NodeGetDegreeByIdForTypeViaLua(node, rel_type); },
-            [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetDegreeByIdForTypesViaLua(node, rel_types); },
-            [this](uint64_t id) { return this->NodeGetDegreeByIdViaLua(id); },
-            [this](uint64_t id, Direction direction) { return this->NodeGetDegreeByIdForDirectionViaLua(id, direction); },
-            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeByIdForDirectionForTypeViaLua(id, direction, rel_type); },
-            [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDegreeByIdForDirectionForTypesViaLua(id, direction, rel_types); },
-            [this](uint64_t id, const std::string& rel_type) { return this->NodeGetDegreeByIdForTypeViaLua(id, rel_type); },
-            [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetDegreeByIdForTypesViaLua(id, rel_types); },
+            [this](Node node) { return this->NodeGetDegreeViaLua(node.getId()); },
+            [this](Node node, Direction direction) { return this->NodeGetDegreeViaLua(node.getId(), direction); },
+            [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeViaLua(node.getId(), direction, rel_type); },
+            [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDegreeViaLua(node.getId(), direction, rel_types); },
+            [this](Node node, const std::string& rel_type) { return this->NodeGetDegreeViaLua(node.getId(), rel_type); },
+            [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetDegreeViaLua(node.getId(), rel_types); },
+            [this](uint64_t id) { return this->NodeGetDegreeViaLua(id); },
+            [this](uint64_t id, Direction direction) { return this->NodeGetDegreeViaLua(id, direction); },
+            [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeViaLua(id, direction, rel_type); },
+            [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDegreeViaLua(id, direction, rel_types); },
+            [this](uint64_t id, const std::string& rel_type) { return this->NodeGetDegreeViaLua(id, rel_type); },
+            [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetDegreeViaLua(id, rel_types); },
             [this](const std::string& type, const std::string& key) { return this->NodeGetDegreeViaLua(type, key); },
-            [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetDegreeForDirectionViaLua(type, key, direction); },
-            [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeForDirectionForTypeViaLua(type, key, direction, rel_type); },
-            [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDegreeForDirectionForTypesViaLua(type, key, direction, rel_types); },
-            [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetDegreeForTypeViaLua(type, key, rel_type); },
-            [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetDegreeForTypesViaLua(type, key, rel_types); }
+            [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetDegreeViaLua(type, key, direction); },
+            [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetDegreeViaLua(type, key, direction, rel_type); },
+            [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetDegreeViaLua(type, key, direction, rel_types); },
+            [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetDegreeViaLua(type, key, rel_type); },
+            [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetDegreeViaLua(type, key, rel_types); }
             ));
 
         // Neighbors
@@ -371,60 +347,60 @@ namespace ragedb {
 
         // Traversing
         lua.set_function("NodeGetLinks", sol::overload(
-           [this](Node node) { return this->NodeGetLinksByIdViaLua(node); },
-           [this](Node node, Direction direction) { return this->NodeGetLinksByIdForDirectionViaLua(node, direction); },
-           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetLinksByIdForDirectionForTypeViaLua(node, direction, rel_type); },
-           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetLinksByIdForDirectionForTypesViaLua(node, direction, rel_types); },
-           [this](Node node, const std::string& rel_type) { return this->NodeGetLinksByIdForTypeViaLua(node, rel_type); },
-           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetLinksByIdForTypesViaLua(node, rel_types); },
-           [this](uint64_t id) { return this->NodeGetLinksByIdViaLua(id); },
-           [this](uint64_t id, Direction direction) { return this->NodeGetLinksByIdForDirectionViaLua(id, direction); },
-           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetLinksByIdForDirectionForTypeViaLua(id, direction, rel_type); },
-           [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetLinksByIdForDirectionForTypesViaLua(id, direction, rel_types); },
-           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetLinksByIdForTypeViaLua(id, rel_type); },
-           [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetLinksByIdForTypesViaLua(id, rel_types); },
+           [this](Node node) { return this->NodeGetLinksViaLua(node.getId()); },
+           [this](Node node, Direction direction) { return this->NodeGetLinksViaLua(node.getId(), direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetLinksViaLua(node.getId(), direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetLinksViaLua(node.getId(), direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetLinksViaLua(node.getId(), rel_type); },
+           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetLinksViaLua(node.getId(), rel_types); },
+           [this](uint64_t id) { return this->NodeGetLinksViaLua(id); },
+           [this](uint64_t id, Direction direction) { return this->NodeGetLinksViaLua(id, direction); },
+           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetLinksViaLua(id, direction, rel_type); },
+           [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetLinksViaLua(id, direction, rel_types); },
+           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetLinksViaLua(id, rel_type); },
+           [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetLinksViaLua(id, rel_types); },
            [this](const std::string& type, const std::string& key) { return this->NodeGetLinksViaLua(type, key); },
-           [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetLinksForDirectionViaLua(type, key, direction); },
-           [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetLinksForDirectionForTypeViaLua(type, key, direction, rel_type); },
-           [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetLinksForDirectionForTypesViaLua(type, key, direction, rel_types); },
-           [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetLinksForTypeViaLua(type, key, rel_type); },
-           [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetLinksForTypesViaLua(type, key, rel_types); }
+           [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetLinksViaLua(type, key, direction); },
+           [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetLinksViaLua(type, key, direction, rel_type); },
+           [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetLinksViaLua(type, key, direction, rel_types); },
+           [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetLinksViaLua(type, key, rel_type); },
+           [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetLinksViaLua(type, key, rel_types); }
            ));
 
         lua.set_function("NodeGetRelationships", sol::overload(
-           [this](Node node) { return this->NodeGetRelationshipsByIdViaLua(node); },
-           [this](Node node, Direction direction) { return this->NodeGetRelationshipsByIdForDirectionViaLua(node, direction); },
-           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForDirectionForTypeViaLua(node, direction, rel_type); },
-           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsByIdForDirectionForTypesViaLua(node, direction, rel_types); },
-           [this](Node node, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForTypeViaLua(node, rel_type); },
-           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsByIdForTypesViaLua(node, rel_types); },
-           [this](uint64_t id) { return this->NodeGetRelationshipsByIdViaLua(id); },
-           [this](uint64_t id, Direction direction) { return this->NodeGetRelationshipsByIdForDirectionViaLua(id, direction); },
-           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForDirectionForTypeViaLua(id, direction, rel_type); },
-           [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsByIdForDirectionForTypesViaLua(id, direction, rel_types); },
-           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetRelationshipsByIdForTypeViaLua(id, rel_type); },
-           [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsByIdForTypesViaLua(id, rel_types); },
+           [this](Node node) { return this->NodeGetRelationshipsViaLua(node.getId()); },
+           [this](Node node, Direction direction) { return this->NodeGetRelationshipsViaLua(node.getId(), direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsViaLua(node.getId(), direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsViaLua(node.getId(), direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetRelationshipsViaLua(node.getId(), rel_type); },
+           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsViaLua(node.getId(), rel_types); },
+           [this](uint64_t id) { return this->NodeGetRelationshipsViaLua(id); },
+           [this](uint64_t id, Direction direction) { return this->NodeGetRelationshipsViaLua(id, direction); },
+           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsViaLua(id, direction, rel_type); },
+           [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsViaLua(id, direction, rel_types); },
+           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetRelationshipsViaLua(id, rel_type); },
+           [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsViaLua(id, rel_types); },
            [this](const std::string& type, const std::string& key) { return this->NodeGetRelationshipsViaLua(type, key); },
-           [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetRelationshipsForDirectionViaLua(type, key, direction); },
-           [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsForDirectionForTypeViaLua(type, key, direction, rel_type); },
-           [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsForDirectionForTypesViaLua(type, key, direction, rel_types); },
-           [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetRelationshipsForTypeViaLua(type, key, rel_type); },
-           [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsForTypesViaLua(type, key, rel_types); }
+           [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetRelationshipsViaLua(type, key, direction); },
+           [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetRelationshipsViaLua(type, key, direction, rel_type); },
+           [this](const std::string& type, const std::string& key, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsViaLua(type, key, direction, rel_types); },
+           [this](const std::string& type, const std::string& key, const std::string& rel_type) { return this->NodeGetRelationshipsViaLua(type, key, rel_type); },
+           [this](const std::string& type, const std::string& key, const std::vector<std::string> rel_types) { return this->NodeGetRelationshipsViaLua(type, key, rel_types); }
            ));
 
         lua.set_function("NodeGetNeighbors", sol::overload(
-           [this](Node node) { return this->NodeGetNeighborsByIdViaLua(node.getId()); },
-           [this](Node node, Direction direction) { return this->NodeGetNeighborsByIdViaLua(node.getId(), direction); },
-           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsByIdViaLua(node.getId(), direction, rel_type); },
-           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsByIdViaLua(node.getId(), direction, rel_types); },
-           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborsByIdViaLua(node.getId(), Direction::BOTH, rel_type); },
-           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsByIdViaLua(node.getId(), Direction::BOTH, rel_types); },
-           [this](uint64_t id) { return this->NodeGetNeighborsByIdViaLua(id); },
-           [this](uint64_t id, Direction direction) { return this->NodeGetNeighborsByIdViaLua(id, direction); },
-           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsByIdViaLua(id, direction, rel_type); },
-           [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsByIdViaLua(id, direction, rel_types); },
-           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetNeighborsByIdViaLua(id, Direction::BOTH, rel_type); },
-           [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsByIdViaLua(id, Direction::BOTH, rel_types); },
+           [this](Node node) { return this->NodeGetNeighborsViaLua(node.getId()); },
+           [this](Node node, Direction direction) { return this->NodeGetNeighborsViaLua(node.getId(), direction); },
+           [this](Node node, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsViaLua(node.getId(), direction, rel_type); },
+           [this](Node node, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsViaLua(node.getId(), direction, rel_types); },
+           [this](Node node, const std::string& rel_type) { return this->NodeGetNeighborsViaLua(node.getId(), Direction::BOTH, rel_type); },
+           [this](Node node, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsViaLua(node.getId(), Direction::BOTH, rel_types); },
+           [this](uint64_t id) { return this->NodeGetNeighborsViaLua(id); },
+           [this](uint64_t id, Direction direction) { return this->NodeGetNeighborsViaLua(id, direction); },
+           [this](uint64_t id, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsViaLua(id, direction, rel_type); },
+           [this](uint64_t id, Direction direction, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsViaLua(id, direction, rel_types); },
+           [this](uint64_t id, const std::string& rel_type) { return this->NodeGetNeighborsViaLua(id, Direction::BOTH, rel_type); },
+           [this](uint64_t id, const std::vector<std::string> rel_types) { return this->NodeGetNeighborsViaLua(id, Direction::BOTH, rel_types); },
            [this](const std::string& type, const std::string& key) { return this->NodeGetNeighborsViaLua(type, key); },
            [this](const std::string& type, const std::string& key, Direction direction) { return this->NodeGetNeighborsViaLua(type, key, direction); },
            [this](const std::string& type, const std::string& key, Direction direction, const std::string& rel_type) { return this->NodeGetNeighborsViaLua(type, key, direction, rel_type); },
@@ -435,24 +411,16 @@ namespace ragedb {
 
         //Bulk
         // TODO: Nodes Get Links
-        lua.set_function("LinksGetNode", &Shard::NodesGetByLinksViaLua, this);
-        lua.set_function("LinksGetNodeKey", &Shard::NodesGetKeyByLinksViaLua, this);
-        lua.set_function("LinksGetNodeType", &Shard::NodesGetTypeByLinksViaLua, this);
-        lua.set_function("LinksGetNodeProperty", &Shard::NodesGetPropertyByLinksViaLua, this);
-        lua.set_function("LinksGetNodeProperties", &Shard::NodesGetPropertiesByLinksViaLua, this);
 
-        lua.set_function("LinksGetRelationship", &Shard::RelationshipsGetByLinksViaLua, this);
-        lua.set_function("LinksGetRelationshipType", &Shard::RelationshipsGetTypeByLinksViaLua, this);
-        lua.set_function("LinksGetRelationshipProperty", &Shard::RelationshipsGetPropertyByLinksViaLua, this);
-        lua.set_function("LinksGetRelationshipProperties", &Shard::RelationshipsGetPropertiesByLinksViaLua, this);
+
 
         lua.set_function("LinksGetLinks", sol::overload(
             [this](std::vector<Link> links) { return this->LinksGetLinksViaLua(links); },
-            [this](std::vector<Link> links, Direction direction) { return this->LinksGetLinksForDirectionViaLua(links, direction); },
-            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, direction, rel_type); },
-            [this](std::vector<Link> links, Direction direction, const std::vector<std::string> rel_types) { return this->LinksGetLinksForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetLinksForDirectionForTypeViaLua(links, Direction::BOTH, rel_type); },
-            [this](std::vector<Link> links, const std::vector<std::string> rel_types) { return this->LinksGetLinksForDirectionForTypesViaLua(links, Direction::BOTH, rel_types); }
+            [this](std::vector<Link> links, Direction direction) { return this->LinksGetLinksViaLua(links, direction); },
+            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetLinksViaLua(links, direction, rel_type); },
+            [this](std::vector<Link> links, Direction direction, const std::vector<std::string> rel_types) { return this->LinksGetLinksViaLua(links, direction, rel_types); },
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetLinksViaLua(links, Direction::BOTH, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string> rel_types) { return this->LinksGetLinksViaLua(links, Direction::BOTH, rel_types); }
             ));
 
         lua.set_function("LinksGetNeighborIds", sol::overload(
@@ -466,20 +434,11 @@ namespace ragedb {
 
         lua.set_function("LinksGetRelationships", sol::overload(
             [this](std::vector<Link> links) { return this->LinksGetRelationshipsViaLua(links); },
-            [this](std::vector<Link> links, Direction direction) { return this->LinksGetRelationshipsForDirectionViaLua(links, direction); },
-            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, direction, rel_type); },
-            [this](std::vector<Link> links, Direction direction, const std::vector<std::string> rel_types) { return this->LinksGetRelationshipsForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetRelationshipsForDirectionForTypeViaLua(links, Direction::BOTH, rel_type); },
-            [this](std::vector<Link> links, const std::vector<std::string> rel_types) { return this->LinksGetRelationshipsForDirectionForTypesViaLua(links, Direction::BOTH, rel_types); }
-            ));
-
-        lua.set_function("LinksGetNeighbors", sol::overload(
-            [this](std::vector<Link> links) { return this->LinksGetNeighborsViaLua(links); },
-            [this](std::vector<Link> links, Direction direction) { return this->LinksGetNeighborsForDirectionViaLua(links, direction); },
-            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, direction, rel_type); },
-            [this](std::vector<Link> links, Direction direction, const std::vector<std::string> rel_types) { return this->LinksGetNeighborsForDirectionForTypesViaLua(links, direction, rel_types); },
-            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetNeighborsForDirectionForTypeViaLua(links, Direction::BOTH, rel_type); },
-            [this](std::vector<Link> links, const std::vector<std::string> rel_types) { return this->LinksGetNeighborsForDirectionForTypesViaLua(links, Direction::BOTH, rel_types); }
+            [this](std::vector<Link> links, Direction direction) { return this->LinksGetRelationshipsViaLua(links, direction); },
+            [this](std::vector<Link> links, Direction direction, const std::string& rel_type) { return this->LinksGetRelationshipsViaLua(links, direction, rel_type); },
+            [this](std::vector<Link> links, Direction direction, const std::vector<std::string> rel_types) { return this->LinksGetRelationshipsViaLua(links, direction, rel_types); },
+            [this](std::vector<Link> links, const std::string& rel_type) { return this->LinksGetRelationshipsViaLua(links, Direction::BOTH, rel_type); },
+            [this](std::vector<Link> links, const std::vector<std::string> rel_types) { return this->LinksGetRelationshipsViaLua(links, Direction::BOTH, rel_types); }
             ));
 
         // Connected
@@ -646,6 +605,24 @@ namespace ragedb {
             [this](const std::string& type) { return this->TriangleCount(type); },
             [this](const std::vector<std::string> rel_types) { return this->TriangleCount(rel_types); }
         ));
+
+        // Nodes
+        lua.set_function("Node", &Shard::NodeOverload, this);
+        lua.set_function("Key", &Shard::NodeKeyOverload, this);
+        lua.set_function("Type", &Shard::NodeTypeOverload, this);
+        lua.set_function("Property", &Shard::NodePropertyOverload, this);
+        lua.set_function("Properties", &Shard::NodePropertiesOverload, this);
+
+        // Relationship
+        lua.set_function("Relationship", &Shard::RelationshipOverload, this);
+        lua.set_function("RelationshipType", &Shard::RelationshipTypeOverload, this);
+        lua.set_function("RelationshipProperty", &Shard::RelationshipPropertyOverload, this);
+        lua.set_function("RelationshipProperties", &Shard::RelationshipPropertiesOverload, this);
+
+
+        // Traversing
+        lua.set_function("Relationships", &Shard::RelationshipsOverload, this);
+        lua.set_function("Neighbors", &Shard::NeighborsOverload, this);
 
         // Create a sanitized environment to restrict the user's Lua code
         lua.set_function("loadstring", &Shard::loadstring, this);

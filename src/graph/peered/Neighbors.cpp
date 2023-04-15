@@ -182,7 +182,7 @@ namespace ragedb {
 
             futures.push_back(std::move(future));
         }
-        
+
         auto p = make_shared(std::move(futures));
         std::vector<roaring::Roaring64Map> results = co_await seastar::when_all_succeed(p->begin(), p->end());
 

@@ -59,6 +59,7 @@ namespace ragedb {
       }
       default: {
         copyAll(env, lua.globals(), ALLOWED_GRAPH_READ_FUNCTIONS);
+        copyAll(env, lua.globals(), ALLOWED_GRAPH_READ_FUNCTIONS_OVERLOADED);
       }
     }
 

@@ -100,6 +100,13 @@ namespace ragedb {
       "RelationshipSetPropertyFromJson",
 
       "StreamCSV"
+
+        ,"Overloaded"
+    };
+
+    inline static const std::vector<std::string> ALLOWED_GRAPH_READ_FUNCTIONS_OVERLOADED = {
+        "Neighbors", // LinksGetNeighbors, NodeIdsGetNeighbors, NodeGetNeighbors, NodesGetNeighbors
+        "NeighborIds", // LinksGetNeighborIds, NodeIdsGetNeighborIds, NodeGetNeighborIds, NodesGetNeighborIds
     };
 
     inline static const std::vector<std::string> ALLOWED_GRAPH_READ_FUNCTIONS = {
@@ -148,8 +155,8 @@ namespace ragedb {
       "KHopNodes",
 
       "LinksGetLinks",
-      "LinksGetNeighbors",
-      "LinksGetNeighborIds",
+      //"LinksGetNeighbors",
+      //"LinksGetNeighborIds",
       "LinksGetRelationships",
       "LinksGetRelationshipsIds",
 
@@ -170,9 +177,9 @@ namespace ragedb {
       "NodeIdsGetProperties",
       "NodeIdsGetProperty",
       "NodeIdsGetType",
-      "NodeIdsGetNeighborIds",
+      //"NodeIdsGetNeighborIds",
       "NodeIdsGetUniqueNeighborIds",
-      "NodeIdsGetNeighbors",
+      //"NodeIdsGetNeighbors",
 
       "NodeGet",
       "NodeGetConnected",
@@ -180,20 +187,20 @@ namespace ragedb {
       "NodeGetId",
       "NodeGetKey",
       "NodeGetLinks",
-      "NodeGetNeighbors",
-      "NodeGetNeighborIds",
+      //"NodeGetNeighbors",
+      //"NodeGetNeighborIds",
       "NodeGetProperties",
       "NodeGetProperty",
       "NodesGetPropertyRaw",
       "NodeGetRelationships",
-      "NodesGetNeighbors",
+      //"NodesGetNeighbors",
       "NodeGetType",
       "NodeTypeGet",
       "NodeTypeGetType",
       "NodeTypesGet",
       "NodeTypesGetCount",
 
-      "NodesGetNeighborIds",
+      //"NodesGetNeighborIds",
 
       "RelationshipGet",
       "RelationshipGetEndingNodeId",

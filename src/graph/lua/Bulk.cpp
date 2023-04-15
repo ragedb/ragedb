@@ -22,15 +22,15 @@ namespace ragedb {
         return sol::as_nested(LinksGetLinksPeered(links).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksForDirectionViaLua(std::vector<Link> links, Direction direction) {
+    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksViaLua(std::vector<Link> links, Direction direction) {
       return sol::as_nested(LinksGetLinksPeered(links, direction).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
       return sol::as_nested(LinksGetLinksPeered(links, direction, rel_type).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    sol::nested<std::map<Link, std::vector<Link>>> Shard::LinksGetLinksViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       return sol::as_nested(LinksGetLinksPeered(links, direction, rel_types).get0());
     }
 
@@ -38,15 +38,15 @@ namespace ragedb {
       return sol::as_nested(LinksGetRelationshipsPeered(links).get0());
     }
     
-    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionViaLua(std::vector<Link> links, Direction direction) {
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsViaLua(std::vector<Link> links, Direction direction) {
       return sol::as_nested(LinksGetRelationshipsPeered(links, direction).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
       return sol::as_nested(LinksGetRelationshipsPeered(links, direction, rel_type).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    sol::nested<std::map<Link, std::vector<Relationship>>> Shard::LinksGetRelationshipsViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       return sol::as_nested(LinksGetRelationshipsPeered(links, direction, rel_types).get0());
     }
 
@@ -54,15 +54,15 @@ namespace ragedb {
       return sol::as_nested(LinksGetNeighborsPeered(links).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForDirectionViaLua(std::vector<Link> links, Direction direction) {
+    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsViaLua(std::vector<Link> links, Direction direction) {
       return sol::as_nested(LinksGetNeighborsPeered(links, direction).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForDirectionForTypeViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
+    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsViaLua(std::vector<Link> links, Direction direction, const std::string& rel_type) {
       return sol::as_nested(LinksGetNeighborsPeered(links, direction, rel_type).get0());
     }
 
-    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsForDirectionForTypesViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
+    sol::nested<std::map<Link, std::vector<Node>>> Shard::LinksGetNeighborsViaLua(std::vector<Link> links, Direction direction, const std::vector<std::string> &rel_types) {
       return sol::as_nested(LinksGetNeighborsPeered(links, direction, rel_types).get0());
     }
 

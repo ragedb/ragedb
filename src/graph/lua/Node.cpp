@@ -38,7 +38,7 @@ namespace ragedb {
         return NodeGetPeered(type, key).get0();
     }
 
-    Node Shard::NodeGetByIdViaLua(uint64_t id) {
+    Node Shard::NodeGetViaLua(uint64_t id) {
         return NodeGetPeered(id).get0();
     }
 
@@ -46,7 +46,7 @@ namespace ragedb {
         return NodeRemovePeered(type, key).get0();
     }
 
-    bool Shard::NodeRemoveByIdViaLua(uint64_t id) {
+    bool Shard::NodeRemoveViaLua(uint64_t id) {
         return NodeRemovePeered(id).get0();
     }
 
@@ -63,7 +63,7 @@ namespace ragedb {
         return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
     }
 
-    sol::object Shard::NodeGetPropertiesByIdViaLua(uint64_t id) {
+    sol::object Shard::NodeGetPropertiesViaLua(uint64_t id) {
         Node node = NodeGetPeered(id).get0();
         return sol::make_object(lua.lua_state(), node.getPropertiesLua(lua.lua_state()));
     }
@@ -73,7 +73,7 @@ namespace ragedb {
         return PropertyToSolObject(value);
     }
 
-    sol::object Shard::NodeGetPropertyByIdViaLua(uint64_t id, const std::string& property) {
+    sol::object Shard::NodeGetPropertyViaLua(uint64_t id, const std::string& property) {
         property_type_t value = NodeGetPropertyPeered(id, property).get0();
         return PropertyToSolObject(value);
     }
@@ -111,7 +111,7 @@ namespace ragedb {
         return false;
     }
 
-    bool Shard::NodeSetPropertyByIdViaLua(uint64_t id, const std::string& property, const sol::object& value) {
+    bool Shard::NodeSetPropertyViaLua(uint64_t id, const std::string& property, const sol::object& value) {
         if (value == sol::lua_nil) {
             return false;
         }
@@ -136,7 +136,7 @@ namespace ragedb {
       return NodeSetPropertyFromJsonPeered(type, key, property, value).get0();
     }
 
-    bool Shard::NodeSetPropertyFromJsonByIdViaLua(uint64_t id, const std::string& property, const std::string& value) {
+    bool Shard::NodeSetPropertyFromJsonViaLua(uint64_t id, const std::string& property, const std::string& value) {
       return NodeSetPropertyFromJsonPeered(id, property, value).get0();
     }
 
@@ -144,7 +144,7 @@ namespace ragedb {
         return NodeSetPropertiesFromJsonPeered(type, key, value).get0();
     }
 
-    bool Shard::NodeSetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value) {
+    bool Shard::NodeSetPropertiesFromJsonViaLua(uint64_t id, const std::string& value) {
         return NodeSetPropertiesFromJsonPeered(id, value).get0();
     }
 
@@ -152,7 +152,7 @@ namespace ragedb {
         return NodeResetPropertiesFromJsonPeered(type, key, value).get0();
     }
 
-    bool Shard::NodeResetPropertiesFromJsonByIdViaLua(uint64_t id, const std::string& value) {
+    bool Shard::NodeResetPropertiesFromJsonViaLua(uint64_t id, const std::string& value) {
         return NodeResetPropertiesFromJsonPeered(id, value).get0();
     }
 
@@ -160,7 +160,7 @@ namespace ragedb {
         return NodeDeletePropertyPeered(type, key, property).get0();
     }
 
-    bool Shard::NodeDeletePropertyByIdViaLua(uint64_t id, const std::string& property) {
+    bool Shard::NodeDeletePropertyViaLua(uint64_t id, const std::string& property) {
         return NodeDeletePropertyPeered(id, property).get0();
     }
 
@@ -168,7 +168,7 @@ namespace ragedb {
         return NodeDeletePropertiesPeered(type, key).get0();
     }
 
-    bool Shard::NodeDeletePropertiesByIdViaLua(uint64_t id) {
+    bool Shard::NodeDeletePropertiesViaLua(uint64_t id) {
         return NodeDeletePropertiesPeered(id).get0();
     }
 
