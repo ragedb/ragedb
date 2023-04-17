@@ -24,6 +24,10 @@ namespace ragedb {
             return sol::make_object(ts, sol::nil);
         }
         auto type = disambiguate(args[0]);
+        if (type == id)
+            return sol::make_object(ts, NodeGetViaLua(args.get<uint64_t>()));
+        if (type == string)
+            return sol::make_object(ts, NodeGetViaLua(args.get<std::string>(), args.get<std::string>(1)));
         if (type == ids)
             return sol::make_object(ts, NodesGetViaLua(args.get<std::vector<uint64_t>>()));
         if (type == links)

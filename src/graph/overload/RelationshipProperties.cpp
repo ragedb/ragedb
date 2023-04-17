@@ -18,20 +18,20 @@
 
 namespace ragedb {
 
-sol::object Shard::RelationshipPropertiesOverload(sol::this_state ts, sol::variadic_args args) {
-    // If we have zero arguments, return nothing
-    if (args.size() == 0) {
+    sol::object Shard::RelationshipPropertiesOverload(sol::this_state ts, sol::variadic_args args) {
+        // If we have zero arguments, return nothing
+        if (args.size() == 0) {
+            return sol::make_object(ts, sol::nil);
+        }
+        auto type = disambiguate(args[0]);
+        if (type == id)
+            return sol::make_object(ts, RelationshipGetPropertiesViaLua(args.get<uint64_t>()));
+        if (type == ids)
+            return sol::make_object(ts, RelationshipsGetPropertiesViaLua(args.get<std::vector<uint64_t>>()));
+        if (type == links)
+            return sol::make_object(ts, RelationshipsGetPropertiesViaLua(args.get<std::vector<Link>>()));
+
         return sol::make_object(ts, sol::nil);
     }
-    auto type = disambiguate(args[0]);
-    if (type == id)
-        return sol::make_object(ts, RelationshipGetPropertiesViaLua(args.get<uint64_t>()));
-    if (type == ids)
-        return sol::make_object(ts, RelationshipsGetPropertiesViaLua(args.get<std::vector<uint64_t>>()));
-    if (type == links)
-        return sol::make_object(ts, RelationshipsGetPropertiesViaLua(args.get<std::vector<Link>>()));
-
-    return sol::make_object(ts, sol::nil);
-}
 
 }

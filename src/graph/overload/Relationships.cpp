@@ -46,6 +46,48 @@ namespace ragedb {
            default: return sol::make_object(ts, sol::nil);
            }
        }
+       if (type == string) {
+           switch (args.size()) {
+           case 1: return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<std::string>(), args.get<std::string>(1)));
+           case 2: {
+               auto type2 = disambiguate(args[2]);
+               if (type2 == direction)
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<Direction>(2)));
+               if (type2 == string)
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<std::string>(2)));
+               else
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<std::vector<std::string>>(2)));
+           }
+           case 3: {
+               if (disambiguate(args[3]) == string)
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<Direction>(2), args.get<std::string>(3)));
+               else
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<Direction>(2), args.get<std::vector<std::string>>(3)));
+           }
+           default: return sol::make_object(ts, sol::nil);
+           }
+       }
+       if (type == node) {
+           switch (args.size()) {
+           case 1: return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<Node>().getId()));
+           case 2: {
+               auto type2 = disambiguate(args[1]);
+               if (type2 == direction)
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<Node>().getId(), args.get<Direction>(1)));
+               if (type2 == string)
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<Node>().getId(), args.get<std::string>(1)));
+               else
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<Node>().getId(), args.get<std::vector<std::string>>(1)));
+           }
+           case 3: {
+               if (disambiguate(args[2]) == string)
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<Node>().getId(), args.get<Direction>(1), args.get<std::string>(2)));
+               else
+                   return sol::make_object(ts, NodeGetRelationshipsViaLua(args.get<Node>().getId(), args.get<Direction>(1), args.get<std::vector<std::string>>(2)));
+           }
+           default: return sol::make_object(ts, sol::nil);
+           }
+       }
     // TODO: Write NodeIdsGetRelationshipsViaLua
     //   if (type == ids) {
     //       switch (args.size()) {

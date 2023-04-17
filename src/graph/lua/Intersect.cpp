@@ -22,15 +22,25 @@ namespace ragedb {
         return IntersectIds(ids1, ids2).size();
     }
 
+    uint64_t Shard::IntersectNodesCountViaLua(std::vector<Node> ids1, std::vector<Node> ids2) {
+
+        return IntersectNodesPeered(ids1, ids2).get0().size();
+    }
+
+    uint64_t Shard::IntersectRelationshipsCountViaLua(std::vector<Relationship> ids1, std::vector<Relationship> ids2) {
+        return IntersectRelationshipsPeered(ids1, ids2).get0().size();
+    }
+
     sol::as_table_t<std::vector<uint64_t>> Shard::IntersectIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
         return sol::as_table(IntersectIds(ids1, ids2));
     }
 
-    sol::as_table_t<std::vector<Node>> Shard::IntersectNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
+    sol::as_table_t<std::vector<Node>> Shard::IntersectNodesViaLua(std::vector<Node> ids1, std::vector<Node> ids2) {
+
         return sol::as_table(IntersectNodesPeered(ids1, ids2).get0());
     }
 
-    sol::as_table_t<std::vector<Relationship>> Shard::IntersectRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2) {
+    sol::as_table_t<std::vector<Relationship>> Shard::IntersectRelationshipsViaLua(std::vector<Relationship> ids1, std::vector<Relationship> ids2) {
         return sol::as_table(IntersectRelationshipsPeered(ids1, ids2).get0());
     }
 }

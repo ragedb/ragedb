@@ -49,8 +49,12 @@ namespace ragedb {
         }
     }
 
-    size_t Shard::IntersectIdsCount(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
-        return IntersectIdsCount(sorted_ids.data(), sorted_ids.size(), sorted_ids2.data(), sorted_ids2.size());
+    size_t Shard::IntersectIdsCount(const std::vector<uint64_t> &ids1, const std::vector<uint64_t> &ids2) const {
+        std::vector<uint64_t> first(ids1);
+        std::vector<uint64_t> second(ids2);
+        std::sort(first.begin(), first.end());
+        std::sort(second.begin(), second.end());
+        return IntersectIdsCount(first.data(), first.size(), second.data(), second.size());
     }
 
     std::vector<uint64_t> Shard::IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const {
@@ -73,19 +77,67 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<uint64_t>> Shard::IntersectIdsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
-          return seastar::make_ready_future<std::vector<uint64_t>>(IntersectIds(ids1, ids2));
+          return seastar::make_ready_future<std::vector<uint64_t>>(IntersectUnsortedIds(ids1, ids2));
     }
 
     seastar::future<uint64_t> Shard::IntersectIdsCountPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
-          return seastar::make_ready_future<uint64_t>(IntersectIds(ids1, ids2).size());
+          return seastar::make_ready_future<uint64_t>(IntersectIdsCount(ids1, ids2));
     }
 
-    seastar::future<std::vector<Node>> Shard::IntersectNodesPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
-        return NodesGetPeered(IntersectIds(ids1, ids2));
+    seastar::future<std::vector<Node>> Shard::IntersectNodesPeered(const std::vector<Node>& nodes1, const std::vector<Node>& nodes2) {
+          std::vector<uint64_t> ids1, ids2;
+          std::vector<Node> result;
+          ids1.reserve(nodes1.size());
+          ids2.reserve(nodes2.size());
+          result.reserve(std::min(nodes1.size(), nodes2.size()));
+          for (const auto & node : nodes1) {
+            ids1.emplace_back(node.getId());
+          }
+          for (const auto & node : nodes2) {
+            ids2.emplace_back(node.getId());
+          }
+          std::unordered_map<uint64_t, Node> nodes;
+          if (ids1.size() > ids2.size()) {
+            for (const auto node : nodes2) {
+                nodes.insert({node.getId(), node});
+            }
+          } else {
+            for (const auto node : nodes1) {
+                nodes.insert({node.getId(), node});
+            }
+          }
+          for (const auto id : IntersectUnsortedIds(ids1, ids2)) {
+            result.emplace_back(nodes[id]);
+          }
+          return seastar::make_ready_future<std::vector<Node>>(result);
     }
 
-    seastar::future<std::vector<Relationship>> Shard::IntersectRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2) {
-        return RelationshipsGetPeered(IntersectIds(ids1, ids2));
+    seastar::future<std::vector<Relationship>> Shard::IntersectRelationshipsPeered(const std::vector<Relationship>& rels1, const std::vector<Relationship>& rels2) {
+          std::vector<uint64_t> ids1, ids2;
+          std::vector<Relationship> result;
+          ids1.reserve(rels1.size());
+          ids2.reserve(rels2.size());
+          result.reserve(std::min(rels1.size(), rels2.size()));
+          for (const auto & node : rels1) {
+            ids1.emplace_back(node.getId());
+          }
+          for (const auto & node : rels2) {
+            ids2.emplace_back(node.getId());
+          }
+          std::unordered_map<uint64_t, Relationship> rels;
+          if (ids1.size() > ids2.size()) {
+            for (const auto node : rels2) {
+                rels.insert({node.getId(), node});
+            }
+          } else {
+            for (const auto node : rels1) {
+                rels.insert({node.getId(), node});
+            }
+          }
+          for (const auto id : IntersectUnsortedIds(ids1, ids2)) {
+            result.emplace_back(rels[id]);
+          }
+          return seastar::make_ready_future<std::vector<Relationship>>(result);
     }
 }
 

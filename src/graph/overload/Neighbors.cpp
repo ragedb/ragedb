@@ -46,6 +46,48 @@ namespace ragedb {
             default: return sol::make_object(ts, sol::nil);
             }
         }
+        if (type == string) {
+            switch (args.size()) {
+            case 1: return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<std::string>(), args.get<std::string>(1)));
+            case 2: {
+                auto type2 = disambiguate(args[2]);
+                if (type2 == direction)
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<Direction>(2)));
+                if (type2 == string)
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<std::string>(), args.get<std::string>(1), Direction::BOTH, args.get<std::string>(2)));
+                else
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<std::string>(), args.get<std::string>(1), Direction::BOTH, args.get<std::vector<std::string>>(2)));
+            }
+            case 3: {
+                if (disambiguate(args[3]) == string)
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<Direction>(2), args.get<std::string>(3)));
+                else
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<std::string>(), args.get<std::string>(1), args.get<Direction>(2), args.get<std::vector<std::string>>(3)));
+            }
+            default: return sol::make_object(ts, sol::nil);
+            }
+        }
+        if (type == node) {
+            switch (args.size()) {
+            case 1: return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<Node>().getId()));
+            case 2: {
+                auto type2 = disambiguate(args[1]);
+                if (type2 == direction)
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<Node>().getId(), args.get<Direction>(1)));
+                if (type2 == string)
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<Node>().getId(), Direction::BOTH, args.get<std::string>(1)));
+                else
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<Node>().getId(), Direction::BOTH, args.get<std::vector<std::string>>(1)));
+            }
+            case 3: {
+                if (disambiguate(args[2]) == string)
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<Node>().getId(), args.get<Direction>(1), args.get<std::string>(2)));
+                else
+                    return sol::make_object(ts, NodeGetNeighborsViaLua(args.get<Node>().getId(), args.get<Direction>(1), args.get<std::vector<std::string>>(2)));
+            }
+            default: return sol::make_object(ts, sol::nil);
+            }
+        }
         if (type == ids) {
             switch (args.size()) {
             case 1: return sol::make_object(ts, NodeIdsGetNeighborsViaLua(args.get<std::vector<uint64_t>>()));
@@ -84,6 +126,27 @@ namespace ragedb {
                     return sol::make_object(ts, LinksGetNeighborsViaLua(args.get<std::vector<Link>>(), args.get<Direction>(1), args.get<std::string>(2)));
                 else
                     return sol::make_object(ts, LinksGetNeighborsViaLua(args.get<std::vector<Link>>(), args.get<Direction>(1), args.get<std::vector<std::string>>(2)));
+            }
+            default: return sol::make_object(ts, sol::nil);
+            }
+        }
+        if (type == nodes) {
+            switch (args.size()) {
+            case 1: return sol::make_object(ts, NodesGetNeighborsViaLua(args.get<std::vector<Node>>()));
+            case 2: {
+                auto type2 = disambiguate(args[1]);
+                if (type2 == direction)
+                    return sol::make_object(ts, NodesGetNeighborsViaLua(args.get<std::vector<Node>>(), args.get<Direction>(1)));
+                if (type2 == string)
+                    return sol::make_object(ts, NodesGetNeighborsViaLua(args.get<std::vector<Node>>(), Direction::BOTH, args.get<std::string>(1)));
+                else
+                    return sol::make_object(ts, NodesGetNeighborsViaLua(args.get<std::vector<Node>>(), Direction::BOTH, args.get<std::vector<std::string>>(1)));
+            }
+            case 3: {
+                if (disambiguate(args[2]) == string)
+                    return sol::make_object(ts, NodesGetNeighborsViaLua(args.get<std::vector<Node>>(), args.get<Direction>(1), args.get<std::string>(2)));
+                else
+                    return sol::make_object(ts, NodesGetNeighborsViaLua(args.get<std::vector<Node>>(), args.get<Direction>(1), args.get<std::vector<std::string>>(2)));
             }
             default: return sol::make_object(ts, sol::nil);
             }

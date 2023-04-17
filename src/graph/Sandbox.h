@@ -143,10 +143,8 @@ namespace ragedb {
       "FindRelationshipIds",
       "FindRelationships",
 
-      "IntersectUnsortedIds",
-      "IntersectNodes",
-      "IntersectRelationships",
-      "IntersectIdsCount",
+      "Intersect",
+      "IntersectCount",
 
       "Invert"
 
@@ -155,46 +153,18 @@ namespace ragedb {
       "KHopNodes",
 
       "LinksGetLinks",
-      //"LinksGetNeighbors",
-      //"LinksGetNeighborIds",
-      "LinksGetRelationships",
-      "LinksGetRelationshipsIds",
 
-        // TODO: Replace these with overloads once Sol allows vector overloads
-      "LinksGetNode",
-      "LinksGetNodeKey",
-      "LinksGetNodeType",
-      "LinksGetNodeProperty",
-      "LinksGetNodeProperties",
-
-      "LinksGetRelationship",
-      "LinksGetRelationshipType",
-      "LinksGetRelationshipProperty",
-      "LinksGetRelationshipProperties",
-
-      "NodeIdsGet",
-      "NodeIdsGetKey",
-      "NodeIdsGetProperties",
-      "NodeIdsGetProperty",
-      "NodeIdsGetType",
-      //"NodeIdsGetNeighborIds",
       "NodeIdsGetUniqueNeighborIds",
-      //"NodeIdsGetNeighbors",
 
       "NodeGet",
-      "NodeGetConnected",
+      "Connected",
       "NodeGetDegree",
       "NodeGetId",
-      "NodeGetKey",
       "NodeGetLinks",
-      //"NodeGetNeighbors",
-      //"NodeGetNeighborIds",
-      "NodeGetProperties",
       "NodeGetProperty",
       "NodesGetPropertyRaw",
       "NodeGetRelationships",
-      //"NodesGetNeighbors",
-      "NodeGetType",
+
       "NodeTypeGet",
       "NodeTypeGetType",
       "NodeTypesGet",
@@ -213,10 +183,6 @@ namespace ragedb {
       "RelationshipTypesGet",
       "RelationshipTypesGetCount",
 
-      "RelationshipsGet",
-      "RelationshipsGetProperties",
-      "RelationshipsGetProperty",
-      "RelationshipsGetType",
       "TriangleCount"
     };
 

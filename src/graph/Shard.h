@@ -748,8 +748,8 @@ namespace ragedb {
         // Intersect
         seastar::future<std::vector<uint64_t>> IntersectIdsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
         seastar::future<uint64_t> IntersectIdsCountPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        seastar::future<std::vector<Node>> IntersectNodesPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
-        seastar::future<std::vector<Relationship>> IntersectRelationshipsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
+        seastar::future<std::vector<Node>> IntersectNodesPeered(const std::vector<Node>& ids1, const std::vector<Node>& ids2);
+        seastar::future<std::vector<Relationship>> IntersectRelationshipsPeered(const std::vector<Relationship>& ids1, const std::vector<Relationship>& ids2);
 
         // Difference
         seastar::future<std::vector<uint64_t>> DifferenceIdsPeered(const std::vector<uint64_t>& ids1, const std::vector<uint64_t>& ids2);
@@ -1070,9 +1070,11 @@ namespace ragedb {
 
         // Intersect
         sol::as_table_t<std::vector<uint64_t>> IntersectIdsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
-        sol::as_table_t<std::vector<Node>> IntersectNodesViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
-        sol::as_table_t<std::vector<Relationship>> IntersectRelationshipsViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        sol::as_table_t<std::vector<Node>> IntersectNodesViaLua(std::vector<Node> ids1, std::vector<Node> ids2);
+        sol::as_table_t<std::vector<Relationship>> IntersectRelationshipsViaLua(std::vector<Relationship> ids1, std::vector<Relationship> ids2);
         uint64_t IntersectIdsCountViaLua(std::vector<uint64_t> ids1, std::vector<uint64_t> ids2);
+        uint64_t IntersectNodesCountViaLua(std::vector<Node> ids1, std::vector<Node> ids2);
+        uint64_t IntersectRelationshipsCountViaLua(std::vector<Relationship> ids1, std::vector<Relationship> ids2);
 
         // Invert
         sol::nested<std::map<uint64_t, std::vector<uint64_t>>> InvertViaLua(const std::map<uint64_t, std::vector<uint64_t>> &map);
@@ -1166,7 +1168,7 @@ namespace ragedb {
 
         [[maybe_unused]] void insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &group) const;
 
-        std::vector<uint64_t> IntersectIds(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids_2) const;
+        std::vector<uint64_t> IntersectIds(const std::vector<uint64_t> &ids1, const std::vector<uint64_t> &ids2) const;
         size_t IntersectIdsCount(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const;
         size_t IntersectIdsCount(const uint64_t *A, const size_t lenA, const uint64_t *B, const size_t lenB) const;
 
@@ -1183,8 +1185,13 @@ namespace ragedb {
         sol::object RelationshipPropertyOverload(sol::this_state ts, sol::variadic_args args);
         sol::object RelationshipPropertiesOverload(sol::this_state ts, sol::variadic_args args);
 
+        sol::object DegreeOverload(sol::this_state ts, sol::variadic_args args);
         sol::object NeighborsOverload(sol::this_state ts, sol::variadic_args args);
+        sol::object NeighborIdsOverload(sol::this_state ts, sol::variadic_args args);
         sol::object RelationshipsOverload(sol::this_state ts, sol::variadic_args args);
+
+        sol::object IntersectOverload(sol::this_state ts, sol::variadic_args args);
+        sol::object IntersectCountOverload(sol::this_state ts, sol::variadic_args args);
 
   };
 }

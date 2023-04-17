@@ -33,6 +33,8 @@ namespace ragedb {
         links,
         node,
         nodes,
+        relationship,
+        relationships,
         unknown
     };
 
