@@ -1186,6 +1186,7 @@ namespace ragedb {
         sol::object RelationshipPropertiesOverload(sol::this_state ts, sol::variadic_args args);
 
         sol::object DegreeOverload(sol::this_state ts, sol::variadic_args args);
+        sol::object LinksOverload(sol::this_state ts, sol::variadic_args args);
         sol::object NeighborsOverload(sol::this_state ts, sol::variadic_args args);
         sol::object NeighborIdsOverload(sol::this_state ts, sol::variadic_args args);
         sol::object RelationshipsOverload(sol::this_state ts, sol::variadic_args args);

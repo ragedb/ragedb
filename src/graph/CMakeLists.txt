@@ -69,6 +69,6 @@ set(SOURCE_FILES
         overload/Neighbors.cpp overload/Node.cpp overload/Key.cpp overload/Type.cpp
         overload/Property.cpp overload/Properties.cpp overload/Relationships.cpp overload/Relationship.cpp
         overload/RelationshipType.cpp overload/RelationshipProperties.cpp overload/RelationshipProperty.cpp
-        overload/Disambiguate.cpp overload/NeighborIds.cpp overload/Degree.cpp overload/Intersect.cpp)
+        overload/Disambiguate.cpp overload/NeighborIds.cpp overload/Degree.cpp overload/Intersect.cpp overload/Links.cpp)
 
 add_library(Graph ${SOURCE_FILES} ${HEADER_FILES})
