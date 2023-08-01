@@ -17,11 +17,7 @@
 #ifndef RAGEDB_COLLECTINDEXES_H
 #define RAGEDB_COLLECTINDEXES_H
 
-#include <eve/algo/concepts.hpp>
-#include <eve/algo/for_each.hpp>
-#include <eve/views/iota.hpp>
-#include <eve/views/zip.hpp>
-
+#include <eve/module/algo.hpp>
 #include <eve/module/core.hpp>
 
 #include <concepts>
@@ -99,7 +95,7 @@ void collect_indexes(R&& r, P p, std::vector<IdxType, Alloc>& res)
           auto test = p(elems);
 
           // We don't know what was the result of applying a predicate to garbage, we need to mask it.
-          test = eve::replace_ignored(test, ignore, false);
+          test = eve::replace_ignored(test, ignore, eve::false_);
 
           // unsafe(compress_store) - write elements marked as true to the output.
           // the elements are packed together to the left.

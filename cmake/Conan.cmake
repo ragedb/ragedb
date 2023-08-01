@@ -18,22 +18,22 @@ macro(run_conan)
     ${CONAN_EXTRA_REQUIRES}
     catch2/2.13.10
     docopt.cpp/0.6.3
-    fmt/9.1.0
-    spdlog/1.11.0
+    fmt/10.0.0
+    spdlog/1.12.0
 #   sol2/3.2.3-luajit
     sol2/3.3.0-exhaustive
     tsl-sparse-map/0.6.2
-    simdjson/2.2.2
-    rapidcsv/8.64
+    simdjson/3.2.1
+    rapidcsv/8.77
     vincentlaucsb-csv-parser/2.1.3
-    roaring/0.8.0
-    jfalcou-eve/v2022.09.1
+    roaring/1.3.0
+    jfalcou-eve/v2023.02.15
     cppcodec/0.2
-    cpr/1.10.1
-    boost/1.81.0
-    unordered_dense/4.0.0
+    cpr/1.10.4
+    boost/1.82.0
+    unordered_dense/4.0.1
 #    reckless/3.0.3  # temporarily removing logging until ARM issue is figured out
-    benchmark/1.7.1
+    benchmark/1.8.2
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP
