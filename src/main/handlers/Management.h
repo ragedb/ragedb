@@ -74,7 +74,7 @@ class Management {
 public:
   Management(Databases &_databases) : databases(_databases), getDatabasesHandler(*this), getDatabaseHandler(*this),
                                       postDatabaseHandler(*this), putDatabaseHandler(*this), deleteDatabaseHandler(*this) {}
-  void set_routes(seastar::routes& routes);
+  void set_routes(seastar::httpd::routes& routes);
 };
 
 

@@ -19,31 +19,31 @@
 #include "Utilities.h"
 #include "../json/JSON.h"
 
-void Relationships::set_routes(seastar::routes &routes) {
+void Relationships::set_routes(seastar::httpd::routes &routes) {
 
-    auto getRelationships = new seastar::match_rule(&getRelationshipsHandler);
+    auto getRelationships = new seastar::httpd::match_rule(&getRelationshipsHandler);
     getRelationships->add_str("/db/" + graph.GetName() + "/relationships");
-    routes.add(getRelationships, seastar::operation_type::GET);
+    routes.add(getRelationships, seastar::httpd::operation_type::GET);
 
-    auto getRelationshipsOfType = new seastar::match_rule(&getRelationshipsOfTypeHandler);
+    auto getRelationshipsOfType = new seastar::httpd::match_rule(&getRelationshipsOfTypeHandler);
     getRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
     getRelationshipsOfType->add_param("type");
-    routes.add(getRelationshipsOfType, seastar::operation_type::GET);
+    routes.add(getRelationshipsOfType, seastar::httpd::operation_type::GET);
 
-    auto getRelationship = new seastar::match_rule(&getRelationshipHandler);
+    auto getRelationship = new seastar::httpd::match_rule(&getRelationshipHandler);
     getRelationship->add_str("/db/" + graph.GetName() + "/relationship");
     getRelationship->add_param("id");
-    routes.add(getRelationship, seastar::operation_type::GET);
+    routes.add(getRelationship, seastar::httpd::operation_type::GET);
 
-    auto postRelationshipById = new seastar::match_rule(&postRelationshipByIdHandler);
+    auto postRelationshipById = new seastar::httpd::match_rule(&postRelationshipByIdHandler);
     postRelationshipById->add_str("/db/" + graph.GetName() + "/node");
     postRelationshipById->add_param("id");
     postRelationshipById->add_str("/relationship");
     postRelationshipById->add_param("id2");
     postRelationshipById->add_param("rel_type");
-    routes.add(postRelationshipById, seastar::operation_type::POST);
+    routes.add(postRelationshipById, seastar::httpd::operation_type::POST);
 
-    auto postRelationship = new seastar::match_rule(&postRelationshipHandler);
+    auto postRelationship = new seastar::httpd::match_rule(&postRelationshipHandler);
     postRelationship->add_str("/db/" + graph.GetName() + "/node");
     postRelationship->add_param("type");
     postRelationship->add_param("key");
@@ -51,34 +51,34 @@ void Relationships::set_routes(seastar::routes &routes) {
     postRelationship->add_param("type2");
     postRelationship->add_param("key2");
     postRelationship->add_param("rel_type");
-    routes.add(postRelationship, seastar::operation_type::POST);
+    routes.add(postRelationship, seastar::httpd::operation_type::POST);
 
-    auto deleteRelationship = new seastar::match_rule(&deleteRelationshipHandler);
+    auto deleteRelationship = new seastar::httpd::match_rule(&deleteRelationshipHandler);
     deleteRelationship->add_str("/db/" + graph.GetName() + "/relationship");
     deleteRelationship->add_param("id");
-    routes.add(deleteRelationship, seastar::operation_type::DELETE);
+    routes.add(deleteRelationship, seastar::httpd::operation_type::DELETE);
 
-    auto getRelationshipsById = new seastar::match_rule(&getNodeRelationshipsByIdHandler);
+    auto getRelationshipsById = new seastar::httpd::match_rule(&getNodeRelationshipsByIdHandler);
     getRelationshipsById->add_str("/db/" + graph.GetName() + "/node");
     getRelationshipsById->add_param("id");
     getRelationshipsById->add_str("/relationships");
     getRelationshipsById->add_param("options", true);
-    routes.add(getRelationshipsById, seastar::operation_type::GET);
+    routes.add(getRelationshipsById, seastar::httpd::operation_type::GET);
 
-    auto getNodeRelationships = new seastar::match_rule(&getNodeRelationshipsHandler);
+    auto getNodeRelationships = new seastar::httpd::match_rule(&getNodeRelationshipsHandler);
     getNodeRelationships->add_str("/db/" + graph.GetName() + "/node");
     getNodeRelationships->add_param("type");
     getNodeRelationships->add_param("key");
     getNodeRelationships->add_str("/relationships");
     getNodeRelationships->add_param("options", true);
-    routes.add(getNodeRelationships, seastar::operation_type::GET);
+    routes.add(getNodeRelationships, seastar::httpd::operation_type::GET);
 
-    auto findRelationshipsOfType = new seastar::match_rule(&findRelationshipsOfTypeHandler);
+    auto findRelationshipsOfType = new seastar::httpd::match_rule(&findRelationshipsOfTypeHandler);
     findRelationshipsOfType->add_str("/db/" + graph.GetName() + "/relationships");
     findRelationshipsOfType->add_param("type");
     findRelationshipsOfType->add_param("property");
     findRelationshipsOfType->add_param("operation");
-    routes.add(findRelationshipsOfType, seastar::operation_type::POST);
+    routes.add(findRelationshipsOfType, seastar::httpd::operation_type::POST);
 }
 
 future<std::unique_ptr<seastar::http::reply>> Relationships::GetRelationshipsHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

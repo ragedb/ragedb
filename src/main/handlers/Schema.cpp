@@ -21,92 +21,92 @@
 #include "../json/JSON.h"
 #include <seastar/json/formatter.hh>
 
-void Schema::set_routes(seastar::routes &routes) {
-    auto clearGraph = new seastar::match_rule(&clearGraphHandler);
+void Schema::set_routes(seastar::httpd::routes &routes) {
+    auto clearGraph = new seastar::httpd::match_rule(&clearGraphHandler);
     clearGraph->add_str("/db/" + graph.GetName() + "/schema");
-    routes.add(clearGraph, seastar::operation_type::DELETE);
+    routes.add(clearGraph, seastar::httpd::operation_type::DELETE);
 
-    auto getNodeTypes = new seastar::match_rule(&getNodeTypesHandler);
+    auto getNodeTypes = new seastar::httpd::match_rule(&getNodeTypesHandler);
     getNodeTypes->add_str("/db/" + graph.GetName() + "/schema/nodes");
-    routes.add(getNodeTypes, seastar::operation_type::GET);
+    routes.add(getNodeTypes, seastar::httpd::operation_type::GET);
 
-    auto getRelationshipTypes = new seastar::match_rule(&getRelationshipTypesHandler);
+    auto getRelationshipTypes = new seastar::httpd::match_rule(&getRelationshipTypesHandler);
     getRelationshipTypes->add_str("/db/" + graph.GetName() + "/schema/relationships");
-    routes.add(getRelationshipTypes, seastar::operation_type::GET);
+    routes.add(getRelationshipTypes, seastar::httpd::operation_type::GET);
 
-    auto getNodeType = new seastar::match_rule(&getNodeTypeHandler);
+    auto getNodeType = new seastar::httpd::match_rule(&getNodeTypeHandler);
     getNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
     getNodeType->add_param("type");
-    routes.add(getNodeType, seastar::operation_type::GET);
+    routes.add(getNodeType, seastar::httpd::operation_type::GET);
 
-    auto postNodeType = new seastar::match_rule(&postNodeTypeHandler);
+    auto postNodeType = new seastar::httpd::match_rule(&postNodeTypeHandler);
     postNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
     postNodeType->add_param("type");
-    routes.add(postNodeType, seastar::operation_type::POST);
+    routes.add(postNodeType, seastar::httpd::operation_type::POST);
 
-    auto deleteNodeType = new seastar::match_rule(&deleteNodeTypeHandler);
+    auto deleteNodeType = new seastar::httpd::match_rule(&deleteNodeTypeHandler);
     deleteNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
     deleteNodeType->add_param("type");
-    routes.add(deleteNodeType, seastar::operation_type::DELETE);
+    routes.add(deleteNodeType, seastar::httpd::operation_type::DELETE);
 
-    auto getRelationshipType = new seastar::match_rule(&getRelationshipTypeHandler);
+    auto getRelationshipType = new seastar::httpd::match_rule(&getRelationshipTypeHandler);
     getRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships");
     getRelationshipType->add_param("type");
-    routes.add(getRelationshipType, seastar::operation_type::GET);
+    routes.add(getRelationshipType, seastar::httpd::operation_type::GET);
 
-    auto postRelationshipType = new seastar::match_rule(&postRelationshipTypeHandler);
+    auto postRelationshipType = new seastar::httpd::match_rule(&postRelationshipTypeHandler);
     postRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships");
     postRelationshipType->add_param("type");
-    routes.add(postRelationshipType, seastar::operation_type::POST);
+    routes.add(postRelationshipType, seastar::httpd::operation_type::POST);
 
-    auto deleteRelationshipType = new seastar::match_rule(&deleteRelationshipTypeHandler);
+    auto deleteRelationshipType = new seastar::httpd::match_rule(&deleteRelationshipTypeHandler);
     deleteRelationshipType->add_str("/db/" + graph.GetName() + "/schema/relationships");
     deleteRelationshipType->add_param("type");
-    routes.add(deleteRelationshipType, seastar::operation_type::DELETE);
+    routes.add(deleteRelationshipType, seastar::httpd::operation_type::DELETE);
 
-    auto getNodeTypeProperty = new seastar::match_rule(&getNodeTypePropertyHandler);
+    auto getNodeTypeProperty = new seastar::httpd::match_rule(&getNodeTypePropertyHandler);
     getNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
     getNodeTypeProperty->add_param("type");
     getNodeTypeProperty->add_str("/properties");
     getNodeTypeProperty->add_param("property");
-    routes.add(getNodeTypeProperty, seastar::operation_type::GET);
+    routes.add(getNodeTypeProperty, seastar::httpd::operation_type::GET);
 
-    auto postNodeTypeProperty = new seastar::match_rule(&postNodeTypePropertyHandler);
+    auto postNodeTypeProperty = new seastar::httpd::match_rule(&postNodeTypePropertyHandler);
     postNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
     postNodeTypeProperty->add_param("type");
     postNodeTypeProperty->add_str("/properties");
     postNodeTypeProperty->add_param("property");
     postNodeTypeProperty->add_param("data_type");
-    routes.add(postNodeTypeProperty, seastar::operation_type::POST);
+    routes.add(postNodeTypeProperty, seastar::httpd::operation_type::POST);
 
-    auto deleteNodeTypeProperty = new seastar::match_rule(&deleteNodeTypePropertyHandler);
+    auto deleteNodeTypeProperty = new seastar::httpd::match_rule(&deleteNodeTypePropertyHandler);
     deleteNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
     deleteNodeTypeProperty->add_param("type");
     deleteNodeTypeProperty->add_str("/properties");
     deleteNodeTypeProperty->add_param("property");
-    routes.add(deleteNodeTypeProperty, seastar::operation_type::DELETE);
+    routes.add(deleteNodeTypeProperty, seastar::httpd::operation_type::DELETE);
 
-    auto getRelationshipTypeProperty = new seastar::match_rule(&getRelationshipTypePropertyHandler);
+    auto getRelationshipTypeProperty = new seastar::httpd::match_rule(&getRelationshipTypePropertyHandler);
     getRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships");
     getRelationshipTypeProperty->add_param("type");
     getRelationshipTypeProperty->add_str("/properties");
     getRelationshipTypeProperty->add_param("property");
-    routes.add(getRelationshipTypeProperty, seastar::operation_type::GET);
+    routes.add(getRelationshipTypeProperty, seastar::httpd::operation_type::GET);
 
-    auto postRelationshipTypeProperty = new seastar::match_rule(&postRelationshipTypePropertyHandler);
+    auto postRelationshipTypeProperty = new seastar::httpd::match_rule(&postRelationshipTypePropertyHandler);
     postRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships");
     postRelationshipTypeProperty->add_param("type");
     postRelationshipTypeProperty->add_str("/properties");
     postRelationshipTypeProperty->add_param("property");
     postRelationshipTypeProperty->add_param("data_type");
-    routes.add(postRelationshipTypeProperty, seastar::operation_type::POST);
+    routes.add(postRelationshipTypeProperty, seastar::httpd::operation_type::POST);
 
-    auto deleteRelationshipTypeProperty = new seastar::match_rule(&deleteRelationshipTypePropertyHandler);
+    auto deleteRelationshipTypeProperty = new seastar::httpd::match_rule(&deleteRelationshipTypePropertyHandler);
     deleteRelationshipTypeProperty->add_str("/db/" + graph.GetName() + "/schema/relationships");
     deleteRelationshipTypeProperty->add_param("type");
     deleteRelationshipTypeProperty->add_str("/properties");
     deleteRelationshipTypeProperty->add_param("property");
-    routes.add(deleteRelationshipTypeProperty, seastar::operation_type::DELETE);
+    routes.add(deleteRelationshipTypeProperty, seastar::httpd::operation_type::DELETE);
 
 }
 

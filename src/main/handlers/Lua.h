@@ -58,7 +58,7 @@ class Lua {
 
 public:
     explicit Lua (ragedb::Graph &_graph) : graph(_graph), postLuaHandler(*this), postLuaRWHandler(*this), postLuaROHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 

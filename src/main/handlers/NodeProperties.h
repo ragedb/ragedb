@@ -160,7 +160,7 @@ public:
                                             postNodePropertiesHandler(*this), putNodePropertiesHandler(*this),
                                             postNodePropertiesByIdHandler(*this), putNodePropertiesByIdHandler(*this),
                                             deleteNodePropertiesHandler(*this), deleteNodePropertiesByIdHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 

@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
                 seastar::net::inet_address addr(config["address"].as<seastar::sstring>());
                 uint16_t port = config["port"].as<uint16_t>();
 
-                seastar::http_server_control srv;
+                seastar::httpd::http_server_control srv;
                 auto server = &srv;
                 server->start().get();
                 Databases databases(server);
@@ -58,20 +58,20 @@ int main(int argc, char** argv) {
                 Utilities utilities;
 
                 Management dbms(databases);
-                server->set_routes([&dbms](seastar::routes &r) { dbms.set_routes(r); }).get();
+                server->set_routes([&dbms](seastar::httpd::routes &r) { dbms.set_routes(r); }).get();
 
-                server->set_routes([](seastar::routes &r) {
-                        r.add(seastar::operation_type::GET,
-                          seastar::url("/hello"),
-                          new seastar::function_handler([]([[maybe_unused]] seastar::const_req req) {
+                server->set_routes([](seastar::httpd::routes &r) {
+                        r.add(seastar::httpd::operation_type::GET,
+                          seastar::httpd::url("/hello"),
+                          new seastar::httpd::function_handler([]([[maybe_unused]] seastar::httpd::const_req req) {
                             return "hello";
                           }));
                       })
                   .get();
 
-                server->set_routes([](seastar::routes &r) {
-                  r.add(seastar::httpd::operation_type::GET, seastar::url("").remainder("path"),
-                    new seastar::directory_handler("./public/"));
+                server->set_routes([](seastar::httpd::routes &r) {
+                  r.add(seastar::httpd::operation_type::GET, seastar::httpd::url("").remainder("path"),
+                    new seastar::httpd::directory_handler("./public/"));
                 }).get();
 
 

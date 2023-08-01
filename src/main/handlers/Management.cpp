@@ -18,30 +18,30 @@
 #include "Utilities.h"
 #include "../json/JSON.h"
 
-void Management::set_routes(seastar::routes &routes) {
-  auto getDatabases = new seastar::match_rule(&getDatabasesHandler);
+void Management::set_routes(seastar::httpd::routes &routes) {
+  auto getDatabases = new seastar::httpd::match_rule(&getDatabasesHandler);
   getDatabases->add_str("/dbs");
-  routes.add(getDatabases, seastar::operation_type::GET);
+  routes.add(getDatabases, seastar::httpd::operation_type::GET);
   
-  auto getDatabase = new seastar::match_rule(&getDatabaseHandler);
+  auto getDatabase = new seastar::httpd::match_rule(&getDatabaseHandler);
   getDatabase->add_str("/dbs");
   getDatabase->add_param("key");
-  routes.add(getDatabase, seastar::operation_type::GET);
+  routes.add(getDatabase, seastar::httpd::operation_type::GET);
   
-  auto postDatabase = new seastar::match_rule(&postDatabaseHandler);
+  auto postDatabase = new seastar::httpd::match_rule(&postDatabaseHandler);
   postDatabase->add_str("/dbs");
   postDatabase->add_param("key");
-  routes.add(postDatabase, seastar::operation_type::POST);
+  routes.add(postDatabase, seastar::httpd::operation_type::POST);
 
-  auto putDatabase = new seastar::match_rule(&putDatabaseHandler);
+  auto putDatabase = new seastar::httpd::match_rule(&putDatabaseHandler);
   putDatabase->add_str("/dbs");
   putDatabase->add_param("key");
-  routes.add(putDatabase, seastar::operation_type::PUT);
+  routes.add(putDatabase, seastar::httpd::operation_type::PUT);
 
-  auto deleteDatabase = new seastar::match_rule(&deleteDatabaseHandler);
+  auto deleteDatabase = new seastar::httpd::match_rule(&deleteDatabaseHandler);
   deleteDatabase->add_str("/dbs");
   deleteDatabase->add_param("key");
-  routes.add(deleteDatabase, seastar::operation_type::DELETE);
+  routes.add(deleteDatabase, seastar::httpd::operation_type::DELETE);
 }
 
 future<std::unique_ptr<seastar::http::reply>> Management::GetDatabasesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

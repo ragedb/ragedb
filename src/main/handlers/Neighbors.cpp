@@ -18,21 +18,21 @@
 #include "../json/JSON.h"
 #include "Neighbors.h"
 
-void Neighbors::set_routes(seastar::routes &routes) {
-    auto getNeighbors = new seastar::match_rule(&getNeighborsHandler);
+void Neighbors::set_routes(seastar::httpd::routes &routes) {
+    auto getNeighbors = new seastar::httpd::match_rule(&getNeighborsHandler);
     getNeighbors->add_str("/db/" + graph.GetName() + "/node");
     getNeighbors->add_param("type");
     getNeighbors->add_param("key");
     getNeighbors->add_str("/neighbors");
     getNeighbors->add_param("options", true);
-    routes.add(getNeighbors, seastar::operation_type::GET);
+    routes.add(getNeighbors, seastar::httpd::operation_type::GET);
 
-    auto getNeighborsById = new seastar::match_rule(&getNeighborsByIdHandler);
+    auto getNeighborsById = new seastar::httpd::match_rule(&getNeighborsByIdHandler);
     getNeighborsById->add_str("/db/" + graph.GetName() + "/node");
     getNeighborsById->add_param("id");
     getNeighborsById->add_str("/neighbors");
     getNeighborsById->add_param("options", true);
-    routes.add(getNeighborsById, seastar::operation_type::GET);
+    routes.add(getNeighborsById, seastar::httpd::operation_type::GET);
 }
 
 

@@ -18,51 +18,51 @@
 #include "Utilities.h"
 #include "../json/JSON.h"
 
-void Nodes::set_routes(seastar::routes &routes) {
+void Nodes::set_routes(seastar::httpd::routes &routes) {
 
-    auto getNodes = new seastar::match_rule(&getNodesHandler);
+    auto getNodes = new seastar::httpd::match_rule(&getNodesHandler);
     getNodes->add_str("/db/" + graph.GetName() + "/nodes");
-    routes.add(getNodes, seastar::operation_type::GET);
+    routes.add(getNodes, seastar::httpd::operation_type::GET);
 
-    auto getNodesOfType = new seastar::match_rule(&getNodesOfTypeHandler);
+    auto getNodesOfType = new seastar::httpd::match_rule(&getNodesOfTypeHandler);
     getNodesOfType->add_str("/db/" + graph.GetName() + "/nodes");
     getNodesOfType->add_param("type");
-    routes.add(getNodesOfType, seastar::operation_type::GET);
+    routes.add(getNodesOfType, seastar::httpd::operation_type::GET);
 
-    auto getNode = new seastar::match_rule(&getNodeHandler);
+    auto getNode = new seastar::httpd::match_rule(&getNodeHandler);
     getNode->add_str("/db/" + graph.GetName() + "/node");
     getNode->add_param("type");
     getNode->add_param("key");
-    routes.add(getNode, seastar::operation_type::GET);
+    routes.add(getNode, seastar::httpd::operation_type::GET);
 
-    auto getNodeById = new seastar::match_rule(&getNodeByIdHandler);
+    auto getNodeById = new seastar::httpd::match_rule(&getNodeByIdHandler);
     getNodeById->add_str("/db/" + graph.GetName() + "/node");
     getNodeById->add_param("id");
-    routes.add(getNodeById, seastar::operation_type::GET);
+    routes.add(getNodeById, seastar::httpd::operation_type::GET);
 
-    auto postNode = new seastar::match_rule(&postNodeHandler);
+    auto postNode = new seastar::httpd::match_rule(&postNodeHandler);
     postNode->add_str("/db/" + graph.GetName() + "/node");
     postNode->add_param("type");
     postNode->add_param("key");
-    routes.add(postNode, seastar::operation_type::POST);
+    routes.add(postNode, seastar::httpd::operation_type::POST);
 
-    auto deleteNode = new seastar::match_rule(&deleteNodeHandler);
+    auto deleteNode = new seastar::httpd::match_rule(&deleteNodeHandler);
     deleteNode->add_str("/db/" + graph.GetName() + "/node");
     deleteNode->add_param("type");
     deleteNode->add_param("key");
-    routes.add(deleteNode, seastar::operation_type::DELETE);
+    routes.add(deleteNode, seastar::httpd::operation_type::DELETE);
 
-    auto deleteNodeById = new seastar::match_rule(&deleteNodeByIdHandler);
+    auto deleteNodeById = new seastar::httpd::match_rule(&deleteNodeByIdHandler);
     deleteNodeById->add_str("/db/" + graph.GetName() + "/node");
     deleteNodeById->add_param("id");
-    routes.add(deleteNodeById, seastar::operation_type::DELETE);
+    routes.add(deleteNodeById, seastar::httpd::operation_type::DELETE);
 
-    auto findNodesOfType = new seastar::match_rule(&findNodesOfTypeHandler);
+    auto findNodesOfType = new seastar::httpd::match_rule(&findNodesOfTypeHandler);
     findNodesOfType->add_str("/db/" + graph.GetName() + "/nodes");
     findNodesOfType->add_param("type");
     findNodesOfType->add_param("property");
     findNodesOfType->add_param("operation");
-    routes.add(findNodesOfType, seastar::operation_type::POST);
+    routes.add(findNodesOfType, seastar::httpd::operation_type::POST);
 }
 
 future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodesHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

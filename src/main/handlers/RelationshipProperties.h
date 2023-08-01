@@ -95,7 +95,7 @@ public:
                                                     putRelationshipPropertyByIdHandler(*this),deleteRelationshipPropertyByIdHandler(*this),
                                                     getRelationshipPropertiesByIdHandler(*this), postRelationshipPropertiesByIdHandler(*this),
                                                     putRelationshipPropertiesByIdHandler(*this), deleteRelationshipPropertiesByIdHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 #endif //RAGEDB_RELATIONSHIPPROPERTIES_H

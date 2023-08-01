@@ -18,19 +18,19 @@
 
 const std::string EXCEPTION = "An exception has occurred: ";
 
-void Lua::set_routes(seastar::routes &routes) {
+void Lua::set_routes(seastar::httpd::routes &routes) {
 
-    auto postLua = new seastar::match_rule(&postLuaHandler);
+    auto postLua = new seastar::httpd::match_rule(&postLuaHandler);
     postLua->add_str("/db/" + graph.GetName() + "/lua");
-    routes.add(postLua, seastar::operation_type::POST);
+    routes.add(postLua, seastar::httpd::operation_type::POST);
 
-    auto postLuaRW = new seastar::match_rule(&postLuaRWHandler);
+    auto postLuaRW = new seastar::httpd::match_rule(&postLuaRWHandler);
     postLuaRW->add_str("/rw/" + graph.GetName() + "/lua");
-    routes.add(postLuaRW, seastar::operation_type::POST);
+    routes.add(postLuaRW, seastar::httpd::operation_type::POST);
 
-    auto postLuaRO = new seastar::match_rule(&postLuaROHandler);
+    auto postLuaRO = new seastar::httpd::match_rule(&postLuaROHandler);
     postLuaRO->add_str("/ro/" + graph.GetName() + "/lua");
-    routes.add(postLuaRO, seastar::operation_type::POST);
+    routes.add(postLuaRO, seastar::httpd::operation_type::POST);
 }
 
 bool forAll(std::string const &str) {

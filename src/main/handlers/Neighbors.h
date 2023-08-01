@@ -45,7 +45,7 @@ class Neighbors {
 
 public:
     explicit Neighbors (ragedb::Graph &_graph) : graph(_graph), getNeighborsHandler(*this), getNeighborsByIdHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 

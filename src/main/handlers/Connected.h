@@ -47,7 +47,7 @@ class Connected {
 
 public:
   explicit Connected(ragedb::Graph &_graph);
-  void set_routes(seastar::routes& routes);
+  void set_routes(seastar::httpd::routes& routes);
 };
 
 

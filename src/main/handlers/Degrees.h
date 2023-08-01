@@ -46,7 +46,7 @@ class Degrees {
 
 public:
     explicit Degrees (ragedb::Graph &_graph) : graph(_graph), getDegreeHandler(*this), getDegreeByIdHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 
 };
 

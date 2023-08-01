@@ -18,8 +18,8 @@
 #include "../json/JSON.h"
 #include "Connected.h"
 
-void Connected::set_routes(seastar::routes &routes) {
-  auto getConnected = new seastar::match_rule(&getConnectedHandler);
+void Connected::set_routes(seastar::httpd::routes &routes) {
+  auto getConnected = new seastar::httpd::match_rule(&getConnectedHandler);
   getConnected->add_str("/db/" + graph.GetName() + "/node");
   getConnected->add_param("type");
   getConnected->add_param("key");
@@ -27,15 +27,15 @@ void Connected::set_routes(seastar::routes &routes) {
   getConnected->add_param("type2");
   getConnected->add_param("key2");
   getConnected->add_param("options", true);
-  routes.add(getConnected, seastar::operation_type::GET);
+  routes.add(getConnected, seastar::httpd::operation_type::GET);
 
-  auto getConnectedById = new seastar::match_rule(&getConnectedByIdHandler);
+  auto getConnectedById = new seastar::httpd::match_rule(&getConnectedByIdHandler);
   getConnectedById->add_str("/db/" + graph.GetName() + "/node");
   getConnectedById->add_param("id");
   getConnectedById->add_str("/connected");
   getConnectedById->add_param("id2");
   getConnectedById->add_param("options", true);
-  routes.add(getConnectedById, seastar::operation_type::GET);
+  routes.add(getConnectedById, seastar::httpd::operation_type::GET);
 }
 
 future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

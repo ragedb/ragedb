@@ -16,10 +16,10 @@
 
 #include "HealthCheck.h"
 
-void HealthCheck::set_routes(seastar::routes &routes) {
-    auto healthCheck = new seastar::match_rule(&healthCheckHandler);
+void HealthCheck::set_routes(seastar::httpd::routes &routes) {
+    auto healthCheck = new seastar::httpd::match_rule(&healthCheckHandler);
     healthCheck->add_str("/db/" + graph.GetName() + "/health_check");
-    routes.add(healthCheck, seastar::operation_type::GET);
+    routes.add(healthCheck, seastar::httpd::operation_type::GET);
 }
 
 seastar::future<std::unique_ptr<seastar::http::reply>> HealthCheck::HealthCheckHandler::handle(

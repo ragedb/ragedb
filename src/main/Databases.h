@@ -22,10 +22,10 @@
 #include "Database.h"
 class Databases {
   std::map<std::string, Database> databases;
-  seastar::http_server_control* server;
+  seastar::httpd::http_server_control* server;
 
 public:
-  explicit Databases(seastar::http_server_control*& _server) : server(_server) {}
+  explicit Databases(seastar::httpd::http_server_control*& _server) : server(_server) {}
   std::vector<std::string> list() const;
   std::string get(std::string const &key);
   bool contains(std::string const &key) const;

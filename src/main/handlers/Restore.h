@@ -36,7 +36,7 @@ class Restore {
 
   public:
     explicit Restore(ragedb::Graph &_graph) : graph(_graph), restoreHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 

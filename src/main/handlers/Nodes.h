@@ -102,7 +102,7 @@ public:
     explicit Nodes (ragedb::Graph &_graph) : graph(_graph), getNodesHandler(*this), getNodesOfTypeHandler(*this),
     getNodeHandler(*this), getNodeByIdHandler(*this), postNodeHandler(*this), deleteNodeHandler(*this),
     deleteNodeByIdHandler(*this), findNodesOfTypeHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 #endif //RAGEDB_NODES_H

@@ -167,7 +167,7 @@ public:
                                      getRelationshipTypeHandler(*this), postRelationshipTypeHandler(*this), deleteRelationshipTypeHandler(*this),
                                      getNodeTypePropertyHandler(*this), postNodeTypePropertyHandler(*this), deleteNodeTypePropertyHandler(*this),
                                      getRelationshipTypePropertyHandler(*this), postRelationshipTypePropertyHandler(*this), deleteRelationshipTypePropertyHandler(*this){}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 

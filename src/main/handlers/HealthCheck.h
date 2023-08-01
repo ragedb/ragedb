@@ -36,7 +36,7 @@ class HealthCheck {
 
 public:
     explicit HealthCheck (ragedb::Graph &_graph) : graph(_graph), healthCheckHandler(*this) {}
-    void set_routes(seastar::routes& routes);
+    void set_routes(seastar::httpd::routes& routes);
 };
 
 

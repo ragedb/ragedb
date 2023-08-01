@@ -18,21 +18,21 @@
 #include "../json/JSON.h"
 #include "Degrees.h"
 
-void Degrees::set_routes(seastar::routes &routes) {
-    auto getDegree = new seastar::match_rule(&getDegreeHandler);
+void Degrees::set_routes(seastar::httpd::routes &routes) {
+    auto getDegree = new seastar::httpd::match_rule(&getDegreeHandler);
     getDegree->add_str("/db/" + graph.GetName() + "/node");
     getDegree->add_param("type");
     getDegree->add_param("key");
     getDegree->add_str("/degree");
     getDegree->add_param("options", true);
-    routes.add(getDegree, seastar::operation_type::GET);
+    routes.add(getDegree, seastar::httpd::operation_type::GET);
 
-    auto getDegreeById = new seastar::match_rule(&getDegreeByIdHandler);
+    auto getDegreeById = new seastar::httpd::match_rule(&getDegreeByIdHandler);
     getDegreeById->add_str("/db/" + graph.GetName() + "/node");
     getDegreeById->add_param("id");
     getDegreeById->add_str("/degree");
     getDegreeById->add_param("options", true);
-    routes.add(getDegreeById, seastar::operation_type::GET);
+    routes.add(getDegreeById, seastar::httpd::operation_type::GET);
 }
 
 future<std::unique_ptr<seastar::http::reply>> Degrees::GetDegreeHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

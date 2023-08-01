@@ -18,52 +18,52 @@
 #include "../json/JSON.h"
 #include "RelationshipProperties.h"
 
-void RelationshipProperties::set_routes(seastar::routes &routes) {
+void RelationshipProperties::set_routes(seastar::httpd::routes &routes) {
 
-    auto getRelationshipPropertyById = new seastar::match_rule(&getRelationshipPropertyByIdHandler);
+    auto getRelationshipPropertyById = new seastar::httpd::match_rule(&getRelationshipPropertyByIdHandler);
     getRelationshipPropertyById->add_str("/db/" + graph.GetName() + "/relationship");
     getRelationshipPropertyById->add_param("id");
     getRelationshipPropertyById->add_str("/property");
     getRelationshipPropertyById->add_param("property");
-    routes.add(getRelationshipPropertyById, seastar::operation_type::GET);
+    routes.add(getRelationshipPropertyById, seastar::httpd::operation_type::GET);
 
-    auto putRelationshipPropertyById = new seastar::match_rule(&putRelationshipPropertyByIdHandler);
+    auto putRelationshipPropertyById = new seastar::httpd::match_rule(&putRelationshipPropertyByIdHandler);
     putRelationshipPropertyById->add_str("/db/" + graph.GetName() + "/relationship");
     putRelationshipPropertyById->add_param("id");
     putRelationshipPropertyById->add_str("/property");
     putRelationshipPropertyById->add_param("property");
-    routes.add(putRelationshipPropertyById, seastar::operation_type::PUT);
+    routes.add(putRelationshipPropertyById, seastar::httpd::operation_type::PUT);
 
-    auto deleteRelationshipPropertyById = new seastar::match_rule(&deleteRelationshipPropertyByIdHandler);
+    auto deleteRelationshipPropertyById = new seastar::httpd::match_rule(&deleteRelationshipPropertyByIdHandler);
     deleteRelationshipPropertyById->add_str("/db/" + graph.GetName() + "/relationship");
     deleteRelationshipPropertyById->add_param("id");
     deleteRelationshipPropertyById->add_str("/property");
     deleteRelationshipPropertyById->add_param("property");
-    routes.add(deleteRelationshipPropertyById, seastar::operation_type::DELETE);
+    routes.add(deleteRelationshipPropertyById, seastar::httpd::operation_type::DELETE);
 
-    auto getRelationshipPropertiesById = new seastar::match_rule(&getRelationshipPropertiesByIdHandler);
+    auto getRelationshipPropertiesById = new seastar::httpd::match_rule(&getRelationshipPropertiesByIdHandler);
     getRelationshipPropertiesById->add_str("/db/" + graph.GetName() + "/relationship");
     getRelationshipPropertiesById->add_param("id");
     getRelationshipPropertiesById->add_str("/properties");
-    routes.add(getRelationshipPropertiesById, seastar::operation_type::GET);
+    routes.add(getRelationshipPropertiesById, seastar::httpd::operation_type::GET);
 
-    auto postRelationshipPropertiesById = new seastar::match_rule(&postRelationshipPropertiesByIdHandler);
+    auto postRelationshipPropertiesById = new seastar::httpd::match_rule(&postRelationshipPropertiesByIdHandler);
     postRelationshipPropertiesById->add_str("/db/" + graph.GetName() + "/relationship");
     postRelationshipPropertiesById->add_param("id");
     postRelationshipPropertiesById->add_str("/properties");
-    routes.add(postRelationshipPropertiesById, seastar::operation_type::POST);
+    routes.add(postRelationshipPropertiesById, seastar::httpd::operation_type::POST);
 
-    auto putRelationshipPropertiesById = new seastar::match_rule(&putRelationshipPropertiesByIdHandler);
+    auto putRelationshipPropertiesById = new seastar::httpd::match_rule(&putRelationshipPropertiesByIdHandler);
     putRelationshipPropertiesById->add_str("/db/" + graph.GetName() + "/relationship");
     putRelationshipPropertiesById->add_param("id");
     putRelationshipPropertiesById->add_str("/properties");
-    routes.add(putRelationshipPropertiesById, seastar::operation_type::PUT);
+    routes.add(putRelationshipPropertiesById, seastar::httpd::operation_type::PUT);
 
-    auto deleteRelationshipPropertiesById = new seastar::match_rule(&deleteRelationshipPropertiesByIdHandler);
+    auto deleteRelationshipPropertiesById = new seastar::httpd::match_rule(&deleteRelationshipPropertiesByIdHandler);
     deleteRelationshipPropertiesById->add_str("/db/" + graph.GetName() + "/relationship");
     deleteRelationshipPropertiesById->add_param("id");
     deleteRelationshipPropertiesById->add_str("/properties");
-    routes.add(deleteRelationshipPropertiesById, seastar::operation_type::DELETE);
+    routes.add(deleteRelationshipPropertiesById, seastar::httpd::operation_type::DELETE);
 }
 
 future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::GetRelationshipPropertyByIdHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

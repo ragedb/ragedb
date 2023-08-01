@@ -18,103 +18,103 @@
 #include "../json/JSON.h"
 #include "NodeProperties.h"
 
-void NodeProperties::set_routes(seastar::routes &routes) {
-    auto getNodeProperty = new seastar::match_rule(&getNodePropertyHandler);
+void NodeProperties::set_routes(seastar::httpd::routes &routes) {
+    auto getNodeProperty = new seastar::httpd::match_rule(&getNodePropertyHandler);
     getNodeProperty->add_str("/db/" + graph.GetName() + "/node");
     getNodeProperty->add_param("type");
     getNodeProperty->add_param("key");
     getNodeProperty->add_str("/property");
     getNodeProperty->add_param("property");
-    routes.add(getNodeProperty, seastar::operation_type::GET);
+    routes.add(getNodeProperty, seastar::httpd::operation_type::GET);
 
-    auto getNodePropertyById = new seastar::match_rule(&getNodePropertyByIdHandler);
+    auto getNodePropertyById = new seastar::httpd::match_rule(&getNodePropertyByIdHandler);
     getNodePropertyById->add_str("/db/" + graph.GetName() + "/node");
     getNodePropertyById->add_param("id");
     getNodePropertyById->add_str("/property");
     getNodePropertyById->add_param("property");
-    routes.add(getNodePropertyById, seastar::operation_type::GET);
+    routes.add(getNodePropertyById, seastar::httpd::operation_type::GET);
 
-    auto putNodeProperty = new seastar::match_rule(&putNodePropertyHandler);
+    auto putNodeProperty = new seastar::httpd::match_rule(&putNodePropertyHandler);
     putNodeProperty->add_str("/db/" + graph.GetName() + "/node");
     putNodeProperty->add_param("type");
     putNodeProperty->add_param("key");
     putNodeProperty->add_str("/property");
     putNodeProperty->add_param("property");
-    routes.add(putNodeProperty, seastar::operation_type::PUT);
+    routes.add(putNodeProperty, seastar::httpd::operation_type::PUT);
 
-    auto putNodePropertyById = new seastar::match_rule(&putNodePropertyByIdHandler);
+    auto putNodePropertyById = new seastar::httpd::match_rule(&putNodePropertyByIdHandler);
     putNodePropertyById->add_str("/db/" + graph.GetName() + "/node");
     putNodePropertyById->add_param("id");
     putNodePropertyById->add_str("/property");
     putNodePropertyById->add_param("property");
-    routes.add(putNodePropertyById, seastar::operation_type::PUT);
+    routes.add(putNodePropertyById, seastar::httpd::operation_type::PUT);
 
-    auto deleteNodeProperty = new seastar::match_rule(&deleteNodePropertyHandler);
+    auto deleteNodeProperty = new seastar::httpd::match_rule(&deleteNodePropertyHandler);
     deleteNodeProperty->add_str("/db/" + graph.GetName() + "/node");
     deleteNodeProperty->add_param("type");
     deleteNodeProperty->add_param("key");
     deleteNodeProperty->add_str("/property");
     deleteNodeProperty->add_param("property");
-    routes.add(deleteNodeProperty, seastar::operation_type::DELETE);
+    routes.add(deleteNodeProperty, seastar::httpd::operation_type::DELETE);
 
-    auto deleteNodePropertyById = new seastar::match_rule(&deleteNodePropertyByIdHandler);
+    auto deleteNodePropertyById = new seastar::httpd::match_rule(&deleteNodePropertyByIdHandler);
     deleteNodePropertyById->add_str("/db/" + graph.GetName() + "/node");
     deleteNodePropertyById->add_param("id");
     deleteNodePropertyById->add_str("/property");
     deleteNodePropertyById->add_param("property");
-    routes.add(deleteNodePropertyById, seastar::operation_type::DELETE);
+    routes.add(deleteNodePropertyById, seastar::httpd::operation_type::DELETE);
 
-    auto getNodeProperties = new seastar::match_rule(&getNodePropertiesHandler);
+    auto getNodeProperties = new seastar::httpd::match_rule(&getNodePropertiesHandler);
     getNodeProperties->add_str("/db/" + graph.GetName() + "/node");
     getNodeProperties->add_param("type");
     getNodeProperties->add_param("key");
     getNodeProperties->add_str("/properties");
-    routes.add(getNodeProperties, seastar::operation_type::GET);
+    routes.add(getNodeProperties, seastar::httpd::operation_type::GET);
 
-    auto getNodePropertiesById = new seastar::match_rule(&getNodePropertiesByIdHandler);
+    auto getNodePropertiesById = new seastar::httpd::match_rule(&getNodePropertiesByIdHandler);
     getNodePropertiesById->add_str("/db/" + graph.GetName() + "/node");
     getNodePropertiesById->add_param("id");
     getNodePropertiesById->add_str("/properties");
-    routes.add(getNodePropertiesById, seastar::operation_type::GET);
+    routes.add(getNodePropertiesById, seastar::httpd::operation_type::GET);
 
-    auto postNodeProperties = new seastar::match_rule(&postNodePropertiesHandler);
+    auto postNodeProperties = new seastar::httpd::match_rule(&postNodePropertiesHandler);
     postNodeProperties->add_str("/db/" + graph.GetName() + "/node");
     postNodeProperties->add_param("type");
     postNodeProperties->add_param("key");
     postNodeProperties->add_str("/properties");
-    routes.add(postNodeProperties, seastar::operation_type::POST);
+    routes.add(postNodeProperties, seastar::httpd::operation_type::POST);
 
-    auto postNodePropertiesById = new seastar::match_rule(&postNodePropertiesByIdHandler);
+    auto postNodePropertiesById = new seastar::httpd::match_rule(&postNodePropertiesByIdHandler);
     postNodePropertiesById->add_str("/db/" + graph.GetName() + "/node");
     postNodePropertiesById->add_param("id");
     postNodePropertiesById->add_str("/properties");
-    routes.add(postNodePropertiesById, seastar::operation_type::POST);
+    routes.add(postNodePropertiesById, seastar::httpd::operation_type::POST);
 
-    auto putNodeProperties = new seastar::match_rule(&putNodePropertiesHandler);
+    auto putNodeProperties = new seastar::httpd::match_rule(&putNodePropertiesHandler);
     putNodeProperties->add_str("/db/" + graph.GetName() + "/node");
     putNodeProperties->add_param("type");
     putNodeProperties->add_param("key");
     putNodeProperties->add_str("/properties");
-    routes.add(putNodeProperties, seastar::operation_type::PUT);
+    routes.add(putNodeProperties, seastar::httpd::operation_type::PUT);
 
-    auto putNodePropertiesById = new seastar::match_rule(&putNodePropertiesByIdHandler);
+    auto putNodePropertiesById = new seastar::httpd::match_rule(&putNodePropertiesByIdHandler);
     putNodePropertiesById->add_str("/db/" + graph.GetName() + "/node");
     putNodePropertiesById->add_param("id");
     putNodePropertiesById->add_str("/properties");
-    routes.add(putNodePropertiesById, seastar::operation_type::PUT);
+    routes.add(putNodePropertiesById, seastar::httpd::operation_type::PUT);
 
-    auto deleteNodeProperties = new seastar::match_rule(&deleteNodePropertiesHandler);
+    auto deleteNodeProperties = new seastar::httpd::match_rule(&deleteNodePropertiesHandler);
     deleteNodeProperties->add_str("/db/" + graph.GetName() + "/node");
     deleteNodeProperties->add_param("type");
     deleteNodeProperties->add_param("key");
     deleteNodeProperties->add_str("/properties");
-    routes.add(deleteNodeProperties, seastar::operation_type::DELETE);
+    routes.add(deleteNodeProperties, seastar::httpd::operation_type::DELETE);
 
-    auto deleteNodePropertiesById = new seastar::match_rule(&deleteNodePropertiesByIdHandler);
+    auto deleteNodePropertiesById = new seastar::httpd::match_rule(&deleteNodePropertiesByIdHandler);
     deleteNodePropertiesById->add_str("/db/" + graph.GetName() + "/node");
     deleteNodePropertiesById->add_param("id");
     deleteNodePropertiesById->add_str("/properties");
-    routes.add(deleteNodePropertiesById, seastar::operation_type::DELETE);
+    routes.add(deleteNodePropertiesById, seastar::httpd::operation_type::DELETE);
 }
 
 future<std::unique_ptr<seastar::http::reply>> NodeProperties::GetNodePropertyHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {

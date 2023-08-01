@@ -17,10 +17,10 @@
 #include "Restore.h"
 #include "../json/JSON.h"
 
-void Restore::set_routes(seastar::routes &routes) {
-    auto restore = new seastar::match_rule(&restoreHandler);
+void Restore::set_routes(seastar::httpd::routes &routes) {
+    auto restore = new seastar::httpd::match_rule(&restoreHandler);
     restore->add_str("/db/" + graph.GetName() + "/restore");
-    routes.add(restore, seastar::operation_type::POST);
+    routes.add(restore, seastar::httpd::operation_type::POST);
 }
 
 future<std::unique_ptr<seastar::http::reply>> Restore::RestoreHandler::handle(
