@@ -50,9 +50,9 @@ SEASTAR_TEST_CASE(handler_connected_handle) {
     seastar::sstring address = "0.0.0.0";
     uint16_t port = 7243;
     seastar::net::inet_address addr(address);
-    auto server = new seastar::http_server_control();
+    auto server = new seastar::httpd::http_server_control();
     server->start().get();
-    server->set_routes([&connected](seastar::routes &r) { connected->set_routes(r); }).get();
+    server->set_routes([&connected](seastar::httpd::routes &r) { connected->set_routes(r); }).get();
     server->listen(seastar::socket_address{addr, port}).get();
 //delete connected;
     graph.Stop().get();
