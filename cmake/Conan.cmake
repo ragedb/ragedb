@@ -27,7 +27,7 @@ macro(run_conan)
     rapidcsv/8.77
     vincentlaucsb-csv-parser/2.1.3
     roaring/1.3.0
-    jfalcou-eve/v2023.02.15
+    jfalcou-eve/v2023.08.1
     cppcodec/0.2
     cpr/1.10.4
     boost/1.82.0

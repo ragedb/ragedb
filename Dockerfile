@@ -22,7 +22,7 @@ RUN conan create . 3.2.3-luajit@
 RUN conan create . 3.3.0-exhaustive@
 RUN git clone https://github.com/ragedb/eve-recipe.git /data/eve
 WORKDIR /data/eve
-RUN conan create . v2022.09.0@
+RUN conan create . v2023.08.1@
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
 RUN mkdir /data/rage/build
 WORKDIR /data/rage/build
