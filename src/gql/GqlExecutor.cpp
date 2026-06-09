@@ -15,304 +15,26 @@
  */
 
 #include "GqlExecutor.h"
+#include "GqlValue.h"
 #include <sstream>
 #include <unordered_set>
 #include <algorithm>
 #include <cstdlib>
 #include <chrono>
 #include <seastar/core/when_all.hh>
-#include <seastar/json/json_elements.hh>
 
 namespace ragedb::gql {
 
-struct GqlValue {
-    enum Type { NIL, NODE, RELATIONSHIP, PROPERTY } type = NIL;
-    std::optional<Node> node;
-    std::optional<Relationship> relationship;
-    property_type_t property = std::monostate{};
-
-    GqlValue() : type(NIL) {}
-    explicit GqlValue(Node n) : type(NODE), node(std::move(n)) {}
-    explicit GqlValue(Relationship r) : type(RELATIONSHIP), relationship(std::move(r)) {}
-    explicit GqlValue(property_type_t p) : type(PROPERTY), property(std::move(p)) {}
-
-    [[nodiscard]] bool is_truthy() const {
-        if (type == PROPERTY) {
-            if (std::holds_alternative<bool>(property)) {
-                return std::get<bool>(property);
-            }
-        }
-        return type != NIL;
-    }
-};
-
-struct GqlRow {
-    std::map<std::string, GqlValue> bindings;
-};
-
-inline int compare_properties(const property_type_t& lhs, const property_type_t& rhs) {
-    if (lhs.index() == rhs.index()) {
-        if (std::holds_alternative<int64_t>(lhs)) {
-            int64_t l = std::get<int64_t>(lhs);
-            int64_t r = std::get<int64_t>(rhs);
-            return (l < r) ? -1 : ((l > r) ? 1 : 0);
-        }
-        if (std::holds_alternative<double>(lhs)) {
-            double l = std::get<double>(lhs);
-            double r = std::get<double>(rhs);
-            return (l < r) ? -1 : ((l > r) ? 1 : 0);
-        }
-        if (std::holds_alternative<std::string>(lhs)) {
-            const auto& l = std::get<std::string>(lhs);
-            const auto& r = std::get<std::string>(rhs);
-            return (l < r) ? -1 : ((l > r) ? 1 : 0);
-        }
-        if (std::holds_alternative<bool>(lhs)) {
-            bool l = std::get<bool>(lhs);
-            bool r = std::get<bool>(rhs);
-            return (l < r) ? -1 : ((l > r) ? 1 : 0);
-        }
-    } else {
-        if (std::holds_alternative<int64_t>(lhs) && std::holds_alternative<double>(rhs)) {
-            double l = static_cast<double>(std::get<int64_t>(lhs));
-            double r = std::get<double>(rhs);
-            return (l < r) ? -1 : ((l > r) ? 1 : 0);
-        }
-        if (std::holds_alternative<double>(lhs) && std::holds_alternative<int64_t>(rhs)) {
-            double l = std::get<double>(lhs);
-            double r = static_cast<double>(std::get<int64_t>(rhs));
-            return (l < r) ? -1 : ((l > r) ? 1 : 0);
-        }
-    }
-    return 0;
-}
-
-inline int compare_gql_values(const GqlValue& a, const GqlValue& b) {
-    if (a.type != b.type) return (a.type < b.type) ? -1 : 1;
-    if (a.type == GqlValue::PROPERTY) {
-        return compare_properties(a.property, b.property);
-    }
-    if (a.type == GqlValue::NODE) {
-        uint64_t la = a.node->getId();
-        uint64_t lb = b.node->getId();
-        return (la < lb) ? -1 : ((la > lb) ? 1 : 0);
-    }
-    if (a.type == GqlValue::RELATIONSHIP) {
-        uint64_t la = a.relationship->getId();
-        uint64_t lb = b.relationship->getId();
-        return (la < lb) ? -1 : ((la > lb) ? 1 : 0);
-    }
-    return 0;
-}
-
-inline bool matches_properties(const std::map<std::string, property_type_t>& target, const std::map<std::string, property_type_t>& pattern) {
-    for (const auto& [key, val] : pattern) {
-        auto it = target.find(key);
-        if (it == target.end()) return false;
-        if (compare_properties(it->second, val) != 0) return false;
-    }
-    return true;
-}
-
-GqlValue evaluate_expression(const GqlRow& row, const Expression* expr) {
-    if (!expr) return GqlValue();
-
-    switch (expr->kind) {
-        case ExpressionKind::LITERAL: {
-            auto* lit = static_cast<const LiteralExpr*>(expr);
-            return GqlValue(lit->value);
-        }
-        case ExpressionKind::VARIABLE: {
-            auto* var = static_cast<const VariableExpr*>(expr);
-            auto it = row.bindings.find(var->name);
-            if (it != row.bindings.end()) {
-                return it->second;
-            }
-            return GqlValue();
-        }
-        case ExpressionKind::PROPERTY_LOOKUP: {
-            auto* prop_lookup = static_cast<const PropertyLookupExpr*>(expr);
-            auto it = row.bindings.find(prop_lookup->variable);
-            if (it != row.bindings.end()) {
-                const auto& val = it->second;
-                if (val.type == GqlValue::NODE) {
-                    return GqlValue(val.node->getProperty(prop_lookup->property));
-                } else if (val.type == GqlValue::RELATIONSHIP) {
-                    return GqlValue(val.relationship->getProperty(prop_lookup->property));
-                }
-            }
-            return GqlValue();
-        }
-        case ExpressionKind::UNARY_OP: {
-            auto* un = static_cast<const UnaryOpExpr*>(expr);
-            auto val = evaluate_expression(row, un->expr.get());
-            if (un->op == UnaryOpKind::NOT) {
-                return GqlValue(!val.is_truthy());
-            } else if (un->op == UnaryOpKind::NEG) {
-                if (val.type == GqlValue::PROPERTY) {
-                    if (std::holds_alternative<int64_t>(val.property)) {
-                        return GqlValue(-std::get<int64_t>(val.property));
-                    }
-                    if (std::holds_alternative<double>(val.property)) {
-                        return GqlValue(-std::get<double>(val.property));
-                    }
-                }
-                return GqlValue();
-            }
-            return GqlValue();
-        }
-        case ExpressionKind::BINARY_OP: {
-            auto* bin = static_cast<const BinaryOpExpr*>(expr);
-            if (bin->op == BinaryOpKind::AND) {
-                auto lhs = evaluate_expression(row, bin->left.get());
-                if (!lhs.is_truthy()) return GqlValue(false);
-                auto rhs = evaluate_expression(row, bin->right.get());
-                return GqlValue(rhs.is_truthy());
-            }
-            if (bin->op == BinaryOpKind::OR) {
-                auto lhs = evaluate_expression(row, bin->left.get());
-                if (lhs.is_truthy()) return GqlValue(true);
-                auto rhs = evaluate_expression(row, bin->right.get());
-                return GqlValue(rhs.is_truthy());
-            }
-
-            auto lhs = evaluate_expression(row, bin->left.get());
-            auto rhs = evaluate_expression(row, bin->right.get());
-
-            if (lhs.type == GqlValue::NIL || rhs.type == GqlValue::NIL) {
-                return GqlValue();
-            }
-
-            if (bin->op == BinaryOpKind::EQ) {
-                return GqlValue(compare_gql_values(lhs, rhs) == 0);
-            }
-            if (bin->op == BinaryOpKind::NE) {
-                return GqlValue(compare_gql_values(lhs, rhs) != 0);
-            }
-            if (bin->op == BinaryOpKind::LT) {
-                return GqlValue(compare_gql_values(lhs, rhs) < 0);
-            }
-            if (bin->op == BinaryOpKind::LE) {
-                return GqlValue(compare_gql_values(lhs, rhs) <= 0);
-            }
-            if (bin->op == BinaryOpKind::GT) {
-                return GqlValue(compare_gql_values(lhs, rhs) > 0);
-            }
-            if (bin->op == BinaryOpKind::GE) {
-                return GqlValue(compare_gql_values(lhs, rhs) >= 0);
-            }
-
-            if (lhs.type == GqlValue::PROPERTY && rhs.type == GqlValue::PROPERTY) {
-                if (std::holds_alternative<int64_t>(lhs.property) && std::holds_alternative<int64_t>(rhs.property)) {
-                    int64_t l = std::get<int64_t>(lhs.property);
-                    int64_t r = std::get<int64_t>(rhs.property);
-                    if (bin->op == BinaryOpKind::ADD) return GqlValue(l + r);
-                    if (bin->op == BinaryOpKind::SUB) return GqlValue(l - r);
-                    if (bin->op == BinaryOpKind::MUL) return GqlValue(l * r);
-                    if (bin->op == BinaryOpKind::DIV) return r != 0 ? GqlValue(l / r) : GqlValue();
-                }
-                if (std::holds_alternative<double>(lhs.property) || std::holds_alternative<double>(rhs.property)) {
-                    double l = std::holds_alternative<double>(lhs.property) ? std::get<double>(lhs.property) : static_cast<double>(std::get<int64_t>(lhs.property));
-                    double r = std::holds_alternative<double>(rhs.property) ? std::get<double>(rhs.property) : static_cast<double>(std::get<int64_t>(rhs.property));
-                    if (bin->op == BinaryOpKind::ADD) return GqlValue(l + r);
-                    if (bin->op == BinaryOpKind::SUB) return GqlValue(l - r);
-                    if (bin->op == BinaryOpKind::MUL) return GqlValue(l * r);
-                    if (bin->op == BinaryOpKind::DIV) return r != 0.0 ? GqlValue(l / r) : GqlValue();
-                }
-                if (std::holds_alternative<std::string>(lhs.property) && std::holds_alternative<std::string>(rhs.property)) {
-                    if (bin->op == BinaryOpKind::ADD) {
-                        return GqlValue(std::get<std::string>(lhs.property) + std::get<std::string>(rhs.property));
-                    }
-                }
-            }
-            return GqlValue();
-        }
-    }
-    return GqlValue();
-}
-
-std::string serialize_gql_value(const GqlValue& val) {
-    if (val.type == GqlValue::NIL) {
-        return "null";
-    }
-    if (val.type == GqlValue::PROPERTY) {
-        switch (val.property.index()) {
-            case 0: return "null";
-            case 1: return std::get<bool>(val.property) ? "true" : "false";
-            case 2: return std::to_string(std::get<int64_t>(val.property));
-            case 3: return std::to_string(std::get<double>(val.property));
-            case 4: return seastar::json::formatter::to_json(std::get<std::string>(val.property));
-            case 5: {
-                std::string s = "[";
-                bool init = true;
-                for (bool x : std::get<std::vector<bool>>(val.property)) {
-                    if (!init) s += ",";
-                    s += (x ? "true" : "false");
-                    init = false;
-                }
-                s += "]";
-                return s;
-            }
-            case 6: {
-                std::string s = "[";
-                bool init = true;
-                for (int64_t x : std::get<std::vector<int64_t>>(val.property)) {
-                    if (!init) s += ",";
-                    s += std::to_string(x);
-                    init = false;
-                }
-                s += "]";
-                return s;
-            }
-            case 7: {
-                std::string s = "[";
-                bool init = true;
-                for (double x : std::get<std::vector<double>>(val.property)) {
-                    if (!init) s += ",";
-                    s += std::to_string(x);
-                    init = false;
-                }
-                s += "]";
-                return s;
-            }
-            case 8: {
-                std::string s = "[";
-                bool init = true;
-                for (const auto& x : std::get<std::vector<std::string>>(val.property)) {
-                    if (!init) s += ",";
-                    s += seastar::json::formatter::to_json(x);
-                    init = false;
-                }
-                s += "]";
-                return s;
-            }
-        }
-    }
-    if (val.type == GqlValue::NODE) {
-        std::string s = "{\"id\": " + std::to_string(val.node->getId()) + ", \"type\": \"" + val.node->getType() + "\", \"key\": \"" + val.node->getKey() + "\", \"properties\": {";
-        bool init = true;
-        for (const auto& [k, v] : val.node->getProperties()) {
-            if (!init) s += ", ";
-            s += "\"" + k + "\": " + serialize_gql_value(GqlValue(v));
-            init = false;
-        }
-        s += "}}";
-        return s;
-    }
-    if (val.type == GqlValue::RELATIONSHIP) {
-        std::string s = "{\"id\": " + std::to_string(val.relationship->getId()) + ", \"type\": \"" + val.relationship->getType() + "\", \"from\": " + std::to_string(val.relationship->getStartingNodeId()) + ", \"to\": " + std::to_string(val.relationship->getEndingNodeId()) + ", \"properties\": {";
-        bool init = true;
-        for (const auto& [k, v] : val.relationship->getProperties()) {
-            if (!init) s += ", ";
-            s += "\"" + k + "\": " + serialize_gql_value(GqlValue(v));
-            init = false;
-        }
-        s += "}}";
-        return s;
-    }
-    return "null";
-}
-
+/**
+ * @brief Retrieves the starting nodes for a pattern match.
+ * 
+ * Inspects node pattern label and properties. Utilizes index scans if a property and a label
+ * are supplied. Falls back to AllNodes scan either labeled or global if properties are absent.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param node The vertex pattern definition.
+ * @return seastar::future<std::vector<Node>> Future wrapping matching start nodes.
+ */
 seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node) {
     if (!node.properties.empty() && !node.label.empty()) {
         auto it = node.properties.begin();
@@ -326,6 +48,19 @@ seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const P
     }
 }
 
+/**
+ * @brief Asynchronously traverses a single edge pattern hop from a given row node.
+ * 
+ * Evaluates edge label, properties, direction (incoming, outgoing, undirected), and matching
+ * properties of the target destination node. Binds the traversed edge and target node variables.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param row The current query row (source context).
+ * @param edge The pattern edge describing the hop.
+ * @param next_node The pattern node that we must reach.
+ * @param node_idx The current node index in the traversal chain.
+ * @return seastar::future<std::vector<GqlRow>> Future wrapping new rows representing extended paths.
+ */
 seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx) {
     auto it = row.bindings.find("_n_" + std::to_string(node_idx));
     if (it == row.bindings.end()) {
@@ -377,6 +112,15 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
     });
 }
 
+/**
+ * @brief Recursively traverses a path pattern, processing one edge-node step at a time.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param prep_pattern The prepared path pattern containing filled variables.
+ * @param step_idx Current edge index in the path pattern.
+ * @param current_step_rows Rows generated by the previous step.
+ * @return seastar::future<std::vector<GqlRow>> Future wrapping the final traversed rows.
+ */
 seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Graph& graph, const PathPattern& prep_pattern, size_t step_idx, std::vector<GqlRow> current_step_rows) {
     if (step_idx >= prep_pattern.edges.size()) {
         return seastar::make_ready_future<std::vector<GqlRow>>(std::move(current_step_rows));
@@ -400,6 +144,17 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Gra
     });
 }
 
+/**
+ * @brief Entry point for traversing a path pattern.
+ * 
+ * Generates default variable names for unlabeled/unnamed nodes/edges, resolves start nodes,
+ * and initiates the recursive traversal.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param pattern The GQL path pattern to evaluate.
+ * @param base_row The base row context.
+ * @return seastar::future<std::vector<GqlRow>> Future wrapping matches.
+ */
 seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row) {
     // Prep pattern with variables if missing
     PathPattern prep_pattern = pattern;
@@ -440,6 +195,17 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     });
 }
 
+/**
+ * @brief Traverses a single GQL MATCH/OPTIONAL MATCH statement.
+ * 
+ * If OPTIONAL MATCH generates no results, binds all newly introduced variables to null values
+ * and retains the incoming row.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param stmt The MatchStatement AST node.
+ * @param row The row context.
+ * @return seastar::future<std::vector<GqlRow>> Future wrapping evaluated rows.
+ */
 seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row) {
     return traverse_path_pattern(graph, stmt.pattern, row)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
@@ -461,6 +227,17 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
     });
 }
 
+/**
+ * @brief Recursively executes a chain of sequential MATCH statements.
+ * 
+ * Multiplies (cartesian product) rows along the match traversal pathways.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param matches List of match statements to execute.
+ * @param match_idx Current match index.
+ * @param current_rows Accumulated rows up to this point.
+ * @return seastar::future<std::vector<GqlRow>> Future wrapping the combined matched rows.
+ */
 seastar::future<std::vector<GqlRow>> execute_match_chain(ragedb::Graph& graph, const std::vector<MatchStatement>& matches, size_t match_idx, std::vector<GqlRow> current_rows) {
     if (match_idx >= matches.size()) {
         return seastar::make_ready_future<std::vector<GqlRow>>(std::move(current_rows));
@@ -483,23 +260,25 @@ seastar::future<std::vector<GqlRow>> execute_match_chain(ragedb::Graph& graph, c
     });
 }
 
+/**
+ * @brief Helper sorting structure representing a row mapped to its sort keys.
+ */
 struct RowSortKey {
     std::vector<GqlValue> keys;
     GqlRow row;
 };
 
-std::string serialize_properties_to_json(const std::map<std::string, property_type_t>& props) {
-    std::string json = "{";
-    bool first = true;
-    for (const auto& [k, v] : props) {
-        if (!first) json += ", ";
-        json += "\"" + k + "\": " + serialize_gql_value(GqlValue(v));
-        first = false;
-    }
-    json += "}";
-    return json;
-}
-
+/**
+ * @brief Recursively executes all write operations (INSERT, SET, REMOVE, DELETE) for a single query row.
+ * 
+ * Operations are chained sequentially within each row context.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param query_ptr Shared GQL query configuration.
+ * @param write_idx Index of the write operation in the writes list.
+ * @param row The row context to apply modifications to.
+ * @return seastar::future<GqlRow> Future wrapping the updated row bindings.
+ */
 seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr, size_t write_idx, GqlRow row) {
     if (write_idx >= query_ptr->writes.size()) {
         return seastar::make_ready_future<GqlRow>(std::move(row));
@@ -694,6 +473,17 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
     return execute_writes_for_row(graph, query_ptr, write_idx + 1, std::move(row));
 }
 
+/**
+ * @brief Main execution entry point for the GQL engine.
+ * 
+ * Performs MATCH chain query paths, applies global WHERE filtering, applies side-effects
+ * (writes), sorts the final results via ORDER BY, serializes return projected columns
+ * to formatted JSON arrays, and handles limits.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param query_val The parsed GQL Query configuration.
+ * @return seastar::future<std::string> Future containing serialized JSON array results.
+ */
 seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery query_val) {
     auto query_ptr = std::make_shared<GqlQuery>(std::move(query_val));
     std::vector<GqlRow> initial_rows = { GqlRow{} };

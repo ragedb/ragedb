@@ -39,6 +39,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
         ../src/gql/GqlAst.h
         )
 target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph Seastar::seastar)
@@ -93,6 +94,7 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
         ../src/gql/GqlAst.h
         )
 
