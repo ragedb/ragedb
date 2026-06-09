@@ -139,9 +139,30 @@ struct SortSpec {
     bool ascending = true;
 };
 
+struct WriteOp {
+    enum class Type { INSERT, SET, REMOVE, DELETE_OP } type;
+
+    // For INSERT
+    PathPattern insert_pattern;
+
+    // For SET
+    std::string set_var;
+    std::string set_prop;
+    std::unique_ptr<Expression> set_expr;
+
+    // For REMOVE
+    std::string remove_var;
+    std::string remove_prop;
+
+    // For DELETE
+    std::string delete_var;
+    bool detach = false;
+};
+
 struct GqlQuery {
     std::vector<MatchStatement> matches;
     std::unique_ptr<Expression> where_expr;
+    std::vector<WriteOp> writes;
     std::vector<ReturnItem> returns;
     bool distinct = false;
     std::vector<SortSpec> order_by;

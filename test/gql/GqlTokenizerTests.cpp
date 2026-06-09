@@ -35,3 +35,32 @@ TEST_CASE("GQL Lexer tokenizes basic query", "[gql_lexer]") {
     REQUIRE(tokens[5].type == TokenType::RPAREN);
     REQUIRE(tokens[6].type == TokenType::WHERE);
 }
+
+TEST_CASE("GQL Lexer handles // single-line comments", "[gql_lexer]") {
+    std::string query = "MATCH (p:Person)\n// this is a comment\nRETURN p.name";
+    auto tokens = GqlLexer::tokenize(query);
+
+    REQUIRE(tokens.size() > 0);
+    REQUIRE(tokens[0].type == TokenType::MATCH);
+    REQUIRE(tokens[1].type == TokenType::LPAREN);
+    REQUIRE(tokens[2].type == TokenType::NAME);
+    REQUIRE(tokens[3].type == TokenType::COLON);
+    REQUIRE(tokens[4].type == TokenType::NAME);
+    REQUIRE(tokens[5].type == TokenType::RPAREN);
+    REQUIRE(tokens[6].type == TokenType::RETURN);
+}
+
+TEST_CASE("GQL Lexer handles backtick-escaped identifiers", "[gql_lexer]") {
+    std::string query = "MATCH (`Person Type` IS `My Label`)";
+    auto tokens = GqlLexer::tokenize(query);
+
+    REQUIRE(tokens.size() >= 7);
+    REQUIRE(tokens[0].type == TokenType::MATCH);
+    REQUIRE(tokens[1].type == TokenType::LPAREN);
+    REQUIRE(tokens[2].type == TokenType::NAME);
+    REQUIRE(tokens[2].text == "Person Type");
+    REQUIRE(tokens[3].type == TokenType::IS);
+    REQUIRE(tokens[4].type == TokenType::NAME);
+    REQUIRE(tokens[4].text == "My Label");
+    REQUIRE(tokens[5].type == TokenType::RPAREN);
+}

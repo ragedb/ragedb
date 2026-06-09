@@ -19,6 +19,7 @@ strace_out
 
 # Build directories
 build
+build_debug/
 cmake-build-debug/
 cmake-build-debug-coverage/
 cmake-build-minsizerel/
@@ -63,4 +64,3 @@ test/cmake-build-release-coverage/
 
 #FrogQL
 frogql_src
-src/gql/target/

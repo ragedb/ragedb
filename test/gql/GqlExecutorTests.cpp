@@ -26,6 +26,7 @@ using namespace ragedb::gql;
 TEST_CASE("GQL Execution integration test", "[gql_executor]") {
     auto graph = Graph("gql_test");
     graph.Start().get();
+    graph.Clear();
     
     // Setup schemas
     graph.shard.local().NodeTypeInsertPeered("Person").get();
@@ -61,6 +62,60 @@ TEST_CASE("GQL Execution integration test", "[gql_executor]") {
         
         REQUIRE(results_json.find("Alice") != std::string::npos);
         REQUIRE(results_json.find("Bob") == std::string::npos);
+    }
+
+    SECTION("INSERT node and relationship") {
+        try {
+            graph.shard.local().NodeTypeInsertPeered("Movie").get();
+            graph.shard.local().NodePropertyTypeAddPeered("Movie", "title", "string").get();
+            graph.shard.local().RelationshipTypeInsertPeered("ACTED_IN").get();
+
+            std::string query_insert_node = "INSERT (m:Movie {title: 'Inception', key: 'inception'})";
+            GqlExecutor::execute(graph, GqlParser::parse(query_insert_node)).get();
+
+            std::string check_query = "MATCH (m:Movie) WHERE m.title = 'Inception' RETURN m.title";
+            std::string check_res = GqlExecutor::execute(graph, GqlParser::parse(check_query)).get();
+            REQUIRE(check_res.find("Inception") != std::string::npos);
+
+            std::string query_insert_rel = "MATCH (p:Person) MATCH (m:Movie) WHERE p.name = 'Alice' AND m.title = 'Inception' INSERT (p)-[r:ACTED_IN]->(m)";
+            GqlExecutor::execute(graph, GqlParser::parse(query_insert_rel)).get();
+
+            std::string check_rel = "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) RETURN p.name, m.title";
+            std::string check_rel_res = GqlExecutor::execute(graph, GqlParser::parse(check_rel)).get();
+            REQUIRE(check_rel_res.find("Alice") != std::string::npos);
+            REQUIRE(check_rel_res.find("Inception") != std::string::npos);
+        } catch (const std::exception& e) {
+            std::cerr << "!!! EXCEPTION CAUGHT: " << e.what() << std::endl;
+            try { graph.Stop().get(); } catch (...) {}
+            throw;
+        }
+    }
+
+    SECTION("SET property") {
+        std::string query_set = "MATCH (p:Person) WHERE p.name = 'Alice' SET p.age = 45";
+        GqlExecutor::execute(graph, GqlParser::parse(query_set)).get();
+
+        std::string check_query = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.age";
+        std::string check_res = GqlExecutor::execute(graph, GqlParser::parse(check_query)).get();
+        REQUIRE(check_res.find("45") != std::string::npos);
+    }
+
+    SECTION("REMOVE property") {
+        std::string query_remove = "MATCH (p:Person) WHERE p.name = 'Alice' REMOVE p.age";
+        GqlExecutor::execute(graph, GqlParser::parse(query_remove)).get();
+
+        std::string check_query = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.age";
+        std::string check_res = GqlExecutor::execute(graph, GqlParser::parse(check_query)).get();
+        REQUIRE(check_res.find("null") != std::string::npos);
+    }
+
+    SECTION("DELETE node") {
+        std::string query_delete = "MATCH (p:Person) WHERE p.name = 'Bob' DELETE p";
+        GqlExecutor::execute(graph, GqlParser::parse(query_delete)).get();
+
+        std::string check_query = "MATCH (p:Person) WHERE p.name = 'Bob' RETURN p.name";
+        std::string check_res = GqlExecutor::execute(graph, GqlParser::parse(check_query)).get();
+        REQUIRE(check_res == "[]");
     }
 
     graph.Stop().get();

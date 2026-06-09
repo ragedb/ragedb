@@ -30,3 +30,74 @@ TEST_CASE("GQL Parser builds AST", "[gql_parser]") {
     REQUIRE(q.matches[0].pattern.nodes[0].label == "Person");
     REQUIRE(q.returns.size() == 1);
 }
+
+TEST_CASE("GQL Parser supports IS keyword for label specification", "[gql_parser]") {
+    std::string query = "MATCH (p IS Person)-[e IS ACTED_IN]->(m IS Movie) RETURN p.name";
+    auto q = GqlParser::parse(query);
+
+    REQUIRE(q.matches.size() == 1);
+    REQUIRE(q.matches[0].pattern.nodes.size() == 2);
+    REQUIRE(q.matches[0].pattern.nodes[0].variable == "p");
+    REQUIRE(q.matches[0].pattern.nodes[0].label == "Person");
+    REQUIRE(q.matches[0].pattern.edges.size() == 1);
+    REQUIRE(q.matches[0].pattern.edges[0].variable == "e");
+    REQUIRE(q.matches[0].pattern.edges[0].label == "ACTED_IN");
+    REQUIRE(q.matches[0].pattern.nodes[1].variable == "m");
+    REQUIRE(q.matches[0].pattern.nodes[1].label == "Movie");
+    REQUIRE(q.returns.size() == 1);
+}
+
+TEST_CASE("GQL Parser parses write statements", "[gql_parser]") {
+    SECTION("INSERT statement") {
+        std::string query = "INSERT (p:Person {name: 'Charlie', age: 25, key: 'charlie'})";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.writes.size() == 1);
+        REQUIRE(q.writes[0].type == WriteOp::Type::INSERT);
+        REQUIRE(q.writes[0].insert_pattern.nodes.size() == 1);
+        REQUIRE(q.writes[0].insert_pattern.nodes[0].variable == "p");
+        REQUIRE(q.writes[0].insert_pattern.nodes[0].label == "Person");
+        REQUIRE(q.writes[0].insert_pattern.nodes[0].properties.count("name") == 1);
+    }
+
+    SECTION("SET statement") {
+        std::string query = "MATCH (p:Person) SET p.age = 30";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.writes.size() == 1);
+        REQUIRE(q.writes[0].type == WriteOp::Type::SET);
+        REQUIRE(q.writes[0].set_var == "p");
+        REQUIRE(q.writes[0].set_prop == "age");
+        REQUIRE(q.writes[0].set_expr != nullptr);
+    }
+
+    SECTION("REMOVE statement") {
+        std::string query = "MATCH (p:Person) REMOVE p.age";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.writes.size() == 1);
+        REQUIRE(q.writes[0].type == WriteOp::Type::REMOVE);
+        REQUIRE(q.writes[0].remove_var == "p");
+        REQUIRE(q.writes[0].remove_prop == "age");
+    }
+
+    SECTION("DELETE statement") {
+        std::string query = "MATCH (p:Person) DELETE p";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.writes.size() == 1);
+        REQUIRE(q.writes[0].type == WriteOp::Type::DELETE_OP);
+        REQUIRE(q.writes[0].delete_var == "p");
+        REQUIRE(q.writes[0].detach == false);
+    }
+
+    SECTION("DETACH DELETE statement") {
+        std::string query = "MATCH (p:Person) DETACH DELETE p";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.writes.size() == 1);
+        REQUIRE(q.writes[0].type == WriteOp::Type::DELETE_OP);
+        REQUIRE(q.writes[0].delete_var == "p");
+        REQUIRE(q.writes[0].detach == true);
+    }
+}

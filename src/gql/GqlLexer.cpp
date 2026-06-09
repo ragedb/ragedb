@@ -53,6 +53,11 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
                 if (pos < length) {
                     advance(2);
                 }
+            } else if (c == '/' && peek(1) == '/') {
+                advance(2);
+                while (pos < length && peek() != '\n') {
+                    advance();
+                }
             } else if (c == '-' && peek(1) == '-' && peek(2) != '>') {
                 advance(2);
                 while (pos < length && peek() != '\n') {
@@ -163,6 +168,26 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             }
             continue;
         }
+        // Backticks (escaped identifiers)
+        if (c == '`') {
+            advance();
+            std::string name;
+            while (pos < length && peek() != '`') {
+                if (peek() == '\\' && pos + 1 < length) {
+                    name += peek(1);
+                    advance(2);
+                } else {
+                    name += peek();
+                    advance();
+                }
+            }
+            if (pos >= length) {
+                throw std::runtime_error("Unterminated backtick identifier");
+            }
+            advance(); // Consume end backtick
+            tokens.push_back({TokenType::NAME, name});
+            continue;
+        }
 
         // Strings
         if (c == '\'' || c == '"') {
@@ -234,6 +259,11 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "NOT") type = TokenType::NOT;
             else if (upper_name == "AS") type = TokenType::AS;
             else if (upper_name == "IS") type = TokenType::IS;
+            else if (upper_name == "INSERT") type = TokenType::INSERT;
+            else if (upper_name == "DELETE") type = TokenType::DELETE;
+            else if (upper_name == "SET") type = TokenType::SET;
+            else if (upper_name == "REMOVE") type = TokenType::REMOVE;
+            else if (upper_name == "DETACH") type = TokenType::DETACH;
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;
                 while (temp_pos < length && std::isspace(input[temp_pos])) {

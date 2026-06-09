@@ -47,6 +47,11 @@ enum class TokenType {
     LIMIT,
     ASC,
     DESC,
+    INSERT,
+    DELETE,
+    SET,
+    REMOVE,
+    DETACH,
 
     // Symbols
     LPAREN,      // (

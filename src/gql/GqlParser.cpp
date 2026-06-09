@@ -69,53 +69,118 @@ GqlQuery GqlParser::parse_query() {
         query.matches.push_back(stmt);
     }
 
-    if (query.matches.empty()) {
-        throw std::runtime_error("Query must contain at least one MATCH clause");
-    }
-
     // Parse optional global WHERE clause
     if (match(TokenType::WHERE)) {
         query.where_expr = parse_expression();
     }
 
-    // Parse RETURN clause
-    consume(TokenType::RETURN, "Expected 'RETURN' clause");
-    if (match(TokenType::DISTINCT)) {
-        query.distinct = true;
-    }
+    // Parse Write Operations (INSERT, SET, REMOVE, DELETE, DETACH)
+    while (check(TokenType::INSERT) || check(TokenType::SET) || check(TokenType::REMOVE) || check(TokenType::DELETE) || check(TokenType::DETACH)) {
+        if (match(TokenType::INSERT)) {
+            WriteOp op;
+            op.type = WriteOp::Type::INSERT;
+            op.insert_pattern = parse_path_pattern();
+            query.writes.push_back(std::move(op));
+        } else if (match(TokenType::SET)) {
+            do {
+                std::string var = peek().text;
+                consume(TokenType::NAME, "Expected variable name in SET");
+                consume(TokenType::DOT, "Expected '.' after variable in SET");
+                std::string prop = peek().text;
+                consume(TokenType::NAME, "Expected property name in SET");
+                consume(TokenType::EQ, "Expected '=' after property in SET");
+                auto expr = parse_expression();
 
-    do {
-        ReturnItem item;
-        item.expr = parse_expression();
-        if (match(TokenType::AS)) {
-            std::string alias = peek().text;
-            consume(TokenType::NAME, "Expected alias name after 'AS'");
-            item.alias = alias;
-        }
-        query.returns.push_back(std::move(item));
-    } while (match(TokenType::COMMA));
+                WriteOp op;
+                op.type = WriteOp::Type::SET;
+                op.set_var = var;
+                op.set_prop = prop;
+                op.set_expr = std::move(expr);
+                query.writes.push_back(std::move(op));
+            } while (match(TokenType::COMMA));
+        } else if (match(TokenType::REMOVE)) {
+            do {
+                std::string var = peek().text;
+                consume(TokenType::NAME, "Expected variable name in REMOVE");
+                consume(TokenType::DOT, "Expected '.' after variable in REMOVE");
+                std::string prop = peek().text;
+                consume(TokenType::NAME, "Expected property name in REMOVE");
 
-    // Parse optional ORDER BY clause
-    if (match(TokenType::ORDER_BY)) {
-        do {
-            SortSpec spec;
-            spec.expr = parse_expression();
-            if (match(TokenType::ASC)) {
-                spec.ascending = true;
-            } else if (match(TokenType::DESC)) {
-                spec.ascending = false;
+                WriteOp op;
+                op.type = WriteOp::Type::REMOVE;
+                op.remove_var = var;
+                op.remove_prop = prop;
+                query.writes.push_back(std::move(op));
+            } while (match(TokenType::COMMA));
+        } else {
+            bool detach = false;
+            if (match(TokenType::DETACH)) {
+                detach = true;
+                consume(TokenType::DELETE, "Expected 'DELETE' after 'DETACH'");
             } else {
-                spec.ascending = true; // default
+                consume(TokenType::DELETE, "Expected 'DELETE'");
             }
-            query.order_by.push_back(std::move(spec));
-        } while (match(TokenType::COMMA));
+            do {
+                std::string var = peek().text;
+                consume(TokenType::NAME, "Expected variable name to delete");
+
+                WriteOp op;
+                op.type = WriteOp::Type::DELETE_OP;
+                op.delete_var = var;
+                op.detach = detach;
+                query.writes.push_back(std::move(op));
+            } while (match(TokenType::COMMA));
+        }
     }
 
-    // Parse optional LIMIT clause
-    if (match(TokenType::LIMIT)) {
-        std::string num_str = peek().text;
-        consume(TokenType::NUMBER, "Expected integer limit value");
-        query.limit = std::stoull(num_str);
+    // Verify we have at least one MATCH or write operation
+    if (query.matches.empty() && query.writes.empty()) {
+        throw std::runtime_error("Query must contain at least one MATCH or write clause");
+    }
+
+    // Parse RETURN clause (optional if we performed writes, otherwise mandatory)
+    if (match(TokenType::RETURN)) {
+        if (match(TokenType::DISTINCT)) {
+            query.distinct = true;
+        }
+
+        do {
+            ReturnItem item;
+            item.expr = parse_expression();
+            if (match(TokenType::AS)) {
+                std::string alias = peek().text;
+                consume(TokenType::NAME, "Expected alias name after 'AS'");
+                item.alias = alias;
+            }
+            query.returns.push_back(std::move(item));
+        } while (match(TokenType::COMMA));
+
+        // Parse optional ORDER BY clause
+        if (match(TokenType::ORDER_BY)) {
+            do {
+                SortSpec spec;
+                spec.expr = parse_expression();
+                if (match(TokenType::ASC)) {
+                    spec.ascending = true;
+                } else if (match(TokenType::DESC)) {
+                    spec.ascending = false;
+                } else {
+                    spec.ascending = true; // default
+                }
+                query.order_by.push_back(std::move(spec));
+            } while (match(TokenType::COMMA));
+        }
+
+        // Parse optional LIMIT clause
+        if (match(TokenType::LIMIT)) {
+            std::string num_str = peek().text;
+            consume(TokenType::NUMBER, "Expected integer limit value");
+            query.limit = std::stoull(num_str);
+        }
+    } else {
+        if (query.writes.empty()) {
+            throw std::runtime_error("Query must contain either a RETURN clause or at least one write clause");
+        }
     }
 
     consume(TokenType::EOF_TOK, "Expected end of query");
@@ -143,9 +208,9 @@ PathPattern GqlParser::parse_path_pattern() {
                 edge.variable = peek().text;
                 advance();
             }
-            if (match(TokenType::COLON)) {
+            if (match(TokenType::COLON) || match(TokenType::IS)) {
                 edge.label = peek().text;
-                consume(TokenType::NAME, "Expected edge type label after ':'");
+                consume(TokenType::NAME, "Expected edge type label after ':' or 'IS'");
             }
             if (check(TokenType::LBRACE)) {
                 edge.properties = parse_properties();
@@ -163,9 +228,9 @@ PathPattern GqlParser::parse_path_pattern() {
                 edge.variable = peek().text;
                 advance();
             }
-            if (match(TokenType::COLON)) {
+            if (match(TokenType::COLON) || match(TokenType::IS)) {
                 edge.label = peek().text;
-                consume(TokenType::NAME, "Expected edge type label after ':'");
+                consume(TokenType::NAME, "Expected edge type label after ':' or 'IS'");
             }
             if (check(TokenType::LBRACE)) {
                 edge.properties = parse_properties();
@@ -189,9 +254,9 @@ PatternNode GqlParser::parse_node_pattern() {
         node.variable = peek().text;
         advance();
     }
-    if (match(TokenType::COLON)) {
+    if (match(TokenType::COLON) || match(TokenType::IS)) {
         node.label = peek().text;
-        consume(TokenType::NAME, "Expected node label after ':'");
+        consume(TokenType::NAME, "Expected node label after ':' or 'IS'");
     }
     if (check(TokenType::LBRACE)) {
         node.properties = parse_properties();
