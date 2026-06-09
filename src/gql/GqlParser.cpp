@@ -16,6 +16,8 @@
 
 #include "GqlParser.h"
 #include <stdexcept>
+#include <algorithm>
+#include <cctype>
 
 namespace ragedb::gql {
 
@@ -519,6 +521,34 @@ std::unique_ptr<Expression> GqlParser::parse_primary() {
     }
     if (check(TokenType::NAME)) {
         std::string var = peek().text;
+        // Check for aggregate function call: NAME '('
+        if (peek(1).type == TokenType::LPAREN) {
+            std::string upper_name = var;
+            std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), [](unsigned char c){ return std::toupper(c); });
+            if (upper_name == "COUNT" || upper_name == "SUM" || upper_name == "AVG" || upper_name == "MIN" || upper_name == "MAX") {
+                advance(); // consume function name
+                consume(TokenType::LPAREN, "Expected '(' after aggregate function");
+                
+                std::unique_ptr<Expression> arg = nullptr;
+                // Special case for count(*)
+                if (upper_name == "COUNT" && check(TokenType::STAR)) {
+                    advance(); // consume '*'
+                } else {
+                    arg = parse_expression();
+                }
+                consume(TokenType::RPAREN, "Expected ')' after aggregate function argument");
+                
+                AggregateKind fn;
+                if (upper_name == "COUNT") fn = AggregateKind::COUNT;
+                else if (upper_name == "SUM") fn = AggregateKind::SUM;
+                else if (upper_name == "AVG") fn = AggregateKind::AVG;
+                else if (upper_name == "MIN") fn = AggregateKind::MIN;
+                else fn = AggregateKind::MAX;
+                
+                return std::make_unique<AggregateExpr>(fn, std::move(arg));
+            }
+        }
+
         advance();
         if (match(TokenType::DOT)) {
             std::string prop = peek().text;

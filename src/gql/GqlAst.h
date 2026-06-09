@@ -35,7 +35,19 @@ enum class ExpressionKind {
     VARIABLE,         ///< An identifier reference (e.g. p, m)
     PROPERTY_LOOKUP,  ///< Property extraction (e.g. p.name, m.title)
     UNARY_OP,         ///< Unary operations (e.g. NOT, -x)
-    BINARY_OP         ///< Binary operations (e.g. AND, OR, +, =, <)
+    BINARY_OP,        ///< Binary operations (e.g. AND, OR, +, =, <)
+    AGGREGATION       ///< GQL Aggregate function (e.g. COUNT, SUM, AVG, MIN, MAX)
+};
+
+/**
+ * @brief Types of aggregate functions supported by GQL.
+ */
+enum class AggregateKind {
+    COUNT,
+    SUM,
+    AVG,
+    MIN,
+    MAX
 };
 
 /**
@@ -124,6 +136,19 @@ struct BinaryOpExpr : public Expression {
         op = o;
         left = std::move(l);
         right = std::move(r);
+    }
+};
+
+/**
+ * @brief Represents an aggregate function expression (e.g. COUNT(p), SUM(p.age)).
+ */
+struct AggregateExpr : public Expression {
+    AggregateKind fn_kind;              ///< The kind of aggregate function.
+    std::unique_ptr<Expression> expr;   ///< Expression target to aggregate (nullptr for COUNT(*)).
+    AggregateExpr(AggregateKind kind_val, std::unique_ptr<Expression> e) {
+        kind = ExpressionKind::AGGREGATION;
+        fn_kind = kind_val;
+        expr = std::move(e);
     }
 };
 

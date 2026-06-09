@@ -130,6 +130,9 @@ GqlValue evaluate_expression(const GqlRow& row, const Expression* expr) {
     if (!expr) return GqlValue();
 
     switch (expr->kind) {
+        case ExpressionKind::AGGREGATION: {
+            return GqlValue(); // Aggregations are not evaluated on single rows
+        }
         case ExpressionKind::LITERAL: {
             auto* lit = static_cast<const LiteralExpr*>(expr);
             return GqlValue(lit->value);

@@ -101,3 +101,143 @@ TEST_CASE("GQL Parser parses write statements", "[gql_parser]") {
         REQUIRE(q.writes[0].detach == true);
     }
 }
+
+TEST_CASE("GQL Parser parses aggregate expressions", "[gql_parser]") {
+    SECTION("COUNT(*)") {
+        std::string query = "MATCH (p:Person) RETURN count(*)";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.returns.size() == 1);
+        auto* expr = q.returns[0].expr.get();
+        REQUIRE(expr->kind == ExpressionKind::AGGREGATION);
+        auto* agg = static_cast<const AggregateExpr*>(expr);
+        REQUIRE(agg->fn_kind == AggregateKind::COUNT);
+        REQUIRE(agg->expr == nullptr);
+    }
+
+    SECTION("SUM(p.age)") {
+        std::string query = "MATCH (p:Person) RETURN SUM(p.age)";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.returns.size() == 1);
+        auto* expr = q.returns[0].expr.get();
+        REQUIRE(expr->kind == ExpressionKind::AGGREGATION);
+        auto* agg = static_cast<const AggregateExpr*>(expr);
+        REQUIRE(agg->fn_kind == AggregateKind::SUM);
+        REQUIRE(agg->expr != nullptr);
+        REQUIRE(agg->expr->kind == ExpressionKind::PROPERTY_LOOKUP);
+        auto* pl = static_cast<const PropertyLookupExpr*>(agg->expr.get());
+        REQUIRE(pl->variable == "p");
+        REQUIRE(pl->property == "age");
+    }
+
+    SECTION("Case-insensitive aggregate functions") {
+        std::string query = "MATCH (p:Person) RETURN cOuNt(p.name), avg(p.age), mIn(p.age), MAX(p.age)";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.returns.size() == 4);
+
+        {
+            auto* agg = static_cast<const AggregateExpr*>(q.returns[0].expr.get());
+            REQUIRE(agg->fn_kind == AggregateKind::COUNT);
+        }
+        {
+            auto* agg = static_cast<const AggregateExpr*>(q.returns[1].expr.get());
+            REQUIRE(agg->fn_kind == AggregateKind::AVG);
+        }
+        {
+            auto* agg = static_cast<const AggregateExpr*>(q.returns[2].expr.get());
+            REQUIRE(agg->fn_kind == AggregateKind::MIN);
+        }
+        {
+            auto* agg = static_cast<const AggregateExpr*>(q.returns[3].expr.get());
+            REQUIRE(agg->fn_kind == AggregateKind::MAX);
+        }
+    }
+}
+
+TEST_CASE("GQL Parser throws exceptions on syntax errors", "[gql_parser]") {
+    SECTION("Unterminated MATCH node pattern") {
+        REQUIRE_THROWS_AS(GqlParser::parse("MATCH (p:Person"), std::runtime_error);
+    }
+
+    SECTION("Missing arithmetic right operand") {
+        REQUIRE_THROWS_AS(GqlParser::parse("MATCH (p) RETURN p.age +"), std::runtime_error);
+    }
+
+    SECTION("Empty RETURN clause") {
+        REQUIRE_THROWS_AS(GqlParser::parse("MATCH (p) RETURN "), std::runtime_error);
+    }
+
+    SECTION("Unmatched open parenthesis in expression") {
+        REQUIRE_THROWS_AS(GqlParser::parse("MATCH (p) RETURN (p.age"), std::runtime_error);
+    }
+}
+
+TEST_CASE("GQL Parser parses logical and comparison expression precedence", "[gql_parser]") {
+    // NOT binds tighter than AND, which binds tighter than OR.
+    // "NOT (p.age > 20) AND p.name = 'Alice' OR p.age = 30"
+    // parses as: ((NOT (p.age > 20)) AND (p.name = 'Alice')) OR (p.age = 30)
+    std::string query = "MATCH (p) WHERE NOT (p.age > 20) AND p.name = 'Alice' OR p.age = 30 RETURN p";
+    auto q = GqlParser::parse(query);
+
+    REQUIRE(q.where_expr != nullptr);
+    REQUIRE(q.where_expr->kind == ExpressionKind::BINARY_OP);
+    auto* or_expr = static_cast<const BinaryOpExpr*>(q.where_expr.get());
+    REQUIRE(or_expr->op == BinaryOpKind::OR);
+
+    // Left child of OR is AND expression
+    REQUIRE(or_expr->left->kind == ExpressionKind::BINARY_OP);
+    auto* and_expr = static_cast<const BinaryOpExpr*>(or_expr->left.get());
+    REQUIRE(and_expr->op == BinaryOpKind::AND);
+
+    // Right child of OR is comparison p.age = 30
+    REQUIRE(or_expr->right->kind == ExpressionKind::BINARY_OP);
+    auto* right_eq = static_cast<const BinaryOpExpr*>(or_expr->right.get());
+    REQUIRE(right_eq->op == BinaryOpKind::EQ);
+
+    // Left child of AND is NOT expression
+    REQUIRE(and_expr->left->kind == ExpressionKind::UNARY_OP);
+    auto* not_expr = static_cast<const UnaryOpExpr*>(and_expr->left.get());
+    REQUIRE(not_expr->op == UnaryOpKind::NOT);
+}
+
+TEST_CASE("GQL Parser parses arithmetic expressions and unary NEG", "[gql_parser]") {
+    SECTION("Arithmetic operator precedence") {
+        // "1 + 2 * 3" parses as: 1 + (2 * 3)
+        std::string query = "MATCH (p) RETURN 1 + 2 * 3";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.returns.size() == 1);
+        auto* expr = q.returns[0].expr.get();
+        REQUIRE(expr->kind == ExpressionKind::BINARY_OP);
+        auto* plus = static_cast<const BinaryOpExpr*>(expr);
+        REQUIRE(plus->op == BinaryOpKind::ADD);
+        REQUIRE(plus->left->kind == ExpressionKind::LITERAL);
+        REQUIRE(plus->right->kind == ExpressionKind::BINARY_OP);
+        auto* mul = static_cast<const BinaryOpExpr*>(plus->right.get());
+        REQUIRE(mul->op == BinaryOpKind::MUL);
+    }
+
+    SECTION("Unary NEG expression") {
+        std::string query = "MATCH (p) RETURN -p.age";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.returns.size() == 1);
+        auto* expr = q.returns[0].expr.get();
+        REQUIRE(expr->kind == ExpressionKind::UNARY_OP);
+        auto* neg = static_cast<const UnaryOpExpr*>(expr);
+        REQUIRE(neg->op == UnaryOpKind::NEG);
+    }
+}
+
+TEST_CASE("GQL Parser parses ORDER BY sort specs", "[gql_parser]") {
+    std::string query = "MATCH (p) RETURN p ORDER BY p.age ASCENDING, p.name DESC";
+    auto q = GqlParser::parse(query);
+
+    REQUIRE(q.order_by.size() == 2);
+    REQUIRE(q.order_by[0].ascending == true);
+    REQUIRE(q.order_by[1].ascending == false);
+}
+
+

@@ -64,3 +64,94 @@ TEST_CASE("GQL Lexer handles backtick-escaped identifiers", "[gql_lexer]") {
     REQUIRE(tokens[4].text == "My Label");
     REQUIRE(tokens[5].type == TokenType::RPAREN);
 }
+
+TEST_CASE("GQL Lexer handles comments and whitespace variants", "[gql_lexer]") {
+    SECTION("Multi-line comment parsing") {
+        std::string query = "MATCH (p) /* multi-line \n comment here */ RETURN p";
+        auto tokens = GqlLexer::tokenize(query);
+        REQUIRE(tokens.size() >= 5);
+        REQUIRE(tokens[0].type == TokenType::MATCH);
+        REQUIRE(tokens[1].type == TokenType::LPAREN);
+        REQUIRE(tokens[2].type == TokenType::NAME);
+        REQUIRE(tokens[3].type == TokenType::RPAREN);
+        REQUIRE(tokens[4].type == TokenType::RETURN);
+    }
+
+    SECTION("Dashed single-line comments") {
+        std::string query = "MATCH (p) -- standard single line comment\nRETURN p";
+        auto tokens = GqlLexer::tokenize(query);
+        REQUIRE(tokens.size() >= 5);
+        REQUIRE(tokens[0].type == TokenType::MATCH);
+        REQUIRE(tokens[4].type == TokenType::RETURN);
+    }
+}
+
+TEST_CASE("GQL Lexer tokenizes literals and numbers", "[gql_lexer]") {
+    SECTION("Floating point numbers") {
+        std::string query = "RETURN 12.34, 0.5";
+        auto tokens = GqlLexer::tokenize(query);
+        REQUIRE(tokens.size() >= 4);
+        REQUIRE(tokens[0].type == TokenType::RETURN);
+        REQUIRE(tokens[1].type == TokenType::FLOAT_LIT);
+        REQUIRE(tokens[1].float_value == Approx(12.34));
+        REQUIRE(tokens[2].type == TokenType::COMMA);
+        REQUIRE(tokens[3].type == TokenType::FLOAT_LIT);
+        REQUIRE(tokens[3].float_value == Approx(0.5));
+    }
+
+    SECTION("Escaped string characters") {
+        std::string query = "RETURN 'Alice\\'s book', \"Bob\\\\Charlie\"";
+        auto tokens = GqlLexer::tokenize(query);
+        REQUIRE(tokens.size() >= 4);
+        REQUIRE(tokens[1].type == TokenType::STRING_LIT);
+        REQUIRE(tokens[1].text == "Alice's book");
+        REQUIRE(tokens[3].type == TokenType::STRING_LIT);
+        REQUIRE(tokens[3].text == "Bob\\Charlie");
+    }
+}
+
+TEST_CASE("GQL Lexer tokenizes all operators and compound keywords", "[gql_lexer]") {
+    SECTION("Operator and inequality symbols") {
+        std::string query = "+ - * / = != <> < > <= >= ! | &";
+        auto tokens = GqlLexer::tokenize(query);
+        
+        // Match 14 operators + 1 EOF token
+        REQUIRE(tokens.size() == 15);
+        REQUIRE(tokens[0].type == TokenType::PLUS);
+        REQUIRE(tokens[1].type == TokenType::MINUS);
+        REQUIRE(tokens[2].type == TokenType::STAR);
+        REQUIRE(tokens[3].type == TokenType::SLASH);
+        REQUIRE(tokens[4].type == TokenType::EQ);
+        REQUIRE(tokens[5].type == TokenType::NE); // !=
+        REQUIRE(tokens[6].type == TokenType::NE); // <>
+        REQUIRE(tokens[7].type == TokenType::LT);
+        REQUIRE(tokens[8].type == TokenType::GT);
+        REQUIRE(tokens[9].type == TokenType::LE);
+        REQUIRE(tokens[10].type == TokenType::GE);
+        REQUIRE(tokens[11].type == TokenType::BANG);
+        REQUIRE(tokens[12].type == TokenType::PIPE);
+        REQUIRE(tokens[13].type == TokenType::AMP);
+    }
+
+    SECTION("ORDER BY with whitespace variants") {
+        std::string query = "RETURN p ORDER    \n   BY p.age";
+        auto tokens = GqlLexer::tokenize(query);
+        REQUIRE(tokens.size() >= 3);
+        REQUIRE(tokens[2].type == TokenType::ORDER_BY);
+    }
+}
+
+TEST_CASE("GQL Lexer throws exceptions on invalid input", "[gql_lexer]") {
+    SECTION("Unrecognized character") {
+        REQUIRE_THROWS_AS(GqlLexer::tokenize("MATCH @p"), std::runtime_error);
+    }
+
+    SECTION("Unterminated string") {
+        REQUIRE_THROWS_AS(GqlLexer::tokenize("RETURN 'Alice"), std::runtime_error);
+    }
+
+    SECTION("Unterminated backtick identifier") {
+        REQUIRE_THROWS_AS(GqlLexer::tokenize("MATCH (`Unterminated"), std::runtime_error);
+    }
+}
+

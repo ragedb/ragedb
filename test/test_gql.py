@@ -142,6 +142,30 @@ def run_tests():
         assert r.status_code == 400
         assert "size" in r.text
 
+        # Test 8: Aggregations (Global COUNT and SUM)
+        q8 = "MATCH (p:Person) RETURN count(*), sum(p.age)"
+        print(f"Query 8: {q8}")
+        r = requests.post(f"{url_base}/db/{graph}/gql", data=q8)
+        print("Response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert '"count(*)": 2' in r.text
+        assert '"sum(p.age)": 65' in r.text
+
+        # Test 9: Aggregations (Grouping by age and sorting)
+        print("Adding Charlie for grouping test...")
+        requests.post(f"{url_base}/db/{graph}/node/Person/charlie", json={"name": "Charlie", "age": 30})
+
+        q9 = "MATCH (p:Person) RETURN p.age, count(*), sum(p.age) ORDER BY p.age DESC"
+        print(f"Query 9: {q9}")
+        r = requests.post(f"{url_base}/db/{graph}/gql", data=q9)
+        print("Response:", r.status_code, r.text)
+        assert r.status_code == 200
+        # Expected response: [{"p.age": 35, "count(*)": 1, "sum(p.age)": 35}, {"p.age": 30, "count(*)": 2, "sum(p.age)": 60}]
+        assert '"p.age": 35' in r.text
+        assert '"p.age": 30' in r.text
+        # Check order: 35 should appear before 30 in the JSON response
+        assert r.text.index('"p.age": 35') < r.text.index('"p.age": 30')
+
         print("\nAll GQL tests passed successfully!")
 
     finally:
