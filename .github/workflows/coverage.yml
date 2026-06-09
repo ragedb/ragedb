@@ -9,8 +9,8 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Debug
-  CC: /usr/bin/gcc-12
-  CXX: /usr/bin/g++-12
+  CC: /usr/bin/gcc
+  CXX: /usr/bin/g++
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
     # well on Windows or Mac.  You can convert this to a matrix build if you need
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       SONAR_SCANNER_VERSION: 4.7.0.2747 # Find the latest version in the "Linux" link on this page:
                                         # https://docs.sonarcloud.io/advanced-setup/ci-based-analysis/sonarscanner-cli/
@@ -33,16 +33,7 @@ jobs:
         run: |
           export DEBIAN_FRONTEND=noninteractive
           sudo apt-get -qq update -y
-          sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip libluajit-5.1-2 luajit luajit-5.1-dev libcrypto++8 libcrypto++-dev liburing-dev
-
-      - name: install g++-12
-        run: |
-          DEBIAN_FRONTEND=noninteractive sudo apt install -y g++-12
-          sudo update-alternatives \
-            --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-12 \
-            --slave /usr/bin/gcov gcov /usr/bin/gcov-12
-          sudo update-alternatives --auto gcc
+          sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip libluajit-5.1-2 luajit luajit-5.1-dev libcrypto++8t64 libcrypto++-dev liburing-dev doxygen
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -64,21 +55,17 @@ jobs:
         run: |
           cd seastar
           sudo ./install-dependencies.sh
-          ./configure.py --mode=release --prefix=/usr/local --compiler=g++-12 --c-compiler=gcc-12 --without-tests --without-apps --without-demos --ccache
+          ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos --ccache
           ninja -C build/release -j$(nproc)
           sudo ninja -C build/release install
  
       - name: Install Conan
         run: |
-          python -m pip install conan -v "conan>=2.0"
-          export CC=/usr/bin/gcc-12
-          export CXX=/usr/bin/g++-12
+          python -m pip install --break-system-packages conan -v "conan>=2.0"
           conan profile detect --force
 
       - name: Install dependencies with Conan
         run: |
-          export CC=/usr/bin/gcc-12
-          export CXX=/usr/bin/g++-12
           conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=${{ env.BUILD_TYPE }}
       
       - name: Set up JDK 21
@@ -110,7 +97,7 @@ jobs:
 
       - name: Run build-wrapper
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage  -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CXX_STANDARD=20 -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Debug
 
       - name: Test
@@ -122,7 +109,7 @@ jobs:
       - name: SonarQube
         working-directory: '${{ github.workspace }}/build'
         run: |        
-          sudo pip install gcovr
+          sudo pip install --break-system-packages gcovr
           gcovr -r .. --sonarqube coverage.xml
           mv coverage.xml ..
 
@@ -134,7 +121,7 @@ jobs:
           sudo apt install python3-setuptools python3-idna python3-requests python3-urllib3
           git clone https://github.com/PredatorCZ/cpp-coveralls.git
           pushd cpp-coveralls
-          sudo python3 setup.py install
+          sudo python3 setup.py install --break-system-packages
           popd
           export COVERALLS_SERVICE_NAME="github-workflows"
-          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake -e eve -e luajit -e sol2 --gcov /usr/bin/gcov-12 --gcov-options '\-lp' > /dev/null
+          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake -e eve -e luajit -e sol2 --gcov /usr/bin/gcov --gcov-options '\-lp' > /dev/null

@@ -78,20 +78,15 @@ int main(int argc, char** argv) {
                 server->listen(seastar::socket_address{addr, port}).get();
                 std::cout << "RageDB HTTP server listening on " << addr << ":" << port << " ...\n";
 
-                seastar::engine().at_exit([&server, &databases] {
-                    std::cout << "Stopping RageDB HTTP server" << std::endl;
-                    return databases.stop().then([server](bool success) {
-                      if (success) {
-                        std::cout << "Stopped RageDB Management" << std::endl;
-                      }
-                      // TODO: This is in the right place, but the install can only be done once or
-                      //  must be uninstalled and redone every time a graph is created
-                      // reckless::uninstall_crash_handler();
-                      return server->stop();
-                    });
-                });
-
                 stop_signal.wait().get();  // this will wait till we receive SIGINT or SIGTERM signal
+
+                std::cout << "Stopping RageDB HTTP server" << std::endl;
+                databases.stop().then([server](bool success) {
+                    if (success) {
+                        std::cout << "Stopped RageDB Management" << std::endl;
+                    }
+                    return server->stop();
+                }).get();
             });
         });
     } catch (...) {

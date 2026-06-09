@@ -60,17 +60,17 @@ namespace seastar_apps_lib {
         }
     public:
         stop_signal() {
-            seastar::engine().handle_signal(SIGINT, [this] { signaled(); });
-            seastar::engine().handle_signal(SIGTERM, [this] { signaled(); });
+            seastar::handle_signal(SIGINT, [this] { signaled(); }, false);
+            seastar::handle_signal(SIGTERM, [this] { signaled(); }, false);
         }
         ~stop_signal() {
 
-            seastar::engine().handle_signal(SIGINT, [] {
+            seastar::handle_signal(SIGINT, [] {
               // There's no way to unregister a handler yet, so register a no-op handler instead.
-            });
-            seastar::engine().handle_signal(SIGTERM, [] {
+            }, false);
+            seastar::handle_signal(SIGTERM, [] {
               // There's no way to unregister a handler yet, so register a no-op handler instead.
-            });
+            }, false);
         }
         seastar::future<> wait() {
             return _cond.wait([this] { return _caught; });
