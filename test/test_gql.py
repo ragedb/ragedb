@@ -160,11 +160,27 @@ def run_tests():
         r = requests.post(f"{url_base}/db/{graph}/gql", data=q9)
         print("Response:", r.status_code, r.text)
         assert r.status_code == 200
-        # Expected response: [{"p.age": 35, "count(*)": 1, "sum(p.age)": 35}, {"p.age": 30, "count(*)": 2, "sum(p.age)": 60}]
         assert '"p.age": 35' in r.text
         assert '"p.age": 30' in r.text
-        # Check order: 35 should appear before 30 in the JSON response
         assert r.text.index('"p.age": 35') < r.text.index('"p.age": 30')
+
+        # Test 10: Set Operations (UNION distinct)
+        q10 = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.name UNION MATCH (p:Person) WHERE p.name = 'Bob' RETURN p.name"
+        print(f"Query 10: {q10}")
+        r = requests.post(f"{url_base}/db/{graph}/gql", data=q10)
+        print("Response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert "Alice" in r.text
+        assert "Bob" in r.text
+
+        # Test 11: Set Operations (INTERSECT distinct)
+        q11 = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.name INTERSECT MATCH (p:Person) RETURN p.name"
+        print(f"Query 11: {q11}")
+        r = requests.post(f"{url_base}/db/{graph}/gql", data=q11)
+        print("Response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert "Alice" in r.text
+        assert "Bob" not in r.text
 
         print("\nAll GQL tests passed successfully!")
 

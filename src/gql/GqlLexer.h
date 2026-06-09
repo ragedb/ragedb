@@ -52,6 +52,9 @@ enum class TokenType {
     SET,
     REMOVE,
     DETACH,
+    UNION,
+    INTERSECT,
+    ALL_KW,
 
     // Symbols
     LPAREN,      // (

@@ -76,6 +76,12 @@ std::unique_ptr<Expression> GqlOptimizer::rebuild_expression_without_pushed_pred
 }
 
 void GqlOptimizer::optimize(GqlQuery& query) {
+    if (query.kind != QueryKind::SINGLE) {
+        if (query.left) optimize(*query.left);
+        if (query.right) optimize(*query.right);
+        return;
+    }
+
     if (!query.where_expr) return;
 
     std::map<std::string, std::map<std::string, property_type_t>> pushdowns;

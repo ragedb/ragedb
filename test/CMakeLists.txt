@@ -16,6 +16,8 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlParserTests.cpp
         gql/GqlOptimizerTests.cpp
         gql/GqlExecutorTests.cpp
+        gql/GqlExecutorWriteTests.cpp
+        gql/GqlExecutorAggregationTests.cpp
 
         ../src/main/util/stop_signal.hh
         ../src/main/handlers/HealthCheck.cpp ../src/main/handlers/HealthCheck.h

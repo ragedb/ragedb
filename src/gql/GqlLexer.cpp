@@ -287,6 +287,9 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "SET") type = TokenType::SET;
             else if (upper_name == "REMOVE") type = TokenType::REMOVE;
             else if (upper_name == "DETACH") type = TokenType::DETACH;
+            else if (upper_name == "UNION") type = TokenType::UNION;
+            else if (upper_name == "INTERSECT") type = TokenType::INTERSECT;
+            else if (upper_name == "ALL") type = TokenType::ALL_KW;
             // Compound keyword check: ORDER BY
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;

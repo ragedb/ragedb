@@ -240,4 +240,65 @@ TEST_CASE("GQL Parser parses ORDER BY sort specs", "[gql_parser]") {
     REQUIRE(q.order_by[1].ascending == false);
 }
 
+TEST_CASE("GQL Parser parses Set Operations", "[gql_parser]") {
+    SECTION("UNION and UNION ALL") {
+        std::string query = "MATCH (p:Person) RETURN p.name UNION MATCH (m:Movie) RETURN m.title";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.kind == QueryKind::UNION);
+        REQUIRE(q.left != nullptr);
+        REQUIRE(q.right != nullptr);
+        REQUIRE(q.left->kind == QueryKind::SINGLE);
+        REQUIRE(q.right->kind == QueryKind::SINGLE);
+
+        std::string query_all = "MATCH (p:Person) RETURN p.name UNION ALL MATCH (m:Movie) RETURN m.title";
+        auto q_all = GqlParser::parse(query_all);
+        REQUIRE(q_all.kind == QueryKind::UNION_ALL);
+    }
+
+    SECTION("INTERSECT and INTERSECT ALL") {
+        std::string query = "MATCH (p:Person) RETURN p.name INTERSECT MATCH (m:Movie) RETURN m.title";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.kind == QueryKind::INTERSECT);
+        REQUIRE(q.left != nullptr);
+        REQUIRE(q.right != nullptr);
+        REQUIRE(q.left->kind == QueryKind::SINGLE);
+        REQUIRE(q.right->kind == QueryKind::SINGLE);
+
+        std::string query_all = "MATCH (p:Person) RETURN p.name INTERSECT ALL MATCH (m:Movie) RETURN m.title";
+        auto q_all = GqlParser::parse(query_all);
+        REQUIRE(q_all.kind == QueryKind::INTERSECT_ALL);
+    }
+
+    SECTION("Precedence of UNION vs INTERSECT") {
+        // "Q1 UNION Q2 INTERSECT Q3" parses as: Q1 UNION (Q2 INTERSECT Q3) because INTERSECT binds tighter.
+        std::string query = "MATCH (a) RETURN a UNION MATCH (b) RETURN b INTERSECT MATCH (c) RETURN c";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.kind == QueryKind::UNION);
+        REQUIRE(q.left->kind == QueryKind::SINGLE);
+        REQUIRE(q.right->kind == QueryKind::INTERSECT);
+        REQUIRE(q.right->left->kind == QueryKind::SINGLE);
+        REQUIRE(q.right->right->kind == QueryKind::SINGLE);
+    }
+
+    SECTION("Top-level ORDER BY and LIMIT on Set operations") {
+        std::string query = "MATCH (p:Person) RETURN p.name UNION MATCH (m:Movie) RETURN m.title ORDER BY p.name LIMIT 5";
+        auto q = GqlParser::parse(query);
+
+        REQUIRE(q.kind == QueryKind::UNION);
+        REQUIRE(q.order_by.size() == 1);
+        REQUIRE(q.limit.has_value());
+        REQUIRE(*q.limit == 5);
+
+        // Subqueries should NOT have order_by or limit
+        REQUIRE(q.left->order_by.empty());
+        REQUIRE(!q.left->limit.has_value());
+        REQUIRE(q.right->order_by.empty());
+        REQUIRE(!q.right->limit.has_value());
+    }
+}
+
+
 

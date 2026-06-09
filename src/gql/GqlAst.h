@@ -240,10 +240,27 @@ struct WriteOp {
     bool detach = false;      ///< True if associated relationships should be deleted implicitly (RageDB behavior).
 };
 
+enum class QueryKind {
+    SINGLE,
+    UNION,
+    UNION_ALL,
+    INTERSECT,
+    INTERSECT_ALL
+};
+
 /**
  * @brief Main root query AST node containing parsed MATCHes, WHERE conditions, write statements, and projections.
+ * 
+ * Supports both single GQL queries and recursive set operations (UNION / INTERSECT).
  */
 struct GqlQuery {
+    QueryKind kind = QueryKind::SINGLE;
+
+    // For set operations:
+    std::unique_ptr<GqlQuery> left;
+    std::unique_ptr<GqlQuery> right;
+
+    // For single query:
     std::vector<MatchStatement> matches;     ///< List of matching path patterns.
     std::unique_ptr<Expression> where_expr;  ///< Global WHERE filter expression.
     std::vector<WriteOp> writes;             ///< Sequence of write/mutation operations.

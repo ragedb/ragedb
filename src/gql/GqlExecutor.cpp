@@ -19,6 +19,8 @@
 #include "GqlWriter.h"
 #include <sstream>
 #include <unordered_set>
+#include <set>
+#include <map>
 #include <algorithm>
 #include <cstdlib>
 #include <chrono>
@@ -469,8 +471,112 @@ struct RowSortKey {
  * @param query_val The parsed GQL Query configuration.
  * @return seastar::future<std::string> Future containing serialized JSON array results.
  */
-seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery query_val) {
-    auto query_ptr = std::make_shared<GqlQuery>(std::move(query_val));
+struct QueryResult {
+    std::vector<std::string> column_names;
+    std::vector<std::vector<GqlValue>> rows;
+};
+
+static void sort_combined_result(QueryResult& res, const std::vector<SortSpec>& order_by) {
+    if (order_by.empty()) return;
+    
+    std::stable_sort(res.rows.begin(), res.rows.end(), [&res, &order_by](const std::vector<GqlValue>& a, const std::vector<GqlValue>& b) {
+        for (const auto& spec : order_by) {
+            size_t col_idx = res.column_names.size();
+            if (spec.expr->kind == ExpressionKind::VARIABLE) {
+                auto* ve = static_cast<const VariableExpr*>(spec.expr.get());
+                for (size_t i = 0; i < res.column_names.size(); ++i) {
+                    if (res.column_names[i] == ve->name) {
+                        col_idx = i;
+                        break;
+                    }
+                }
+            } else if (spec.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                auto* pl = static_cast<const PropertyLookupExpr*>(spec.expr.get());
+                std::string col_name = pl->variable + "." + pl->property;
+                for (size_t i = 0; i < res.column_names.size(); ++i) {
+                    if (res.column_names[i] == col_name) {
+                        col_idx = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (col_idx < res.column_names.size()) {
+                int cmp = compare_gql_values(a[col_idx], b[col_idx]);
+                if (cmp != 0) {
+                    return spec.ascending ? (cmp < 0) : (cmp > 0);
+                }
+            }
+        }
+        return false;
+    });
+}
+
+static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr) {
+    if (query_ptr->kind != QueryKind::SINGLE) {
+        auto left_ptr = std::shared_ptr<GqlQuery>(query_ptr->left.release());
+        auto right_ptr = std::shared_ptr<GqlQuery>(query_ptr->right.release());
+
+        return execute_query_internal(graph, left_ptr)
+        .then([&graph, right_ptr, query_ptr](QueryResult left_res) {
+            return execute_query_internal(graph, right_ptr)
+            .then([left_res = std::move(left_res), query_ptr](QueryResult right_res) {
+                if (left_res.column_names.size() != right_res.column_names.size()) {
+                    throw std::runtime_error("All subqueries in a GQL Set operation must return the same number of columns");
+                }
+
+                QueryResult combined_res;
+                combined_res.column_names = left_res.column_names;
+
+                if (query_ptr->kind == QueryKind::UNION_ALL) {
+                    combined_res.rows = std::move(left_res.rows);
+                    for (auto& r : right_res.rows) {
+                        combined_res.rows.push_back(std::move(r));
+                    }
+                } else if (query_ptr->kind == QueryKind::UNION) {
+                    std::set<std::vector<GqlValue>, GqlValueVectorLess> seen;
+                    for (auto& r : left_res.rows) {
+                        if (seen.insert(r).second) {
+                            combined_res.rows.push_back(std::move(r));
+                        }
+                    }
+                    for (auto& r : right_res.rows) {
+                        if (seen.insert(r).second) {
+                            combined_res.rows.push_back(std::move(r));
+                        }
+                    }
+                } else if (query_ptr->kind == QueryKind::INTERSECT) {
+                    std::set<std::vector<GqlValue>, GqlValueVectorLess> left_set;
+                    for (const auto& r : left_res.rows) {
+                        left_set.insert(r);
+                    }
+                    std::set<std::vector<GqlValue>, GqlValueVectorLess> seen_intersection;
+                    for (auto& r : right_res.rows) {
+                        if (left_set.count(r)) {
+                            if (seen_intersection.insert(r).second) {
+                                combined_res.rows.push_back(std::move(r));
+                            }
+                        }
+                    }
+                } else if (query_ptr->kind == QueryKind::INTERSECT_ALL) {
+                    std::map<std::vector<GqlValue>, int64_t, GqlValueVectorLess> left_counts;
+                    for (const auto& r : left_res.rows) {
+                        left_counts[r]++;
+                    }
+                    for (auto& r : right_res.rows) {
+                        auto it = left_counts.find(r);
+                        if (it != left_counts.end() && it->second > 0) {
+                            combined_res.rows.push_back(std::move(r));
+                            it->second--;
+                        }
+                    }
+                }
+
+                return combined_res;
+            });
+        });
+    }
+
     std::vector<GqlRow> initial_rows = { GqlRow{} };
 
     return execute_match_chain(graph, query_ptr->matches, 0, std::move(initial_rows))
@@ -516,11 +622,51 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
             }
         }
 
-        std::vector<std::string> results;
-        std::unordered_set<std::string> seen;
+        QueryResult query_res;
+
+        // Resolve column names
+        for (size_t i = 0; i < query.returns.size(); ++i) {
+            const auto& item = query.returns[i];
+            std::string key;
+            if (item.alias) {
+                key = *item.alias;
+            } else {
+                if (item.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                    auto* pl = static_cast<const PropertyLookupExpr*>(item.expr.get());
+                    key = pl->variable + "." + pl->property;
+                } else if (item.expr->kind == ExpressionKind::VARIABLE) {
+                    auto* ve = static_cast<const VariableExpr*>(item.expr.get());
+                    key = ve->name;
+                } else if (item.expr->kind == ExpressionKind::AGGREGATION) {
+                    auto* ae = static_cast<const AggregateExpr*>(item.expr.get());
+                    std::string fn_name;
+                    if (ae->fn_kind == AggregateKind::COUNT) fn_name = "count";
+                    else if (ae->fn_kind == AggregateKind::SUM) fn_name = "sum";
+                    else if (ae->fn_kind == AggregateKind::AVG) fn_name = "avg";
+                    else if (ae->fn_kind == AggregateKind::MIN) fn_name = "min";
+                    else fn_name = "max";
+
+                    if (!ae->expr) {
+                        key = fn_name + "(*)";
+                    } else if (ae->expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                        auto* pl = static_cast<const PropertyLookupExpr*>(ae->expr.get());
+                        key = fn_name + "(" + pl->variable + "." + pl->property + ")";
+                    } else if (ae->expr->kind == ExpressionKind::VARIABLE) {
+                        auto* ve = static_cast<const VariableExpr*>(ae->expr.get());
+                        key = fn_name + "(" + ve->name + ")";
+                    } else {
+                        key = fn_name + "(expr)";
+                    }
+                } else {
+                    key = "column_" + std::to_string(i);
+                }
+            }
+            query_res.column_names.push_back(key);
+        }
+
+        std::unordered_set<std::string> seen_distinct;
 
         if (contains_aggregates) {
-            // Collect all unique AggregateExpr pointer targets in the query
             std::vector<const AggregateExpr*> aggregate_exprs;
             for (const auto& item : query.returns) {
                 find_aggregates(item.expr.get(), aggregate_exprs);
@@ -529,7 +675,6 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                 find_aggregates(spec.expr.get(), aggregate_exprs);
             }
 
-            // Identify non-aggregate grouping key expressions from query returns
             std::vector<const Expression*> grouping_keys;
             for (const auto& item : query.returns) {
                 if (!has_aggregates(item.expr.get())) {
@@ -537,7 +682,6 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                 }
             }
 
-            // Group the matching rows by evaluated grouping keys
             std::map<std::vector<GqlValue>, GqlGroup, GqlValueVectorLess> groups;
             for (auto& row : filtered_rows) {
                 std::vector<GqlValue> key;
@@ -551,28 +695,24 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                 group.rows.push_back(std::move(row));
             }
 
-            // Standard GQL behavior: if inputs are empty and there are only aggregates, return a single default row
             if (groups.empty() && grouping_keys.empty()) {
                 GqlGroup default_group;
                 default_group.representative = GqlRow{};
                 groups[{}] = default_group;
             }
 
-            // Evaluate aggregates and build projected results for each group
             struct GroupSortKey {
                 std::vector<GqlValue> sort_keys;
-                std::string serialized_row;
+                std::vector<GqlValue> projected_row;
             };
             std::vector<GroupSortKey> sorted_groups;
 
             for (const auto& [key, group] : groups) {
-                // Pre-compute all aggregate values for this group
                 std::map<const AggregateExpr*, GqlValue> aggregate_results;
                 for (const auto* agg : aggregate_exprs) {
                     if (agg->fn_kind == AggregateKind::COUNT) {
                         int64_t count = 0;
                         if (!agg->expr) {
-                            // count(*)
                             count = static_cast<int64_t>(group.rows.size());
                         } else {
                             for (const auto& r : group.rows) {
@@ -616,7 +756,6 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                                 aggregate_results[agg] = GqlValue(sum_int);
                             }
                         } else {
-                            // AVG
                             if (count == 0) {
                                 aggregate_results[agg] = GqlValue();
                             } else if (has_double) {
@@ -650,64 +789,20 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                     }
                 }
 
-                // Serialize projected group columns
-                std::string serialized_row = "{";
-                bool first = true;
+                std::vector<GqlValue> projected;
                 for (size_t i = 0; i < query.returns.size(); ++i) {
                     const auto& item = query.returns[i];
-                    GqlValue val = evaluate_group_expression(group.representative, aggregate_results, item.expr.get());
-
-                    std::string return_key;
-                    if (item.alias) {
-                        return_key = *item.alias;
-                    } else {
-                        if (item.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
-                            auto* pl = static_cast<const PropertyLookupExpr*>(item.expr.get());
-                            return_key = pl->variable + "." + pl->property;
-                        } else if (item.expr->kind == ExpressionKind::VARIABLE) {
-                            auto* ve = static_cast<const VariableExpr*>(item.expr.get());
-                            return_key = ve->name;
-                        } else if (item.expr->kind == ExpressionKind::AGGREGATION) {
-                            auto* ae = static_cast<const AggregateExpr*>(item.expr.get());
-                            std::string fn_name;
-                            if (ae->fn_kind == AggregateKind::COUNT) fn_name = "count";
-                            else if (ae->fn_kind == AggregateKind::SUM) fn_name = "sum";
-                            else if (ae->fn_kind == AggregateKind::AVG) fn_name = "avg";
-                            else if (ae->fn_kind == AggregateKind::MIN) fn_name = "min";
-                            else fn_name = "max";
-
-                            if (!ae->expr) {
-                                return_key = fn_name + "(*)";
-                            } else if (ae->expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
-                                auto* pl = static_cast<const PropertyLookupExpr*>(ae->expr.get());
-                                return_key = fn_name + "(" + pl->variable + "." + pl->property + ")";
-                            } else if (ae->expr->kind == ExpressionKind::VARIABLE) {
-                                auto* ve = static_cast<const VariableExpr*>(ae->expr.get());
-                                return_key = fn_name + "(" + ve->name + ")";
-                            } else {
-                                return_key = fn_name + "(expr)";
-                            }
-                        } else {
-                            return_key = "column_" + std::to_string(i);
-                        }
-                    }
-
-                    if (!first) serialized_row += ", ";
-                    serialized_row += "\"" + return_key + "\": " + serialize_gql_value(val);
-                    first = false;
+                    projected.push_back(evaluate_group_expression(group.representative, aggregate_results, item.expr.get()));
                 }
-                serialized_row += "}";
 
-                // Evaluate sorting specifications for this group
                 GroupSortKey gsk;
-                gsk.serialized_row = serialized_row;
+                gsk.projected_row = std::move(projected);
                 for (const auto& spec : query.order_by) {
                     gsk.sort_keys.push_back(evaluate_group_expression(group.representative, aggregate_results, spec.expr.get()));
                 }
                 sorted_groups.push_back(std::move(gsk));
             }
 
-            // Apply sorting to the groups
             if (!query.order_by.empty()) {
                 std::stable_sort(sorted_groups.begin(), sorted_groups.end(), [&query](const GroupSortKey& a, const GroupSortKey& b) {
                     for (size_t i = 0; i < query.order_by.size(); ++i) {
@@ -720,18 +815,20 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                 });
             }
 
-            // Format results with distinct constraints
             for (const auto& gsk : sorted_groups) {
                 if (query.distinct) {
-                    if (seen.insert(gsk.serialized_row).second) {
-                        results.push_back(gsk.serialized_row);
+                    std::string serialized_distinct;
+                    for (const auto& v : gsk.projected_row) {
+                        serialized_distinct += serialize_gql_value(v) + ",";
+                    }
+                    if (seen_distinct.insert(serialized_distinct).second) {
+                        query_res.rows.push_back(gsk.projected_row);
                     }
                 } else {
-                    results.push_back(gsk.serialized_row);
+                    query_res.rows.push_back(gsk.projected_row);
                 }
             }
         } else {
-            // Apply ORDER BY to raw rows
             if (!query.order_by.empty()) {
                 std::vector<RowSortKey> sorted_keys;
                 for (auto& row : filtered_rows) {
@@ -759,57 +856,63 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
                 }
             }
 
-            // Format return projection items for raw rows
             for (const auto& row : filtered_rows) {
-                std::string serialized_row = "{";
-                bool first = true;
+                std::vector<GqlValue> projected;
                 for (size_t i = 0; i < query.returns.size(); ++i) {
                     const auto& item = query.returns[i];
-                    GqlValue val = evaluate_expression(row, item.expr.get());
-
-                    std::string key;
-                    if (item.alias) {
-                        key = *item.alias;
-                    } else {
-                        if (item.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
-                            auto* pl = static_cast<const PropertyLookupExpr*>(item.expr.get());
-                            key = pl->variable + "." + pl->property;
-                        } else if (item.expr->kind == ExpressionKind::VARIABLE) {
-                            auto* ve = static_cast<const VariableExpr*>(item.expr.get());
-                            key = ve->name;
-                        } else {
-                            key = "column_" + std::to_string(i);
-                        }
-                    }
-
-                    if (!first) serialized_row += ", ";
-                    serialized_row += "\"" + key + "\": " + serialize_gql_value(val);
-                    first = false;
+                    projected.push_back(evaluate_expression(row, item.expr.get()));
                 }
-                serialized_row += "}";
 
                 if (query.distinct) {
-                    if (seen.insert(serialized_row).second) {
-                        results.push_back(serialized_row);
+                    std::string serialized_distinct;
+                    for (const auto& v : projected) {
+                        serialized_distinct += serialize_gql_value(v) + ",";
+                    }
+                    if (seen_distinct.insert(serialized_distinct).second) {
+                        query_res.rows.push_back(std::move(projected));
                     }
                 } else {
-                    results.push_back(serialized_row);
+                    query_res.rows.push_back(std::move(projected));
                 }
             }
         }
 
-        // Apply LIMIT
-        if (query.limit && results.size() > *query.limit) {
-            results.resize(*query.limit);
+        if (query.limit && query_res.rows.size() > *query.limit) {
+            query_res.rows.resize(*query.limit);
         }
 
-        // Output final JSON Array
+        return seastar::make_ready_future<QueryResult>(std::move(query_res));
+    });
+}
+
+seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery query_val) {
+    auto query_ptr = std::make_shared<GqlQuery>(std::move(query_val));
+
+    return execute_query_internal(graph, query_ptr)
+    .then([query_ptr](QueryResult result) {
+        const auto& query = *query_ptr;
+
+        if (!query.order_by.empty()) {
+            sort_combined_result(result, query.order_by);
+        }
+
+        if (query.limit && result.rows.size() > *query.limit) {
+            result.rows.resize(*query.limit);
+        }
+
         std::string json_res = "[";
-        bool first = true;
-        for (const auto& r : results) {
-            if (!first) json_res += ", ";
-            json_res += r;
-            first = false;
+        bool first_row = true;
+        for (const auto& row : result.rows) {
+            if (!first_row) json_res += ", ";
+            json_res += "{";
+            bool first_col = true;
+            for (size_t i = 0; i < result.column_names.size(); ++i) {
+                if (!first_col) json_res += ", ";
+                json_res += "\"" + result.column_names[i] + "\": " + serialize_gql_value(row[i]);
+                first_col = false;
+            }
+            json_res += "}";
+            first_row = false;
         }
         json_res += "]";
 

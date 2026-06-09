@@ -98,7 +98,7 @@ void GqlParser::consume(TokenType type, const std::string& error_message) {
  * @return GqlQuery The constructed query AST object.
  * @throws std::runtime_error If syntax errors are encountered.
  */
-GqlQuery GqlParser::parse_query() {
+GqlQuery GqlParser::parse_single_query() {
     GqlQuery query;
 
     // Parse MATCH/OPTIONAL MATCH clauses
@@ -199,36 +199,78 @@ GqlQuery GqlParser::parse_query() {
             }
             query.returns.push_back(std::move(item));
         } while (match(TokenType::COMMA));
-
-        // Parse optional ORDER BY clause
-        if (match(TokenType::ORDER_BY)) {
-            do {
-                SortSpec spec;
-                spec.expr = parse_expression();
-                if (match(TokenType::ASC)) {
-                    spec.ascending = true;
-                } else if (match(TokenType::DESC)) {
-                    spec.ascending = false;
-                } else {
-                    spec.ascending = true; // default
-                }
-                query.order_by.push_back(std::move(spec));
-            } while (match(TokenType::COMMA));
-        }
-
-        // Parse optional LIMIT clause
-        if (match(TokenType::LIMIT)) {
-            std::string num_str = peek().text;
-            consume(TokenType::NUMBER, "Expected integer limit value");
-            query.limit = std::stoull(num_str);
-        }
     } else {
         if (query.writes.empty()) {
             throw std::runtime_error("Query must contain either a RETURN clause or at least one write clause");
         }
     }
 
+    return query;
+}
+
+GqlQuery GqlParser::parse_query() {
+    GqlQuery query = parse_union();
+
+    // Parse optional top-level ORDER BY clause
+    if (match(TokenType::ORDER_BY)) {
+        do {
+            SortSpec spec;
+            spec.expr = parse_expression();
+            if (match(TokenType::ASC)) {
+                spec.ascending = true;
+            } else if (match(TokenType::DESC)) {
+                spec.ascending = false;
+            } else {
+                spec.ascending = true; // default
+            }
+            query.order_by.push_back(std::move(spec));
+        } while (match(TokenType::COMMA));
+    }
+
+    // Parse optional top-level LIMIT clause
+    if (match(TokenType::LIMIT)) {
+        std::string num_str = peek().text;
+        consume(TokenType::NUMBER, "Expected integer limit value");
+        query.limit = std::stoull(num_str);
+    }
+
     consume(TokenType::EOF_TOK, "Expected end of query");
+    return query;
+}
+
+GqlQuery GqlParser::parse_union() {
+    GqlQuery query = parse_intersect();
+    while (match(TokenType::UNION)) {
+        bool all = false;
+        if (match(TokenType::ALL_KW)) {
+            all = true;
+        }
+        GqlQuery right = parse_intersect();
+
+        GqlQuery combined;
+        combined.kind = all ? QueryKind::UNION_ALL : QueryKind::UNION;
+        combined.left = std::make_unique<GqlQuery>(std::move(query));
+        combined.right = std::make_unique<GqlQuery>(std::move(right));
+        query = std::move(combined);
+    }
+    return query;
+}
+
+GqlQuery GqlParser::parse_intersect() {
+    GqlQuery query = parse_single_query();
+    while (match(TokenType::INTERSECT)) {
+        bool all = false;
+        if (match(TokenType::ALL_KW)) {
+            all = true;
+        }
+        GqlQuery right = parse_single_query();
+
+        GqlQuery combined;
+        combined.kind = all ? QueryKind::INTERSECT_ALL : QueryKind::INTERSECT;
+        combined.left = std::make_unique<GqlQuery>(std::move(query));
+        combined.right = std::make_unique<GqlQuery>(std::move(right));
+        query = std::move(combined);
+    }
     return query;
 }
 

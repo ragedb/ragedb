@@ -38,6 +38,9 @@ private:
 
     // Parsing routines
     GqlQuery parse_query();
+    GqlQuery parse_union();
+    GqlQuery parse_intersect();
+    GqlQuery parse_single_query();
     MatchStatement parse_match();
     PathPattern parse_path_pattern();
     PatternNode parse_node_pattern();
