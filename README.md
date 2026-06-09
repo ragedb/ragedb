@@ -407,7 +407,7 @@ First let's update and upgrade to the latest versions of local software:
 
 Install Seastar (this will take a while, that's why we are using screen):
 
-    git clone https://github.com/scylladb/seastar.git
+    git clone -b seastar-25.05.0 https://github.com/scylladb/seastar.git
     cd seastar
     sudo ./install-dependencies.sh
     ./configure.py --mode=release --prefix=/usr/local

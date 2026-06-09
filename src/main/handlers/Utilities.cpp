@@ -310,7 +310,7 @@ ragedb::property_type_t Utilities::validate_json_property(const std::unique_ptr<
 
 bool Utilities::validate_allowed_data_type(std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep) {
   if ( req->param.exists(Utilities::DATA_TYPE) ) {
-    bool allowed_type = allowed_types.find(req->param.at(Utilities::DATA_TYPE)) != allowed_types.end();
+    bool allowed_type = allowed_types.find(req->get_path_param(Utilities::DATA_TYPE)) != allowed_types.end();
     if (!allowed_type) {
       rep->write_body("json", seastar::json::stream_object("Allowed data types: \"boolean\", \"integer\", \"double\", \"string\", \"boolean_list\", \"integer_list\", \"double_list\", \"string_list\""));
       rep->set_status(seastar::http::reply::status_type::bad_request);
