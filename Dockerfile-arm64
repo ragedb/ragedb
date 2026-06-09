@@ -50,7 +50,7 @@ COPY --from=build /lib/aarch64-linux-gnu/libudev.so.1 /lib/aarch64-linux-gnu/
 COPY --from=build /lib/aarch64-linux-gnu/libffi.so.8 /lib/aarch64-linux-gnu/
 COPY --from=build /lib/aarch64-linux-gnu/libc.so.6 /lib/aarch64-linux-gnu/
 WORKDIR /ragedb
-COPY --from=build /data/rage/build/bin/ragedb ragedb
+COPY --from=build /data/rage/build/ragedb ragedb
 COPY --from=build /data/rage/build/bin/public public
 EXPOSE 7243/tcp
 ENTRYPOINT ["./ragedb"]
