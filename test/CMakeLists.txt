@@ -30,6 +30,12 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/main/handlers/Management.cpp ../src/main/handlers/Management.h
         ../src/main/Database.cpp ../src/main/Database.h
         ../src/main/Databases.cpp ../src/main/Databases.h
+        ../src/main/handlers/Gql.cpp ../src/main/handlers/Gql.h
+        ../src/gql/GqlLexer.cpp ../src/gql/GqlLexer.h
+        ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
+        ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
+        ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlAst.h
         )
 target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph Seastar::seastar)
 target_include_directories(tests PRIVATE
@@ -43,6 +49,7 @@ target_include_directories(tests PRIVATE
         ../src/main/handlers
         ../src/main/json
         ../src/main/util
+        ../src/gql
         ../lua)
 # automatically discover tests that are defined in catch based test files you can modify the unittests. Set TEST_PREFIX
 # to whatever you want, or use different for different binaries
@@ -77,6 +84,12 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/main/handlers/Management.cpp ../src/main/handlers/Management.h
         ../src/main/Database.cpp ../src/main/Database.h
         ../src/main/Databases.cpp ../src/main/Databases.h
+        ../src/main/handlers/Gql.cpp ../src/main/handlers/Gql.h
+        ../src/gql/GqlLexer.cpp ../src/gql/GqlLexer.h
+        ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
+        ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
+        ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlAst.h
         )
 
 target_compile_definitions (tests2 PRIVATE SEASTAR_TESTING_MAIN)
@@ -92,4 +105,5 @@ target_include_directories(tests2 PRIVATE
         ../src/main/handlers
         ../src/main/json
         ../src/main/util
+        ../src/gql
         ../lua)
