@@ -12,6 +12,10 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp
         Link.cpp Node.cpp Graph.cpp
         types/Date.cpp
+        gql/GqlTokenizerTests.cpp
+        gql/GqlParserTests.cpp
+        gql/GqlOptimizerTests.cpp
+        gql/GqlExecutorTests.cpp
 
         ../src/main/util/stop_signal.hh
         ../src/main/handlers/HealthCheck.cpp ../src/main/handlers/HealthCheck.h
