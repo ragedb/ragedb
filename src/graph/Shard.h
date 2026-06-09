@@ -60,6 +60,8 @@
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
 
+#define get0() get()
+
 extern unsigned int SHARD_BITS;
 extern unsigned int SHARD_MASK;
 

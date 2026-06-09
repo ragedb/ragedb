@@ -123,10 +123,10 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::GetNodePropertyHan
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_key && valid_property) {
-        return parent.graph.shard.local().NodeGetPropertyPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().NodeGetPropertyPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::PROPERTY))
         .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
             json_properties_builder json;
-            json.add_property(req->param[Utilities::PROPERTY], property);
+            json.add_property(req->get_path_param(Utilities::PROPERTY), property);
             rep->write_body("json", seastar::sstring(json.as_json()));
             return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
@@ -141,10 +141,10 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::GetNodePropertyByI
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if (id > 0 && valid_property) {
-        return parent.graph.shard.local().NodeGetPropertyPeered(id, req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().NodeGetPropertyPeered(id, req->get_path_param(Utilities::PROPERTY))
         .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
             json_properties_builder json;
-            json.add_property(req->param[Utilities::PROPERTY], property);
+            json.add_property(req->get_path_param(Utilities::PROPERTY), property);
             rep->write_body("json", seastar::sstring(json.as_json()));
             return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
@@ -161,7 +161,7 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::PutNodePropertyHan
     if(valid_type && valid_key && valid_property) {
         parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.invoke_on(seastar::this_shard_id(), [req = std::move(req)] (ragedb::Shard &local_shard) {
-            return local_shard.NodeSetPropertyFromJsonPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY], req->content.c_str());
+            return local_shard.NodeSetPropertyFromJsonPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::PROPERTY), req->content.c_str());
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
@@ -183,7 +183,7 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::PutNodePropertyByI
         parent.graph.Log(req->_method, req->get_url(), req->content);
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (ragedb::Shard &local_shard) {
-            return local_shard.NodeSetPropertyFromJson(id, req->param[Utilities::PROPERTY], req->content.c_str());
+            return local_shard.NodeSetPropertyFromJson(id, req->get_path_param(Utilities::PROPERTY), req->content.c_str());
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
@@ -205,7 +205,7 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::DeleteNodeProperty
     if(valid_type && valid_key && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.invoke_on(seastar::this_shard_id(), [req = std::move(req)] (ragedb::Shard &local_shard) {
-            return local_shard.NodeDeletePropertyPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::PROPERTY]);
+            return local_shard.NodeDeletePropertyPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::PROPERTY));
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
@@ -227,7 +227,7 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::DeleteNodeProperty
         parent.graph.Log(req->_method, req->get_url());
         uint16_t node_shard_id = Shard::CalculateShardId(id);
         return parent.graph.shard.invoke_on(node_shard_id, [id, req = std::move(req)] (ragedb::Shard &local_shard) {
-            return local_shard.NodeDeleteProperty(id, req->param[Utilities::PROPERTY]);
+            return local_shard.NodeDeleteProperty(id, req->get_path_param(Utilities::PROPERTY));
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
@@ -247,7 +247,7 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::GetNodePropertiesH
 
     if(valid_type && valid_key) {
         return parent.graph.shard.invoke_on(seastar::this_shard_id(), [req = std::move(req)] (ragedb::Shard &local_shard) {
-            return local_shard.NodeGetPropertiesPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
+            return local_shard.NodeGetPropertiesPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY));
         }).then([rep = std::move(rep)] (const std::map<std::string, property_type_t>& properties) mutable {
             json_properties_builder json;
             json.add_properties(properties);
@@ -285,8 +285,8 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::PostNodeProperties
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.invoke_on(seastar::this_shard_id(), [req = std::move(req)](ragedb::Shard &local_shard) {
-                return local_shard.NodeResetPropertiesFromJsonPeered(req->param[Utilities::TYPE],
-                                         req->param[Utilities::KEY],
+                return local_shard.NodeResetPropertiesFromJsonPeered(req->get_path_param(Utilities::TYPE),
+                                         req->get_path_param(Utilities::KEY),
                                          req->content.c_str());
             }).then([rep = std::move(rep)](bool success) mutable {
                 if (success) {
@@ -333,8 +333,8 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::PutNodePropertiesH
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
             return parent.graph.shard.invoke_on(seastar::this_shard_id(), [req = std::move(req)](ragedb::Shard &local_shard) {
-                return local_shard.NodeSetPropertiesFromJsonPeered(req->param[Utilities::TYPE],
-                                         req->param[Utilities::KEY],
+                return local_shard.NodeSetPropertiesFromJsonPeered(req->get_path_param(Utilities::TYPE),
+                                         req->get_path_param(Utilities::KEY),
                                          req->content.c_str());
             }).then([rep = std::move(rep)](bool success) mutable {
                 if (success) {
@@ -380,7 +380,7 @@ future<std::unique_ptr<seastar::http::reply>> NodeProperties::DeleteNodeProperti
     if(valid_type && valid_key) {
         parent.graph.Log(req->_method, req->get_url(), req->content);
         return parent.graph.shard.invoke_on(seastar::this_shard_id(), [req = std::move(req)] (ragedb::Shard &local_shard) {
-            return local_shard.NodeDeletePropertiesPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]);
+            return local_shard.NodeDeletePropertiesPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY));
         }).then([rep = std::move(rep)] (bool success) mutable {
             if(success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);

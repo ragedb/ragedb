@@ -138,7 +138,7 @@ Schema::GetNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &path
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if (valid_type) {
-        std::map<std::string, std::string> type = parent.graph.shard.local().NodeTypeGet(req->param[Utilities::TYPE]);
+        std::map<std::string, std::string> type = parent.graph.shard.local().NodeTypeGet(req->get_path_param(Utilities::TYPE));
         rep->write_body("json", seastar::json::stream_object(properties_json(type)));
     }
 
@@ -152,7 +152,7 @@ Schema::PostNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &pat
     if (valid_type) {
         parent.graph.Log(req->_method, req->get_url());
         // The node type needs to be set by Shard 0 and propagated
-        return parent.graph.shard.invoke_on(0, [type = req->param[Utilities::TYPE]](ragedb::Shard &local_shard) {
+        return parent.graph.shard.invoke_on(0, [type = req->get_path_param(Utilities::TYPE)](ragedb::Shard &local_shard) {
             return local_shard.NodeTypeInsertPeered(type);
         }).then(
                 [rep = std::move(rep)](bool success) mutable {
@@ -173,7 +173,7 @@ Schema::DeleteNodeTypeHandler::handle([[maybe_unused]] const seastar::sstring &p
 
     if(valid_type) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().DeleteNodeTypePeered(req->param[Utilities::TYPE]).then([rep = std::move(rep)](bool success) mutable {
+        return parent.graph.shard.local().DeleteNodeTypePeered(req->get_path_param(Utilities::TYPE)).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
@@ -191,7 +191,7 @@ Schema::GetRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstri
     bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
 
     if(valid_type) {
-        std::map<std::string, std::string> type = parent.graph.shard.local().RelationshipTypeGet(req->param[Utilities::TYPE]);
+        std::map<std::string, std::string> type = parent.graph.shard.local().RelationshipTypeGet(req->get_path_param(Utilities::TYPE));
         rep->write_body("json", seastar::json::stream_object(properties_json(type)));
     }
     return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
@@ -205,7 +205,7 @@ Schema::PostRelationshipTypeHandler::handle([[maybe_unused]] const seastar::sstr
     if(valid_type) {
         parent.graph.Log(req->_method, req->get_url());
         // The relationship type needs to be set by Shard 0 and propagated
-        return parent.graph.shard.invoke_on(0, [type = req->param[Utilities::TYPE]](ragedb::Shard &local_shard) {
+        return parent.graph.shard.invoke_on(0, [type = req->get_path_param(Utilities::TYPE)](ragedb::Shard &local_shard) {
             return local_shard.RelationshipTypeInsertPeered(type);
         }).then([rep = std::move(rep)](bool success) mutable {
                     if (success) {
@@ -226,7 +226,7 @@ Schema::DeleteRelationshipTypeHandler::handle([[maybe_unused]] const seastar::ss
 
     if(valid_type) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().DeleteRelationshipTypePeered(req->param[Utilities::TYPE]).then([rep = std::move(rep)](bool success) mutable {
+        return parent.graph.shard.local().DeleteRelationshipTypePeered(req->get_path_param(Utilities::TYPE)).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
@@ -245,9 +245,9 @@ Schema::GetNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstri
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_property) {
-        std::string data_type = parent.graph.shard.local().NodePropertyTypeGet(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]);
+        std::string data_type = parent.graph.shard.local().NodePropertyTypeGet(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY));
         json_properties_builder json;
-        json.add_property(req->param[Utilities::PROPERTY], data_type);
+        json.add_property(req->get_path_param(Utilities::PROPERTY), data_type);
         rep->write_body("json", seastar::sstring(json.as_json()));
     }
     return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
@@ -263,7 +263,7 @@ Schema::PostNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::sstr
 
     if(valid_type && valid_property && valid_data_type && allowed_data_type) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().NodePropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
+        return parent.graph.shard.local().NodePropertyTypeAddPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY), req->get_path_param(Utilities::DATA_TYPE)).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
             if (property_type_id > 0) {
                 rep->set_status(seastar::http::reply::status_type::created);
             } else {
@@ -283,8 +283,8 @@ Schema::DeleteNodeTypePropertyHandler::handle([[maybe_unused]] const seastar::ss
 
     if(valid_type && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().NodePropertyTypeDeletePeered(req->param[Utilities::TYPE],
-                                                                       req->param[Utilities::PROPERTY]).then([rep = std::move(rep)](bool success) mutable {
+        return parent.graph.shard.local().NodePropertyTypeDeletePeered(req->get_path_param(Utilities::TYPE),
+                                                                       req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
@@ -303,9 +303,9 @@ Schema::GetRelationshipTypePropertyHandler::handle([[maybe_unused]] const seasta
     bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
 
     if(valid_type && valid_property) {
-        std::string data_type = parent.graph.shard.local().RelationshipPropertyTypeGet(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]);
+        std::string data_type = parent.graph.shard.local().RelationshipPropertyTypeGet(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY));
         json_properties_builder json;
-        json.add_property(req->param[Utilities::PROPERTY], data_type);
+        json.add_property(req->get_path_param(Utilities::PROPERTY), data_type);
         rep->write_body("json", seastar::sstring(json.as_json()));
     }
     return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
@@ -321,7 +321,7 @@ Schema::PostRelationshipTypePropertyHandler::handle([[maybe_unused]] const seast
 
     if(valid_type && valid_property && valid_data_type && allowed_data_type) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], req->param[Utilities::DATA_TYPE]).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
+        return parent.graph.shard.local().RelationshipPropertyTypeAddPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY), req->get_path_param(Utilities::DATA_TYPE)).then([rep = std::move(rep)](uint8_t property_type_id) mutable {
             if (property_type_id != 0) {
                 rep->set_status(seastar::http::reply::status_type::created);
             } else {
@@ -341,7 +341,7 @@ Schema::DeleteRelationshipTypePropertyHandler::handle([[maybe_unused]] const sea
 
     if(valid_type && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().RelationshipPropertyTypeDeletePeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY]).then([rep = std::move(rep)](bool success) mutable {
+        return parent.graph.shard.local().RelationshipPropertyTypeDeletePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {

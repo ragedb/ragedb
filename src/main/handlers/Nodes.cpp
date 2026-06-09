@@ -88,7 +88,7 @@ future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodesOfTypeHandler::hand
         uint64_t skip = Utilities::validate_skip(req, rep);
         uint64_t limit = Utilities::validate_limit(req, rep);
 
-        return parent.graph.shard.local().AllNodesPeered(req->param[Utilities::TYPE], skip, limit)
+        return parent.graph.shard.local().AllNodesPeered(req->get_path_param(Utilities::TYPE), skip, limit)
                 .then([rep = std::move(rep)](const std::vector<Node>& nodes) mutable {
                     std::vector<node_json> json_array;
                     json_array.reserve(nodes.size());
@@ -131,7 +131,7 @@ future<std::unique_ptr<seastar::http::reply>> Nodes::GetNodeHandler::handle([[ma
     bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
     if(valid_type && valid_key) {
-        return parent.graph.shard.local().NodeGetPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
+        return parent.graph.shard.local().NodeGetPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY))
                 .then([rep = std::move(rep)](Node node) mutable {
                     if (node.getId() == 0) {
                         rep->set_status(seastar::http::reply::status_type::not_found);
@@ -152,8 +152,8 @@ future<std::unique_ptr<seastar::http::reply>> Nodes::PostNodeHandler::handle([[m
         // If there are no properties
         if (req->content.empty()) {
             parent.graph.Log(req->_method, req->get_url());
-            return parent.graph.shard.local().NodeAddEmptyPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
-                    .then([rep = std::move(rep), type = req->param[Utilities::TYPE], key = req->param[Utilities::KEY]](uint64_t id) mutable {
+            return parent.graph.shard.local().NodeAddEmptyPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY))
+                    .then([rep = std::move(rep), type = req->get_path_param(Utilities::TYPE), key = req->get_path_param(Utilities::KEY)](uint64_t id) mutable {
                         if (id > 0) {
                             Node node(id, type, key);
                             rep->write_body("json", seastar::json::stream_object(node_json(node)));
@@ -167,10 +167,10 @@ future<std::unique_ptr<seastar::http::reply>> Nodes::PostNodeHandler::handle([[m
         }
         if (Utilities::validate_json(req, rep)) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
-            return parent.graph.shard.local().NodeAddPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY],
+            return parent.graph.shard.local().NodeAddPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY),
                                                             req->content.c_str())
                     .then([rep = std::move(
-                            rep), type = req->param[Utilities::TYPE], key = req->param[Utilities::KEY], this](
+                            rep), type = req->get_path_param(Utilities::TYPE), key = req->get_path_param(Utilities::KEY), this](
                             uint64_t id) mutable {
                         if (id > 0) {
                             return parent.graph.shard.local().NodeGetPeered(id).then(
@@ -197,7 +197,7 @@ future<std::unique_ptr<seastar::http::reply>> Nodes::DeleteNodeHandler::handle([
 
     if(valid_type && valid_key) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().NodeRemovePeered(req->param[Utilities::TYPE], req->param[Utilities::KEY]).then([rep = std::move(rep)](bool success) mutable {
+        return parent.graph.shard.local().NodeRemovePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY)).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
@@ -238,7 +238,7 @@ future<std::unique_ptr<seastar::http::reply>> Nodes::FindNodesOfTypeHandler::han
         uint64_t skip = Utilities::validate_skip(req, rep);
         uint64_t limit = Utilities::validate_limit(req, rep);
 
-        return parent.graph.shard.local().FindNodesPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], operation, value, skip, limit)
+        return parent.graph.shard.local().FindNodesPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY), operation, value, skip, limit)
         .then([rep = std::move(rep)](const std::vector<Node>& nodes) mutable {
             std::vector<node_json> json_array;
             json_array.reserve(nodes.size());

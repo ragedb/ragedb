@@ -409,7 +409,7 @@ Install Seastar (this will take a while, that's why we are using screen):
 
     git clone https://github.com/scylladb/seastar.git
     cd seastar
-    sudo ./install_dependencies.sh
+    sudo ./install-dependencies.sh
     ./configure.py --mode=release --prefix=/usr/local
     sudo ninja -C build/release install
 

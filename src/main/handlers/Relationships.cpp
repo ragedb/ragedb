@@ -104,7 +104,7 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::GetRelationshipsOfT
         uint64_t limit = Utilities::validate_limit(req, rep);
         uint64_t skip = Utilities::validate_skip(req, rep);
 
-        return parent.graph.shard.local().AllRelationshipsPeered(req->param[Utilities::TYPE], skip, limit)
+        return parent.graph.shard.local().AllRelationshipsPeered(req->get_path_param(Utilities::TYPE), skip, limit)
                 .then([rep = std::move(rep)](const std::vector<Relationship>& relationships) mutable {
                     std::vector<relationship_json> json_array;
                     json_array.reserve(relationships.size());
@@ -150,8 +150,8 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipHan
         // If there are no properties
         if (req->content.empty()) {
             parent.graph.Log(req->_method, req->get_url());
-            return parent.graph.shard.local().RelationshipAddEmptyPeered(req->param[Utilities::REL_TYPE], req->param[Utilities::TYPE],req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2])
-                    .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this] (uint64_t id) mutable {
+            return parent.graph.shard.local().RelationshipAddEmptyPeered(req->get_path_param(Utilities::REL_TYPE), req->get_path_param(Utilities::TYPE),req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::TYPE2), req->get_path_param(Utilities::KEY2))
+                    .then([rep = std::move(rep), rel_type=req->get_path_param(Utilities::REL_TYPE), this] (uint64_t id) mutable {
                         if (id > 0) {
                             return parent.graph.shard.local().RelationshipGetPeered(id).then([rep = std::move(rep), rel_type] (Relationship relationship) mutable {
                                 rep->write_body("json", seastar::json::stream_object((relationship_json(relationship))));
@@ -167,13 +167,13 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipHan
         } else {
             if (Utilities::validate_json(req, rep)) {
                 parent.graph.Log(req->_method, req->get_url(), req->content);
-                return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE],
-                                                                        req->param[Utilities::TYPE],
-                                                                        req->param[Utilities::KEY],
-                                                                        req->param[Utilities::TYPE2],
-                                                                        req->param[Utilities::KEY2],
+                return parent.graph.shard.local().RelationshipAddPeered(req->get_path_param(Utilities::REL_TYPE),
+                                                                        req->get_path_param(Utilities::TYPE),
+                                                                        req->get_path_param(Utilities::KEY),
+                                                                        req->get_path_param(Utilities::TYPE2),
+                                                                        req->get_path_param(Utilities::KEY2),
                                                                         req->content.c_str())
-                        .then([rep = std::move(rep), rel_type = req->param[Utilities::REL_TYPE], this](
+                        .then([rep = std::move(rep), rel_type = req->get_path_param(Utilities::REL_TYPE), this](
                                 uint64_t id) mutable {
                             if (id > 0) {
                                 return parent.graph.shard.local().RelationshipGetPeered(id).then(
@@ -204,8 +204,8 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipByI
         // If there are no properties
         if (req->content.empty()) {
             parent.graph.Log(req->_method, req->get_url(), req->content);
-            return parent.graph.shard.local().RelationshipAddEmptyPeered(req->param[Utilities::REL_TYPE], id, id2)
-                    .then([rep = std::move(rep), rel_type=req->param[Utilities::REL_TYPE], this] (uint64_t relationship_id) mutable {
+            return parent.graph.shard.local().RelationshipAddEmptyPeered(req->get_path_param(Utilities::REL_TYPE), id, id2)
+                    .then([rep = std::move(rep), rel_type=req->get_path_param(Utilities::REL_TYPE), this] (uint64_t relationship_id) mutable {
                         if (relationship_id > 0) {
                             return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then([rep = std::move(rep)] (Relationship relationship) mutable {
                                 rep->write_body("json", seastar::json::stream_object(relationship_json(relationship)));
@@ -221,9 +221,9 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipByI
         } else {
             if (Utilities::validate_json(req, rep)) {
                 parent.graph.Log(req->_method, req->get_url(), req->content);
-                return parent.graph.shard.local().RelationshipAddPeered(req->param[Utilities::REL_TYPE], id, id2,
+                return parent.graph.shard.local().RelationshipAddPeered(req->get_path_param(Utilities::REL_TYPE), id, id2,
                                                                         req->content.c_str())
-                        .then([rep = std::move(rep), rel_type = req->param[Utilities::REL_TYPE], this](
+                        .then([rep = std::move(rep), rel_type = req->get_path_param(Utilities::REL_TYPE), this](
                                 uint64_t relationship_id) mutable {
                             if (relationship_id > 0) {
                                 return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then(
@@ -277,7 +277,7 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::GetNodeRelationship
 
         if(options_string.empty()) {
             // Get Node Relationships
-            return parent.graph.shard.local().NodeGetRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
+            return parent.graph.shard.local().NodeGetRelationshipsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY))
                     .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
                         std::vector<relationship_json> json_array;
                         json_array.reserve(relationships.size());
@@ -306,7 +306,7 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::GetNodeRelationship
         switch(options.size()) {
             case 1:
                 // Get Node Degree with Direction
-                return parent.graph.shard.local().NodeGetRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction)
+                return parent.graph.shard.local().NodeGetRelationshipsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), direction)
                         .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
                             std::vector<relationship_json> json_array;
                             json_array.reserve(relationships.size());
@@ -323,7 +323,7 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::GetNodeRelationship
                 boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
                 // Single Relationship Type
                 if (rel_types.size() == 1) {
-                    return parent.graph.shard.local().NodeGetRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types[0])
+                    return parent.graph.shard.local().NodeGetRelationshipsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), direction, rel_types[0])
                             .then([rep = std::move(rep), rel_type = rel_types[0]] (const std::vector<Relationship>& relationships) mutable {
                                 std::vector<relationship_json> json_array;
                                 json_array.reserve(relationships.size());
@@ -336,7 +336,7 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::GetNodeRelationship
                 }
 
                 // Multiple Relationship Types
-                return parent.graph.shard.local().NodeGetRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types)
+                return parent.graph.shard.local().NodeGetRelationshipsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), direction, rel_types)
                         .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
                             std::vector<relationship_json> json_array;
                             json_array.reserve(relationships.size());
@@ -462,7 +462,7 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::FindRelationshipsOf
         uint64_t skip = Utilities::validate_skip(req, rep);
         uint64_t limit = Utilities::validate_limit(req, rep);
 
-        return parent.graph.shard.local().FindRelationshipsPeered(req->param[Utilities::TYPE], req->param[Utilities::PROPERTY], operation, value, skip, limit)
+        return parent.graph.shard.local().FindRelationshipsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY), operation, value, skip, limit)
                 .then([rep = std::move(rep)](const std::vector<Relationship>& relationships) mutable {
                     std::vector<relationship_json> json_array;
                     json_array.reserve(relationships.size());

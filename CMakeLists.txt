@@ -69,14 +69,25 @@ if(ENABLE_PCH)
     <utility>)
 endif()
 
-# Set up some extra Conan dependencies based on our needs before loading Conan
-set(CONAN_EXTRA_REQUIRES "")
-set(CONAN_EXTRA_OPTIONS "")
-set(ENV{CONAN_REVISIONS_ENABLED} 1)
+find_package(fmt REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(sol2 REQUIRED)
+find_package(luajit REQUIRED)
+find_package(tsl-sparse-map REQUIRED)
+find_package(simdjson REQUIRED)
+find_package(rapidcsv REQUIRED)
+find_package(vincentlaucsb-csv-parser REQUIRED)
+find_package(roaring REQUIRED)
+find_package(eve REQUIRED)
+find_package(cppcodec REQUIRED)
+find_package(cpr REQUIRED)
+find_package(Boost REQUIRED)
+find_package(unordered_dense REQUIRED)
+find_package(benchmark REQUIRED)
 
-include(cmake/Conan.cmake)
-
-run_conan()
+if(NOT TARGET LinuxMembarrier::membarrier)
+  add_library(LinuxMembarrier::membarrier INTERFACE IMPORTED)
+endif()
 
 if(ENABLE_TESTING)
   enable_testing()
@@ -92,6 +103,10 @@ endif()
 include(FetchContent)
 
 find_package(Seastar REQUIRED)
+find_library(SYSTEM_FMT_LIB NAMES fmt PATHS /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
+if(SYSTEM_FMT_LIB)
+  set_property(TARGET Seastar::seastar APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${SYSTEM_FMT_LIB}")
+endif()
 
 option(ENABLE_UNITY "Enable Unity builds of projects" OFF)
 if(ENABLE_UNITY)
@@ -131,19 +146,18 @@ target_link_libraries(
         Graph
         project_options
         Seastar::seastar
-        CONAN_PKG::tsl-sparse-map
-        CONAN_PKG::simdjson
-        CONAN_PKG::rapidcsv
-        CONAN_PKG::vincentlaucsb-csv-parser
-        CONAN_PKG::roaring
-        CONAN_PKG::sol2
-        CONAN_PKG::luajit
-        CONAN_PKG::jfalcou-eve
-        CONAN_PKG::cppcodec
-        CONAN_PKG::cpr
-        CONAN_PKG::boost
-        CONAN_PKG::unordered_dense
-#        CONAN_PKG::reckless # temporarily removing logging until ARM issue is figured out
+        tsl::sparse_map
+        simdjson::simdjson
+        rapidcsv::rapidcsv
+        vincentlaucsb-csv-parser::vincentlaucsb-csv-parser
+        roaring::roaring
+        sol2::sol2
+        luajit::luajit
+        eve::eve
+        cppcodec::cppcodec
+        cpr::cpr
+        boost::boost
+        unordered_dense::unordered_dense
 )
 
 target_link_libraries(

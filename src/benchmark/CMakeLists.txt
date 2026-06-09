@@ -12,7 +12,7 @@ foreach(ONE_BENCH_CPP ${ALL_BENCH_CPP})
     target_link_libraries(
     ${TARGET_NAME}
     PUBLIC
-    CONAN_PKG::benchmark
+    benchmark::benchmark
     ${CMAKE_THREAD_LIBS_INIT}
     )
 

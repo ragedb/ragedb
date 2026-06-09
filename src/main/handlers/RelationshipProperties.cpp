@@ -70,10 +70,10 @@ future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::GetRelatio
     uint64_t id = Utilities::validate_id(req, rep);
 
     if (id > 0) {
-        return parent.graph.shard.local().RelationshipGetPropertyPeered(id, req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().RelationshipGetPropertyPeered(id, req->get_path_param(Utilities::PROPERTY))
         .then([req = std::move(req), rep = std::move(rep)] (const property_type_t& property) mutable {
                     json_properties_builder json;
-                    json.add_property(req->param[Utilities::PROPERTY], property);
+                    json.add_property(req->get_path_param(Utilities::PROPERTY), property);
                     rep->write_body("json", seastar::sstring(json.as_json()));
                     return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
                 });
@@ -88,7 +88,7 @@ future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::PutRelatio
 
     if (id > 0 && valid_property) {
         parent.graph.Log(req->_method, req->get_url(), req->content);
-        return parent.graph.shard.local().RelationshipSetPropertyFromJsonPeered(id, req->param[Utilities::PROPERTY], req->content.c_str())
+        return parent.graph.shard.local().RelationshipSetPropertyFromJsonPeered(id, req->get_path_param(Utilities::PROPERTY), req->content.c_str())
                 .then([rep = std::move(rep)] (bool success) mutable {
                     if(success) {
                         rep->set_status(seastar::http::reply::status_type::no_content);
@@ -108,7 +108,7 @@ future<std::unique_ptr<seastar::http::reply>> RelationshipProperties::DeleteRela
 
     if (id > 0 && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().RelationshipDeletePropertyPeered(id, req->param[Utilities::PROPERTY])
+        return parent.graph.shard.local().RelationshipDeletePropertyPeered(id, req->get_path_param(Utilities::PROPERTY))
                 .then([rep = std::move(rep)] (bool success) mutable {
                    if(success) {
                        rep->set_status(seastar::http::reply::status_type::no_content);

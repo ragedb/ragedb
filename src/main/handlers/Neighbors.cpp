@@ -48,7 +48,7 @@ future<std::unique_ptr<seastar::http::reply>> Neighbors::GetNeighborsHandler::ha
 
         if(options_string.empty()) {
             // Get Node Neighbors
-            return parent.graph.shard.local().NodeGetNeighborsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY])
+            return parent.graph.shard.local().NodeGetNeighborsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY))
                     .then([rep = std::move(rep)] (const std::vector<Node>& nodes) mutable {
                         std::vector<node_json> json_array;
                         json_array.reserve(nodes.size());
@@ -77,7 +77,7 @@ future<std::unique_ptr<seastar::http::reply>> Neighbors::GetNeighborsHandler::ha
         switch(options.size()) {
             case 1:
                 // Get Node Neighbors with Direction
-                return parent.graph.shard.local().NodeGetNeighborsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction)
+                return parent.graph.shard.local().NodeGetNeighborsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), direction)
                         .then([rep = std::move(rep)] (const std::vector<Node>& nodes) mutable {
                             std::vector<node_json> json_array;
                             json_array.reserve(nodes.size());
@@ -94,7 +94,7 @@ future<std::unique_ptr<seastar::http::reply>> Neighbors::GetNeighborsHandler::ha
                 boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
                 // Single Relationship Type
                 if (rel_types.size() == 1) {
-                    return parent.graph.shard.local().NodeGetNeighborsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types[0])
+                    return parent.graph.shard.local().NodeGetNeighborsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), direction, rel_types[0])
                             .then([rep = std::move(rep)] (const std::vector<Node>& nodes) mutable {
                                 std::vector<node_json> json_array;
                                 json_array.reserve(nodes.size());
@@ -107,7 +107,7 @@ future<std::unique_ptr<seastar::http::reply>> Neighbors::GetNeighborsHandler::ha
                 }
 
                 // Multiple Relationship Types
-                return parent.graph.shard.local().NodeGetNeighborsPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], direction, rel_types)
+                return parent.graph.shard.local().NodeGetNeighborsPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), direction, rel_types)
                         .then([rep = std::move(rep)] (const std::vector<Node>& nodes) mutable {
                             std::vector<node_json> json_array;
                             json_array.reserve(nodes.size());

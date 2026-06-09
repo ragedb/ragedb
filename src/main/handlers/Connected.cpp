@@ -53,7 +53,7 @@ future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedHandler::ha
 
     if(options_string.empty()) {
       // Get Connected
-      return parent.graph.shard.local().NodeGetConnectedPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2])
+      return parent.graph.shard.local().NodeGetConnectedPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::TYPE2), req->get_path_param(Utilities::KEY2))
         .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
           std::vector<relationship_json> json_array;
           json_array.reserve(relationships.size());
@@ -82,7 +82,7 @@ future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedHandler::ha
     switch(options.size()) {
     case 1:
       // Get Node Degree with Direction
-      return parent.graph.shard.local().NodeGetConnectedPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2], direction)
+      return parent.graph.shard.local().NodeGetConnectedPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::TYPE2), req->get_path_param(Utilities::KEY2), direction)
         .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
           std::vector<relationship_json> json_array;
           json_array.reserve(relationships.size());
@@ -99,7 +99,7 @@ future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedHandler::ha
       boost::split(rel_types, options[1], boost::is_any_of("&,%26"), boost::token_compress_on);
       // Single Relationship Type
       if (rel_types.size() == 1) {
-        return parent.graph.shard.local().NodeGetConnectedPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2], direction, rel_types[0])
+        return parent.graph.shard.local().NodeGetConnectedPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::TYPE2), req->get_path_param(Utilities::KEY2), direction, rel_types[0])
           .then([rep = std::move(rep), rel_type = rel_types[0]] (const std::vector<Relationship>& relationships) mutable {
             std::vector<relationship_json> json_array;
             json_array.reserve(relationships.size());
@@ -112,7 +112,7 @@ future<std::unique_ptr<seastar::http::reply>> Connected::GetConnectedHandler::ha
       }
 
       // Multiple Relationship Types
-      return parent.graph.shard.local().NodeGetConnectedPeered(req->param[Utilities::TYPE], req->param[Utilities::KEY], req->param[Utilities::TYPE2], req->param[Utilities::KEY2], direction, rel_types)
+      return parent.graph.shard.local().NodeGetConnectedPeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::TYPE2), req->get_path_param(Utilities::KEY2), direction, rel_types)
         .then([rep = std::move(rep)] (const std::vector<Relationship>& relationships) mutable {
           std::vector<relationship_json> json_array;
           json_array.reserve(relationships.size());

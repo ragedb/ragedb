@@ -51,8 +51,8 @@ future<std::unique_ptr<seastar::http::reply>> Management::GetDatabasesHandler::h
 
 future<std::unique_ptr<seastar::http::reply>> Management::GetDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
-  if (valid_key && parent.databases.contains(req->param[Utilities::KEY])) {
-    rep->write_body("json", seastar::sstring(parent.databases.get(req->param[Utilities::KEY])));
+  if (valid_key && parent.databases.contains(req->get_path_param(Utilities::KEY))) {
+    rep->write_body("json", seastar::sstring(parent.databases.get(req->get_path_param(Utilities::KEY))));
   }
   return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
@@ -60,7 +60,7 @@ future<std::unique_ptr<seastar::http::reply>> Management::GetDatabaseHandler::ha
 future<std::unique_ptr<seastar::http::reply>> Management::PostDatabaseHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
   if (valid_key) {
-    std::string key = req->param[Utilities::KEY];
+    std::string key = req->get_path_param(Utilities::KEY);
     return parent.databases.add(key).then([key, req = std::move(req), rep = std::move(rep), this] (bool success) mutable {
       if (success) {
         rep->write_body("json", seastar::sstring(parent.databases.get(key)));
@@ -79,7 +79,7 @@ future<std::unique_ptr<seastar::http::reply>> Management::PutDatabaseHandler::ha
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
   if (valid_key) {
-    std::string key = req->param[Utilities::KEY];
+    std::string key = req->get_path_param(Utilities::KEY);
     return parent.databases.reset(key).then([key, req = std::move(req), rep = std::move(rep), this] (bool success) mutable {
       if (success) {
         rep->write_body("json", seastar::sstring(parent.databases.get(key)));
@@ -97,7 +97,7 @@ future<std::unique_ptr<seastar::http::reply>> Management::DeleteDatabaseHandler:
   bool valid_key = Utilities::validate_parameter(Utilities::KEY, req, rep, "Invalid key");
 
   if (valid_key) {
-    std::string key = req->param[Utilities::KEY];
+    std::string key = req->get_path_param(Utilities::KEY);
     return parent.databases.remove(key).then([key, req = std::move(req), rep = std::move(rep), this] (bool success) mutable {
       if (!success) {
         rep->set_status(seastar::http::reply::status_type::no_content);

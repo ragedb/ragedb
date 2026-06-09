@@ -32,7 +32,7 @@ uint64_t Utilities::validate_id(const std::unique_ptr<seastar::http::request> &r
     uint64_t id;
 
     try {
-        id = std::stoull(req->param["id"]);
+        id = std::stoull(req->get_path_param("id"));
     } catch (std::exception& e) {
         rep->write_body("json", seastar::json::stream_object("Invalid id"));
         rep->set_status(seastar::http::reply::status_type::bad_request);
@@ -47,7 +47,7 @@ uint64_t Utilities::validate_id2(const std::unique_ptr<seastar::http::request> &
     uint64_t id;
 
     try {
-        id = std::stoull(req->param["id2"]);
+        id = std::stoull(req->get_path_param("id2"));
     } catch (std::exception& e) {
         rep->write_body("json", seastar::json::stream_object("Invalid id2"));
         rep->set_status(seastar::http::reply::status_type::bad_request);
@@ -95,7 +95,7 @@ uint64_t Utilities::validate_skip(std::unique_ptr<seastar::http::request> &req, 
 ragedb::Operation Utilities::validate_operation(std::unique_ptr<seastar::http::request> &req, std::unique_ptr<seastar::http::reply> &rep) {
     // Validate operation is allowed
 
-    seastar::sstring parameter = req->param["operation"];
+    seastar::sstring parameter = req->get_path_param("operation");
 
     static std::unordered_map<std::string,ragedb::Operation> const table = {
             {"EQ", ragedb::Operation::EQ},
@@ -184,13 +184,13 @@ double Utilities::convert_parameter_to_double(const seastar::sstring &parameter,
     double d;
 
     try {
-        d = std::stod(req->param[parameter]);
+        d = std::stod(req->get_path_param(parameter));
     } catch (const std::invalid_argument&) {
-        rep->write_body("json", seastar::json::stream_object("Invalid parameter value: " + parameter + " " + req->param[parameter]));
+        rep->write_body("json", seastar::json::stream_object("Invalid parameter value: " + parameter + " " + req->get_path_param(parameter)));
         rep->set_status(seastar::http::reply::status_type::bad_request);
         throw;
     } catch (const std::out_of_range&) {
-        rep->write_body("json", seastar::json::stream_object("Parameter out of range for a double: " + parameter + " " + req->param[parameter]));
+        rep->write_body("json", seastar::json::stream_object("Parameter out of range for a double: " + parameter + " " + req->get_path_param(parameter)));
         rep->set_status(seastar::http::reply::status_type::bad_request);
     }
     return d;
@@ -322,7 +322,7 @@ bool Utilities::validate_allowed_data_type(std::unique_ptr<seastar::http::reques
 
 Utilities::Utilities() {
     // We need to create one parser per core because otherwise we get parsing errors
-    int cores = static_cast<int>(seastar::smp::count);
+    int cores = static_cast<int>(seastar::smp::this_smp().shard_count());
     for (int i = 0; i < cores; ++i) {
         parsers.emplace_back();
     }
