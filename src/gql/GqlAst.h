@@ -27,50 +27,71 @@
 
 namespace ragedb::gql {
 
+/**
+ * @brief Identifies the type of an Expression AST node.
+ */
 enum class ExpressionKind {
-    LITERAL,
-    VARIABLE,
-    PROPERTY_LOOKUP,
-    UNARY_OP,
-    BINARY_OP
+    LITERAL,          ///< A static value (e.g. 5, "Alice", true)
+    VARIABLE,         ///< An identifier reference (e.g. p, m)
+    PROPERTY_LOOKUP,  ///< Property extraction (e.g. p.name, m.title)
+    UNARY_OP,         ///< Unary operations (e.g. NOT, -x)
+    BINARY_OP         ///< Binary operations (e.g. AND, OR, +, =, <)
 };
 
+/**
+ * @brief Unary operator kinds.
+ */
 enum class UnaryOpKind {
-    NOT,
-    NEG
+    NOT,  ///< Logical NOT (e.g. NOT condition)
+    NEG   ///< Numeric Negation (e.g. -age)
 };
 
+/**
+ * @brief Binary operator kinds.
+ */
 enum class BinaryOpKind {
-    AND, OR,
-    ADD, SUB, MUL, DIV,
-    EQ, NE, LT, LE, GT, GE,
-    IS, AS
+    AND, OR,                 ///< Logical conjunction/disjunction
+    ADD, SUB, MUL, DIV,      ///< Arithmetic operators (+, -, *, /)
+    EQ, NE, LT, LE, GT, GE,  ///< Comparison operators (=, !=, <, <=, >, >=)
+    IS, AS                   ///< Keywords used in label specification and projections
 };
 
+/**
+ * @brief Base struct for all GQL expression nodes.
+ */
 struct Expression {
     ExpressionKind kind;
     virtual ~Expression() = default;
 };
 
+/**
+ * @brief Represents a literal value expression in the AST.
+ */
 struct LiteralExpr : public Expression {
-    property_type_t value;
+    property_type_t value; ///< Holds the variant of property types (bool, string, int64_t, double, etc.)
     explicit LiteralExpr(property_type_t val) {
         kind = ExpressionKind::LITERAL;
         value = std::move(val);
     }
 };
 
+/**
+ * @brief Represents a variable reference expression in the AST.
+ */
 struct VariableExpr : public Expression {
-    std::string name;
+    std::string name; ///< The identifier of the referenced variable.
     explicit VariableExpr(std::string n) {
         kind = ExpressionKind::VARIABLE;
         name = std::move(n);
     }
 };
 
+/**
+ * @brief Represents a property retrieval from a variable (e.g., node.property).
+ */
 struct PropertyLookupExpr : public Expression {
-    std::string variable;
-    std::string property;
+    std::string variable; ///< Variable referencing the node/relationship.
+    std::string property; ///< Property key to retrieve.
     PropertyLookupExpr(std::string var, std::string prop) {
         kind = ExpressionKind::PROPERTY_LOOKUP;
         variable = std::move(var);
@@ -78,9 +99,12 @@ struct PropertyLookupExpr : public Expression {
     }
 };
 
+/**
+ * @brief Represents a unary operation expression.
+ */
 struct UnaryOpExpr : public Expression {
-    UnaryOpKind op;
-    std::unique_ptr<Expression> expr;
+    UnaryOpKind op;                      ///< The unary operator kind.
+    std::unique_ptr<Expression> expr;    ///< Target expression operand.
     UnaryOpExpr(UnaryOpKind o, std::unique_ptr<Expression> e) {
         kind = ExpressionKind::UNARY_OP;
         op = o;
@@ -88,10 +112,13 @@ struct UnaryOpExpr : public Expression {
     }
 };
 
+/**
+ * @brief Represents a binary operation expression.
+ */
 struct BinaryOpExpr : public Expression {
-    BinaryOpKind op;
-    std::unique_ptr<Expression> left;
-    std::unique_ptr<Expression> right;
+    BinaryOpKind op;                     ///< The binary operator kind.
+    std::unique_ptr<Expression> left;    ///< Left expression operand.
+    std::unique_ptr<Expression> right;   ///< Right expression operand.
     BinaryOpExpr(BinaryOpKind o, std::unique_ptr<Expression> l, std::unique_ptr<Expression> r) {
         kind = ExpressionKind::BINARY_OP;
         op = o;
@@ -100,73 +127,105 @@ struct BinaryOpExpr : public Expression {
     }
 };
 
+/**
+ * @brief Represents a node pattern in MATCH or INSERT statements (e.g. (p:Person {name: 'Alice'})).
+ */
 struct PatternNode {
-    std::string variable;
-    std::string label;
-    std::map<std::string, property_type_t> properties;
+    std::string variable;                             ///< Optional variable name.
+    std::string label;                                ///< Optional node label/type.
+    std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
 };
 
+/**
+ * @brief Represents directionality of relationship patterns.
+ */
 enum class EdgeDirection {
-    RIGHT, // -[e]->
-    LEFT,  // <-[e]-
-    ANY    // -[e]-
+    RIGHT, ///< Outgoing relationship: -[e]->
+    LEFT,  ///< Incoming relationship: <-[e]-
+    ANY    ///< Undirected relationship: -[e]-
 };
 
+/**
+ * @brief Represents an edge/relationship pattern (e.g., -[e:ACTED_IN {roles: [...]}]->).
+ */
 struct PatternEdge {
-    std::string variable;
-    std::string label;
-    EdgeDirection direction;
-    std::map<std::string, property_type_t> properties;
+    std::string variable;                             ///< Optional variable name.
+    std::string label;                                ///< Optional edge label/type.
+    EdgeDirection direction;                          ///< Direction of the relationship.
+    std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
 };
 
+/**
+ * @brief Represents a full traversal path pattern (e.g., node1 -> edge -> node2).
+ */
 struct PathPattern {
-    std::vector<PatternNode> nodes;
-    std::vector<PatternEdge> edges;
+    std::vector<PatternNode> nodes; ///< Nodes along the path.
+    std::vector<PatternEdge> edges; ///< Connecting edges.
 };
 
+/**
+ * @brief Represents a single MATCH or OPTIONAL MATCH statement.
+ */
 struct MatchStatement {
-    bool is_optional = false;
-    PathPattern pattern;
+    bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
+    PathPattern pattern;      ///< Path pattern to match.
 };
 
+/**
+ * @brief Represents a projected expression inside the RETURN clause (e.g. p.name AS client_name).
+ */
 struct ReturnItem {
-    std::unique_ptr<Expression> expr;
-    std::optional<std::string> alias;
+    std::unique_ptr<Expression> expr; ///< Projection expression.
+    std::optional<std::string> alias;  ///< Optional alias name (AS alias).
 };
 
+/**
+ * @brief Specifies sorting requirements in the ORDER BY clause.
+ */
 struct SortSpec {
-    std::unique_ptr<Expression> expr;
-    bool ascending = true;
+    std::unique_ptr<Expression> expr; ///< Expression to sort by.
+    bool ascending = true;             ///< True for ascending order, false for descending.
 };
 
+/**
+ * @brief Represents database write/modification operations (INSERT, SET, REMOVE, DELETE).
+ */
 struct WriteOp {
-    enum class Type { INSERT, SET, REMOVE, DELETE_OP } type;
+    enum class Type { 
+        INSERT,    ///< Create new nodes/relationships.
+        SET,       ///< Update node/relationship property.
+        REMOVE,    ///< Delete property.
+        DELETE_OP  ///< Remove nodes/relationships from the graph.
+    } type;
 
-    // For INSERT
-    PathPattern insert_pattern;
+    // INSERT details
+    PathPattern insert_pattern; ///< Pattern indicating nodes/relationships to be created.
 
-    // For SET
-    std::string set_var;
-    std::string set_prop;
-    std::unique_ptr<Expression> set_expr;
+    // SET details
+    std::string set_var;                  ///< Target variable name to update.
+    std::string set_prop;                 ///< Property key to update.
+    std::unique_ptr<Expression> set_expr; ///< Expression evaluating to the new property value.
 
-    // For REMOVE
-    std::string remove_var;
-    std::string remove_prop;
+    // REMOVE details
+    std::string remove_var;   ///< Variable to delete a property from.
+    std::string remove_prop;  ///< Property key to remove.
 
-    // For DELETE
-    std::string delete_var;
-    bool detach = false;
+    // DELETE details
+    std::string delete_var;   ///< Variable pointing to the node/relationship to delete.
+    bool detach = false;      ///< True if associated relationships should be deleted implicitly (RageDB behavior).
 };
 
+/**
+ * @brief Main root query AST node containing parsed MATCHes, WHERE conditions, write statements, and projections.
+ */
 struct GqlQuery {
-    std::vector<MatchStatement> matches;
-    std::unique_ptr<Expression> where_expr;
-    std::vector<WriteOp> writes;
-    std::vector<ReturnItem> returns;
-    bool distinct = false;
-    std::vector<SortSpec> order_by;
-    std::optional<uint64_t> limit;
+    std::vector<MatchStatement> matches;     ///< List of matching path patterns.
+    std::unique_ptr<Expression> where_expr;  ///< Global WHERE filter expression.
+    std::vector<WriteOp> writes;             ///< Sequence of write/mutation operations.
+    std::vector<ReturnItem> returns;         ///< Projected RETURN clause items.
+    bool distinct = false;                   ///< True if distinct results are required.
+    std::vector<SortSpec> order_by;          ///< Sequence of sort specifications.
+    std::optional<uint64_t> limit;           ///< Optional maximum number of rows to return.
 };
 
 } // namespace ragedb::gql
