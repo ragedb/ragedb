@@ -44,14 +44,15 @@ jobs:
             --slave /usr/bin/gcov gcov /usr/bin/gcov-12
           sudo update-alternatives --auto gcc
 
-      - name: ccache
+      - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.os }}-${{ matrix.type }}
+          key: ${{ github.job }}-seastar
 
       - name: add ccache to path
         run: |
-          export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+          echo "/usr/lib/ccache" >> $GITHUB_PATH
+          echo "/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
       
       - uses: actions/checkout@master
         with:
@@ -63,7 +64,8 @@ jobs:
         run: |
           cd seastar
           sudo ./install-dependencies.sh
-          ./configure.py --mode=release --prefix=/usr/local --compiler=g++-12 --c-compiler=gcc-12 --without-tests --without-apps --without-demos
+          ./configure.py --mode=release --prefix=/usr/local --compiler=g++-12 --c-compiler=gcc-12 --without-tests --without-apps --without-demos --compiler-cache=ccache
+          ninja -C build/release -j$(nproc)
           sudo ninja -C build/release install
  
       - name: Install Conan
