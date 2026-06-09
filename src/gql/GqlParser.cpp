@@ -19,6 +19,12 @@
 
 namespace ragedb::gql {
 
+/**
+ * @brief Peek at a token in the stream without advancing the cursor.
+ * 
+ * @param offset The number of tokens ahead of the current position to inspect.
+ * @return const Token& The token at the specified offset, or the EOF/last token if out of bounds.
+ */
 const Token& GqlParser::peek(size_t offset) const {
     if (pos + offset >= tokens.size()) {
         return tokens.back();
@@ -26,6 +32,11 @@ const Token& GqlParser::peek(size_t offset) const {
     return tokens[pos + offset];
 }
 
+/**
+ * @brief Consume the current token and advance the stream position.
+ * 
+ * @return const Token& The token that was current before advancing.
+ */
 const Token& GqlParser::advance() {
     if (pos < tokens.size()) {
         pos++;
@@ -33,10 +44,24 @@ const Token& GqlParser::advance() {
     return tokens[pos - 1];
 }
 
+/**
+ * @brief Check if the current token matches the specified type.
+ * 
+ * @param type The token type to compare against.
+ * @return true If the current token's type matches.
+ * @return false Otherwise.
+ */
 bool GqlParser::check(TokenType type) const {
     return peek().type == type;
 }
 
+/**
+ * @brief If the current token matches the specified type, consume it and return true.
+ * 
+ * @param type The token type to match.
+ * @return true If the token was matched and consumed.
+ * @return false If the token did not match, leaving the cursor unchanged.
+ */
 bool GqlParser::match(TokenType type) {
     if (check(type)) {
         advance();
@@ -45,6 +70,14 @@ bool GqlParser::match(TokenType type) {
     return false;
 }
 
+/**
+ * @brief Assert that the current token matches the expected type and consume it.
+ *        Throws an exception if the token type does not match.
+ * 
+ * @param type The expected token type.
+ * @param error_message The descriptive message to include in the thrown exception.
+ * @throws std::runtime_error If the current token type does not match.
+ */
 void GqlParser::consume(TokenType type, const std::string& error_message) {
     if (check(type)) {
         advance();
@@ -53,6 +86,16 @@ void GqlParser::consume(TokenType type, const std::string& error_message) {
     throw std::runtime_error(error_message + " (found: " + peek().text + ")");
 }
 
+/**
+ * @brief Parses a complete GQL query into a GqlQuery AST object.
+ * 
+ * Main entry point of the recursive descent parser. Processes MATCH, OPTIONAL MATCH,
+ * global WHERE, write operations (INSERT, SET, REMOVE, DELETE, DETACH DELETE),
+ * and RETURN clauses with sorting and limits.
+ * 
+ * @return GqlQuery The constructed query AST object.
+ * @throws std::runtime_error If syntax errors are encountered.
+ */
 GqlQuery GqlParser::parse_query() {
     GqlQuery query;
 
@@ -187,6 +230,13 @@ GqlQuery GqlParser::parse_query() {
     return query;
 }
 
+/**
+ * @brief Parses a path pattern consisting of alternating nodes and edges.
+ * 
+ * Path patterns are defined as node-edge-node structures.
+ * 
+ * @return PathPattern The parsed path pattern AST structure.
+ */
 PathPattern GqlParser::parse_path_pattern() {
     PathPattern pattern;
     pattern.nodes.push_back(parse_node_pattern());
@@ -246,6 +296,11 @@ PathPattern GqlParser::parse_path_pattern() {
     return pattern;
 }
 
+/**
+ * @brief Parses a node pattern of the form: (variable:Label {prop1: val1, ...})
+ * 
+ * @return PatternNode The parsed node pattern AST structure.
+ */
 PatternNode GqlParser::parse_node_pattern() {
     PatternNode node;
     consume(TokenType::LPAREN, "Expected '(' to start node pattern");
@@ -266,6 +321,11 @@ PatternNode GqlParser::parse_node_pattern() {
     return node;
 }
 
+/**
+ * @brief Parses property maps in nodes or edges: {name: 'John', age: 30}
+ * 
+ * @return std::map<std::string, property_type_t> The map of parsed keys to typed literal values.
+ */
 std::map<std::string, property_type_t> GqlParser::parse_properties() {
     std::map<std::string, property_type_t> props;
     consume(TokenType::LBRACE, "Expected '{' to start property map");
@@ -302,10 +362,22 @@ std::map<std::string, property_type_t> GqlParser::parse_properties() {
     return props;
 }
 
+/**
+ * @brief Helper rule to initiate precedence climbing/recursive descent for expressions.
+ * 
+ * @return std::unique_ptr<Expression> The root node of the parsed expression AST.
+ */
 std::unique_ptr<Expression> GqlParser::parse_expression() {
     return parse_or();
 }
 
+/**
+ * @brief Parses boolean OR expressions.
+ * 
+ * Precedence level: lowest.
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ */
 std::unique_ptr<Expression> GqlParser::parse_or() {
     auto expr = parse_and();
     while (match(TokenType::OR)) {
@@ -315,6 +387,11 @@ std::unique_ptr<Expression> GqlParser::parse_or() {
     return expr;
 }
 
+/**
+ * @brief Parses boolean AND expressions.
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ */
 std::unique_ptr<Expression> GqlParser::parse_and() {
     auto expr = parse_comparison();
     while (match(TokenType::AND)) {
@@ -324,6 +401,11 @@ std::unique_ptr<Expression> GqlParser::parse_and() {
     return expr;
 }
 
+/**
+ * @brief Parses comparison expressions: =, <>, <, <=, >, >=
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ */
 std::unique_ptr<Expression> GqlParser::parse_comparison() {
     auto expr = parse_add_sub();
     while (check(TokenType::EQ) || check(TokenType::NE) ||
@@ -346,6 +428,11 @@ std::unique_ptr<Expression> GqlParser::parse_comparison() {
     return expr;
 }
 
+/**
+ * @brief Parses additive arithmetic expressions: + and -
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ */
 std::unique_ptr<Expression> GqlParser::parse_add_sub() {
     auto expr = parse_mul_div();
     while (check(TokenType::PLUS) || check(TokenType::MINUS)) {
@@ -358,6 +445,11 @@ std::unique_ptr<Expression> GqlParser::parse_add_sub() {
     return expr;
 }
 
+/**
+ * @brief Parses multiplicative arithmetic expressions: * and /
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ */
 std::unique_ptr<Expression> GqlParser::parse_mul_div() {
     auto expr = parse_unary();
     while (check(TokenType::STAR) || check(TokenType::SLASH)) {
@@ -370,6 +462,11 @@ std::unique_ptr<Expression> GqlParser::parse_mul_div() {
     return expr;
 }
 
+/**
+ * @brief Parses unary prefix expressions: NOT and - (negative)
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ */
 std::unique_ptr<Expression> GqlParser::parse_unary() {
     if (match(TokenType::NOT)) {
         auto right = parse_unary();
@@ -382,6 +479,14 @@ std::unique_ptr<Expression> GqlParser::parse_unary() {
     return parse_primary();
 }
 
+/**
+ * @brief Parses primary expressions: literals, variables, property lookups, and parenthesized sub-expressions.
+ * 
+ * Precedence level: highest.
+ * 
+ * @return std::unique_ptr<Expression> Parsed expression node.
+ * @throws std::runtime_error If an unexpected token or syntax issue is encountered.
+ */
 std::unique_ptr<Expression> GqlParser::parse_primary() {
     if (match(TokenType::TRUE_KW)) {
         return std::make_unique<LiteralExpr>(true);
@@ -426,6 +531,12 @@ std::unique_ptr<Expression> GqlParser::parse_primary() {
     throw std::runtime_error("Unexpected token in expression: " + peek().text);
 }
 
+/**
+ * @brief Class helper method to tokenize and parse a GQL query string into its AST.
+ * 
+ * @param query The GQL query string to process.
+ * @return GqlQuery The parsed AST query object.
+ */
 GqlQuery GqlParser::parse(const std::string& query) {
     auto tokens = GqlLexer::tokenize(query);
     GqlParser parser(tokens);
