@@ -135,5 +135,39 @@ TEST_CASE("GQL Static Typechecker Tests", "[gql_typechecker]") {
         REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, invalid_query), Catch::Contains("Property 'age' does not exist on any of the matched types"));
     }
 
+    SECTION("Setting internal key property is rejected") {
+        std::string query_str = "MATCH (p:Person) SET p.key = 'new_key'";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Cannot set the internal 'key' property"));
+    }
+
+    SECTION("Removing internal key property is rejected") {
+        std::string query_str = "MATCH (p:Person) REMOVE p.key";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Cannot remove the internal 'key' property"));
+    }
+
+    SECTION("Creating schema node/relationship type with key property is rejected") {
+        std::string query_str1 = "CREATE NODE TYPE Customer (key STRING)";
+        auto query1 = GqlParser::parse(query_str1);
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query1), Catch::Contains("Cannot define a property named 'key' on schema types as it is an internal property"));
+
+        std::string query_str2 = "CREATE RELATIONSHIP TYPE ENEMY_OF (key STRING)";
+        auto query2 = GqlParser::parse(query_str2);
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query2), Catch::Contains("Cannot define a property named 'key' on schema types as it is an internal property"));
+    }
+
+    SECTION("Altering schema node/relationship type to add key property is rejected") {
+        std::string query_str1 = "ALTER NODE TYPE Person ADD key STRING";
+        auto query1 = GqlParser::parse(query_str1);
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query1), Catch::Contains("Cannot define a property named 'key' on schema types as it is an internal property"));
+
+        std::string query_str2 = "ALTER RELATIONSHIP TYPE FRIEND_OF ADD key STRING";
+        auto query2 = GqlParser::parse(query_str2);
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query2), Catch::Contains("Cannot define a property named 'key' on schema types as it is an internal property"));
+    }
+
     graph.Stop().get();
 }

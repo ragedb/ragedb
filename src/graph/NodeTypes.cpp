@@ -522,6 +522,9 @@ namespace ragedb {
     }
 
     bool NodeTypes::setNodeProperty(uint16_t type_id, uint64_t internal_id, const std::string &property, const property_type_t& value) {
+        if (property == "key") {
+            return false;
+        }
         // find out what data_type property is supposed to be, cast value to that.
 
         switch (properties[type_id].getPropertyTypeId(property)) {
@@ -700,6 +703,9 @@ namespace ragedb {
     }
 
     bool NodeTypes::setNodePropertyFromJson(uint16_t type_id, uint64_t internal_id, const std::string &property, const std::string &json) {
+        if (property == "key") {
+            return false;
+        }
         if (json.empty()) {
             return false;
         }
@@ -731,6 +737,10 @@ namespace ragedb {
             int valid = 0;
             for (const auto&[key, value] : object) {
                 auto property = static_cast<std::string>(key);
+                if (property == "key") {
+                    valid++;
+                    continue;
+                }
                 const uint16_t property_type_id = properties[type_id].getPropertyTypeId(property);
                 // If the property type exists at all
                 if (property_type_id > 0) {

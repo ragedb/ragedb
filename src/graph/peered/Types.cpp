@@ -139,6 +139,9 @@ namespace ragedb {
     }
 
     seastar::future<uint8_t> Shard::NodePropertyTypeInsertPeered(uint16_t type_id, const std::string &key, const std::string &type) {
+        if (key == "key") {
+            return seastar::make_ready_future<uint8_t>(0);
+        }
       node_types.getProperties(type_id).property_type_lock.for_write().lock().get();
 
         uint8_t property_type_id = node_types.getProperties(type_id).setPropertyType(key, type);
@@ -165,6 +168,9 @@ namespace ragedb {
     }
 
     seastar::future<uint8_t> Shard::NodePropertyTypeAddPeered(const std::string& node_type, const std::string& key, const std::string& type) {
+        if (key == "key") {
+            return seastar::make_ready_future<uint8_t>(0);
+        }
         uint16_t node_type_id = node_types.getTypeId(node_type);
         if (node_type_id == 0) {
             return container().invoke_on(0, [node_type, key, type, this] (Shard &local_shard) {

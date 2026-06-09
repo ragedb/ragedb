@@ -96,6 +96,9 @@ namespace ragedb {
     }
 
     uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {
+        if (key == "key") {
+            return 0;
+        }
         return node_types.getProperties(type_id).setPropertyTypeId(key, property_type_id);
     }
 

@@ -570,5 +570,26 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
 //
 //            }
 //        }
+
+        WHEN("a property named 'key' is added") {
+            THEN("the shard rejects it") {
+                uint8_t add = shard.NodePropertyTypeAdd(1, "key", 4);
+                REQUIRE(add == 0);
+            }
+        }
+
+        WHEN("a property named 'key' is set by id") {
+            THEN("the shard rejects it") {
+                bool set = shard.NodeSetPropertyFromJson(existing, "key", "\"new_key\"");
+                REQUIRE(set == false);
+            }
+        }
+
+        WHEN("a property named 'key' is set by label/key") {
+            THEN("the shard rejects it") {
+                bool set = shard.NodeSetPropertyFromJson("Node", "existing", "key", "\"new_key\"");
+                REQUIRE(set == false);
+            }
+        }
     }
 }

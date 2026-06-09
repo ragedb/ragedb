@@ -404,6 +404,9 @@ void GqlTypechecker::check_write_op(const WriteOp& write_op) {
             if (it == env.end()) {
                 throw std::runtime_error("Variable '" + write_op.set_var + "' is not bound");
             }
+            if (write_op.set_prop == "key") {
+                throw std::runtime_error("Cannot set the internal 'key' property");
+            }
             GqlType prop_type = get_property_type(write_op.set_var, write_op.set_prop);
             GqlType val_type = check_expression(*write_op.set_expr);
             check_property_compatibility(prop_type, val_type, write_op.set_prop);
@@ -413,6 +416,9 @@ void GqlTypechecker::check_write_op(const WriteOp& write_op) {
             auto it = env.find(write_op.remove_var);
             if (it == env.end()) {
                 throw std::runtime_error("Variable '" + write_op.remove_var + "' is not bound");
+            }
+            if (write_op.remove_prop == "key") {
+                throw std::runtime_error("Cannot remove the internal 'key' property");
             }
             // Verify that the property exists
             get_property_type(write_op.remove_var, write_op.remove_prop);
@@ -450,6 +456,18 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
 
     if (query.schema_op) {
         // DDL bypasses standard pattern typing
+        const auto& op = *query.schema_op;
+        if (op.op == SchemaOperation::Op::CREATE_NODE_TYPE || op.op == SchemaOperation::Op::CREATE_REL_TYPE) {
+            for (const auto& prop : op.properties) {
+                if (prop.first == "key") {
+                    throw std::runtime_error("Cannot define a property named 'key' on schema types as it is an internal property");
+                }
+            }
+        } else if (op.op == SchemaOperation::Op::ALTER_NODE_TYPE || op.op == SchemaOperation::Op::ALTER_REL_TYPE) {
+            if (op.alter_op == SchemaOperation::AlterOp::ADD && op.alter_property_name == "key") {
+                throw std::runtime_error("Cannot define a property named 'key' on schema types as it is an internal property");
+            }
+        }
         return;
     }
 
