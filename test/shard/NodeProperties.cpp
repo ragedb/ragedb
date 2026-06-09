@@ -540,36 +540,27 @@ SCENARIO( "Shard can handle Node Properties", "[node,properties]" ) {
             }
         }
 
-//        WHEN("all properties are set by label/key") {
-//            THEN("the shard sets them") {
-//                std::map<std::string, std::any> properties;
-//
-//                properties.insert({"eyes", std::string("brown")});
-//                properties.insert({"height", 5.11});
-//                bool set = shard.NodePropertiesSet("Node", "existing", properties);
-//                REQUIRE(set);
-//                auto eyes = shard.NodeGetProperty("Node", "existing", "eyes");
-//                REQUIRE("brown" == get<std::string>(eyes));
-//                auto height = shard.NodePropertyGetDouble("Node", "existing", "height");
-//                REQUIRE(5.11 == height);
-//            }
-//        }
+        WHEN("all properties are set by label/key") {
+            THEN("the shard sets them") {
+                bool set = shard.NodeSetPropertiesFromJson("Node", "existing", R"({ "name":"alex", "weight":190.0 })");
+                REQUIRE(set);
+                auto name = shard.NodeGetProperty("Node", "existing", "name");
+                REQUIRE("alex" == get<std::string>(name));
+                auto weight = shard.NodeGetProperty("Node", "existing", "weight");
+                REQUIRE(190.0 == get<double>(weight));
+            }
+        }
 
-//        WHEN("all properties are set by id") {
-//            THEN("the shard sets them") {
-//                std::map<std::string, std::any> properties;
-//                properties.insert({"eyes", std::string("brown")});
-//                properties.insert({"height", 5.11});
-//
-//                bool set = shard.NodePropertiesSet(existing, properties);
-//                REQUIRE(set);
-//                auto eyes = shard.NodeGetProperty("Node", "existing", "eyes");
-//                REQUIRE("brown" == get<std::string>(eyes));
-//                auto height = shard.NodePropertyGetDouble("Node", "existing", "height");
-//                REQUIRE(5.11 == height);
-//
-//            }
-//        }
+        WHEN("all properties are set by id") {
+            THEN("the shard sets them") {
+                bool set = shard.NodeSetPropertiesFromJson(existing, R"({ "name":"alex", "weight":190.0 })");
+                REQUIRE(set);
+                auto name = shard.NodeGetProperty(existing, "name");
+                REQUIRE("alex" == get<std::string>(name));
+                auto weight = shard.NodeGetProperty(existing, "weight");
+                REQUIRE(190.0 == get<double>(weight));
+            }
+        }
 
         WHEN("a property named 'key' is added") {
             THEN("the shard rejects it") {
