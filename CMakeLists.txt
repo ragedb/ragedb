@@ -84,6 +84,7 @@ find_package(cpr REQUIRED)
 find_package(Boost REQUIRED)
 find_package(unordered_dense REQUIRED)
 find_package(benchmark REQUIRED)
+find_package(Threads REQUIRED)
 
 if(NOT TARGET LinuxMembarrier::membarrier)
   add_library(LinuxMembarrier::membarrier INTERFACE IMPORTED)
@@ -122,7 +123,7 @@ include_directories(src/graph)
 add_subdirectory(src/benchmark)
 include_directories(src/benchmark)
 
-
+include_directories(src/gql)
 
 add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/HealthCheck.cpp src/main/handlers/HealthCheck.h
@@ -139,6 +140,12 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Restore.cpp src/main/handlers/Restore.h
         src/main/handlers/Connected.cpp src/main/handlers/Connected.h
         src/main/handlers/Management.cpp src/main/handlers/Management.h
+        src/main/handlers/Gql.cpp src/main/handlers/Gql.h
+        src/gql/GqlLexer.cpp src/gql/GqlLexer.h
+        src/gql/GqlParser.cpp src/gql/GqlParser.h
+        src/gql/GqlOptimizer.cpp src/gql/GqlOptimizer.h
+        src/gql/GqlExecutor.cpp src/gql/GqlExecutor.h
+        src/gql/GqlAst.h
         src/main/Database.cpp src/main/Database.h
         src/main/Databases.cpp src/main/Databases.h)
 
