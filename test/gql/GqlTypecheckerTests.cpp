@@ -1,0 +1,139 @@
+/*
+ * Copyright RageDB Contributors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <catch2/catch.hpp>
+#include <Graph.h>
+#include "../../src/gql/GqlParser.h"
+#include "../../src/gql/GqlOptimizer.h"
+#include "../../src/gql/GqlExecutor.h"
+#include "../../src/gql/GqlTypechecker.h"
+
+using namespace ragedb;
+using namespace ragedb::gql;
+
+TEST_CASE("GQL Static Typechecker Tests", "[gql_typechecker]") {
+    auto graph = Graph("gql_typechecker_test");
+    graph.Start().get();
+    graph.Clear();
+    
+    // Set up schema
+    graph.shard.local().NodeTypeInsertPeered("Person").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "age", "integer").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "weight", "double").get();
+
+    graph.shard.local().NodeTypeInsertPeered("Company").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Company", "name", "string").get();
+
+    graph.shard.local().RelationshipTypeInsertPeered("FRIEND_OF").get();
+    graph.shard.local().RelationshipPropertyTypeAddPeered("FRIEND_OF", "since", "integer").get();
+
+    SECTION("Valid Query Passes") {
+        std::string query_str = "MATCH (p:Person)-[:FRIEND_OF]->(c:Company) WHERE p.age > 21 RETURN p.name, c.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        
+        REQUIRE_NOTHROW(GqlTypechecker::typecheck(graph, query));
+    }
+
+    SECTION("Non-existent Node Type Throws") {
+        std::string query_str = "MATCH (p:Animal) RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("NodeType 'Animal' does not exist in schema"));
+    }
+
+    SECTION("Non-existent Relationship Type Throws") {
+        std::string query_str = "MATCH (p:Person)-[:WORKS_AT]->(c:Company) RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("RelationshipType 'WORKS_AT' does not exist in schema"));
+    }
+
+    SECTION("Non-existent Property Lookup Throws") {
+        std::string query_str = "MATCH (p:Person) WHERE p.salary > 50000 RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Property 'salary' does not exist on any of the matched types"));
+    }
+
+    SECTION("Disjoint Variable Conjunction Throws") {
+        // Person and Company are distinct types, so p:Person&Company is disjoint
+        std::string query_str = "MATCH (p:Person&Company) RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Label expression reduces to empty set (disjoint conjunction)"));
+    }
+
+    SECTION("Conflicting Variable Type (Node as Relationship) Throws") {
+        std::string query_str = "MATCH (p:Person)-[p:FRIEND_OF]->(c:Company) RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Variable 'p' has conflicting types: NODE vs RELATIONSHIP"));
+    }
+
+    SECTION("Unbound Variable Reference Throws") {
+        std::string query_str = "MATCH (p:Person) RETURN x";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Variable 'x' is not bound"));
+    }
+
+    SECTION("Incompatible Comparison Throws") {
+        std::string query_str = "MATCH (p:Person) WHERE p.name = 123 RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Incompatible types for comparison: STRING and INTEGER"));
+    }
+
+    SECTION("Arithmetic Type Compatibility (Integer Promotion to Double)") {
+        // Person.weight is double, p.age is integer. Adding them promotes to double.
+        std::string query_str = "MATCH (p:Person) WHERE (p.weight + p.age) > 100.0 RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_NOTHROW(GqlTypechecker::typecheck(graph, query));
+    }
+
+    SECTION("Non-numeric Arithmetic Throws") {
+        std::string query_str = "MATCH (p:Person) WHERE (p.name + p.age) > 100 RETURN p";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Arithmetic operands must be numeric, got STRING and INTEGER"));
+    }
+
+    SECTION("Assignment Type Mismatch in SET Throws") {
+        std::string query_str = "MATCH (p:Person) SET p.age = 'thirty'";
+        auto query = GqlParser::parse(query_str);
+        
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Type mismatch for property 'age': expected INTEGER, got STRING"));
+    }
+
+    SECTION("Complex Label Algebra Conjunction and Disjunction (NOT / OR)") {
+        // Matches nodes that are Person or Company but NOT Person (reduces to Company)
+        std::string query_str = "MATCH (p:(Person|Company)&!Person) RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        
+        // This is valid, and should evaluate p as Node with label "Company" which has property "name"
+        REQUIRE_NOTHROW(GqlTypechecker::typecheck(graph, query));
+
+        // Now lookup property "age" on p (reduces to Company, which has NO "age" property)
+        std::string invalid_query_str = "MATCH (p:(Person|Company)&!Person) WHERE p.age > 21 RETURN p";
+        auto invalid_query = GqlParser::parse(invalid_query_str);
+        REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, invalid_query), Catch::Contains("Property 'age' does not exist on any of the matched types"));
+    }
+
+    graph.Stop().get();
+}

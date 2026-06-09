@@ -18,6 +18,7 @@
 #include "GqlValue.h"
 #include "GqlWriter.h"
 #include "GqlCatalog.h"
+#include "GqlTypechecker.h"
 #include <sstream>
 #include <unordered_set>
 #include <set>
@@ -1048,6 +1049,8 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
 }
 
 seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery query_val) {
+    GqlTypechecker::typecheck(graph, query_val);
+
     if (query_val.schema_op.has_value()) {
         return GqlCatalog::execute_schema_op(graph, *query_val.schema_op);
     }
