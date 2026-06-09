@@ -152,12 +152,28 @@ struct AggregateExpr : public Expression {
     }
 };
 
+
+enum class LabelExprKind {
+    LITERAL,
+    NOT,
+    AND,
+    OR
+};
+
+struct LabelExpression {
+    LabelExprKind kind;
+    std::string name; // For LITERAL
+    std::shared_ptr<LabelExpression> left;  // For AND/OR
+    std::shared_ptr<LabelExpression> right; // For AND/OR
+    std::shared_ptr<LabelExpression> expr;  // For NOT
+};
+
 /**
  * @brief Represents a node pattern in MATCH or INSERT statements (e.g. (p:Person {name: 'Alice'})).
  */
 struct PatternNode {
     std::string variable;                             ///< Optional variable name.
-    std::string label;                                ///< Optional node label/type.
+    std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
 };
 
@@ -175,9 +191,12 @@ enum class EdgeDirection {
  */
 struct PatternEdge {
     std::string variable;                             ///< Optional variable name.
-    std::string label;                                ///< Optional edge label/type.
+    std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     EdgeDirection direction;                          ///< Direction of the relationship.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
+    bool is_variable_length = false;                  ///< True if variable-length hops repetition is used.
+    uint64_t min_hops = 1;                            ///< Minimum number of repetitions.
+    uint64_t max_hops = 1;                            ///< Maximum number of repetitions.
 };
 
 /**
@@ -187,6 +206,7 @@ struct PathPattern {
     std::vector<PatternNode> nodes; ///< Nodes along the path.
     std::vector<PatternEdge> edges; ///< Connecting edges.
 };
+
 
 /**
  * @brief Represents a single MATCH or OPTIONAL MATCH statement.
@@ -240,6 +260,30 @@ struct WriteOp {
     bool detach = false;      ///< True if associated relationships should be deleted implicitly (RageDB behavior).
 };
 
+struct SchemaOperation {
+    enum class Op {
+        CREATE_NODE_TYPE,
+        DROP_NODE_TYPE,
+        CREATE_REL_TYPE,
+        DROP_REL_TYPE,
+        ALTER_NODE_TYPE,
+        ALTER_REL_TYPE
+    } op;
+
+    std::string name;
+    
+    // For CREATE (properties list: name and datatype string, e.g. {"name", "string"})
+    std::vector<std::pair<std::string, std::string>> properties;
+
+    // For ALTER
+    enum class AlterOp {
+        ADD,
+        DROP
+    } alter_op;
+    std::string alter_property_name;
+    std::string alter_property_type; // For ALTER ADD
+};
+
 enum class QueryKind {
     SINGLE,
     UNION,
@@ -268,6 +312,9 @@ struct GqlQuery {
     bool distinct = false;                   ///< True if distinct results are required.
     std::vector<SortSpec> order_by;          ///< Sequence of sort specifications.
     std::optional<uint64_t> limit;           ///< Optional maximum number of rows to return.
+
+    // DDL schema controls
+    std::optional<SchemaOperation> schema_op;
 };
 
 } // namespace ragedb::gql

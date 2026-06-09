@@ -18,6 +18,8 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cctype>
+#include <limits>
+#include <memory>
 
 namespace ragedb::gql {
 
@@ -88,6 +90,13 @@ void GqlParser::consume(TokenType type, const std::string& error_message) {
     throw std::runtime_error(error_message + " (found: " + peek().text + ")");
 }
 
+static void validate_insert_label_expr(const std::shared_ptr<LabelExpression>& expr) {
+    if (!expr) return;
+    if (expr->kind != LabelExprKind::LITERAL) {
+        throw std::runtime_error("Complex label expressions (AND, OR, NOT) are not allowed in INSERT statements");
+    }
+}
+
 /**
  * @brief Parses a complete GQL query into a GqlQuery AST object.
  * 
@@ -102,14 +111,12 @@ GqlQuery GqlParser::parse_single_query() {
     GqlQuery query;
 
     // Parse MATCH/OPTIONAL MATCH clauses
-    while (check(TokenType::MATCH) || check(TokenType::OPTIONAL)) {
+    while (check(TokenType::MATCH) || (check(TokenType::OPTIONAL) && peek(1).type == TokenType::MATCH)) {
         MatchStatement stmt;
         if (match(TokenType::OPTIONAL)) {
             stmt.is_optional = true;
-            consume(TokenType::MATCH, "Expected 'MATCH' after 'OPTIONAL'");
-        } else {
-            consume(TokenType::MATCH, "Expected 'MATCH'");
         }
+        consume(TokenType::MATCH, "Expected MATCH");
         stmt.pattern = parse_path_pattern();
         query.matches.push_back(stmt);
     }
@@ -125,6 +132,12 @@ GqlQuery GqlParser::parse_single_query() {
             WriteOp op;
             op.type = WriteOp::Type::INSERT;
             op.insert_pattern = parse_path_pattern();
+            for (const auto& node : op.insert_pattern.nodes) {
+                validate_insert_label_expr(node.label_expr);
+            }
+            for (const auto& edge : op.insert_pattern.edges) {
+                validate_insert_label_expr(edge.label_expr);
+            }
             query.writes.push_back(std::move(op));
         } else if (match(TokenType::SET)) {
             do {
@@ -209,6 +222,121 @@ GqlQuery GqlParser::parse_single_query() {
 }
 
 GqlQuery GqlParser::parse_query() {
+    if (check(TokenType::CREATE) || check(TokenType::DROP) || check(TokenType::ALTER)) {
+        GqlQuery query;
+        SchemaOperation schema;
+        
+        if (match(TokenType::CREATE)) {
+            bool is_node = false;
+            if (match(TokenType::NODE)) {
+                is_node = true;
+            } else if (match(TokenType::RELATIONSHIP)) {
+                is_node = false;
+            } else {
+                throw std::runtime_error("Expected 'NODE' or 'RELATIONSHIP' / 'REL' after 'CREATE'");
+            }
+            consume(TokenType::TYPE, "Expected 'TYPE' keyword");
+            
+            std::string type_name = peek().text;
+            consume(TokenType::NAME, "Expected type name identifier");
+            
+            schema.op = is_node ? SchemaOperation::Op::CREATE_NODE_TYPE : SchemaOperation::Op::CREATE_REL_TYPE;
+            schema.name = type_name;
+            
+            // Parse optional properties
+            if (match(TokenType::LPAREN)) {
+                do {
+                    std::string prop_name = peek().text;
+                    consume(TokenType::NAME, "Expected property name identifier");
+                    
+                    std::string data_type;
+                    if (match(TokenType::STRING_KW)) data_type = "string";
+                    else if (match(TokenType::INTEGER_KW)) data_type = "integer";
+                    else if (match(TokenType::DOUBLE_KW)) data_type = "double";
+                    else if (match(TokenType::BOOLEAN_KW)) data_type = "boolean";
+                    else if (match(TokenType::STRING_LIST_KW)) data_type = "string_list";
+                    else if (match(TokenType::INTEGER_LIST_KW)) data_type = "integer_list";
+                    else if (match(TokenType::DOUBLE_LIST_KW)) data_type = "double_list";
+                    else if (match(TokenType::BOOLEAN_LIST_KW)) data_type = "boolean_list";
+                    else {
+                        throw std::runtime_error("Expected datatype (STRING, INTEGER, DOUBLE, BOOLEAN, or list variants) for property '" + prop_name + "'");
+                    }
+                    
+                    schema.properties.push_back({prop_name, data_type});
+                } while (match(TokenType::COMMA));
+                consume(TokenType::RPAREN, "Expected ')' to close property list");
+            }
+        }
+        else if (match(TokenType::DROP)) {
+            bool is_node = false;
+            if (match(TokenType::NODE)) {
+                is_node = true;
+            } else if (match(TokenType::RELATIONSHIP)) {
+                is_node = false;
+            } else {
+                throw std::runtime_error("Expected 'NODE' or 'RELATIONSHIP' / 'REL' after 'DROP'");
+            }
+            consume(TokenType::TYPE, "Expected 'TYPE' keyword");
+            
+            std::string type_name = peek().text;
+            consume(TokenType::NAME, "Expected type name identifier");
+            
+            schema.op = is_node ? SchemaOperation::Op::DROP_NODE_TYPE : SchemaOperation::Op::DROP_REL_TYPE;
+            schema.name = type_name;
+        }
+        else if (match(TokenType::ALTER)) {
+            bool is_node = false;
+            if (match(TokenType::NODE)) {
+                is_node = true;
+            } else if (match(TokenType::RELATIONSHIP)) {
+                is_node = false;
+            } else {
+                throw std::runtime_error("Expected 'NODE' or 'RELATIONSHIP' / 'REL' after 'ALTER'");
+            }
+            consume(TokenType::TYPE, "Expected 'TYPE' keyword");
+            
+            std::string type_name = peek().text;
+            consume(TokenType::NAME, "Expected type name identifier");
+            
+            schema.op = is_node ? SchemaOperation::Op::ALTER_NODE_TYPE : SchemaOperation::Op::ALTER_REL_TYPE;
+            schema.name = type_name;
+            
+            if (match(TokenType::ADD)) {
+                schema.alter_op = SchemaOperation::AlterOp::ADD;
+                std::string prop_name = peek().text;
+                consume(TokenType::NAME, "Expected property name identifier");
+                
+                std::string data_type;
+                if (match(TokenType::STRING_KW)) data_type = "string";
+                else if (match(TokenType::INTEGER_KW)) data_type = "integer";
+                else if (match(TokenType::DOUBLE_KW)) data_type = "double";
+                else if (match(TokenType::BOOLEAN_KW)) data_type = "boolean";
+                else if (match(TokenType::STRING_LIST_KW)) data_type = "string_list";
+                else if (match(TokenType::INTEGER_LIST_KW)) data_type = "integer_list";
+                else if (match(TokenType::DOUBLE_LIST_KW)) data_type = "double_list";
+                else if (match(TokenType::BOOLEAN_LIST_KW)) data_type = "boolean_list";
+                else {
+                    throw std::runtime_error("Expected datatype for property '" + prop_name + "'");
+                }
+                schema.alter_property_name = prop_name;
+                schema.alter_property_type = data_type;
+            }
+            else if (match(TokenType::DROP)) {
+                schema.alter_op = SchemaOperation::AlterOp::DROP;
+                std::string prop_name = peek().text;
+                consume(TokenType::NAME, "Expected property name identifier");
+                schema.alter_property_name = prop_name;
+            }
+            else {
+                throw std::runtime_error("Expected 'ADD' or 'DROP' operation after type name in ALTER TYPE statement");
+            }
+        }
+        
+        query.schema_op = std::move(schema);
+        consume(TokenType::EOF_TOK, "Expected end of query");
+        return query;
+    }
+
     GqlQuery query = parse_union();
 
     // Parse optional top-level ORDER BY clause
@@ -274,6 +402,46 @@ GqlQuery GqlParser::parse_intersect() {
     return query;
 }
 
+void GqlParser::parse_edge_details(PatternEdge& edge) {
+    if (check(TokenType::NAME)) {
+        edge.variable = peek().text;
+        advance();
+    }
+    if (match(TokenType::COLON) || match(TokenType::IS)) {
+        edge.label_expr = parse_label_expression();
+    }
+    if (match(TokenType::STAR)) {
+        edge.is_variable_length = true;
+        edge.min_hops = 1;
+        edge.max_hops = std::numeric_limits<uint64_t>::max();
+        if (check(TokenType::NUMBER)) {
+            uint64_t val = peek().int_value;
+            advance();
+            if (match(TokenType::DOT)) {
+                consume(TokenType::DOT, "Expected '..' for repetition range");
+                edge.min_hops = val;
+                if (check(TokenType::NUMBER)) {
+                    edge.max_hops = peek().int_value;
+                    advance();
+                }
+            } else {
+                edge.min_hops = val;
+                edge.max_hops = val;
+            }
+        } else if (match(TokenType::DOT)) {
+            consume(TokenType::DOT, "Expected '..' for repetition range");
+            edge.min_hops = 1;
+            if (check(TokenType::NUMBER)) {
+                edge.max_hops = peek().int_value;
+                advance();
+            }
+        }
+    }
+    if (check(TokenType::LBRACE)) {
+        edge.properties = parse_properties();
+    }
+}
+
 /**
  * @brief Parses a path pattern consisting of alternating nodes and edges.
  * 
@@ -298,18 +466,7 @@ PathPattern GqlParser::parse_path_pattern() {
             edge.direction = EdgeDirection::ANY;
         } else if (match(TokenType::DASH_LB)) {
             // Outgoing or Undirected Edge with detail: -[e:L {p:v}]-> or -[e:L {p:v}]-
-            if (check(TokenType::NAME)) {
-                edge.variable = peek().text;
-                advance();
-            }
-            if (match(TokenType::COLON) || match(TokenType::IS)) {
-                edge.label = peek().text;
-                consume(TokenType::NAME, "Expected edge type label after ':' or 'IS'");
-            }
-            if (check(TokenType::LBRACE)) {
-                edge.properties = parse_properties();
-            }
-
+            parse_edge_details(edge);
             if (match(TokenType::RB_DASH_GT)) {
                 edge.direction = EdgeDirection::RIGHT;
             } else {
@@ -318,17 +475,7 @@ PathPattern GqlParser::parse_path_pattern() {
             }
         } else if (match(TokenType::LT_DASH_LB)) {
             // Incoming Edge with detail: <-[e:L {p:v}]-
-            if (check(TokenType::NAME)) {
-                edge.variable = peek().text;
-                advance();
-            }
-            if (match(TokenType::COLON) || match(TokenType::IS)) {
-                edge.label = peek().text;
-                consume(TokenType::NAME, "Expected edge type label after ':' or 'IS'");
-            }
-            if (check(TokenType::LBRACE)) {
-                edge.properties = parse_properties();
-            }
+            parse_edge_details(edge);
             consume(TokenType::RB_DASH, "Expected ']-' to end incoming relationship description");
             edge.direction = EdgeDirection::LEFT;
         }
@@ -354,8 +501,7 @@ PatternNode GqlParser::parse_node_pattern() {
         advance();
     }
     if (match(TokenType::COLON) || match(TokenType::IS)) {
-        node.label = peek().text;
-        consume(TokenType::NAME, "Expected node label after ':' or 'IS'");
+        node.label_expr = parse_label_expression();
     }
     if (check(TokenType::LBRACE)) {
         node.properties = parse_properties();
@@ -613,6 +759,62 @@ GqlQuery GqlParser::parse(const std::string& query) {
     auto tokens = GqlLexer::tokenize(query);
     GqlParser parser(tokens);
     return parser.parse_query();
+}
+
+std::shared_ptr<LabelExpression> GqlParser::parse_label_expression() {
+    return parse_label_or();
+}
+
+std::shared_ptr<LabelExpression> GqlParser::parse_label_or() {
+    auto left = parse_label_and();
+    while (check(TokenType::PIPE) || check(TokenType::OR)) {
+        advance(); // consume '|' or 'OR'
+        auto right = parse_label_and();
+        auto node = std::make_shared<LabelExpression>();
+        node->kind = LabelExprKind::OR;
+        node->left = std::move(left);
+        node->right = std::move(right);
+        left = std::move(node);
+    }
+    return left;
+}
+
+std::shared_ptr<LabelExpression> GqlParser::parse_label_and() {
+    auto left = parse_label_factor();
+    while (check(TokenType::AMP) || check(TokenType::AND)) {
+        advance(); // consume '&' or 'AND'
+        auto right = parse_label_factor();
+        auto node = std::make_shared<LabelExpression>();
+        node->kind = LabelExprKind::AND;
+        node->left = std::move(left);
+        node->right = std::move(right);
+        left = std::move(node);
+    }
+    return left;
+}
+
+std::shared_ptr<LabelExpression> GqlParser::parse_label_factor() {
+    if (match(TokenType::BANG) || match(TokenType::NOT)) {
+        auto expr = parse_label_factor();
+        auto node = std::make_shared<LabelExpression>();
+        node->kind = LabelExprKind::NOT;
+        node->expr = std::move(expr);
+        return node;
+    }
+    if (match(TokenType::LPAREN)) {
+        auto expr = parse_label_expression();
+        consume(TokenType::RPAREN, "Expected ')' to close label expression");
+        return expr;
+    }
+    if (check(TokenType::NAME)) {
+        auto text = peek().text;
+        advance();
+        auto node = std::make_shared<LabelExpression>();
+        node->kind = LabelExprKind::LITERAL;
+        node->name = text;
+        return node;
+    }
+    throw std::runtime_error("Expected label name or expression in node/edge pattern (found: " + peek().text + ")");
 }
 
 } // namespace ragedb::gql

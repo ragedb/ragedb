@@ -27,7 +27,7 @@ TEST_CASE("GQL Parser builds AST", "[gql_parser]") {
     REQUIRE(q.matches.size() == 1);
     REQUIRE(q.matches[0].pattern.nodes.size() == 1);
     REQUIRE(q.matches[0].pattern.nodes[0].variable == "p");
-    REQUIRE(q.matches[0].pattern.nodes[0].label == "Person");
+    REQUIRE(q.matches[0].pattern.nodes[0].label_expr->name == "Person");
     REQUIRE(q.returns.size() == 1);
 }
 
@@ -38,12 +38,12 @@ TEST_CASE("GQL Parser supports IS keyword for label specification", "[gql_parser
     REQUIRE(q.matches.size() == 1);
     REQUIRE(q.matches[0].pattern.nodes.size() == 2);
     REQUIRE(q.matches[0].pattern.nodes[0].variable == "p");
-    REQUIRE(q.matches[0].pattern.nodes[0].label == "Person");
+    REQUIRE(q.matches[0].pattern.nodes[0].label_expr->name == "Person");
     REQUIRE(q.matches[0].pattern.edges.size() == 1);
     REQUIRE(q.matches[0].pattern.edges[0].variable == "e");
-    REQUIRE(q.matches[0].pattern.edges[0].label == "ACTED_IN");
+    REQUIRE(q.matches[0].pattern.edges[0].label_expr->name == "ACTED_IN");
     REQUIRE(q.matches[0].pattern.nodes[1].variable == "m");
-    REQUIRE(q.matches[0].pattern.nodes[1].label == "Movie");
+    REQUIRE(q.matches[0].pattern.nodes[1].label_expr->name == "Movie");
     REQUIRE(q.returns.size() == 1);
 }
 
@@ -56,7 +56,7 @@ TEST_CASE("GQL Parser parses write statements", "[gql_parser]") {
         REQUIRE(q.writes[0].type == WriteOp::Type::INSERT);
         REQUIRE(q.writes[0].insert_pattern.nodes.size() == 1);
         REQUIRE(q.writes[0].insert_pattern.nodes[0].variable == "p");
-        REQUIRE(q.writes[0].insert_pattern.nodes[0].label == "Person");
+        REQUIRE(q.writes[0].insert_pattern.nodes[0].label_expr->name == "Person");
         REQUIRE(q.writes[0].insert_pattern.nodes[0].properties.count("name") == 1);
     }
 
@@ -297,6 +297,109 @@ TEST_CASE("GQL Parser parses Set Operations", "[gql_parser]") {
         REQUIRE(!q.left->limit.has_value());
         REQUIRE(q.right->order_by.empty());
         REQUIRE(!q.right->limit.has_value());
+    }
+}
+
+TEST_CASE("GQL Parser parses schema statements (DDL)", "[gql_parser]") {
+    SECTION("CREATE NODE TYPE") {
+        std::string query = "CREATE NODE TYPE Person";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_NODE_TYPE);
+        REQUIRE(q.schema_op->name == "Person");
+        REQUIRE(q.schema_op->properties.empty());
+    }
+
+    SECTION("CREATE NODE TYPE with properties") {
+        std::string query = "CREATE NODE TYPE Customer (name STRING, age INT)";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_NODE_TYPE);
+        REQUIRE(q.schema_op->name == "Customer");
+        REQUIRE(q.schema_op->properties.size() == 2);
+        REQUIRE(q.schema_op->properties[0].first == "name");
+        REQUIRE(q.schema_op->properties[0].second == "string");
+        REQUIRE(q.schema_op->properties[1].first == "age");
+        REQUIRE(q.schema_op->properties[1].second == "integer");
+    }
+
+    SECTION("DROP NODE TYPE") {
+        std::string query = "DROP NODE TYPE Person";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_NODE_TYPE);
+        REQUIRE(q.schema_op->name == "Person");
+    }
+
+    SECTION("ALTER NODE TYPE ADD") {
+        std::string query = "ALTER NODE TYPE Person ADD weight DOUBLE";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::ALTER_NODE_TYPE);
+        REQUIRE(q.schema_op->name == "Person");
+        REQUIRE(q.schema_op->alter_op == SchemaOperation::AlterOp::ADD);
+        REQUIRE(q.schema_op->alter_property_name == "weight");
+        REQUIRE(q.schema_op->alter_property_type == "double");
+    }
+
+    SECTION("ALTER NODE TYPE DROP") {
+        std::string query = "ALTER NODE TYPE Person DROP age";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::ALTER_NODE_TYPE);
+        REQUIRE(q.schema_op->name == "Person");
+        REQUIRE(q.schema_op->alter_op == SchemaOperation::AlterOp::DROP);
+        REQUIRE(q.schema_op->alter_property_name == "age");
+    }
+}
+
+TEST_CASE("GQL Parser parses label algebra and repetitions", "[gql_parser]") {
+    SECTION("Label algebra OR/AND/NOT") {
+        std::string query = "MATCH (p:Person|Employee) RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.matches.size() == 1);
+        auto expr = q.matches[0].pattern.nodes[0].label_expr;
+        REQUIRE(expr != nullptr);
+        REQUIRE(expr->kind == LabelExprKind::OR);
+        REQUIRE(expr->left->name == "Person");
+        REQUIRE(expr->right->name == "Employee");
+    }
+
+    SECTION("Label algebra AND/NOT and parentheses") {
+        std::string query = "MATCH (p:(Person|Employee)&!Customer) RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.matches.size() == 1);
+        auto expr = q.matches[0].pattern.nodes[0].label_expr;
+        REQUIRE(expr != nullptr);
+        REQUIRE(expr->kind == LabelExprKind::AND);
+        REQUIRE(expr->left->kind == LabelExprKind::OR);
+        REQUIRE(expr->right->kind == LabelExprKind::NOT);
+        REQUIRE(expr->right->expr->name == "Customer");
+    }
+
+    SECTION("Path repetitions range") {
+        std::string query = "MATCH (p)-[:FRIEND*1..3]->(m) RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.matches.size() == 1);
+        auto edge = q.matches[0].pattern.edges[0];
+        REQUIRE(edge.is_variable_length);
+        REQUIRE(edge.min_hops == 1);
+        REQUIRE(edge.max_hops == 3);
+    }
+
+    SECTION("Path repetitions unbounded") {
+        std::string query = "MATCH (p)-[:FRIEND*]->(m) RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.matches.size() == 1);
+        auto edge = q.matches[0].pattern.edges[0];
+        REQUIRE(edge.is_variable_length);
+        REQUIRE(edge.min_hops == 1);
+        REQUIRE(edge.max_hops == std::numeric_limits<uint64_t>::max());
+    }
+
+    SECTION("INSERT rejects complex label expressions") {
+        std::string query = "INSERT (p:Person|Employee)";
+        REQUIRE_THROWS_AS(GqlParser::parse(query), std::runtime_error);
     }
 }
 

@@ -94,6 +94,19 @@ int compare_gql_values(const GqlValue& a, const GqlValue& b) {
         uint64_t lb = b.relationship->getId();
         return (la < lb) ? -1 : ((la > lb) ? 1 : 0);
     }
+    if (a.type == GqlValue::RELATIONSHIP_LIST) {
+        if (a.relationship_list->size() != b.relationship_list->size()) {
+            return (a.relationship_list->size() < b.relationship_list->size()) ? -1 : 1;
+        }
+        for (size_t i = 0; i < a.relationship_list->size(); ++i) {
+            uint64_t la = (*a.relationship_list)[i].getId();
+            uint64_t lb = (*b.relationship_list)[i].getId();
+            if (la != lb) {
+                return (la < lb) ? -1 : 1;
+            }
+        }
+        return 0;
+    }
     return 0;
 }
 
@@ -332,6 +345,17 @@ std::string serialize_gql_value(const GqlValue& val) {
             init = false;
         }
         s += "}}";
+        return s;
+    }
+    if (val.type == GqlValue::RELATIONSHIP_LIST) {
+        std::string s = "[";
+        bool init = true;
+        for (const auto& rel : *val.relationship_list) {
+            if (!init) s += ",";
+            s += serialize_gql_value(GqlValue(rel));
+            init = false;
+        }
+        s += "]";
         return s;
     }
     return "null";

@@ -290,6 +290,21 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "UNION") type = TokenType::UNION;
             else if (upper_name == "INTERSECT") type = TokenType::INTERSECT;
             else if (upper_name == "ALL") type = TokenType::ALL_KW;
+            else if (upper_name == "CREATE") type = TokenType::CREATE;
+            else if (upper_name == "DROP") type = TokenType::DROP;
+            else if (upper_name == "ALTER") type = TokenType::ALTER;
+            else if (upper_name == "ADD") type = TokenType::ADD;
+            else if (upper_name == "TYPE") type = TokenType::TYPE;
+            else if (upper_name == "NODE") type = TokenType::NODE;
+            else if (upper_name == "RELATIONSHIP" || upper_name == "REL") type = TokenType::RELATIONSHIP;
+            else if (upper_name == "STRING") type = TokenType::STRING_KW;
+            else if (upper_name == "INTEGER" || upper_name == "INT") type = TokenType::INTEGER_KW;
+            else if (upper_name == "DOUBLE") type = TokenType::DOUBLE_KW;
+            else if (upper_name == "BOOLEAN" || upper_name == "BOOL") type = TokenType::BOOLEAN_KW;
+            else if (upper_name == "STRING_LIST") type = TokenType::STRING_LIST_KW;
+            else if (upper_name == "INTEGER_LIST" || upper_name == "INT_LIST") type = TokenType::INTEGER_LIST_KW;
+            else if (upper_name == "DOUBLE_LIST") type = TokenType::DOUBLE_LIST_KW;
+            else if (upper_name == "BOOLEAN_LIST" || upper_name == "BOOL_LIST") type = TokenType::BOOLEAN_LIST_KW;
             // Compound keyword check: ORDER BY
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;

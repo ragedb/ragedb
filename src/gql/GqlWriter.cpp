@@ -238,7 +238,8 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             }
 
             // Execute NodeAddPeered asynchronously on the graph
-            return graph.shard.local().NodeAddPeered(node.label, key, serialize_properties_to_json(node.properties))
+            std::string node_lbl = node.label_expr ? node.label_expr->name : "";
+            return graph.shard.local().NodeAddPeered(node_lbl, key, serialize_properties_to_json(node.properties))
             .then([state, i, &graph, node_var = node.variable](uint64_t new_id) {
                 state->node_ids[i] = new_id;
                 // Retrieve the inserted Node object to bind to its variable name in the GqlRow
@@ -267,7 +268,8 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             uint64_t end = state->node_ids[i + 1];
 
             // Execute RelationshipAddPeered asynchronously on the graph
-            return graph.shard.local().RelationshipAddPeered(edge.label, start, end, serialize_properties_to_json(edge.properties))
+            std::string edge_lbl = edge.label_expr ? edge.label_expr->name : "";
+            return graph.shard.local().RelationshipAddPeered(edge_lbl, start, end, serialize_properties_to_json(edge.properties))
             .then([state, &graph, i, edge_var = edge.variable](uint64_t new_rel_id) {
                 // Retrieve relationship properties and object to bind in GqlRow
                 return graph.shard.local().RelationshipGetPeered(new_rel_id)

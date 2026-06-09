@@ -76,6 +76,10 @@ std::unique_ptr<Expression> GqlOptimizer::rebuild_expression_without_pushed_pred
 }
 
 void GqlOptimizer::optimize(GqlQuery& query) {
+    if (query.schema_op.has_value()) {
+        return;
+    }
+
     if (query.kind != QueryKind::SINGLE) {
         if (query.left) optimize(*query.left);
         if (query.right) optimize(*query.right);

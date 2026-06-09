@@ -45,6 +45,11 @@ private:
     PathPattern parse_path_pattern();
     PatternNode parse_node_pattern();
     std::map<std::string, property_type_t> parse_properties();
+    void parse_edge_details(PatternEdge& edge);
+    std::shared_ptr<LabelExpression> parse_label_expression();
+    std::shared_ptr<LabelExpression> parse_label_or();
+    std::shared_ptr<LabelExpression> parse_label_and();
+    std::shared_ptr<LabelExpression> parse_label_factor();
 
     // Expression parsing (Precedence climbing)
     std::unique_ptr<Expression> parse_expression();

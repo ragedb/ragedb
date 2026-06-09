@@ -18,6 +18,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlExecutorTests.cpp
         gql/GqlExecutorWriteTests.cpp
         gql/GqlExecutorAggregationTests.cpp
+        gql/GqlExecutorSchemaTests.cpp
 
         ../src/main/util/stop_signal.hh
         ../src/main/handlers/HealthCheck.cpp ../src/main/handlers/HealthCheck.h
@@ -41,6 +42,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlCatalog.cpp ../src/gql/GqlCatalog.h
         ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
         ../src/gql/GqlWriter.cpp ../src/gql/GqlWriter.h
         ../src/gql/GqlAst.h
@@ -97,6 +99,7 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlCatalog.cpp ../src/gql/GqlCatalog.h
         ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
         ../src/gql/GqlWriter.cpp ../src/gql/GqlWriter.h
         ../src/gql/GqlAst.h

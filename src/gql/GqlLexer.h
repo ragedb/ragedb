@@ -56,6 +56,23 @@ enum class TokenType {
     INTERSECT,
     ALL_KW,
 
+    // DDL Keywords
+    CREATE,
+    DROP,
+    ALTER,
+    ADD,
+    TYPE,
+    NODE,
+    RELATIONSHIP,
+    STRING_KW,
+    INTEGER_KW,
+    DOUBLE_KW,
+    BOOLEAN_KW,
+    STRING_LIST_KW,
+    INTEGER_LIST_KW,
+    DOUBLE_LIST_KW,
+    BOOLEAN_LIST_KW,
+
     // Symbols
     LPAREN,      // (
     RPAREN,      // )

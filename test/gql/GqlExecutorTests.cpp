@@ -66,3 +66,60 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
 
     graph.Stop().get();
 }
+
+TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_complex]") {
+    auto graph = Graph("gql_test_complex");
+    graph.Start().get();
+    graph.Clear();
+    
+    // Setup schemas
+    graph.shard.local().NodeTypeInsertPeered("Person").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+    graph.shard.local().NodeTypeInsertPeered("Employee").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Employee", "name", "string").get();
+    graph.shard.local().NodeTypeInsertPeered("Robot").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Robot", "name", "string").get();
+
+    graph.shard.local().RelationshipTypeInsertPeered("FRIEND").get();
+    graph.shard.local().RelationshipTypeInsertPeered("KNOWS").get();
+
+    // Create test nodes
+    uint64_t id1 = graph.shard.local().NodeAddPeered("Person", "alice", "{\"name\": \"Alice\"}").get();
+    uint64_t id2 = graph.shard.local().NodeAddPeered("Employee", "bob", "{\"name\": \"Bob\"}").get();
+    uint64_t id3 = graph.shard.local().NodeAddPeered("Robot", "charlie", "{\"name\": \"Charlie\"}").get();
+
+    // Create relationships
+    graph.shard.local().RelationshipAddPeered("FRIEND", id1, id2, "{}").get();
+    graph.shard.local().RelationshipAddPeered("KNOWS", id2, id3, "{}").get();
+
+    SECTION("Label algebra OR type query") {
+        std::string query_str = "MATCH (p:Person|Employee) RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Bob") != std::string::npos);
+        REQUIRE(results.find("Charlie") == std::string::npos);
+    }
+
+    SECTION("Label algebra NOT type query") {
+        std::string query_str = "MATCH (p:!Robot) RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Bob") != std::string::npos);
+        REQUIRE(results.find("Charlie") == std::string::npos);
+    }
+
+    SECTION("Repetitions 1..2 hops query") {
+        std::string query_str = "MATCH (p)-[:FRIEND|KNOWS*1..2]->(m) WHERE p.name = 'Alice' RETURN m.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Bob") != std::string::npos);
+        REQUIRE(results.find("Charlie") != std::string::npos);
+    }
+
+    graph.Stop().get();
+}
