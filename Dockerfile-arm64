@@ -6,7 +6,7 @@ RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
     libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev
-RUN pip install --user conan -v "conan==1.59.0"
+RUN pip install --user conan -v "conan>=2.0"
 RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
 WORKDIR /data/seastar
@@ -14,22 +14,12 @@ RUN git checkout 28daa8f50ccd5737b1779a2656d4330473d53d59
 RUN ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
-RUN git clone https://github.com/ragedb/luajit-recipe.git /data/luajit
-WORKDIR /data/luajit
-RUN conan create . 2.1.0-beta3-2023-01-04@
-RUN git clone https://github.com/ragedb/sol2-recipe.git /data/sol2
-WORKDIR /data/sol2
-RUN conan create . 3.2.3-luajit@
-RUN conan create . 3.3.0-exhaustive@
-RUN git clone https://github.com/ragedb/eve-recipe.git /data/eve
-WORKDIR /data/eve
-RUN conan create . v2023.08.1@
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
-RUN mkdir /data/rage/build
+WORKDIR /data/rage
+RUN conan profile detect --force
+RUN conan install . --output-folder=build --build=missing -s compiler.cppstd=20 -s build_type=Release
 WORKDIR /data/rage/build
-RUN apt-get install -y luajit libluajit-5.1-dev
-RUN cp /usr/lib/aarch64-linux-gnu/libluajit-5.1.so /root/.conan/data/luajit/2.1.0-beta3-2022-7-22/_/_/package/115c8fa606e08a868a5ec8073c26c1a096c7263b/lib/.
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release
+RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 RUN cmake --build . --target ragedb
 
 FROM ${ARCH}ubuntu:22.04
