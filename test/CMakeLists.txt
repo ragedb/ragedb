@@ -106,7 +106,8 @@ add_executable(tests2 main/ConnectedHandler.cpp
         )
 
 target_compile_definitions (tests2 PRIVATE SEASTAR_TESTING_MAIN)
-target_link_libraries(tests2 PRIVATE project_warnings project_options Graph Seastar::seastar Boost::unit_test_framework Seastar::seastar_testing)
+find_library(SYSTEM_BOOST_TEST NAMES boost_unit_test_framework PATHS /usr/lib/x86_64-linux-gnu /usr/lib NO_DEFAULT_PATH)
+target_link_libraries(tests2 PRIVATE project_warnings project_options Graph Seastar::seastar Seastar::seastar_testing ${SYSTEM_BOOST_TEST})
 target_include_directories(tests2 PRIVATE
         ../src/graph
         ../src/graph/eve
