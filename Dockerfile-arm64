@@ -3,7 +3,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update -y
 RUN apt-get -qq dist-upgrade -y
 RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
-    valgrind libfmt-dev gcc-11 g++-11 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
+    valgrind libfmt-dev gcc-12 g++-12 ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
     libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev
 RUN pip install --user conan -v "conan>=2.0"
@@ -11,11 +11,13 @@ RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
 WORKDIR /data/seastar
 RUN git checkout seastar-25.05.0
-RUN ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
+RUN ./configure.py --mode=release --prefix=/usr/local --compiler=g++-12 --c-compiler=gcc-12 --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
 WORKDIR /data/rage
+ENV CC=gcc-12
+ENV CXX=g++-12
 RUN conan profile detect --force
 RUN conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
 WORKDIR /data/rage/build

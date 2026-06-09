@@ -380,12 +380,12 @@ A second example:
 
 ## Building
 
-RageDB uses Seastar which only runs on *nix servers (no windows or mac) so use your local linux desktop or use EC2.
+RageDB uses Seastar which only runs on *nix servers (no windows or mac) so use your local linux desktop or use EC2. A compiler supporting C++23 (such as GCC 12 or newer) is required.
 
 On EC2 launch an instance:
 
     Step 1: Choose an Amazon Machine Image
-    Ubuntu Server 20.04 LTS(HVM), SSD Volume Type - ami-09e67e426f25ce0d7
+    Ubuntu Server 24.04 LTS (HVM), SSD Volume Type (as it comes with GCC 13 by default, providing full C++23 support)
 
     Step 2: Choose Instance Type
     r5.2xlarge
@@ -410,6 +410,8 @@ Install Seastar (this will take a while, that's why we are using screen):
     git clone -b seastar-25.05.0 https://github.com/scylladb/seastar.git
     cd seastar
     sudo ./install-dependencies.sh
+    # Note: On older Ubuntu 22.04, install gcc-12/g++-12 and configure with:
+    # ./configure.py --mode=release --prefix=/usr/local --compiler=g++-12 --c-compiler=gcc-12 --without-tests --without-apps --without-demos
     ./configure.py --mode=release --prefix=/usr/local
     sudo ninja -C build/release install
 
@@ -434,6 +436,8 @@ Install RageDB
     cd ragedb
     mkdir build
     cd build
+    # On Ubuntu 22.04 with GCC 12, run:
+    # CC=gcc-12 CXX=g++-12 cmake .. -DCMAKE_BUILD_TYPE=Release
     cmake .. -DCMAKE_BUILD_TYPE=Release
     cmake --build . --target ragedb
     cd bin
