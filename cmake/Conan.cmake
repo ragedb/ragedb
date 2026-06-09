@@ -30,7 +30,7 @@ macro(run_conan)
 #    reckless/3.0.3  # temporarily removing logging until ARM issue is figured out
     benchmark/1.8.2
     SETTINGS
-    compiler.cppstd=20
+    compiler.cppstd=23
     OPTIONS
     ${CONAN_EXTRA_OPTIONS}
     BASIC_SETUP

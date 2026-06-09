@@ -16,7 +16,7 @@ RUN rm -rf /data/seastar/*
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
 WORKDIR /data/rage
 RUN conan profile detect --force
-RUN conan install . --output-folder=build --build=missing -s compiler.cppstd=20 -s build_type=Release
+RUN conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
 WORKDIR /data/rage/build
 RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 RUN cmake --build . --target ragedb

@@ -322,7 +322,7 @@ bool Utilities::validate_allowed_data_type(std::unique_ptr<seastar::http::reques
 
 Utilities::Utilities() {
     // We need to create one parser per core because otherwise we get parsing errors
-    int cores = static_cast<int>(seastar::smp::this_smp().shard_count());
+    int cores = static_cast<int>(seastar::smp::count);
     for (int i = 0; i < cores; ++i) {
         parsers.emplace_back();
     }

@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 
     try {
         app.run(argc, argv, [&app] {
-            std::cout << "RageDB running on " << seastar::smp::this_smp().shard_count() << " cores.\n";
+            std::cout << "RageDB running on " << seastar::smp::count << " cores.\n";
 
             return seastar::async([&app] {
                 seastar_apps_lib::stop_signal stop_signal;

@@ -6,9 +6,9 @@ include(cmake/PreventInSourceBuilds.cmake)
 
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
-set(CMAKE_CXX_STANDARD 20)
-target_compile_features(project_options INTERFACE cxx_std_20)
-set_property(TARGET project_options PROPERTY CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
+target_compile_features(project_options INTERFACE cxx_std_23)
+set_property(TARGET project_options PROPERTY CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

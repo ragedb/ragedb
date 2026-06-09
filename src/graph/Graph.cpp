@@ -36,7 +36,7 @@ namespace ragedb {
      */
     seastar::future<> Graph::Start() {
         StartLogging();
-        return shard.start(seastar::smp::this_smp().shard_count());
+        return shard.start(seastar::smp::count);
     }
 
     void Graph::StartLogging() const {

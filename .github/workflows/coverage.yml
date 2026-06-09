@@ -79,7 +79,7 @@ jobs:
         run: |
           export CC=/usr/bin/gcc-12
           export CXX=/usr/bin/g++-12
-          conan install . --output-folder=build --build=missing -s compiler.cppstd=20 -s build_type=${{ env.BUILD_TYPE }}
+          conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=${{ env.BUILD_TYPE }}
       
       - name: Set up JDK 21
         uses: actions/setup-java@v3
