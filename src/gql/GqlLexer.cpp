@@ -21,31 +21,46 @@
 
 namespace ragedb::gql {
 
+/**
+ * @brief Helper utility to convert a string to uppercase.
+ * Used for case-insensitive keyword comparisons.
+ */
 static std::string to_upper(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return std::toupper(c); });
     return s;
 }
 
+/**
+ * @brief Main lexical analysis entry point.
+ * Scans the GQL query string and produces a list of structured tokens.
+ * 
+ * @param input The raw GQL query string.
+ * @return std::vector<Token> List of parsed tokens, ending with an EOF token.
+ */
 std::vector<Token> GqlLexer::tokenize(const std::string& input) {
     std::vector<Token> tokens;
     size_t pos = 0;
     size_t length = input.length();
 
+    // Look ahead at characters in the input stream without advancing the cursor.
     auto peek = [&](size_t offset = 0) -> char {
         if (pos + offset >= length) return '\0';
         return input[pos + offset];
     };
 
+    // Move the cursor forward by a given number of characters.
     auto advance = [&](size_t count = 1) {
         pos += count;
     };
 
+    // Skips standard whitespace as well as single-line and multi-line comments.
     auto skip_whitespace_and_comments = [&]() {
         while (pos < length) {
             char c = peek();
             if (std::isspace(c)) {
                 advance();
             } else if (c == '/' && peek(1) == '*') {
+                // Multi-line comment: /* comment */
                 advance(2);
                 while (pos < length && !(peek() == '*' && peek(1) == '/')) {
                     advance();
@@ -54,11 +69,13 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
                     advance(2);
                 }
             } else if (c == '/' && peek(1) == '/') {
+                // Single-line comment style 1: // comment
                 advance(2);
                 while (pos < length && peek() != '\n') {
                     advance();
                 }
             } else if (c == '-' && peek(1) == '-' && peek(2) != '>') {
+                // Single-line comment style 2: -- comment (ignoring relationship arrow '-->')
                 advance(2);
                 while (pos < length && peek() != '\n') {
                     advance();
@@ -69,51 +86,52 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
         }
     };
 
+    // Main tokenizer loop
     while (pos < length) {
         skip_whitespace_and_comments();
         if (pos >= length) break;
 
         char c = peek();
 
-        // Check compound relationship tokens first
-        // <-[
+        // 1. Check compound relationship tokens first (greedily match arrows)
+        // Left incoming relationship: <-[
         if (c == '<' && peek(1) == '-' && peek(2) == '[') {
             tokens.push_back({TokenType::LT_DASH_LB, "<-["});
             advance(3);
             continue;
         }
-        // <-
+        // Left incoming arrow: <-
         if (c == '<' && peek(1) == '-') {
             tokens.push_back({TokenType::LEFT_ARROW, "<-"});
             advance(2);
             continue;
         }
-        // ->
+        // Right outgoing arrow: ->
         if (c == '-' && peek(1) == '>') {
             tokens.push_back({TokenType::RIGHT_ARROW, "->"});
             advance(2);
             continue;
         }
-        // -[
+        // Undirected details or outgoing details start: -[
         if (c == '-' && peek(1) == '[') {
             tokens.push_back({TokenType::DASH_LB, "-["});
             advance(2);
             continue;
         }
-        // ]->
+        // Relationship details end + right arrow: ]->
         if (c == ']' && peek(1) == '-' && peek(2) == '>') {
             tokens.push_back({TokenType::RB_DASH_GT, "]->"});
             advance(3);
             continue;
         }
-        // ]-
+        // Relationship details end: ]-
         if (c == ']' && peek(1) == '-') {
             tokens.push_back({TokenType::RB_DASH, "]-"});
             advance(2);
             continue;
         }
 
-        // Single symbols
+        // 2. Single-character symbols and operators
         if (c == '(') { tokens.push_back({TokenType::LPAREN, "("}); advance(); continue; }
         if (c == ')') { tokens.push_back({TokenType::RPAREN, ")"}); advance(); continue; }
         if (c == '[') { tokens.push_back({TokenType::LBRACKET, "["}); advance(); continue; }
@@ -130,6 +148,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
         if (c == '|') { tokens.push_back({TokenType::PIPE, "|"}); advance(); continue; }
         if (c == '&') { tokens.push_back({TokenType::AMP, "&"}); advance(); continue; }
 
+        // Inequality and logical operators
         if (c == '!') {
             if (peek(1) == '=') {
                 tokens.push_back({TokenType::NE, "!="});
@@ -168,7 +187,8 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             }
             continue;
         }
-        // Backticks (escaped identifiers)
+
+        // 3. Backticks: Backtick-escaped identifiers (e.g. `My Type Name`)
         if (c == '`') {
             advance();
             std::string name;
@@ -184,12 +204,12 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             if (pos >= length) {
                 throw std::runtime_error("Unterminated backtick identifier");
             }
-            advance(); // Consume end backtick
+            advance(); // Consume the terminating backtick
             tokens.push_back({TokenType::NAME, name});
             continue;
         }
 
-        // Strings
+        // 4. String Literals (e.g., 'Alice' or "Bob")
         if (c == '\'' || c == '"') {
             char quote_char = c;
             advance();
@@ -206,18 +226,19 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             if (pos >= length) {
                 throw std::runtime_error("Unterminated string literal");
             }
-            advance(); // Consume end quote
+            advance(); // Consume the closing quote
             tokens.push_back({TokenType::STRING_LIT, str});
             continue;
         }
 
-        // Numbers
+        // 5. Numeric Literals (Integers and Floating Points)
         if (std::isdigit(c)) {
             std::string num_str;
             while (pos < length && std::isdigit(peek())) {
                 num_str += peek();
                 advance();
             }
+            // If we hit a dot followed by digits, it's a floating point number
             if (peek() == '.' && std::isdigit(peek(1))) {
                 num_str += '.';
                 advance();
@@ -232,7 +253,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             continue;
         }
 
-        // Names & Keywords
+        // 6. Alphabetic Identifiers and Keywords
         if (std::isalpha(c) || c == '_') {
             std::string name;
             while (pos < length && (std::isalnum(peek()) || peek() == '_')) {
@@ -240,6 +261,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
                 advance();
             }
 
+            // Convert to uppercase to match keywords case-insensitively
             std::string upper_name = to_upper(name);
             TokenType type = TokenType::NAME;
 
@@ -259,11 +281,13 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "NOT") type = TokenType::NOT;
             else if (upper_name == "AS") type = TokenType::AS;
             else if (upper_name == "IS") type = TokenType::IS;
+            // GQL Write/Modification keywords
             else if (upper_name == "INSERT") type = TokenType::INSERT;
             else if (upper_name == "DELETE") type = TokenType::DELETE;
             else if (upper_name == "SET") type = TokenType::SET;
             else if (upper_name == "REMOVE") type = TokenType::REMOVE;
             else if (upper_name == "DETACH") type = TokenType::DETACH;
+            // Compound keyword check: ORDER BY
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;
                 while (temp_pos < length && std::isspace(input[temp_pos])) {
@@ -277,6 +301,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             }
 
             Token tok{type, name};
+            // Set simple numeric representation for booleans
             if (type == TokenType::TRUE_KW) {
                 tok.int_value = 1;
             } else if (type == TokenType::FALSE_KW) {
@@ -286,9 +311,11 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             continue;
         }
 
+        // Throw error on any unexpected character that couldn't be parsed
         throw std::runtime_error(std::string("Unexpected character '") + c + "' in GQL query");
     }
 
+    // Always append an EOF token to mark the end of the token stream
     tokens.push_back({TokenType::EOF_TOK, ""});
     return tokens;
 }
