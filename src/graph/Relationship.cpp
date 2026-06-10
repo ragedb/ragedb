@@ -140,6 +140,12 @@ namespace ragedb {
       return {};
     }
 
+    void Relationship::pruneProperties(const std::set<std::string>& keys) {
+        std::erase_if(properties, [&keys](const auto& item) {
+            return !keys.count(item.first);
+        });
+    }
+
     std::ostream &operator<<(std::ostream &os, const Relationship &relationship) {
         os << "{ \"id\": " << relationship.id << R"(, "type": ")" << relationship.type << R"(", "starting_node_id": )" << relationship.starting_node_id << ", \"ending_node_id\": " << relationship.ending_node_id << ", \"properties\": { ";
         bool initial = true;

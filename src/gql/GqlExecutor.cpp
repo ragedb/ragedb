@@ -19,6 +19,7 @@
 #include "GqlWriter.h"
 #include "GqlCatalog.h"
 #include "GqlTypechecker.h"
+#include "Join.h"
 #include <sstream>
 #include <unordered_set>
 #include <set>
@@ -29,6 +30,435 @@
 #include <seastar/core/when_all.hh>
 
 namespace ragedb::gql {
+
+/**
+ * @brief Represents the factorization types for query execution tree nodes.
+ *
+ * Factorization groups intermediate matching subgraphs to avoid premature Cartesian products.
+ */
+enum class FactorNodeType {
+    FLAT,         ///< Flat vector of GqlRow records.
+    PRODUCT,      ///< Cartesian product of child sub-trees (lazily joined).
+    PATH_CONCAT,  ///< Path concatenation of nodes/edges.
+    UNION         ///< Disjoint union of matching options.
+};
+
+struct FactorNode;
+using FactorNodePtr = std::shared_ptr<FactorNode>;
+
+/**
+ * @brief Comparator for ordering GqlValues when partitioning factorized tree nodes.
+ */
+struct GqlValueLess {
+    bool operator()(const GqlValue& a, const GqlValue& b) const {
+        return compare_gql_values(a, b) < 0;
+    }
+};
+
+/**
+ * @brief Joins two lists of flat GqlRows on shared variables.
+ *
+ * Skips internal traversal trackers (prefixed with _n_ and _e_) to prevent false naming collisions.
+ *
+ * @param left Left side flat rows.
+ * @param right Right side flat rows.
+ * @return std::vector<GqlRow> The joined output rows.
+ */
+std::vector<GqlRow> join_flat_rows_variable(const std::vector<GqlRow>& left, const std::vector<GqlRow>& right) {
+    if (left.empty() || right.empty()) return {};
+    std::vector<GqlRow> result;
+    for (const auto& r1 : left) {
+        for (const auto& r2 : right) {
+            bool can_unify = true;
+            for (const auto& [var, val] : r1.bindings) {
+                // Internal graph traversal variables are query-specific and do not restrict natural joins
+                if (var.rfind("_n_", 0) == 0 || var.rfind("_e_", 0) == 0) {
+                    continue;
+                }
+                auto it = r2.bindings.find(var);
+                if (it != r2.bindings.end()) {
+                    if (compare_gql_values(val, it->second) != 0) {
+                        can_unify = false;
+                        break;
+                    }
+                }
+            }
+            if (can_unify) {
+                GqlRow unified = r1;
+                for (const auto& [var, val] : r2.bindings) {
+                    unified.bindings[var] = val;
+                }
+                result.push_back(std::move(unified));
+            }
+        }
+    }
+    return result;
+}
+
+/**
+ * @brief Node representation in a factorized query tree.
+ *
+ * Allows lazy merging and evaluation of multi-way patterns.
+ */
+struct FactorNode {
+    FactorNodeType type;
+    std::vector<GqlRow> flat_rows;             ///< Populated when type is FLAT.
+    std::vector<FactorNodePtr> children;       ///< Populated when type is PRODUCT, PATH_CONCAT, or UNION.
+
+    FactorNode(FactorNodeType t) : type(t) {}
+    FactorNode(std::vector<GqlRow> rows) : type(FactorNodeType::FLAT), flat_rows(std::move(rows)) {}
+
+    /**
+     * @brief Checks if this node contains no matching patterns or rows.
+     */
+    bool is_empty() const {
+        switch (type) {
+            case FactorNodeType::FLAT:
+                return flat_rows.empty();
+            case FactorNodeType::UNION: {
+                for (const auto& child : children) {
+                    if (!child->is_empty()) return false;
+                }
+                return true;
+            }
+            case FactorNodeType::PRODUCT:
+            case FactorNodeType::PATH_CONCAT: {
+                for (const auto& child : children) {
+                    if (child->is_empty()) return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Returns the set of query variable names bound in this sub-tree.
+     */
+    std::set<std::string> freevars() const {
+        std::set<std::string> vars;
+        if (type == FactorNodeType::FLAT) {
+            if (!flat_rows.empty()) {
+                for (const auto& [k, v] : flat_rows[0].bindings) {
+                    if (k.rfind("_n_", 0) != 0 && k.rfind("_e_", 0) != 0) {
+                        vars.insert(k);
+                    }
+                }
+            }
+        } else {
+            for (const auto& child : children) {
+                auto child_vars = child->freevars();
+                vars.insert(child_vars.begin(), child_vars.end());
+            }
+        }
+        return vars;
+    }
+
+    /**
+     * @brief Partitions this factorized node into sub-trees grouped by the value of a specific variable.
+     *
+     * Enables merging sub-trees that share a common variable during natural joins.
+     *
+     * @param var Variable name to partition by.
+     * @return std::map<GqlValue, FactorNodePtr, GqlValueLess> Mapped sub-trees.
+     */
+    std::map<GqlValue, FactorNodePtr, GqlValueLess> partition(const std::string& var) const {
+        std::map<GqlValue, FactorNodePtr, GqlValueLess> partition_map;
+        if (type == FactorNodeType::FLAT) {
+            std::map<GqlValue, std::vector<GqlRow>, GqlValueLess> groups;
+            for (const auto& row : flat_rows) {
+                auto it = row.bindings.find(var);
+                if (it != row.bindings.end()) {
+                    groups[it->second].push_back(row);
+                }
+            }
+            for (auto& [val, group_rows] : groups) {
+                partition_map[val] = std::make_shared<FactorNode>(std::move(group_rows));
+            }
+        } else if (type == FactorNodeType::UNION) {
+            std::map<GqlValue, std::vector<FactorNodePtr>, GqlValueLess> groups;
+            for (const auto& child : children) {
+                auto child_parts = child->partition(var);
+                for (auto& [val, part] : child_parts) {
+                    groups[val].push_back(part);
+                }
+            }
+            for (auto& [val, group_nodes] : groups) {
+                auto union_node = std::make_shared<FactorNode>(FactorNodeType::UNION);
+                union_node->children = std::move(group_nodes);
+                partition_map[val] = union_node;
+            }
+        } else if (type == FactorNodeType::PRODUCT || type == FactorNodeType::PATH_CONCAT) {
+            int target_idx = -1;
+            for (size_t i = 0; i < children.size(); ++i) {
+                auto free_vars = children[i]->freevars();
+                if (free_vars.count(var)) {
+                    target_idx = i;
+                    break;
+                }
+            }
+            if (target_idx != -1) {
+                auto target_node = children[target_idx];
+                auto target_parts = target_node->partition(var);
+                for (auto& [val, part] : target_parts) {
+                    auto product_node = std::make_shared<FactorNode>(type);
+                    product_node->children = children;
+                    product_node->children[target_idx] = part;
+                    partition_map[val] = product_node;
+                }
+            }
+        }
+        return partition_map;
+    }
+
+    /**
+     * @brief Performs a natural join of this tree and another on a shared variable.
+     *
+     * Partitions both trees by `join_var` and aligns matching sub-trees under a `PRODUCT` node.
+     *
+     * @param other The other tree to join.
+     * @param join_var The variable to join on.
+     * @return FactorNodePtr The combined union tree.
+     */
+    FactorNodePtr join(const FactorNodePtr& other, const std::string& join_var) const {
+        auto left_parts = partition(join_var);
+        auto right_parts = other->partition(join_var);
+
+        auto union_node = std::make_shared<FactorNode>(FactorNodeType::UNION);
+        for (const auto& [val, left_node] : left_parts) {
+            auto it = right_parts.find(val);
+            if (it != right_parts.end()) {
+                auto product_node = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
+                product_node->children.push_back(left_node);
+                product_node->children.push_back(it->second);
+                union_node->children.push_back(product_node);
+            }
+        }
+        return union_node;
+    }
+
+    /**
+     * @brief Flattens this factorized representation into a list of flat GqlRows.
+     */
+    std::vector<GqlRow> flatten() const {
+        if (type == FactorNodeType::FLAT) {
+            return flat_rows;
+        }
+        if (type == FactorNodeType::UNION) {
+            auto dom = freevars();
+            std::vector<GqlRow> rows;
+            for (const auto& child : children) {
+                for (auto r : child->flatten()) {
+                    for (const auto& var : dom) {
+                        if (r.bindings.find(var) == r.bindings.end()) {
+                            r.bindings[var] = GqlValue();
+                        }
+                    }
+                    rows.push_back(std::move(r));
+                }
+            }
+            return rows;
+        }
+        if (type == FactorNodeType::PRODUCT) {
+            if (children.empty()) return {};
+            std::vector<GqlRow> result = children[0]->flatten();
+            for (size_t i = 1; i < children.size(); ++i) {
+                result = join_flat_rows_variable(result, children[i]->flatten());
+            }
+            return result;
+        }
+        return {};
+    }
+};
+
+/**
+ * @brief Helper structure wrapping a factorized node for use in matching chains.
+ */
+struct IntermediateResult {
+    std::vector<GqlRow> rows;      ///< Flat rows (lazily populated on ensure_flat).
+    FactorNodePtr root;            ///< The root factorized node of the query execution tree.
+
+    IntermediateResult() {
+        root = std::make_shared<FactorNode>(std::vector<GqlRow>{});
+    }
+
+    IntermediateResult(std::vector<GqlRow> r) : rows(r) {
+        root = std::make_shared<FactorNode>(std::move(r));
+    }
+
+    IntermediateResult(FactorNodePtr node) : root(std::move(node)) {}
+
+    static IntermediateResult empty() {
+        return IntermediateResult(std::vector<GqlRow>{});
+    }
+
+    /**
+     * @brief Recursively flattens the factorized query tree to yield a flat row list.
+     */
+    void ensure_flat() {
+        if (rows.empty() && root) {
+            rows = root->flatten();
+        }
+    }
+
+    FactorNodePtr into_root() const {
+        if (root) return root;
+        return std::make_shared<FactorNode>(rows);
+    }
+
+    bool is_empty() const {
+        if (root) return root->is_empty();
+        return rows.empty();
+    }
+
+    std::set<std::string> freevars() const {
+        if (root) return root->freevars();
+        std::set<std::string> vars;
+        if (!rows.empty()) {
+            for (const auto& [k, v] : rows[0].bindings) {
+                vars.insert(k);
+            }
+        }
+        return vars;
+    }
+
+    /**
+     * @brief Joins another intermediate result as a UNION node.
+     */
+    IntermediateResult union_with(const IntermediateResult& other) const {
+        auto union_node = std::make_shared<FactorNode>(FactorNodeType::UNION);
+        union_node->children.push_back(into_root());
+        union_node->children.push_back(other.into_root());
+        return IntermediateResult(union_node);
+    }
+};
+
+/**
+ * @brief Performs natural join optimization on two intermediate results.
+ *
+ * If results share variables, joins their factor nodes. Otherwise, builds a lazy PRODUCT node.
+ *
+ * @param left Left operand.
+ * @param right Right operand.
+ * @param limit Row limit to apply.
+ * @return IntermediateResult Joined factorized representation.
+ */
+IntermediateResult natural_join(IntermediateResult left, IntermediateResult right, size_t limit = 0) {
+    auto lk = left.freevars();
+    auto rk = right.freevars();
+    std::vector<std::string> shared;
+    for (const auto& var : lk) {
+        if (rk.count(var)) {
+            shared.push_back(var);
+        }
+    }
+
+    if (!shared.empty()) {
+        std::string jv = shared[0];
+        auto left_root = left.into_root();
+        auto right_root = right.into_root();
+        auto joined = left_root->join(right_root, jv);
+        auto combined = IntermediateResult(joined);
+        if (limit > 0) {
+            combined.ensure_flat();
+            if (combined.rows.size() > limit) {
+                combined.rows.resize(limit);
+            }
+        }
+        return combined;
+    } else {
+        auto factorized = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
+        factorized->children.push_back(left.into_root());
+        factorized->children.push_back(right.into_root());
+        auto combined = IntermediateResult(factorized);
+        if (limit > 0) {
+            combined.ensure_flat();
+            if (combined.rows.size() > limit) {
+                combined.rows.resize(limit);
+            }
+        }
+        return combined;
+    }
+}
+
+/**
+ * @brief Performs a left outer join of two intermediate results.
+ *
+ * Used for OPTIONAL MATCH chains that share variables. Left rows without matching right rows
+ * are padded with null (nil) values.
+ *
+ * @param left Left side (primary query context).
+ * @param right Right side (optional match context).
+ * @param bound_vars Set of variables bound in the left context.
+ * @param new_vars Set of variables introduced in the right context.
+ * @return IntermediateResult Joined factorized representation.
+ */
+IntermediateResult left_outer_join(
+    IntermediateResult left,
+    IntermediateResult right,
+    const std::set<std::string>& bound_vars,
+    const std::set<std::string>& new_vars
+) {
+    std::vector<std::string> pad_vars;
+    for (const auto& v : new_vars) {
+        if (!bound_vars.count(v)) {
+            pad_vars.push_back(v);
+        }
+    }
+
+    auto lk = left.freevars();
+    auto rk = right.freevars();
+    std::vector<std::string> shared;
+    for (const auto& var : lk) {
+        if (rk.count(var)) {
+            shared.push_back(var);
+        }
+    }
+
+    auto make_pad_node = [&pad_vars]() {
+        GqlRow pad_row;
+        for (const auto& v : pad_vars) {
+            pad_row.bindings[v] = GqlValue();
+        }
+        return std::make_shared<FactorNode>(std::vector<GqlRow>{pad_row});
+    };
+
+    if (!shared.empty()) {
+        std::string jv = shared[0];
+        auto left_parts = left.into_root()->partition(jv);
+        auto right_parts = right.into_root()->partition(jv);
+
+        auto union_node = std::make_shared<FactorNode>(FactorNodeType::UNION);
+        for (const auto& [val, left_node] : left_parts) {
+            auto it = right_parts.find(val);
+            if (it != right_parts.end()) {
+                auto product_node = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
+                product_node->children.push_back(left_node);
+                product_node->children.push_back(it->second);
+                union_node->children.push_back(product_node);
+            } else {
+                auto product_node = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
+                product_node->children.push_back(left_node);
+                product_node->children.push_back(make_pad_node());
+                union_node->children.push_back(product_node);
+            }
+        }
+        return IntermediateResult(union_node);
+    } else {
+        if (right.is_empty()) {
+            auto pad_node = make_pad_node();
+            auto factorized = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
+            factorized->children.push_back(left.into_root());
+            factorized->children.push_back(pad_node);
+            return IntermediateResult(factorized);
+        } else {
+            auto factorized = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
+            factorized->children.push_back(left.into_root());
+            factorized->children.push_back(right.into_root());
+            return IntermediateResult(factorized);
+        }
+    }
+}
 
 bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<LabelExpression>& expr) {
     if (!expr) return true;
@@ -45,6 +475,64 @@ bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<La
     return false;
 }
 
+struct ProjectionPruner {
+    std::map<std::string, std::set<std::string>> accessed_props;
+    std::set<std::string> whole_objects;
+
+    bool should_prune(const std::string& var) const {
+        if (var.empty()) return false;
+        if (whole_objects.count(var)) return false;
+        return true;
+    }
+
+    const std::set<std::string>& get_keys(const std::string& var) const {
+        static const std::set<std::string> empty_keys;
+        auto it = accessed_props.find(var);
+        if (it != accessed_props.end()) {
+            return it->second;
+        }
+        return empty_keys;
+    }
+};
+
+static void collect_accessed_properties(const Expression* expr,
+                                 std::map<std::string, std::set<std::string>>& accessed_props,
+                                 std::set<std::string>& whole_objects) {
+    if (!expr) return;
+    switch (expr->kind) {
+        case ExpressionKind::VARIABLE: {
+            auto* var = static_cast<const VariableExpr*>(expr);
+            whole_objects.insert(var->name);
+            break;
+        }
+        case ExpressionKind::PROPERTY_LOOKUP: {
+            auto* prop_lookup = static_cast<const PropertyLookupExpr*>(expr);
+            accessed_props[prop_lookup->variable].insert(prop_lookup->property);
+            break;
+        }
+        case ExpressionKind::UNARY_OP: {
+            auto* un = static_cast<const UnaryOpExpr*>(expr);
+            collect_accessed_properties(un->expr.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::BINARY_OP: {
+            auto* bin = static_cast<const BinaryOpExpr*>(expr);
+            collect_accessed_properties(bin->left.get(), accessed_props, whole_objects);
+            collect_accessed_properties(bin->right.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::AGGREGATION: {
+            auto* agg = static_cast<const AggregateExpr*>(expr);
+            collect_accessed_properties(agg->expr.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::LITERAL:
+        default:
+            break;
+    }
+}
+
+
 /**
  * @brief Retrieves the starting nodes for a pattern match.
  * 
@@ -55,21 +543,95 @@ bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<La
  * @param node The vertex pattern definition.
  * @return seastar::future<std::vector<Node>> Future wrapping matching start nodes.
  */
-seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node) {
+/**
+ * @brief Retrieves the starting nodes for a pattern match.
+ * 
+ * Inspects node pattern label and properties. Utilizes index scans if a property and a label
+ * are supplied. Falls back to AllNodes scan either labeled or global if properties are absent.
+ * 
+ * @param graph The RageDB graph instance.
+ * @param node The vertex pattern definition.
+ * @param limit Optional limit for start node queries.
+ * @param pruner The projection properties pruner.
+ * @return seastar::future<std::vector<Node>> Future wrapping matching start nodes.
+ */
+seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node, size_t limit = 0, const ProjectionPruner& pruner = {}) {
+    size_t scan_limit = (limit > 0) ? limit : 100000;
     std::string single_label = "";
     if (node.label_expr && node.label_expr->kind == LabelExprKind::LITERAL) {
         single_label = node.label_expr->name;
     }
-    if (!node.properties.empty() && !single_label.empty()) {
-        auto it = node.properties.begin();
-        std::string prop = it->first;
-        property_type_t val = it->second;
-        return graph.shard.local().FindNodesPeered(single_label, prop, Operation::EQ, val, 0, 100000);
-    } else if (!single_label.empty()) {
-        return graph.shard.local().AllNodesPeered(single_label, 0, 100000);
-    } else {
-        return graph.shard.local().AllNodesPeered(0, 100000);
+
+    struct FilterInfo {
+        std::string property;
+        Operation op;
+        property_type_t value;
+    };
+    std::vector<FilterInfo> all_filters;
+    for (const auto& [prop, val] : node.properties) {
+        all_filters.push_back({prop, Operation::EQ, val});
     }
+    for (const auto& filter : node.property_filters) {
+        all_filters.push_back({filter.property, filter.op, filter.value});
+    }
+    
+    seastar::future<std::vector<Node>> fut = seastar::make_ready_future<std::vector<Node>>();
+    // Leapfrog Join Optimization (WCOJ): Intersect multi-property search results via their IDs.
+    if (all_filters.size() > 1 && !single_label.empty()) {
+        std::vector<seastar::future<std::vector<Node>>> futs;
+        // Query the shard index concurrently for each property filter constraint.
+        for (const auto& filter : all_filters) {
+            futs.push_back(graph.shard.local().FindNodesPeered(single_label, filter.property, filter.op, filter.value, 0, scan_limit));
+        }
+        fut = seastar::when_all_succeed(futs.begin(), futs.end())
+        .then([scan_limit](std::vector<std::vector<Node>> node_lists) {
+            if (node_lists.empty()) return std::vector<Node>{};
+            
+            // Gather, sort, and organize node IDs from each index scan for leapfrog intersection.
+            std::vector<std::vector<uint64_t>> id_lists;
+            for (const auto& list : node_lists) {
+                std::vector<uint64_t> ids;
+                for (const auto& n : list) {
+                    ids.push_back(n.getId());
+                }
+                std::sort(ids.begin(), ids.end());
+                id_lists.push_back(std::move(ids));
+            }
+            
+            // Perform Worst-Case-Optimal Join intersection using the leapfrog join algorithm
+            std::vector<uint64_t> intersected_ids = leapfrogJoin(id_lists);
+            
+            // Filter the original nodes to match only the intersected IDs
+            std::unordered_set<uint64_t> valid_ids(intersected_ids.begin(), intersected_ids.end());
+            std::vector<Node> result;
+            for (const auto& n : node_lists[0]) {
+                if (valid_ids.count(n.getId())) {
+                    result.push_back(n);
+                    if (result.size() >= scan_limit) {
+                        break;
+                    }
+                }
+            }
+            return result;
+        });
+    } else if (all_filters.size() == 1 && !single_label.empty()) {
+        const auto& filter = all_filters[0];
+        fut = graph.shard.local().FindNodesPeered(single_label, filter.property, filter.op, filter.value, 0, scan_limit);
+    } else if (!single_label.empty()) {
+        fut = graph.shard.local().AllNodesPeered(single_label, 0, scan_limit);
+    } else {
+        fut = graph.shard.local().AllNodesPeered(0, scan_limit);
+    }
+
+    return fut.then([var = node.variable, pruner](std::vector<Node> result_list) {
+        if (pruner.should_prune(var)) {
+            auto keys = pruner.get_keys(var);
+            for (auto& n : result_list) {
+                n.pruneProperties(keys);
+            }
+        }
+        return result_list;
+    });
 }
 
 struct PathHop {
@@ -85,7 +647,9 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
     uint64_t current_depth,
     std::vector<uint64_t> visited_rel_ids,
     std::vector<Relationship> current_path_rels,
-    std::vector<Node> current_path_nodes
+    std::vector<Node> current_path_nodes,
+    size_t limit = 0,
+    const ProjectionPruner& pruner = {}
 ) {
     if (current_depth > edge.max_hops) {
         return seastar::make_ready_future<std::vector<PathHop>>();
@@ -111,7 +675,14 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
 
     auto handle_rels = [&graph, edge, next_node, current_node_id, current_depth, visited_rel_ids = std::move(visited_rel_ids),
            current_path_rels = std::move(current_path_rels), current_path_nodes = std::move(current_path_nodes),
-           local_results = std::move(local_results)](std::vector<Relationship> rels) mutable {
+           local_results = std::move(local_results), limit, pruner](std::vector<Relationship> rels) mutable {
+
+        if (pruner.should_prune(edge.variable)) {
+            auto keys = pruner.get_keys(edge.variable);
+            for (auto& r : rels) {
+                r.pruneProperties(keys);
+            }
+        }
 
         std::vector<seastar::future<std::vector<PathHop>>> branch_futs;
         for (const auto& rel : rels) {
@@ -124,7 +695,7 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
             if (edge.label_expr && !matches_label_expr(rel.getType(), edge.label_expr)) {
                 continue;
             }
-            if (!matches_properties(rel.getProperties(), edge.properties)) {
+            if (!matches_properties(rel.getProperties(), edge.properties) || !matches_filters(rel.getProperties(), edge.property_filters)) {
                 continue;
             }
 
@@ -132,7 +703,10 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
 
             branch_futs.push_back(
                 graph.shard.local().NodeGetPeered(target_id)
-                .then([&graph, rel, edge, next_node, current_depth, visited_rel_ids, current_path_rels, current_path_nodes, target_id](Node target_node) mutable {
+                .then([&graph, rel, edge, next_node, current_depth, visited_rel_ids, current_path_rels, current_path_nodes, target_id, limit, pruner](Node target_node) mutable {
+                    if (pruner.should_prune(next_node.variable)) {
+                        target_node.pruneProperties(pruner.get_keys(next_node.variable));
+                    }
                     visited_rel_ids.push_back(rel.getId());
                     current_path_rels.push_back(rel);
                     current_path_nodes.push_back(target_node);
@@ -145,7 +719,9 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
                         current_depth + 1,
                         std::move(visited_rel_ids),
                         std::move(current_path_rels),
-                        std::move(current_path_nodes)
+                        std::move(current_path_nodes),
+                        limit,
+                        pruner
                     );
                 })
             );
@@ -156,9 +732,13 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
         }
 
         return seastar::when_all_succeed(branch_futs.begin(), branch_futs.end())
-        .then([local_results = std::move(local_results)](std::vector<std::vector<PathHop>> nested_branches) mutable {
+        .then([local_results = std::move(local_results), limit](std::vector<std::vector<PathHop>> nested_branches) mutable {
             for (auto& branch_res : nested_branches) {
                 local_results.insert(local_results.end(), branch_res.begin(), branch_res.end());
+                if (limit > 0 && local_results.size() >= limit) {
+                    local_results.resize(limit);
+                    break;
+                }
             }
             return local_results;
         });
@@ -182,9 +762,10 @@ seastar::future<std::vector<PathHop>> traverse_var_len_async(
  * @param edge The pattern edge describing the hop.
  * @param next_node The pattern node that we must reach.
  * @param node_idx The current node index in the traversal chain.
+ * @param limit Optional row limit for traversing.
  * @return seastar::future<std::vector<GqlRow>> Future wrapping new rows representing extended paths.
  */
-seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx) {
+seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx, size_t limit = 0, const ProjectionPruner& pruner = {}) {
     auto it = row.bindings.find("_n_" + std::to_string(node_idx));
     if (it == row.bindings.end()) {
         return seastar::make_ready_future<std::vector<GqlRow>>();
@@ -192,7 +773,7 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
     uint64_t src_id = it->second.node->getId();
 
     if (edge.is_variable_length) {
-        return traverse_var_len_async(graph, src_id, edge, next_node, 0, {}, {}, {})
+        return traverse_var_len_async(graph, src_id, edge, next_node, 0, {}, {}, {}, limit, pruner)
         .then([row, edge, next_node, node_idx](std::vector<PathHop> hops) {
             std::vector<GqlRow> out;
             for (const auto& hop : hops) {
@@ -203,7 +784,7 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
                 if (next_node.label_expr && !matches_label_expr(final_node.getType(), next_node.label_expr)) {
                     continue;
                 }
-                if (!matches_properties(final_node.getProperties(), next_node.properties)) {
+                if (!matches_properties(final_node.getProperties(), next_node.properties) || !matches_filters(final_node.getProperties(), next_node.property_filters)) {
                     continue;
                 }
 
@@ -227,13 +808,19 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
         edge_type = edge.label_expr->name;
     }
 
-    auto handle_rels = [row, edge, next_node, src_id, node_idx, &graph](std::vector<Relationship> rels) {
+    auto handle_rels = [row, edge, next_node, src_id, node_idx, &graph, limit, pruner](std::vector<Relationship> rels) {
+        if (pruner.should_prune(edge.variable)) {
+            auto keys = pruner.get_keys(edge.variable);
+            for (auto& r : rels) {
+                r.pruneProperties(keys);
+            }
+        }
         std::vector<seastar::future<std::optional<GqlRow>>> futs;
         for (const auto& rel : rels) {
             if (edge.label_expr && !matches_label_expr(rel.getType(), edge.label_expr)) {
                 continue;
             }
-            if (!matches_properties(rel.getProperties(), edge.properties)) {
+            if (!matches_properties(rel.getProperties(), edge.properties) || !matches_filters(rel.getProperties(), edge.property_filters)) {
                 continue;
             }
 
@@ -241,11 +828,14 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
 
             futs.push_back(
                 graph.shard.local().NodeGetPeered(target_id)
-                .then([row, rel, edge, next_node, node_idx](Node target_node) -> std::optional<GqlRow> {
+                .then([row, rel, edge, next_node, node_idx, pruner](Node target_node) -> std::optional<GqlRow> {
+                    if (pruner.should_prune(next_node.variable)) {
+                        target_node.pruneProperties(pruner.get_keys(next_node.variable));
+                    }
                     if (next_node.label_expr && !matches_label_expr(target_node.getType(), next_node.label_expr)) {
                         return std::nullopt;
                     }
-                    if (!matches_properties(target_node.getProperties(), next_node.properties)) {
+                    if (!matches_properties(target_node.getProperties(), next_node.properties) || !matches_filters(target_node.getProperties(), next_node.property_filters)) {
                         return std::nullopt;
                     }
 
@@ -259,10 +849,15 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
             );
         }
         return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([](std::vector<std::optional<GqlRow>> opts) {
+        .then([limit](std::vector<std::optional<GqlRow>> opts) {
             std::vector<GqlRow> out;
             for (const auto& opt : opts) {
-                if (opt) out.push_back(*opt);
+                if (opt) {
+                    out.push_back(*opt);
+                    if (limit > 0 && out.size() >= limit) {
+                        break;
+                    }
+                }
             }
             return out;
         });
@@ -282,9 +877,10 @@ seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const G
  * @param prep_pattern The prepared path pattern containing filled variables.
  * @param step_idx Current edge index in the path pattern.
  * @param current_step_rows Rows generated by the previous step.
+ * @param limit Optional limit for rows returned.
  * @return seastar::future<std::vector<GqlRow>> Future wrapping the final traversed rows.
  */
-seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Graph& graph, const PathPattern& prep_pattern, size_t step_idx, std::vector<GqlRow> current_step_rows) {
+seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Graph& graph, const PathPattern& prep_pattern, size_t step_idx, std::vector<GqlRow> current_step_rows, size_t limit = 0, const ProjectionPruner& pruner = {}) {
     if (step_idx >= prep_pattern.edges.size()) {
         return seastar::make_ready_future<std::vector<GqlRow>>(std::move(current_step_rows));
     }
@@ -294,16 +890,20 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Gra
 
     std::vector<seastar::future<std::vector<GqlRow>>> futs;
     for (const auto& row : current_step_rows) {
-        futs.push_back(traverse_step(graph, row, edge, next_node, step_idx));
+        futs.push_back(traverse_step(graph, row, edge, next_node, step_idx, limit, pruner));
     }
 
     return seastar::when_all_succeed(futs.begin(), futs.end())
-    .then([&graph, prep_pattern, step_idx](std::vector<std::vector<GqlRow>> nested) {
+    .then([&graph, prep_pattern, step_idx, limit, pruner](std::vector<std::vector<GqlRow>> nested) {
         std::vector<GqlRow> next_rows;
         for (const auto& vec : nested) {
             next_rows.insert(next_rows.end(), vec.begin(), vec.end());
+            if (limit > 0 && next_rows.size() >= limit) {
+                next_rows.resize(limit);
+                break;
+            }
         }
-        return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows));
+        return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows), limit, pruner);
     });
 }
 
@@ -316,9 +916,10 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Gra
  * @param graph The RageDB graph instance.
  * @param pattern The GQL path pattern to evaluate.
  * @param base_row The base row context.
+ * @param limit Optional limit for traversal paths.
  * @return seastar::future<std::vector<GqlRow>> Future wrapping matches.
  */
-seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row) {
+seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit = 0, const ProjectionPruner& pruner = {}) {
     // Prep pattern with variables if missing
     PathPattern prep_pattern = pattern;
     for (size_t j = 0; j < prep_pattern.nodes.size(); ++j) {
@@ -335,29 +936,33 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     auto start_node_var = prep_pattern.nodes[0].variable;
     auto bound_it = base_row.bindings.find(start_node_var);
 
+    size_t start_node_limit = prep_pattern.edges.empty() ? limit : 0;
     seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
     if (bound_it != base_row.bindings.end() && bound_it->second.type == GqlValue::NODE) {
         start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_it->second.node });
     } else {
-        start_nodes_fut = get_start_nodes(graph, prep_pattern.nodes[0]);
+        start_nodes_fut = get_start_nodes(graph, prep_pattern.nodes[0], start_node_limit, pruner);
     }
 
-    return start_nodes_fut.then([base_row, prep_pattern, &graph](std::vector<Node> start_nodes) {
+    return start_nodes_fut.then([base_row, prep_pattern, &graph, limit, pruner](std::vector<Node> start_nodes) {
         std::vector<GqlRow> initial_rows;
         for (const auto& node : start_nodes) {
             if (prep_pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), prep_pattern.nodes[0].label_expr)) {
                 continue;
             }
-            if (!matches_properties(node.getProperties(), prep_pattern.nodes[0].properties)) {
+            if (!matches_properties(node.getProperties(), prep_pattern.nodes[0].properties) || !matches_filters(node.getProperties(), prep_pattern.nodes[0].property_filters)) {
                 continue;
             }
             GqlRow new_row = base_row;
             new_row.bindings[prep_pattern.nodes[0].variable] = GqlValue(node);
             new_row.bindings["_n_0"] = GqlValue(node);
             initial_rows.push_back(new_row);
+            if (limit > 0 && prep_pattern.edges.empty() && initial_rows.size() >= limit) {
+                break;
+            }
         }
 
-        return traverse_path_pattern_iterative(graph, prep_pattern, 0, std::move(initial_rows));
+        return traverse_path_pattern_iterative(graph, prep_pattern, 0, std::move(initial_rows), limit, pruner);
     });
 }
 
@@ -370,10 +975,11 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
  * @param graph The RageDB graph instance.
  * @param stmt The MatchStatement AST node.
  * @param row The row context.
+ * @param limit Optional limit for traversing.
  * @return seastar::future<std::vector<GqlRow>> Future wrapping evaluated rows.
  */
-seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row) {
-    return traverse_path_pattern(graph, stmt.pattern, row)
+seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit = 0, const ProjectionPruner& pruner = {}) {
+    return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
         if (traversed_rows.empty() && stmt.is_optional) {
             GqlRow opt_row = row;
@@ -396,34 +1002,84 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
 /**
  * @brief Recursively executes a chain of sequential MATCH statements.
  * 
- * Multiplies (cartesian product) rows along the match traversal pathways.
+ * If a MATCH statement shares no common variables with the accumulated results, it is
+ * executed independently, and the results are joined using a factorized lazy join (natural join or outer join),
+ * preventing early Cartesian product expansion. Otherwise, it executes relative to the incoming flat rows.
  * 
  * @param graph The RageDB graph instance.
  * @param matches List of match statements to execute.
  * @param match_idx Current match index.
- * @param current_rows Accumulated rows up to this point.
- * @return seastar::future<std::vector<GqlRow>> Future wrapping the combined matched rows.
+ * @param incoming Accumulated intermediate results.
+ * @param limit Optional limit to truncate query paths.
+ * @return seastar::future<IntermediateResult> Future wrapping the factorized matched rows.
  */
-seastar::future<std::vector<GqlRow>> execute_match_chain(ragedb::Graph& graph, const std::vector<MatchStatement>& matches, size_t match_idx, std::vector<GqlRow> current_rows) {
+seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, const std::vector<MatchStatement>& matches, size_t match_idx, IntermediateResult incoming, size_t limit = 0, const ProjectionPruner& pruner = {}) {
     if (match_idx >= matches.size()) {
-        return seastar::make_ready_future<std::vector<GqlRow>>(std::move(current_rows));
+        return seastar::make_ready_future<IntermediateResult>(std::move(incoming));
     }
 
     const auto& stmt = matches[match_idx];
 
-    std::vector<seastar::future<std::vector<GqlRow>>> futs;
-    for (const auto& row : current_rows) {
-        futs.push_back(traverse_match_statement(graph, stmt, row));
+    // Check if the current MATCH statement shares any query variables with previous MATCH results.
+    auto incoming_vars = incoming.freevars();
+    bool has_shared = false;
+    for (const auto& node : stmt.pattern.nodes) {
+        if (!node.variable.empty() && incoming_vars.count(node.variable)) {
+            has_shared = true;
+            break;
+        }
+    }
+    for (const auto& edge : stmt.pattern.edges) {
+        if (!edge.variable.empty() && incoming_vars.count(edge.variable)) {
+            has_shared = true;
+            break;
+        }
     }
 
-    return seastar::when_all_succeed(futs.begin(), futs.end())
-    .then([&graph, matches, match_idx, current_rows = std::move(current_rows)](std::vector<std::vector<GqlRow>> nested) {
-        std::vector<GqlRow> next_rows;
-        for (const auto& vec : nested) {
-            next_rows.insert(next_rows.end(), vec.begin(), vec.end());
+    // Optimization: If no variables are shared, execute the MATCH independently and construct a factorized join.
+    if (!has_shared && !incoming_vars.empty()) {
+        return traverse_path_pattern(graph, stmt.pattern, GqlRow{}, limit, pruner)
+        .then([&graph, &matches, match_idx, incoming = std::move(incoming), stmt, limit, pruner](std::vector<GqlRow> pattern_rows) mutable {
+            IntermediateResult pattern_res(std::move(pattern_rows));
+            IntermediateResult joined;
+            if (stmt.is_optional) {
+                std::set<std::string> new_vars;
+                for (const auto& node : stmt.pattern.nodes) {
+                    if (!node.variable.empty()) new_vars.insert(node.variable);
+                }
+                for (const auto& edge : stmt.pattern.edges) {
+                    if (!edge.variable.empty()) new_vars.insert(edge.variable);
+                }
+                joined = left_outer_join(std::move(incoming), std::move(pattern_res), incoming.freevars(), new_vars);
+            } else {
+                joined = natural_join(std::move(incoming), std::move(pattern_res), limit);
+            }
+            return execute_match_chain_factorized(graph, matches, match_idx + 1, std::move(joined), limit, pruner);
+        });
+    } else {
+        // Fallback: Flatten the incoming results and traverse the pattern relative to each row context.
+        incoming.ensure_flat();
+        if (limit > 0 && incoming.rows.size() > limit) {
+            incoming.rows.resize(limit);
         }
-        return execute_match_chain(graph, matches, match_idx + 1, std::move(next_rows));
-    });
+        std::vector<seastar::future<std::vector<GqlRow>>> futs;
+        for (const auto& row : incoming.rows) {
+            futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner));
+        }
+
+        return seastar::when_all_succeed(futs.begin(), futs.end())
+        .then([&graph, &matches, match_idx, incoming = std::move(incoming), limit, pruner](std::vector<std::vector<GqlRow>> nested) {
+            std::vector<GqlRow> next_rows;
+            for (const auto& vec : nested) {
+                next_rows.insert(next_rows.end(), vec.begin(), vec.end());
+                if (limit > 0 && next_rows.size() >= limit) {
+                    next_rows.resize(limit);
+                    break;
+                }
+            }
+            return execute_match_chain_factorized(graph, matches, match_idx + 1, IntermediateResult(std::move(next_rows)), limit, pruner);
+        });
+    }
 }
 
 /**
@@ -740,10 +1396,103 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         });
     }
 
-    std::vector<GqlRow> initial_rows = { GqlRow{} };
+    bool query_contains_aggregates = false;
+    for (const auto& item : query_ptr->returns) {
+        if (has_aggregates(item.expr.get())) {
+            query_contains_aggregates = true;
+            break;
+        }
+    }
+    if (!query_contains_aggregates) {
+        for (const auto& spec : query_ptr->order_by) {
+            if (has_aggregates(spec.expr.get())) {
+                query_contains_aggregates = true;
+                break;
+            }
+        }
+    }
 
-    return execute_match_chain(graph, query_ptr->matches, 0, std::move(initial_rows))
-    .then([&graph, query_ptr](std::vector<GqlRow> matched_rows) {
+    size_t limit_val = 0;
+    if (query_ptr->limit.has_value() && query_ptr->order_by.empty() && !query_contains_aggregates) {
+        limit_val = *query_ptr->limit;
+    }
+
+    ProjectionPruner pruner;
+
+    // 1. Analyze returns
+    for (const auto& item : query_ptr->returns) {
+        collect_accessed_properties(item.expr.get(), pruner.accessed_props, pruner.whole_objects);
+    }
+
+    // 2. Analyze order_by
+    for (const auto& spec : query_ptr->order_by) {
+        collect_accessed_properties(spec.expr.get(), pruner.accessed_props, pruner.whole_objects);
+    }
+
+    // 3. Analyze where_expr
+    if (query_ptr->where_expr) {
+        collect_accessed_properties(query_ptr->where_expr.get(), pruner.accessed_props, pruner.whole_objects);
+    }
+
+    // 4. Analyze writes
+    for (const auto& w : query_ptr->writes) {
+        if (w.type == WriteOp::Type::INSERT) {
+            for (const auto& n : w.insert_pattern.nodes) {
+                if (!n.variable.empty()) {
+                    pruner.whole_objects.insert(n.variable);
+                }
+            }
+            for (const auto& e : w.insert_pattern.edges) {
+                if (!e.variable.empty()) {
+                    pruner.whole_objects.insert(e.variable);
+                }
+            }
+        } else if (w.type == WriteOp::Type::SET) {
+            if (!w.set_var.empty()) {
+                pruner.whole_objects.insert(w.set_var);
+            }
+            collect_accessed_properties(w.set_expr.get(), pruner.accessed_props, pruner.whole_objects);
+        } else if (w.type == WriteOp::Type::REMOVE) {
+            if (!w.remove_var.empty()) {
+                pruner.whole_objects.insert(w.remove_var);
+            }
+        } else if (w.type == WriteOp::Type::DELETE_OP) {
+            if (!w.delete_var.empty()) {
+                pruner.whole_objects.insert(w.delete_var);
+            }
+        }
+    }
+
+    // 5. Collect inline properties and filters from patterns
+    for (const auto& match : query_ptr->matches) {
+        for (const auto& n : match.pattern.nodes) {
+            if (!n.variable.empty()) {
+                for (const auto& [prop, val] : n.properties) {
+                    pruner.accessed_props[n.variable].insert(prop);
+                }
+                for (const auto& filter : n.property_filters) {
+                    pruner.accessed_props[n.variable].insert(filter.property);
+                }
+            }
+        }
+        for (const auto& e : match.pattern.edges) {
+            if (!e.variable.empty()) {
+                for (const auto& [prop, val] : e.properties) {
+                    pruner.accessed_props[e.variable].insert(prop);
+                }
+                for (const auto& filter : e.property_filters) {
+                    pruner.accessed_props[e.variable].insert(filter.property);
+                }
+            }
+        }
+    }
+
+    IntermediateResult initial_res(std::vector<GqlRow>{ GqlRow{} });
+
+    return execute_match_chain_factorized(graph, query_ptr->matches, 0, std::move(initial_res), limit_val, pruner)
+    .then([&graph, query_ptr](IntermediateResult matched_res) {
+        matched_res.ensure_flat();
+        std::vector<GqlRow> matched_rows = std::move(matched_res.rows);
         const auto& query = *query_ptr;
         // Filter rows using global WHERE condition
         std::vector<GqlRow> filtered_rows;

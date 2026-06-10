@@ -24,8 +24,15 @@
 #include <variant>
 #include <optional>
 #include "../graph/PropertyType.h"
+#include "../graph/Operation.h"
 
 namespace ragedb::gql {
+
+struct PropertyFilter {
+    std::string property;
+    Operation op;
+    property_type_t value;
+};
 
 /**
  * @brief Identifies the type of an Expression AST node.
@@ -175,6 +182,7 @@ struct PatternNode {
     std::string variable;                             ///< Optional variable name.
     std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
+    std::vector<PropertyFilter> property_filters;     ///< Pushed down property filters.
 };
 
 /**
@@ -194,6 +202,7 @@ struct PatternEdge {
     std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     EdgeDirection direction;                          ///< Direction of the relationship.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
+    std::vector<PropertyFilter> property_filters;     ///< Pushed down property filters.
     bool is_variable_length = false;                  ///< True if variable-length hops repetition is used.
     uint64_t min_hops = 1;                            ///< Minimum number of repetitions.
     uint64_t max_hops = 1;                            ///< Maximum number of repetitions.

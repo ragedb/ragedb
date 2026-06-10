@@ -64,6 +64,46 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
         REQUIRE(results_json.find("Bob") == std::string::npos);
     }
 
+    SECTION("Match with LIMIT pushdown") {
+        std::string query_str = "MATCH (p:Person) RETURN p.name LIMIT 1";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        
+        bool has_alice = results_json.find("Alice") != std::string::npos;
+        bool has_bob = results_json.find("Bob") != std::string::npos;
+        REQUIRE((has_alice || has_bob));
+        REQUIRE_FALSE((has_alice && has_bob));
+    }
+
+    SECTION("Match with range and inequality pushdown") {
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.age > 32 RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.age < 32 RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") == std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.age != 30 RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+    }
+
     graph.Stop().get();
 }
 
@@ -75,6 +115,7 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
     // Setup schemas
     graph.shard.local().NodeTypeInsertPeered("Person").get();
     graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "age", "integer").get();
     graph.shard.local().NodeTypeInsertPeered("Employee").get();
     graph.shard.local().NodePropertyTypeAddPeered("Employee", "name", "string").get();
     graph.shard.local().NodeTypeInsertPeered("Robot").get();
@@ -84,7 +125,7 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
     graph.shard.local().RelationshipTypeInsertPeered("KNOWS").get();
 
     // Create test nodes
-    uint64_t id1 = graph.shard.local().NodeAddPeered("Person", "alice", "{\"name\": \"Alice\"}").get();
+    uint64_t id1 = graph.shard.local().NodeAddPeered("Person", "alice", "{\"name\": \"Alice\", \"age\": 30}").get();
     uint64_t id2 = graph.shard.local().NodeAddPeered("Employee", "bob", "{\"name\": \"Bob\"}").get();
     uint64_t id3 = graph.shard.local().NodeAddPeered("Robot", "charlie", "{\"name\": \"Charlie\"}").get();
 
@@ -119,6 +160,26 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
         std::string results = GqlExecutor::execute(graph, std::move(query)).get();
         REQUIRE(results.find("Bob") != std::string::npos);
         REQUIRE(results.find("Charlie") != std::string::npos);
+    }
+
+    SECTION("Repetitions 1..2 hops query with LIMIT pushdown") {
+        std::string query_str = "MATCH (p)-[:FRIEND|KNOWS*1..2]->(m) WHERE p.name = 'Alice' RETURN m.name LIMIT 1";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        bool has_bob = results.find("Bob") != std::string::npos;
+        bool has_charlie = results.find("Charlie") != std::string::npos;
+        REQUIRE((has_bob || has_charlie));
+        REQUIRE_FALSE((has_bob && has_charlie));
+    }
+
+    SECTION("Projection pruning query") {
+        std::string query_str = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.age";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results_json.find("30") != std::string::npos);
+        REQUIRE(results_json.find("Alice") == std::string::npos);
     }
 
     graph.Stop().get();

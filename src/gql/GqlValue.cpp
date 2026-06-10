@@ -129,6 +129,38 @@ bool matches_properties(const std::map<std::string, property_type_t>& target, co
     return true;
 }
 
+bool matches_filters(const std::map<std::string, property_type_t>& target, const std::vector<PropertyFilter>& filters) {
+    for (const auto& filter : filters) {
+        auto it = target.find(filter.property);
+        if (it == target.end()) return false;
+
+        int cmp = compare_properties(it->second, filter.value);
+        switch (filter.op) {
+            case Operation::EQ:
+                if (cmp != 0) return false;
+                break;
+            case Operation::NEQ:
+                if (cmp == 0) return false;
+                break;
+            case Operation::LT:
+                if (cmp >= 0) return false;
+                break;
+            case Operation::LTE:
+                if (cmp > 0) return false;
+                break;
+            case Operation::GT:
+                if (cmp <= 0) return false;
+                break;
+            case Operation::GTE:
+                if (cmp < 0) return false;
+                break;
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+
 /**
  * @brief Evaluates an AST expression node against a query row's bindings.
  * 

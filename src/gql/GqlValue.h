@@ -90,6 +90,11 @@ int compare_gql_values(const GqlValue& a, const GqlValue& b);
 bool matches_properties(const std::map<std::string, property_type_t>& target, const std::map<std::string, property_type_t>& pattern);
 
 /**
+ * @brief Checks if a map of properties satisfies a list of pushed down property filters.
+ */
+bool matches_filters(const std::map<std::string, property_type_t>& target, const std::vector<PropertyFilter>& filters);
+
+/**
  * @brief Evaluates an AST expression tree against a GqlRow context.
  * 
  * Resolves literals, variable lookups, property extractions, unary/binary operators, and math operations.

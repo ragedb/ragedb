@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <set>
 #include <sol/sol.hpp>
 #include "PropertyType.h"
 
@@ -56,6 +57,8 @@ namespace ragedb {
 //        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state) const;
 
         [[nodiscard]] sol::lua_value getPropertyLua(const std::string& property, sol::this_state) const;
+
+        void pruneProperties(const std::set<std::string>& keys);
 
         friend std::ostream& operator<<(std::ostream& os, const Node& node);
 

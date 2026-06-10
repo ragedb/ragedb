@@ -23,8 +23,8 @@ namespace ragedb::gql {
 
 class GqlOptimizer {
 private:
-    static void extract_eq_predicates(Expression* expr, std::map<std::string, std::map<std::string, property_type_t>>& pushdowns);
-    static std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::unique_ptr<Expression> expr, const std::map<std::string, std::map<std::string, property_type_t>>& pushdowns);
+    static void extract_filters(Expression* expr, std::map<std::string, std::vector<PropertyFilter>>& pushdowns);
+    static std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::unique_ptr<Expression> expr, const std::map<std::string, std::vector<PropertyFilter>>& pushdowns);
 
 public:
     static void optimize(GqlQuery& query);

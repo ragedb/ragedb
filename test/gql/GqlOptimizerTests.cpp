@@ -25,18 +25,20 @@ TEST_CASE("GQL Optimizer pushdown test", "[gql_optimizer]") {
     std::string query_str = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.name";
     auto query = GqlParser::parse(query_str);
 
-    // Prior to optimization, the node's properties map is empty
-    REQUIRE(query.matches[0].pattern.nodes[0].properties.empty());
+    // Prior to optimization, the node's property filters vector is empty
+    REQUIRE(query.matches[0].pattern.nodes[0].property_filters.empty());
     REQUIRE(query.where_expr != nullptr);
 
     GqlOptimizer::optimize(query);
 
-    // After optimization, 'name = Alice' should be pushed down into the node patterns
-    auto& properties = query.matches[0].pattern.nodes[0].properties;
-    REQUIRE(properties.count("name") == 1);
-    REQUIRE(std::get<std::string>(properties.at("name")) == "Alice");
+    // After optimization, 'name = Alice' should be pushed down into the node patterns' property_filters
+    auto& filters = query.matches[0].pattern.nodes[0].property_filters;
+    REQUIRE(filters.size() == 1);
+    REQUIRE(filters[0].property == "name");
+    REQUIRE(filters[0].op == Operation::EQ);
+    REQUIRE(std::get<std::string>(filters[0].value) == "Alice");
 
-    // The where expression should be simplified and rebuild to nullptr since the only predicate was pushed down
+    // The where expression should be simplified and rebuilt to nullptr since the only predicate was pushed down
     REQUIRE(query.where_expr == nullptr);
 }
 
@@ -46,10 +48,24 @@ TEST_CASE("GQL Optimizer pushdown multiple predicates", "[gql_optimizer]") {
 
     GqlOptimizer::optimize(query);
 
-    auto& properties = query.matches[0].pattern.nodes[0].properties;
-    REQUIRE(properties.size() == 2);
-    REQUIRE(std::get<std::string>(properties.at("name")) == "Alice");
-    REQUIRE(std::get<int64_t>(properties.at("age")) == 30);
+    auto& filters = query.matches[0].pattern.nodes[0].property_filters;
+    REQUIRE(filters.size() == 2);
+
+    bool has_name = false;
+    bool has_age = false;
+    for (const auto& filter : filters) {
+        if (filter.property == "name") {
+            has_name = true;
+            REQUIRE(filter.op == Operation::EQ);
+            REQUIRE(std::get<std::string>(filter.value) == "Alice");
+        } else if (filter.property == "age") {
+            has_age = true;
+            REQUIRE(filter.op == Operation::EQ);
+            REQUIRE(std::get<int64_t>(filter.value) == 30);
+        }
+    }
+    REQUIRE(has_name);
+    REQUIRE(has_age);
     REQUIRE(query.where_expr == nullptr);
 }
 
@@ -59,28 +75,42 @@ TEST_CASE("GQL Optimizer pushdown edge predicates", "[gql_optimizer]") {
 
     GqlOptimizer::optimize(query);
 
-    auto& edge_properties = query.matches[0].pattern.edges[0].properties;
-    REQUIRE(edge_properties.size() == 1);
-    REQUIRE(std::get<std::string>(edge_properties.at("role")) == "Hero");
+    auto& edge_filters = query.matches[0].pattern.edges[0].property_filters;
+    REQUIRE(edge_filters.size() == 1);
+    REQUIRE(edge_filters[0].property == "role");
+    REQUIRE(edge_filters[0].op == Operation::EQ);
+    REQUIRE(std::get<std::string>(edge_filters[0].value) == "Hero");
     REQUIRE(query.where_expr == nullptr);
 }
 
-TEST_CASE("GQL Optimizer pushdown mixed predicates", "[gql_optimizer]") {
-    // Only 'p.name = Alice' can be pushed down; 'p.age > 20' remains in the where clause.
+TEST_CASE("GQL Optimizer pushdown range and inequality predicates", "[gql_optimizer]") {
+    // Both 'p.name = Alice' and 'p.age > 20' are pushed down
     std::string query_str = "MATCH (p:Person) WHERE p.name = 'Alice' AND p.age > 20 RETURN p.name";
     auto query = GqlParser::parse(query_str);
 
     GqlOptimizer::optimize(query);
 
-    auto& properties = query.matches[0].pattern.nodes[0].properties;
-    REQUIRE(properties.size() == 1);
-    REQUIRE(std::get<std::string>(properties.at("name")) == "Alice");
+    auto& filters = query.matches[0].pattern.nodes[0].property_filters;
+    REQUIRE(filters.size() == 2);
 
-    // The where expression should NOT be nullptr; it should contain the remaining filter
-    REQUIRE(query.where_expr != nullptr);
-    REQUIRE(query.where_expr->kind == ExpressionKind::BINARY_OP);
-    auto* bin = static_cast<const BinaryOpExpr*>(query.where_expr.get());
-    REQUIRE(bin->op == BinaryOpKind::GT);
+    bool has_name = false;
+    bool has_age = false;
+    for (const auto& filter : filters) {
+        if (filter.property == "name") {
+            has_name = true;
+            REQUIRE(filter.op == Operation::EQ);
+            REQUIRE(std::get<std::string>(filter.value) == "Alice");
+        } else if (filter.property == "age") {
+            has_age = true;
+            REQUIRE(filter.op == Operation::GT);
+            REQUIRE(std::get<int64_t>(filter.value) == 20);
+        }
+    }
+    REQUIRE(has_name);
+    REQUIRE(has_age);
+
+    // The where expression should be nullptr since both are pushed down
+    REQUIRE(query.where_expr == nullptr);
 }
 
 TEST_CASE("GQL Optimizer ignores OR predicates", "[gql_optimizer]") {
@@ -90,10 +120,9 @@ TEST_CASE("GQL Optimizer ignores OR predicates", "[gql_optimizer]") {
 
     GqlOptimizer::optimize(query);
 
-    REQUIRE(query.matches[0].pattern.nodes[0].properties.empty());
+    REQUIRE(query.matches[0].pattern.nodes[0].property_filters.empty());
     REQUIRE(query.where_expr != nullptr);
     REQUIRE(query.where_expr->kind == ExpressionKind::BINARY_OP);
     auto* bin = static_cast<const BinaryOpExpr*>(query.where_expr.get());
     REQUIRE(bin->op == BinaryOpKind::OR);
 }
-

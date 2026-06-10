@@ -96,6 +96,12 @@ namespace ragedb {
         return {};
     }
 
+    void Node::pruneProperties(const std::set<std::string>& keys) {
+        std::erase_if(properties, [&keys](const auto& item) {
+            return !keys.count(item.first);
+        });
+    }
+
     std::ostream& operator<<(std::ostream& os, const Node& node) {
         os << "{ \"id\": " << node.id << R"(, "type": ")" << node.type << R"(", "key": )" << "\"" << node.key << "\"" << ", \"properties\": { ";
         bool initial = true;
