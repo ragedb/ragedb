@@ -69,3 +69,21 @@ Isolated Single-Threaded Implementation: While the library includes a concurrent
 Modern SIMD Vectorization: The original ART paper relied on older SSE2 instructions to scan its internal node architectures (like Node16). uNoDB modernizes this by leveraging AVX2 on Intel/AMD chips and NEON intrinsics on ARM architectures. When a Seastar shard searches a node for a byte match, it executes it in a single vectorized CPU cycle.
 
 Cache-Conscious Path Compression: It implements pessimistic path compression (storing up to 7 bytes of key data directly inside internal routing nodes). This dramatically cuts down on "pointer-chasing" through the trie for long string keys, ensuring you stay within local cache lines as much as possible.
+
+
+GQL Index Syntax:
+
+// for nodes
+CREATE INDEX Person.name;
+for relationships
+CREATE INDEX WORKS_AT.since;
+
+// node drop index 
+DROP INDEX Person.name;
+
+// relationship drop index 
+DROP INDEX WORKS_AT.since;
+
+SHOW INDEXES;
+SHOW INDEXES ON Person;
+SHOW INDEXES ON WORKS_AT;

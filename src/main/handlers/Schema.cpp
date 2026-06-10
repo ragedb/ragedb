@@ -34,6 +34,26 @@ void Schema::set_routes(seastar::httpd::routes &routes) {
     getRelationshipTypes->add_str("/db/" + graph.GetName() + "/schema/relationships");
     routes.add(getRelationshipTypes, seastar::httpd::operation_type::GET);
 
+    auto getNodeIndexes = new seastar::httpd::match_rule(&getNodeIndexesHandler);
+    getNodeIndexes->add_str("/db/" + graph.GetName() + "/schema/nodes/indexes");
+    routes.add(getNodeIndexes, seastar::httpd::operation_type::GET);
+
+    auto getNodeTypeIndexes = new seastar::httpd::match_rule(&getNodeTypeIndexesHandler);
+    getNodeTypeIndexes->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    getNodeTypeIndexes->add_param("type");
+    getNodeTypeIndexes->add_str("/indexes");
+    routes.add(getNodeTypeIndexes, seastar::httpd::operation_type::GET);
+
+    auto getRelationshipIndexes = new seastar::httpd::match_rule(&getRelationshipIndexesHandler);
+    getRelationshipIndexes->add_str("/db/" + graph.GetName() + "/schema/relationships/indexes");
+    routes.add(getRelationshipIndexes, seastar::httpd::operation_type::GET);
+
+    auto getRelationshipTypeIndexes = new seastar::httpd::match_rule(&getRelationshipTypeIndexesHandler);
+    getRelationshipTypeIndexes->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    getRelationshipTypeIndexes->add_param("type");
+    getRelationshipTypeIndexes->add_str("/indexes");
+    routes.add(getRelationshipTypeIndexes, seastar::httpd::operation_type::GET);
+
     auto getNodeType = new seastar::httpd::match_rule(&getNodeTypeHandler);
     getNodeType->add_str("/db/" + graph.GetName() + "/schema/nodes");
     getNodeType->add_param("type");
@@ -71,6 +91,38 @@ void Schema::set_routes(seastar::httpd::routes &routes) {
     getNodeTypeProperty->add_param("property");
     routes.add(getNodeTypeProperty, seastar::httpd::operation_type::GET);
 
+    auto postNodeTypePropertyIndex = new seastar::httpd::match_rule(&postNodeTypePropertyIndexHandler);
+    postNodeTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    postNodeTypePropertyIndex->add_param("type");
+    postNodeTypePropertyIndex->add_str("/properties");
+    postNodeTypePropertyIndex->add_param("property");
+    postNodeTypePropertyIndex->add_str("/index");
+    routes.add(postNodeTypePropertyIndex, seastar::httpd::operation_type::POST);
+
+    auto deleteNodeTypePropertyIndex = new seastar::httpd::match_rule(&deleteNodeTypePropertyIndexHandler);
+    deleteNodeTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    deleteNodeTypePropertyIndex->add_param("type");
+    deleteNodeTypePropertyIndex->add_str("/properties");
+    deleteNodeTypePropertyIndex->add_param("property");
+    deleteNodeTypePropertyIndex->add_str("/index");
+    routes.add(deleteNodeTypePropertyIndex, seastar::httpd::operation_type::DELETE);
+
+    auto postRelationshipTypePropertyIndex = new seastar::httpd::match_rule(&postRelationshipTypePropertyIndexHandler);
+    postRelationshipTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    postRelationshipTypePropertyIndex->add_param("type");
+    postRelationshipTypePropertyIndex->add_str("/properties");
+    postRelationshipTypePropertyIndex->add_param("property");
+    postRelationshipTypePropertyIndex->add_str("/index");
+    routes.add(postRelationshipTypePropertyIndex, seastar::httpd::operation_type::POST);
+
+    auto deleteRelationshipTypePropertyIndex = new seastar::httpd::match_rule(&deleteRelationshipTypePropertyIndexHandler);
+    deleteRelationshipTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    deleteRelationshipTypePropertyIndex->add_param("type");
+    deleteRelationshipTypePropertyIndex->add_str("/properties");
+    deleteRelationshipTypePropertyIndex->add_param("property");
+    deleteRelationshipTypePropertyIndex->add_str("/index");
+    routes.add(deleteRelationshipTypePropertyIndex, seastar::httpd::operation_type::DELETE);
+
     auto postNodeTypeProperty = new seastar::httpd::match_rule(&postNodeTypePropertyHandler);
     postNodeTypeProperty->add_str("/db/" + graph.GetName() + "/schema/nodes");
     postNodeTypeProperty->add_param("type");
@@ -107,38 +159,6 @@ void Schema::set_routes(seastar::httpd::routes &routes) {
     deleteRelationshipTypeProperty->add_str("/properties");
     deleteRelationshipTypeProperty->add_param("property");
     routes.add(deleteRelationshipTypeProperty, seastar::httpd::operation_type::DELETE);
-
-    auto postNodeTypePropertyIndex = new seastar::httpd::match_rule(&postNodeTypePropertyIndexHandler);
-    postNodeTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/nodes");
-    postNodeTypePropertyIndex->add_param("type");
-    postNodeTypePropertyIndex->add_str("/properties");
-    postNodeTypePropertyIndex->add_param("property");
-    postNodeTypePropertyIndex->add_str("/index");
-    routes.add(postNodeTypePropertyIndex, seastar::httpd::operation_type::POST);
-
-    auto deleteNodeTypePropertyIndex = new seastar::httpd::match_rule(&deleteNodeTypePropertyIndexHandler);
-    deleteNodeTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/nodes");
-    deleteNodeTypePropertyIndex->add_param("type");
-    deleteNodeTypePropertyIndex->add_str("/properties");
-    deleteNodeTypePropertyIndex->add_param("property");
-    deleteNodeTypePropertyIndex->add_str("/index");
-    routes.add(deleteNodeTypePropertyIndex, seastar::httpd::operation_type::DELETE);
-
-    auto postRelationshipTypePropertyIndex = new seastar::httpd::match_rule(&postRelationshipTypePropertyIndexHandler);
-    postRelationshipTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/relationships");
-    postRelationshipTypePropertyIndex->add_param("type");
-    postRelationshipTypePropertyIndex->add_str("/properties");
-    postRelationshipTypePropertyIndex->add_param("property");
-    postRelationshipTypePropertyIndex->add_str("/index");
-    routes.add(postRelationshipTypePropertyIndex, seastar::httpd::operation_type::POST);
-
-    auto deleteRelationshipTypePropertyIndex = new seastar::httpd::match_rule(&deleteRelationshipTypePropertyIndexHandler);
-    deleteRelationshipTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/relationships");
-    deleteRelationshipTypePropertyIndex->add_param("type");
-    deleteRelationshipTypePropertyIndex->add_str("/properties");
-    deleteRelationshipTypePropertyIndex->add_param("property");
-    deleteRelationshipTypePropertyIndex->add_str("/index");
-    routes.add(deleteRelationshipTypePropertyIndex, seastar::httpd::operation_type::DELETE);
 
 }
 
@@ -457,6 +477,96 @@ Schema::DeleteRelationshipTypePropertyIndexHandler::handle([[maybe_unused]] cons
             }
             return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetNodeIndexesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    auto node_indexes = parent.graph.shard.local().NodeIndexesGet();
+    std::string json = "{";
+    bool first_type = true;
+    for (const auto& [type_name, properties] : node_indexes) {
+        if (!first_type) json += ", ";
+        first_type = false;
+        json += "\"" + type_name + "\": [";
+        bool first_prop = true;
+        for (const auto& property : properties) {
+            if (!first_prop) json += ", ";
+            first_prop = false;
+            json += "\"" + property + "\"";
+        }
+        json += "]";
+    }
+    json += "}";
+    rep->write_body("json", seastar::sstring(json));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetNodeTypeIndexesHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+
+    if (valid_type) {
+        std::string type_name = req->get_path_param(Utilities::TYPE);
+        auto node_indexes = parent.graph.shard.local().NodeIndexesGet();
+        std::string json = "[";
+        auto type_it = node_indexes.find(type_name);
+        if (type_it != node_indexes.end()) {
+            bool first_prop = true;
+            for (const auto& property : type_it->second) {
+                if (!first_prop) json += ", ";
+                first_prop = false;
+                json += "\"" + property + "\"";
+            }
+        }
+        json += "]";
+        rep->write_body("json", seastar::sstring(json));
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetRelationshipIndexesHandler::handle([[maybe_unused]] const seastar::sstring &path, [[maybe_unused]] std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    auto rel_indexes = parent.graph.shard.local().RelationshipIndexesGet();
+    std::string json = "{";
+    bool first_type = true;
+    for (const auto& [type_name, properties] : rel_indexes) {
+        if (!first_type) json += ", ";
+        first_type = false;
+        json += "\"" + type_name + "\": [";
+        bool first_prop = true;
+        for (const auto& property : properties) {
+            if (!first_prop) json += ", ";
+            first_prop = false;
+            json += "\"" + property + "\"";
+        }
+        json += "]";
+    }
+    json += "}";
+    rep->write_body("json", seastar::sstring(json));
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::GetRelationshipTypeIndexesHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+
+    if (valid_type) {
+        std::string type_name = req->get_path_param(Utilities::TYPE);
+        auto rel_indexes = parent.graph.shard.local().RelationshipIndexesGet();
+        std::string json = "[";
+        auto type_it = rel_indexes.find(type_name);
+        if (type_it != rel_indexes.end()) {
+            bool first_prop = true;
+            for (const auto& property : type_it->second) {
+                if (!first_prop) json += ", ";
+                first_prop = false;
+                json += "\"" + property + "\"";
+            }
+        }
+        json += "]";
+        rep->write_body("json", seastar::sstring(json));
     }
     return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }

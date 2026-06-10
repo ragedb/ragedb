@@ -95,4 +95,32 @@ namespace ragedb {
         return RelationshipIndexDeletePeered(type, property).get0();
     }
 
+    sol::as_table_t<std::map<std::string, std::vector<std::string>>> Shard::NodeIndexesGetViaLua() {
+        return sol::as_table(NodeIndexesGet());
+    }
+
+    sol::as_table_t<std::vector<std::string>> Shard::NodeIndexesGetByTypeViaLua(const std::string& type) {
+        std::vector<std::string> properties;
+        auto indexes = NodeIndexesGet();
+        auto it = indexes.find(type);
+        if (it != indexes.end()) {
+            properties = it->second;
+        }
+        return sol::as_table(properties);
+    }
+
+    sol::as_table_t<std::map<std::string, std::vector<std::string>>> Shard::RelationshipIndexesGetViaLua() {
+        return sol::as_table(RelationshipIndexesGet());
+    }
+
+    sol::as_table_t<std::vector<std::string>> Shard::RelationshipIndexesGetByTypeViaLua(const std::string& type) {
+        std::vector<std::string> properties;
+        auto indexes = RelationshipIndexesGet();
+        auto it = indexes.find(type);
+        if (it != indexes.end()) {
+            properties = it->second;
+        }
+        return sol::as_table(properties);
+    }
+
 }

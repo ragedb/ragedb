@@ -168,5 +168,50 @@ TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
         }
     }
 
+    SECTION("Property Index Management") {
+        // Setup schema
+        graph.shard.local().NodeTypeInsertPeered("User").get();
+        graph.shard.local().NodePropertyTypeAddPeered("User", "name", "string").get();
+        graph.shard.local().RelationshipTypeInsertPeered("FRIEND_OF").get();
+        graph.shard.local().RelationshipPropertyTypeAddPeered("FRIEND_OF", "since", "integer").get();
+
+        // 1. Create index
+        std::string query_create_node = "CREATE INDEX User.name";
+        std::string res_create_node = GqlExecutor::execute(graph, GqlParser::parse(query_create_node)).get();
+        REQUIRE(res_create_node == "{\"status\": \"created\", \"index\": \"User.name\"}");
+
+        std::string query_create_rel = "CREATE INDEX FRIEND_OF.since";
+        std::string res_create_rel = GqlExecutor::execute(graph, GqlParser::parse(query_create_rel)).get();
+        REQUIRE(res_create_rel == "{\"status\": \"created\", \"index\": \"FRIEND_OF.since\"}");
+
+        // 2. Show indexes
+        std::string query_show = "SHOW INDEXES";
+        std::string res_show = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
+        REQUIRE(res_show.find("\"label\": \"User\"") != std::string::npos);
+        REQUIRE(res_show.find("\"property\": \"name\"") != std::string::npos);
+        REQUIRE(res_show.find("\"label\": \"FRIEND_OF\"") != std::string::npos);
+        REQUIRE(res_show.find("\"property\": \"since\"") != std::string::npos);
+
+        std::string query_show_filter = "SHOW INDEXES ON User";
+        std::string res_show_filter = GqlExecutor::execute(graph, GqlParser::parse(query_show_filter)).get();
+        REQUIRE(res_show_filter == "[{\"type\": \"Node\", \"label\": \"User\", \"property\": \"name\"}]");
+
+        // 3. Drop index
+        std::string query_drop = "DROP INDEX User.name";
+        std::string res_drop = GqlExecutor::execute(graph, GqlParser::parse(query_drop)).get();
+        REQUIRE(res_drop == "{\"status\": \"dropped\", \"index\": \"User.name\"}");
+
+        std::string res_show_after = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
+        REQUIRE(res_show_after.find("\"label\": \"User\"") == std::string::npos);
+        REQUIRE(res_show_after.find("\"label\": \"FRIEND_OF\"") != std::string::npos);
+
+        // 4. Drop node type (which should automatically delete its associated index)
+        std::string query_drop_type = "DROP NODE TYPE User";
+        GqlExecutor::execute(graph, GqlParser::parse(query_drop_type)).get();
+
+        std::string res_show_final = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
+        REQUIRE(res_show_final.find("\"label\": \"User\"") == std::string::npos);
+    }
+
     graph.Stop().get();
 }

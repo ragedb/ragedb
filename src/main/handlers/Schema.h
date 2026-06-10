@@ -176,6 +176,38 @@ class Schema {
         seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
     };
 
+    class GetNodeIndexesHandler : public seastar::httpd::handler_base {
+    public:
+        explicit GetNodeIndexesHandler(Schema& schema) : parent(schema) {};
+    private:
+        Schema& parent;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
+    };
+
+    class GetNodeTypeIndexesHandler : public seastar::httpd::handler_base {
+    public:
+        explicit GetNodeTypeIndexesHandler(Schema& schema) : parent(schema) {};
+    private:
+        Schema& parent;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
+    };
+
+    class GetRelationshipIndexesHandler : public seastar::httpd::handler_base {
+    public:
+        explicit GetRelationshipIndexesHandler(Schema& schema) : parent(schema) {};
+    private:
+        Schema& parent;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
+    };
+
+    class GetRelationshipTypeIndexesHandler : public seastar::httpd::handler_base {
+    public:
+        explicit GetRelationshipTypeIndexesHandler(Schema& schema) : parent(schema) {};
+    private:
+        Schema& parent;
+        seastar::future<std::unique_ptr<seastar::http::reply>> handle(const seastar::sstring& path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) override;
+    };
+
     ragedb::Graph& graph;
     ClearGraphHandler clearGraphHandler;
     GetNodeTypesHandler getNodeTypesHandler;
@@ -196,6 +228,10 @@ class Schema {
     DeleteNodeTypePropertyIndexHandler deleteNodeTypePropertyIndexHandler;
     PostRelationshipTypePropertyIndexHandler postRelationshipTypePropertyIndexHandler;
     DeleteRelationshipTypePropertyIndexHandler deleteRelationshipTypePropertyIndexHandler;
+    GetNodeIndexesHandler getNodeIndexesHandler;
+    GetNodeTypeIndexesHandler getNodeTypeIndexesHandler;
+    GetRelationshipIndexesHandler getRelationshipIndexesHandler;
+    GetRelationshipTypeIndexesHandler getRelationshipTypeIndexesHandler;
 public:
     explicit Schema (ragedb::Graph &_graph) : graph(_graph), clearGraphHandler(*this),
                                      getNodeTypesHandler(*this), getRelationshipTypesHandler(*this),
@@ -204,7 +240,9 @@ public:
                                      getNodeTypePropertyHandler(*this), postNodeTypePropertyHandler(*this), deleteNodeTypePropertyHandler(*this),
                                      getRelationshipTypePropertyHandler(*this), postRelationshipTypePropertyHandler(*this), deleteRelationshipTypePropertyHandler(*this),
                                      postNodeTypePropertyIndexHandler(*this), deleteNodeTypePropertyIndexHandler(*this),
-                                     postRelationshipTypePropertyIndexHandler(*this), deleteRelationshipTypePropertyIndexHandler(*this){}
+                                     postRelationshipTypePropertyIndexHandler(*this), deleteRelationshipTypePropertyIndexHandler(*this),
+                                     getNodeIndexesHandler(*this), getNodeTypeIndexesHandler(*this),
+                                     getRelationshipIndexesHandler(*this), getRelationshipTypeIndexesHandler(*this){}
     void set_routes(seastar::httpd::routes& routes);
 };
 

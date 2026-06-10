@@ -46,6 +46,20 @@ SCENARIO( "Shard can handle Property Indexes", "[index]" ) {
                 uint64_t node3 = shard.NodeAdd(1, "three", R"({ "name":"max", "age":35, "score":75.2, "active":true })");
 
                 THEN("We lookup values using index lookup directly") {
+                    // Verify Lua index listing methods
+                    auto node_indexes_lua = shard.NodeIndexesGetViaLua();
+                    auto node_indexes_map = node_indexes_lua.value();
+                    REQUIRE(node_indexes_map.size() == 1);
+                    REQUIRE(node_indexes_map["Person"].size() == 4);
+
+                    auto name_indexes_lua = shard.NodeIndexesGetByTypeViaLua("Person");
+                    auto name_indexes_vec = name_indexes_lua.value();
+                    REQUIRE(name_indexes_vec.size() == 4);
+                    REQUIRE(std::find(name_indexes_vec.begin(), name_indexes_vec.end(), "name") != name_indexes_vec.end());
+
+                    auto empty_indexes_lua = shard.NodeIndexesGetByTypeViaLua("NonExistent");
+                    REQUIRE(empty_indexes_lua.value().empty());
+
                     // String Lookups
                     auto res_max = shard.NodeIndexLookup(1, "name", ragedb::Operation::EQ, std::string("max"));
                     REQUIRE(res_max.size() == 2);
@@ -282,6 +296,20 @@ SCENARIO( "Shard can handle Relationship Property Indexes", "[index]" ) {
                 uint64_t rel3 = shard.RelationshipAddSameShard(1, "Person", "one", "Person", "two", R"({ "comment":"good", "since":2020, "weight":3.5, "active":true })");
 
                 THEN("We lookup values using index lookup directly") {
+                    // Verify Lua index listing methods
+                    auto rel_indexes_lua = shard.RelationshipIndexesGetViaLua();
+                    auto rel_indexes_map = rel_indexes_lua.value();
+                    REQUIRE(rel_indexes_map.size() == 1);
+                    REQUIRE(rel_indexes_map["Knows"].size() == 4);
+
+                    auto since_indexes_lua = shard.RelationshipIndexesGetByTypeViaLua("Knows");
+                    auto since_indexes_vec = since_indexes_lua.value();
+                    REQUIRE(since_indexes_vec.size() == 4);
+                    REQUIRE(std::find(since_indexes_vec.begin(), since_indexes_vec.end(), "since") != since_indexes_vec.end());
+
+                    auto empty_rel_indexes_lua = shard.RelationshipIndexesGetByTypeViaLua("NonExistent");
+                    REQUIRE(empty_rel_indexes_lua.value().empty());
+
                     // String Lookups
                     auto res_good = shard.RelationshipIndexLookup(1, "comment", ragedb::Operation::EQ, std::string("good"));
                     REQUIRE(res_good.size() == 2);

@@ -171,6 +171,14 @@ namespace ragedb {
         lua.set_function("NodeIndexDelete", &Shard::NodeIndexDeleteViaLua, this);
         lua.set_function("RelationshipIndexCreate", &Shard::RelationshipIndexCreateViaLua, this);
         lua.set_function("RelationshipIndexDelete", &Shard::RelationshipIndexDeleteViaLua, this);
+        lua.set_function("NodeIndexesGet", sol::overload(
+            [this]() { return this->NodeIndexesGetViaLua(); },
+            [this](const std::string& type) { return this->NodeIndexesGetByTypeViaLua(type); }
+        ));
+        lua.set_function("RelationshipIndexesGet", sol::overload(
+            [this]() { return this->RelationshipIndexesGetViaLua(); },
+            [this](const std::string& type) { return this->RelationshipIndexesGetByTypeViaLua(type); }
+        ));
 
         //Node
         lua.set_function("NodeAdd", sol::overload(

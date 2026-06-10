@@ -346,7 +346,10 @@ struct SchemaOperation {
         CREATE_REL_TYPE,
         DROP_REL_TYPE,
         ALTER_NODE_TYPE,
-        ALTER_REL_TYPE
+        ALTER_REL_TYPE,
+        CREATE_INDEX,
+        DROP_INDEX,
+        SHOW_INDEXES
     } op;
 
     std::string name;

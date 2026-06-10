@@ -242,67 +242,89 @@ GqlQuery GqlParser::parse_query() {
         return query;
     }
 
-    if (check(TokenType::CREATE) || check(TokenType::DROP) || check(TokenType::ALTER)) {
+    if (check(TokenType::CREATE) || check(TokenType::DROP) || check(TokenType::ALTER) || check(TokenType::SHOW)) {
         GqlQuery query;
         SchemaOperation schema;
         
         if (match(TokenType::CREATE)) {
-            bool is_node = false;
-            if (match(TokenType::NODE)) {
-                is_node = true;
-            } else if (match(TokenType::RELATIONSHIP)) {
-                is_node = false;
+            if (match(TokenType::INDEX)) {
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name identifier");
+                consume(TokenType::DOT, "Expected '.'");
+                std::string property_name = peek().text;
+                consume(TokenType::NAME, "Expected property name identifier");
+                schema.op = SchemaOperation::Op::CREATE_INDEX;
+                schema.name = type_name;
+                schema.alter_property_name = property_name;
             } else {
-                throw std::runtime_error("Expected 'NODE' or 'RELATIONSHIP' / 'REL' after 'CREATE'");
-            }
-            consume(TokenType::TYPE, "Expected 'TYPE' keyword");
-            
-            std::string type_name = peek().text;
-            consume(TokenType::NAME, "Expected type name identifier");
-            
-            schema.op = is_node ? SchemaOperation::Op::CREATE_NODE_TYPE : SchemaOperation::Op::CREATE_REL_TYPE;
-            schema.name = type_name;
-            
-            // Parse optional properties
-            if (match(TokenType::LPAREN)) {
-                do {
-                    std::string prop_name = peek().text;
-                    consume(TokenType::NAME, "Expected property name identifier");
-                    
-                    std::string data_type;
-                    if (match(TokenType::STRING_KW)) data_type = "string";
-                    else if (match(TokenType::INTEGER_KW)) data_type = "integer";
-                    else if (match(TokenType::DOUBLE_KW)) data_type = "double";
-                    else if (match(TokenType::BOOLEAN_KW)) data_type = "boolean";
-                    else if (match(TokenType::STRING_LIST_KW)) data_type = "string_list";
-                    else if (match(TokenType::INTEGER_LIST_KW)) data_type = "integer_list";
-                    else if (match(TokenType::DOUBLE_LIST_KW)) data_type = "double_list";
-                    else if (match(TokenType::BOOLEAN_LIST_KW)) data_type = "boolean_list";
-                    else {
-                        throw std::runtime_error("Expected datatype (STRING, INTEGER, DOUBLE, BOOLEAN, or list variants) for property '" + prop_name + "'");
-                    }
-                    
-                    schema.properties.push_back({prop_name, data_type});
-                } while (match(TokenType::COMMA));
-                consume(TokenType::RPAREN, "Expected ')' to close property list");
+                bool is_node = false;
+                if (match(TokenType::NODE)) {
+                    is_node = true;
+                } else if (match(TokenType::RELATIONSHIP)) {
+                    is_node = false;
+                } else {
+                    throw std::runtime_error("Expected 'NODE', 'RELATIONSHIP', 'REL', or 'INDEX' after 'CREATE'");
+                }
+                consume(TokenType::TYPE, "Expected 'TYPE' keyword");
+                
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name identifier");
+                
+                schema.op = is_node ? SchemaOperation::Op::CREATE_NODE_TYPE : SchemaOperation::Op::CREATE_REL_TYPE;
+                schema.name = type_name;
+                
+                // Parse optional properties
+                if (match(TokenType::LPAREN)) {
+                    do {
+                        std::string prop_name = peek().text;
+                        consume(TokenType::NAME, "Expected property name identifier");
+                        
+                        std::string data_type;
+                        if (match(TokenType::STRING_KW)) data_type = "string";
+                        else if (match(TokenType::INTEGER_KW)) data_type = "integer";
+                        else if (match(TokenType::DOUBLE_KW)) data_type = "double";
+                        else if (match(TokenType::BOOLEAN_KW)) data_type = "boolean";
+                        else if (match(TokenType::STRING_LIST_KW)) data_type = "string_list";
+                        else if (match(TokenType::INTEGER_LIST_KW)) data_type = "integer_list";
+                        else if (match(TokenType::DOUBLE_LIST_KW)) data_type = "double_list";
+                        else if (match(TokenType::BOOLEAN_LIST_KW)) data_type = "boolean_list";
+                        else {
+                            throw std::runtime_error("Expected datatype (STRING, INTEGER, DOUBLE, BOOLEAN, or list variants) for property '" + prop_name + "'");
+                        }
+                        
+                        schema.properties.push_back({prop_name, data_type});
+                    } while (match(TokenType::COMMA));
+                    consume(TokenType::RPAREN, "Expected ')' to close property list");
+                }
             }
         }
         else if (match(TokenType::DROP)) {
-            bool is_node = false;
-            if (match(TokenType::NODE)) {
-                is_node = true;
-            } else if (match(TokenType::RELATIONSHIP)) {
-                is_node = false;
+            if (match(TokenType::INDEX)) {
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name identifier");
+                consume(TokenType::DOT, "Expected '.'");
+                std::string property_name = peek().text;
+                consume(TokenType::NAME, "Expected property name identifier");
+                schema.op = SchemaOperation::Op::DROP_INDEX;
+                schema.name = type_name;
+                schema.alter_property_name = property_name;
             } else {
-                throw std::runtime_error("Expected 'NODE' or 'RELATIONSHIP' / 'REL' after 'DROP'");
+                bool is_node = false;
+                if (match(TokenType::NODE)) {
+                    is_node = true;
+                } else if (match(TokenType::RELATIONSHIP)) {
+                    is_node = false;
+                } else {
+                    throw std::runtime_error("Expected 'NODE', 'RELATIONSHIP', 'REL', or 'INDEX' after 'DROP'");
+                }
+                consume(TokenType::TYPE, "Expected 'TYPE' keyword");
+                
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name identifier");
+                
+                schema.op = is_node ? SchemaOperation::Op::DROP_NODE_TYPE : SchemaOperation::Op::DROP_REL_TYPE;
+                schema.name = type_name;
             }
-            consume(TokenType::TYPE, "Expected 'TYPE' keyword");
-            
-            std::string type_name = peek().text;
-            consume(TokenType::NAME, "Expected type name identifier");
-            
-            schema.op = is_node ? SchemaOperation::Op::DROP_NODE_TYPE : SchemaOperation::Op::DROP_REL_TYPE;
-            schema.name = type_name;
         }
         else if (match(TokenType::ALTER)) {
             bool is_node = false;
@@ -349,6 +371,17 @@ GqlQuery GqlParser::parse_query() {
             }
             else {
                 throw std::runtime_error("Expected 'ADD' or 'DROP' operation after type name in ALTER TYPE statement");
+            }
+        }
+        else if (match(TokenType::SHOW)) {
+            consume(TokenType::INDEXES, "Expected 'INDEXES' after 'SHOW'");
+            schema.op = SchemaOperation::Op::SHOW_INDEXES;
+            if (match(TokenType::ON)) {
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name identifier after 'ON'");
+                schema.name = type_name;
+            } else {
+                schema.name = "";
             }
         }
         

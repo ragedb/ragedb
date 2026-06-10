@@ -75,6 +75,10 @@ enum class TokenType {
     INTEGER_LIST_KW,
     DOUBLE_LIST_KW,
     BOOLEAN_LIST_KW,
+    INDEX,
+    INDEXES,
+    ON,
+    SHOW,
 
     // Admin Keywords
     CALL,

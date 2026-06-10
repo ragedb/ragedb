@@ -71,7 +71,12 @@ namespace ragedb {
     }
 
     bool Shard::DeleteNodeType(const std::string& type) {
-        return node_types.deleteTypeId(type);
+        uint16_t type_id = node_types.getTypeId(type);
+        bool success = node_types.deleteTypeId(type);
+        if (success && type_id > 0) {
+            node_indexes.erase(type_id);
+        }
+        return success;
     }
 
     std::string Shard::RelationshipTypeGetType(uint16_t type_id) {
@@ -92,7 +97,12 @@ namespace ragedb {
     }
 
     bool Shard::DeleteRelationshipType(const std::string& type) {
-        return relationship_types.deleteTypeId(type);
+        uint16_t type_id = relationship_types.getTypeId(type);
+        bool success = relationship_types.deleteTypeId(type);
+        if (success && type_id > 0) {
+            relationship_indexes.erase(type_id);
+        }
+        return success;
     }
 
     uint8_t Shard::NodePropertyTypeAdd(uint16_t type_id, const std::string& key, uint8_t property_type_id) {

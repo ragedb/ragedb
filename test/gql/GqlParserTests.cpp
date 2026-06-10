@@ -403,5 +403,50 @@ TEST_CASE("GQL Parser parses label algebra and repetitions", "[gql_parser]") {
     }
 }
 
+TEST_CASE("GQL Parser parses index statements (DDL)", "[gql_parser]") {
+    SECTION("CREATE INDEX on node") {
+        std::string query = "CREATE INDEX Person.name";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_INDEX);
+        REQUIRE(q.schema_op->name == "Person");
+        REQUIRE(q.schema_op->alter_property_name == "name");
+    }
+
+    SECTION("CREATE INDEX on relationship") {
+        std::string query = "CREATE INDEX WORKS_AT.since";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_INDEX);
+        REQUIRE(q.schema_op->name == "WORKS_AT");
+        REQUIRE(q.schema_op->alter_property_name == "since");
+    }
+
+    SECTION("DROP INDEX on node") {
+        std::string query = "DROP INDEX Person.name";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_INDEX);
+        REQUIRE(q.schema_op->name == "Person");
+        REQUIRE(q.schema_op->alter_property_name == "name");
+    }
+
+    SECTION("SHOW INDEXES") {
+        std::string query = "SHOW INDEXES";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::SHOW_INDEXES);
+        REQUIRE(q.schema_op->name == "");
+    }
+
+    SECTION("SHOW INDEXES ON Person") {
+        std::string query = "SHOW INDEXES ON Person";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::SHOW_INDEXES);
+        REQUIRE(q.schema_op->name == "Person");
+    }
+}
+
 
 

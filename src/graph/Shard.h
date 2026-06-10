@@ -176,6 +176,8 @@ namespace ragedb {
         bool NodeIndexDelete(uint16_t type_id, const std::string& property);
         bool RelationshipIndexCreate(uint16_t type_id, const std::string& property);
         bool RelationshipIndexDelete(uint16_t type_id, const std::string& property);
+        std::map<std::string, std::vector<std::string>> NodeIndexesGet();
+        std::map<std::string, std::vector<std::string>> RelationshipIndexesGet();
         void NodeIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
         void NodeIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
         void RelationshipIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
@@ -881,6 +883,10 @@ namespace ragedb {
         bool NodeIndexDeleteViaLua(const std::string& type, const std::string& property);
         bool RelationshipIndexCreateViaLua(const std::string& type, const std::string& property);
         bool RelationshipIndexDeleteViaLua(const std::string& type, const std::string& property);
+        sol::as_table_t<std::map<std::string, std::vector<std::string>>> NodeIndexesGetViaLua();
+        sol::as_table_t<std::vector<std::string>> NodeIndexesGetByTypeViaLua(const std::string& type);
+        sol::as_table_t<std::map<std::string, std::vector<std::string>>> RelationshipIndexesGetViaLua();
+        sol::as_table_t<std::vector<std::string>> RelationshipIndexesGetByTypeViaLua(const std::string& type);
 
         // Node Properties
         sol::object NodeGetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property);

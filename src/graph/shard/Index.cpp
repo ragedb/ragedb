@@ -39,6 +39,9 @@ namespace ragedb {
             return false;
         }
         type_map.erase(it);
+        if (type_map.empty()) {
+            node_indexes.erase(type_id);
+        }
         return true;
     }
 
@@ -63,6 +66,9 @@ namespace ragedb {
             return false;
         }
         type_map.erase(it);
+        if (type_map.empty()) {
+            relationship_indexes.erase(type_id);
+        }
         return true;
     }
 
@@ -242,6 +248,40 @@ namespace ragedb {
             }
         }
         return {};
+    }
+
+    std::map<std::string, std::vector<std::string>> Shard::NodeIndexesGet() {
+        std::map<std::string, std::vector<std::string>> result;
+        for (const auto& [type_id, prop_map] : node_indexes) {
+            std::string type_name = node_types.getType(type_id);
+            if (!type_name.empty()) {
+                std::vector<std::string> properties;
+                for (const auto& [prop_name, _] : prop_map) {
+                    properties.push_back(prop_name);
+                }
+                if (!properties.empty()) {
+                    result[type_name] = properties;
+                }
+            }
+        }
+        return result;
+    }
+
+    std::map<std::string, std::vector<std::string>> Shard::RelationshipIndexesGet() {
+        std::map<std::string, std::vector<std::string>> result;
+        for (const auto& [type_id, prop_map] : relationship_indexes) {
+            std::string type_name = relationship_types.getType(type_id);
+            if (!type_name.empty()) {
+                std::vector<std::string> properties;
+                for (const auto& [prop_name, _] : prop_map) {
+                    properties.push_back(prop_name);
+                }
+                if (!properties.empty()) {
+                    result[type_name] = properties;
+                }
+            }
+        }
+        return result;
     }
 
 }

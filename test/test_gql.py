@@ -61,6 +61,77 @@ def run_tests():
         # 4. Create relationship schemas
         print("Creating Relationship schemas...")
         requests.post(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN")
+        requests.post(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN/properties/since/integer")
+
+        # Test index REST API endpoints
+        print("Testing index REST API endpoints...")
+        # Create indexes
+        r1 = requests.post(f"{url_base}/db/{graph}/schema/nodes/Person/properties/name/index")
+        print("Create node index response:", r1.status_code, r1.text)
+        assert r1.status_code == 201
+        r2 = requests.post(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN/properties/since/index")
+        print("Create relationship index response:", r2.status_code, r2.text)
+        assert r2.status_code == 201
+
+        # List all node indexes
+        r = requests.get(f"{url_base}/db/{graph}/schema/nodes/indexes")
+        print("List all node indexes response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert r.json() == {"Person": ["name"]}
+
+        # List all relationship indexes
+        r = requests.get(f"{url_base}/db/{graph}/schema/relationships/indexes")
+        print("List all relationship indexes response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert r.json() == {"ACTED_IN": ["since"]}
+
+        # List node indexes for specific type
+        r = requests.get(f"{url_base}/db/{graph}/schema/nodes/Person/indexes")
+        print("List node indexes for Person response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert r.json() == ["name"]
+
+        # List relationship indexes for specific type
+        r = requests.get(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN/indexes")
+        print("List relationship indexes for ACTED_IN response:", r.status_code, r.text)
+        assert r.status_code == 200
+        assert r.json() == ["since"]
+
+        # Delete indexes
+        r3 = requests.delete(f"{url_base}/db/{graph}/schema/nodes/Person/properties/name/index")
+        assert r3.status_code == 204
+        r4 = requests.delete(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN/properties/since/index")
+        assert r4.status_code == 204
+
+        # List after deletion
+        r = requests.get(f"{url_base}/db/{graph}/schema/nodes/indexes")
+        assert r.json() == {}
+        r = requests.get(f"{url_base}/db/{graph}/schema/relationships/indexes")
+        assert r.json() == {}
+
+        # Test index deletion when parent node/relationship type is deleted
+        print("Testing index deletion when type is deleted...")
+        requests.post(f"{url_base}/db/{graph}/schema/nodes/Person/properties/name/index")
+        requests.post(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN/properties/since/index")
+
+        # Delete the parent types
+        rd1 = requests.delete(f"{url_base}/db/{graph}/schema/nodes/Person")
+        assert rd1.status_code == 204
+        rd2 = requests.delete(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN")
+        assert rd2.status_code == 204
+
+        # Verify indexes are gone
+        r = requests.get(f"{url_base}/db/{graph}/schema/nodes/indexes")
+        assert r.json() == {}
+        r = requests.get(f"{url_base}/db/{graph}/schema/relationships/indexes")
+        assert r.json() == {}
+
+        # Re-create Person and ACTED_IN types/properties for subsequent tests
+        requests.post(f"{url_base}/db/{graph}/schema/nodes/Person")
+        requests.post(f"{url_base}/db/{graph}/schema/nodes/Person/properties/name/string")
+        requests.post(f"{url_base}/db/{graph}/schema/nodes/Person/properties/age/integer")
+        requests.post(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN")
+        requests.post(f"{url_base}/db/{graph}/schema/relationships/ACTED_IN/properties/since/integer")
 
         # 5. Populate nodes
         print("Creating Nodes...")
@@ -184,10 +255,17 @@ def run_tests():
 
         print("\nAll GQL tests passed successfully!")
 
+    except Exception as e:
+        print("Test failed with exception:", e)
+        raise e
     finally:
         print("Stopping ragedb server...")
         server_process.terminate()
-        server_process.wait()
+        stdout, stderr = server_process.communicate()
+        print("--- SERVER STDOUT ---")
+        print(stdout.decode())
+        print("--- SERVER STDERR ---")
+        print(stderr.decode())
 
 if __name__ == "__main__":
     run_tests()

@@ -85,7 +85,7 @@ namespace ragedb {
           return type_search->second;
         }
         // Insert
-        uint16_t type_id = type_to_id.size();
+        uint16_t type_id = id_to_type.size();
         type_to_id.try_emplace(type, type_id);
         id_to_type.emplace_back(type);
         starting_node_ids.emplace_back();
@@ -149,7 +149,7 @@ namespace ragedb {
     bool RelationshipTypes::deleteTypeId(const std::string &type) {
         // TODO: Recycle type links
         if (uint16_t type_id = getTypeId(type); ValidTypeId(type_id) && getCount(type_id) == 0) {
-            type_to_id[type] = 0;
+            type_to_id.erase(type);
             id_to_type[type_id].clear();
             starting_node_ids[type_id].clear();
             ending_node_ids[type_id].clear();
@@ -384,8 +384,13 @@ namespace ragedb {
     }
 
     std::set<std::string> RelationshipTypes::getTypes() {
-        // Skip the empty type
-        return {id_to_type.begin() + 1, id_to_type.end()};
+        std::set<std::string> types;
+        for (auto it = id_to_type.begin() + 1; it != id_to_type.end(); ++it) {
+            if (!it->empty()) {
+                types.insert(*it);
+            }
+        }
+        return types;
     }
 
     std::set<uint16_t> RelationshipTypes::getTypeIds() const {
@@ -407,8 +412,10 @@ namespace ragedb {
 
     std::map<uint16_t, uint64_t> RelationshipTypes::getCounts() const {
         std::map<uint16_t,uint64_t> counts;
-        for (size_t type_id=1; type_id < type_to_id.size(); type_id++) {
-            counts.insert({type_id, starting_node_ids[type_id].size() - deleted_ids[type_id].cardinality()});
+        for (size_t type_id=1; type_id < id_to_type.size(); type_id++) {
+            if (!id_to_type[type_id].empty()) {
+                counts.insert({type_id, starting_node_ids[type_id].size() - deleted_ids[type_id].cardinality()});
+            }
         }
 
         return counts;

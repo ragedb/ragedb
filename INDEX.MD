@@ -76,6 +76,30 @@ POST /db/{graph}/schema/relationships/{type}/properties/{property}/index
 DELETE /db/{graph}/schema/relationships/{type}/properties/{property}/index
 ```
 
+#### List Node Property Indexes
+```http
+GET /db/{graph}/schema/nodes/indexes
+```
+*   **Response**: JSON mapping node labels to vectors of indexed properties: `{"Person": ["name"]}`
+
+#### List Node Property Indexes for a Specific Type
+```http
+GET /db/{graph}/schema/nodes/{type}/indexes
+```
+*   **Response**: JSON array of indexed properties for the target type: `["name"]`
+
+#### List Relationship Property Indexes
+```http
+GET /db/{graph}/schema/relationships/indexes
+```
+*   **Response**: JSON mapping relationship types to vectors of indexed properties: `{"ACTED_IN": ["since"]}`
+
+#### List Relationship Property Indexes for a Specific Type
+```http
+GET /db/{graph}/schema/relationships/{type}/indexes
+```
+*   **Response**: JSON array of indexed properties for the target type: `["since"]`
+
 ---
 
 ### 2. Lua API
@@ -94,4 +118,57 @@ RelationshipIndexCreate("Knows", "since")
 
 -- Delete relationship property index
 RelationshipIndexDelete("Knows", "since")
+
+-- Show all node indexes (returns table mapping NodeType -> List of properties)
+NodeIndexesGet()
+
+-- Show node indexes for a specific node type (returns table list of properties)
+NodeIndexesGet("Person")
+
+-- Show all relationship indexes (returns table mapping RelationshipType -> List of properties)
+RelationshipIndexesGet()
+
+-- Show relationship indexes for a specific relationship type (returns table list of properties)
+RelationshipIndexesGet("Knows")
+```
+
+---
+
+### 3. GQL DDL Commands
+
+You can manage and view indexes directly using GQL commands:
+
+#### Create Index
+```cypher
+-- Create a node property index
+CREATE INDEX Person.name;
+
+-- Create a relationship property index
+CREATE INDEX WORKS_AT.since;
+```
+
+#### Drop Index
+```cypher
+-- Drop a node property index
+DROP INDEX Person.name;
+
+-- Drop a relationship property index
+DROP INDEX WORKS_AT.since;
+```
+
+#### Show Indexes
+```cypher
+-- Show all active indexes
+SHOW INDEXES;
+
+-- Show indexes filtered by label
+SHOW INDEXES ON Person;
+```
+
+When running `SHOW INDEXES`, the engine returns a JSON array of active indexes:
+```json
+[
+  {"type": "Node", "label": "Person", "property": "name"},
+  {"type": "Relationship", "label": "WORKS_AT", "property": "since"}
+]
 ```
