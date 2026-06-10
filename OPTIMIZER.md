@@ -285,7 +285,7 @@ All tests compile and pass successfully:
 
 Output:
 ```
-All tests passed (130 assertions in 52 test cases)
+All tests passed (1474 assertions in 52 test cases)
 ```
 
 ---
