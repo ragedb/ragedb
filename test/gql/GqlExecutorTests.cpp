@@ -344,3 +344,55 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
 
     guard.stop();
 }
+
+TEST_CASE("GQL Execution Correlated Subquery Tests", "[gql_executor_subquery]") {
+    auto graph = Graph("gql_test_subquery");
+    graph.Start().get();
+    graph.Clear();
+    GraphStopGuard guard(graph);
+    
+    // Setup schemas
+    graph.shard.local().NodeTypeInsertPeered("Person").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+    graph.shard.local().RelationshipTypeInsertPeered("FRIEND").get();
+
+    // Create test nodes
+    uint64_t id1 = graph.shard.local().NodeAddPeered("Person", "alice", "{\"name\": \"Alice\"}").get();
+    uint64_t id2 = graph.shard.local().NodeAddPeered("Person", "bob", "{\"name\": \"Bob\"}").get();
+    uint64_t id3 = graph.shard.local().NodeAddPeered("Person", "charlie", "{\"name\": \"Charlie\"}").get();
+
+    // Alice is friends with Bob. Charlie has no friends.
+    graph.shard.local().RelationshipAddPeered("FRIEND", id1, id2, "{}").get();
+
+    SECTION("Correlated EXISTS subquery") {
+        std::string query_str = "MATCH (p:Person) WHERE EXISTS { MATCH (p)-[:FRIEND]->(f) } RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Bob") == std::string::npos);
+        REQUIRE(results.find("Charlie") == std::string::npos);
+    }
+
+    SECTION("Correlated EXISTS subquery with filter") {
+        std::string query_str = "MATCH (p:Person) WHERE EXISTS { MATCH (p)-[:FRIEND]->(f) WHERE f.name = 'Bob' } RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Bob") == std::string::npos);
+        REQUIRE(results.find("Charlie") == std::string::npos);
+    }
+
+    SECTION("Correlated NOT EXISTS subquery") {
+        std::string query_str = "MATCH (p:Person) WHERE NOT EXISTS { MATCH (p)-[:FRIEND]->(f) } RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") == std::string::npos);
+        REQUIRE(results.find("Bob") != std::string::npos);
+        REQUIRE(results.find("Charlie") != std::string::npos);
+    }
+
+    guard.stop();
+}

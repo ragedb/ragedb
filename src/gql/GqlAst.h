@@ -23,6 +23,7 @@
 #include <memory>
 #include <variant>
 #include <optional>
+#include <set>
 #include "../graph/PropertyType.h"
 #include "../graph/Operation.h"
 #include "../graph/Direction.h"
@@ -50,7 +51,8 @@ enum class ExpressionKind {
     PROPERTY_LOOKUP,  ///< Property extraction (e.g. p.name, m.title)
     UNARY_OP,         ///< Unary operations (e.g. NOT, -x)
     BINARY_OP,        ///< Binary operations (e.g. AND, OR, +, =, <)
-    AGGREGATION       ///< GQL Aggregate function (e.g. COUNT, SUM, AVG, MIN, MAX)
+    AGGREGATION,      ///< GQL Aggregate function (e.g. COUNT, SUM, AVG, MIN, MAX)
+    EXISTS            ///< Exists subquery expression (e.g. EXISTS { MATCH ... })
 };
 
 /**
@@ -234,6 +236,21 @@ struct MatchStatement {
 };
 
 /**
+ * @brief Represents an EXISTS subquery expression (e.g., EXISTS { MATCH ... WHERE ... }).
+ */
+struct ExistsExpr : public Expression {
+    std::vector<MatchStatement> matches; ///< Nested match statements.
+    std::unique_ptr<Expression> where_expr; ///< Optional nested where filter.
+    std::string target_variable; ///< Target variable for checking existence.
+    
+    ExistsExpr(std::vector<MatchStatement> m, std::unique_ptr<Expression> w) {
+        kind = ExpressionKind::EXISTS;
+        matches = std::move(m);
+        where_expr = std::move(w);
+    }
+};
+
+/**
  * @brief Represents a projected expression inside the RETURN clause (e.g. p.name AS client_name).
  */
 struct ReturnItem {
@@ -332,6 +349,10 @@ struct GqlQuery {
 
     // DDL schema controls
     std::optional<SchemaOperation> schema_op;
+
+    // Optimization tracking fields
+    std::set<std::string> outer_vars;
+    bool has_unnested_subquery = false;
 };
 
 } // namespace ragedb::gql

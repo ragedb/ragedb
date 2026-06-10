@@ -25,6 +25,7 @@ class GqlOptimizer {
 private:
     static void extract_filters(Expression* expr, std::map<std::string, std::vector<PropertyFilter>>& pushdowns);
     static std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::unique_ptr<Expression> expr, const std::map<std::string, std::vector<PropertyFilter>>& pushdowns);
+    static void unnest_subqueries_in_expr(std::unique_ptr<Expression>& expr, std::vector<MatchStatement>& query_matches, const std::set<std::string>& outer_vars, bool& has_unnested, int& var_counter);
 
 public:
     static void optimize(GqlQuery& query);

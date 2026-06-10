@@ -188,6 +188,20 @@ GqlValue evaluate_expression(const GqlRow& row, const Expression* expr) {
         case ExpressionKind::AGGREGATION: {
             return GqlValue(); // Aggregations are not evaluated on single rows
         }
+        case ExpressionKind::EXISTS: {
+            auto* exists = static_cast<const ExistsExpr*>(expr);
+            if (!exists->target_variable.empty()) {
+                auto it = row.bindings.find(exists->target_variable);
+                if (it != row.bindings.end() && it->second.type != GqlValue::NIL) {
+                    if (exists->where_expr) {
+                        return evaluate_expression(row, exists->where_expr.get());
+                    }
+                    return GqlValue(true);
+                }
+                return GqlValue(false);
+            }
+            return GqlValue(false);
+        }
         case ExpressionKind::LITERAL: {
             auto* lit = static_cast<const LiteralExpr*>(expr);
             return GqlValue(lit->value);

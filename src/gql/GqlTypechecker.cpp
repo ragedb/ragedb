@@ -395,6 +395,21 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
             }
             break;
         }
+        case ExpressionKind::EXISTS: {
+            const auto& exists = static_cast<const ExistsExpr&>(expr);
+            auto parent_env = this->env;
+            for (const auto& match : exists.matches) {
+                check_path_pattern(match.pattern);
+            }
+            if (exists.where_expr) {
+                GqlType t = check_expression(*exists.where_expr);
+                if (t != GqlType::BOOLEAN && t != GqlType::ANY) {
+                    throw std::runtime_error("EXISTS subquery WHERE filter expression must evaluate to BOOLEAN, got " + to_string(t));
+                }
+            }
+            this->env = std::move(parent_env);
+            return GqlType::BOOLEAN;
+        }
     }
     return GqlType::ANY;
 }

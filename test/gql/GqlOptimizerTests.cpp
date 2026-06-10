@@ -155,4 +155,38 @@ TEST_CASE("GQL Optimizer ignores OR predicates", "[gql_optimizer]") {
      REQUIRE(query.matches.size() == 1);
      REQUIRE(query.matches[0].pattern.nodes[0].variable == "p");
      REQUIRE_FALSE(query.matches[0].is_optional);
- }
+}
+
+TEST_CASE("GQL Optimizer correlated subquery unnesting test", "[gql_optimizer]") {
+    std::string query_str = "MATCH (a:Person) WHERE EXISTS { MATCH (a)-[:KNOWS]->(b:Person) WHERE b.name = 'Bob' } RETURN a.name";
+    auto query = GqlParser::parse(query_str);
+
+    REQUIRE(query.matches.size() == 1);
+    REQUIRE_FALSE(query.has_unnested_subquery);
+
+    GqlOptimizer::optimize(query);
+
+    // The subquery MATCH should be unnested and appended to the main matches list as an optional match
+    REQUIRE(query.has_unnested_subquery);
+    REQUIRE(query.matches.size() == 2);
+    REQUIRE_FALSE(query.matches[0].is_optional);
+    REQUIRE(query.matches[1].is_optional);
+    
+    // The second match pattern should be the subquery pattern: (a)-[:KNOWS]->(b)
+    const auto& pattern = query.matches[1].pattern;
+    REQUIRE(pattern.nodes.size() == 2);
+    REQUIRE(pattern.nodes[0].variable == "a");
+    REQUIRE(pattern.nodes[1].variable == "b");
+    REQUIRE(pattern.edges.size() == 1);
+    
+    // The subquery's filter b.name = 'Bob' should be pushed down into the subquery's node b's property filters!
+    const auto& b_filters = pattern.nodes[1].property_filters;
+    REQUIRE(b_filters.size() == 1);
+    REQUIRE(b_filters[0].property == "name");
+    REQUIRE(b_filters[0].op == Operation::EQ);
+    REQUIRE(std::get<std::string>(b_filters[0].value) == "Bob");
+
+    // The outer variables should be populated
+    REQUIRE(query.outer_vars.size() == 1);
+    REQUIRE(query.outer_vars.count("a"));
+}

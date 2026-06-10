@@ -55,6 +55,7 @@ enum class TokenType {
     UNION,
     INTERSECT,
     ALL_KW,
+    EXISTS,
 
     // DDL Keywords
     CREATE,

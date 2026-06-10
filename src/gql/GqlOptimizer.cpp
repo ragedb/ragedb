@@ -284,7 +284,144 @@ void extract_rel_types(const LabelExpression* expr, std::vector<std::string>& re
     }
 }
 
+void collect_variables_from_matches(const std::vector<MatchStatement>& matches, std::set<std::string>& vars) {
+    for (const auto& match : matches) {
+        for (const auto& node : match.pattern.nodes) {
+            if (!node.variable.empty()) vars.insert(node.variable);
+        }
+        for (const auto& edge : match.pattern.edges) {
+            if (!edge.variable.empty()) vars.insert(edge.variable);
+        }
+    }
+}
+
 } // namespace
+
+void GqlOptimizer::unnest_subqueries_in_expr(
+    std::unique_ptr<Expression>& expr,
+    std::vector<MatchStatement>& query_matches,
+    const std::set<std::string>& outer_vars,
+    bool& has_unnested,
+    int& var_counter
+) {
+    if (!expr) return;
+
+    if (expr->kind == ExpressionKind::EXISTS) {
+        auto* exists = static_cast<ExistsExpr*>(expr.get());
+        if (exists->target_variable.empty()) {
+            std::set<std::string> sub_vars;
+            collect_variables_from_matches(exists->matches, sub_vars);
+            
+            std::vector<std::string> new_vars;
+            for (const auto& var : sub_vars) {
+                if (!outer_vars.count(var)) {
+                    new_vars.push_back(var);
+                }
+            }
+
+            if (new_vars.empty()) {
+                std::string new_temp_var = "_exists_var_" + std::to_string(var_counter++);
+                bool assigned = false;
+                for (auto& match : exists->matches) {
+                    for (auto& edge : match.pattern.edges) {
+                        if (edge.variable.empty()) {
+                            edge.variable = new_temp_var;
+                            assigned = true;
+                            break;
+                        }
+                    }
+                    if (assigned) break;
+                }
+                if (!assigned) {
+                    for (auto& match : exists->matches) {
+                        for (auto& node : match.pattern.nodes) {
+                            if (node.variable.empty()) {
+                                node.variable = new_temp_var;
+                                assigned = true;
+                                break;
+                            }
+                        }
+                        if (assigned) break;
+                    }
+                }
+                if (assigned) {
+                    new_vars.push_back(new_temp_var);
+                }
+            }
+
+            if (!new_vars.empty()) {
+                exists->target_variable = new_vars[0];
+                has_unnested = true;
+                
+                if (exists->where_expr) {
+                    // Push down filters within the EXISTS subquery itself.
+                    std::map<std::string, std::vector<PropertyFilter>> sub_pushdowns;
+                    extract_filters(exists->where_expr.get(), sub_pushdowns);
+                    if (!sub_pushdowns.empty()) {
+                        for (auto& match : exists->matches) {
+                            for (auto& node : match.pattern.nodes) {
+                                if (!node.variable.empty()) {
+                                    auto it = sub_pushdowns.find(node.variable);
+                                    if (it != sub_pushdowns.end()) {
+                                        for (const auto& filter : it->second) {
+                                            node.property_filters.push_back(filter);
+                                        }
+                                    }
+                                }
+                            }
+                            for (auto& edge : match.pattern.edges) {
+                                if (!edge.variable.empty()) {
+                                    auto it = sub_pushdowns.find(edge.variable);
+                                    if (it != sub_pushdowns.end()) {
+                                        for (const auto& filter : it->second) {
+                                            edge.property_filters.push_back(filter);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Rebuild exists->where_expr without the pushed predicates.
+                        exists->where_expr = rebuild_expression_without_pushed_predicates(std::move(exists->where_expr), sub_pushdowns);
+                    }
+                    
+                    if (exists->where_expr) {
+                        unnest_subqueries_in_expr(exists->where_expr, query_matches, outer_vars, has_unnested, var_counter);
+                    }
+                }
+
+                // Append the subquery matches to the outer matches as optional matches
+                for (const auto& match : exists->matches) {
+                    MatchStatement opt_match = match;
+                    opt_match.is_optional = true;
+                    query_matches.push_back(std::move(opt_match));
+                }
+            }
+        }
+    }
+
+    switch (expr->kind) {
+        case ExpressionKind::UNARY_OP: {
+            auto* un = static_cast<UnaryOpExpr*>(expr.get());
+            unnest_subqueries_in_expr(un->expr, query_matches, outer_vars, has_unnested, var_counter);
+            break;
+        }
+        case ExpressionKind::BINARY_OP: {
+            auto* bin = static_cast<BinaryOpExpr*>(expr.get());
+            unnest_subqueries_in_expr(bin->left, query_matches, outer_vars, has_unnested, var_counter);
+            unnest_subqueries_in_expr(bin->right, query_matches, outer_vars, has_unnested, var_counter);
+            break;
+        }
+        case ExpressionKind::AGGREGATION: {
+            auto* agg = static_cast<AggregateExpr*>(expr.get());
+            if (agg->expr) {
+                unnest_subqueries_in_expr(agg->expr, query_matches, outer_vars, has_unnested, var_counter);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
 
 /**
  * @brief Performs AST-level optimization passes on a GQL query.
@@ -336,6 +473,22 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         if (query.left) optimize(*query.left);
         if (query.right) optimize(*query.right);
         return;
+    }
+
+    // --- Phase 10: Correlated Subquery Unnesting ---
+    // Extract EXISTS subqueries, rewrite them, and append them as OPTIONAL MATCHes.
+    std::set<std::string> outer_vars;
+    collect_variables_from_matches(query.matches, outer_vars);
+    int var_counter = 0;
+    unnest_subqueries_in_expr(query.where_expr, query.matches, outer_vars, query.has_unnested_subquery, var_counter);
+    for (auto& item : query.returns) {
+        unnest_subqueries_in_expr(item.expr, query.matches, outer_vars, query.has_unnested_subquery, var_counter);
+    }
+    for (auto& spec : query.order_by) {
+        unnest_subqueries_in_expr(spec.expr, query.matches, outer_vars, query.has_unnested_subquery, var_counter);
+    }
+    if (query.has_unnested_subquery) {
+        query.outer_vars = std::move(outer_vars);
     }
 
     // --- Phase 8: Unnecessary Join Removal ---

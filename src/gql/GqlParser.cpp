@@ -678,6 +678,25 @@ std::unique_ptr<Expression> GqlParser::parse_unary() {
  * @throws std::runtime_error If an unexpected token or syntax issue is encountered.
  */
 std::unique_ptr<Expression> GqlParser::parse_primary() {
+    if (match(TokenType::EXISTS)) {
+        consume(TokenType::LBRACE, "Expected '{' after EXISTS");
+        std::vector<MatchStatement> matches;
+        while (check(TokenType::MATCH) || (check(TokenType::OPTIONAL) && peek(1).type == TokenType::MATCH)) {
+            MatchStatement stmt;
+            if (match(TokenType::OPTIONAL)) {
+                stmt.is_optional = true;
+            }
+            consume(TokenType::MATCH, "Expected MATCH");
+            stmt.pattern = parse_path_pattern();
+            matches.push_back(stmt);
+        }
+        std::unique_ptr<Expression> sub_where = nullptr;
+        if (match(TokenType::WHERE)) {
+            sub_where = parse_expression();
+        }
+        consume(TokenType::RBRACE, "Expected '}' after EXISTS subquery");
+        return std::make_unique<ExistsExpr>(std::move(matches), std::move(sub_where));
+    }
     if (match(TokenType::TRUE_KW)) {
         return std::make_unique<LiteralExpr>(true);
     }

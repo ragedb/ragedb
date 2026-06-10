@@ -1574,6 +1574,22 @@ static void sort_combined_result(QueryResult& res, const std::vector<SortSpec>& 
     }
 }
 
+struct GqlRowOuterVarsLess {
+    std::set<std::string> outer_vars;
+    bool operator()(const GqlRow& lhs, const GqlRow& rhs) const {
+        for (const auto& var : outer_vars) {
+            auto it_l = lhs.bindings.find(var);
+            auto it_r = rhs.bindings.find(var);
+            GqlValue val_l = (it_l != lhs.bindings.end()) ? it_l->second : GqlValue();
+            GqlValue val_r = (it_r != rhs.bindings.end()) ? it_r->second : GqlValue();
+            int cmp = compare_gql_values(val_l, val_r);
+            if (cmp < 0) return true;
+            if (cmp > 0) return false;
+        }
+        return false;
+    }
+};
+
 static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr) {
     if (query_ptr->kind != QueryKind::SINGLE) {
         auto left_ptr = std::shared_ptr<GqlQuery>(query_ptr->left.release());
@@ -1779,6 +1795,18 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             if (!query.where_expr || evaluate_expression(row, query.where_expr.get()).is_truthy()) {
                 filtered_rows.push_back(std::move(row));
             }
+        }
+
+        // Deduplicate rows if subquery unnesting occurred to maintain correct semi-join/exists semantics
+        if (query.has_unnested_subquery && !query.outer_vars.empty()) {
+            std::vector<GqlRow> deduped_rows;
+            std::set<GqlRow, GqlRowOuterVarsLess> seen((GqlRowOuterVarsLess{query.outer_vars}));
+            for (auto& row : filtered_rows) {
+                if (seen.insert(row).second) {
+                    deduped_rows.push_back(std::move(row));
+                }
+            }
+            filtered_rows = std::move(deduped_rows);
         }
 
         // Execute write operations if any
