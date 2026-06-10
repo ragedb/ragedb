@@ -237,5 +237,29 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
         REQUIRE(results_json.find("Alice") != std::string::npos);
     }
 
+    SECTION("Join query utilizing accumulator hash join") {
+        // MATCH uses two path patterns sharing variable 'b'.
+        // This will trigger natural_join of both pattern results, invoking
+        // join_flat_rows_variable to join them on the shared variable 'b'.
+        std::string query_str = "MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) RETURN a.name, b.name, c.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Bob") != std::string::npos);
+        REQUIRE(results.find("Charlie") != std::string::npos);
+    }
+
+    SECTION("Cartesian product join query") {
+        // Query matches two disjoint patterns with no shared variables.
+        // This should trigger the Cartesian product fallback in join_flat_rows_variable.
+        std::string query_str = "MATCH (a:Person) MATCH (b:Robot) RETURN a.name, b.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Charlie") != std::string::npos);
+    }
+
     guard.stop();
 }
