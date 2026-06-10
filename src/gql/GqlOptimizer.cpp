@@ -15,8 +15,63 @@
  */
 
 #include "GqlOptimizer.h"
+#include "GqlValue.h"
 
 namespace ragedb::gql {
+
+namespace {
+
+// Helper functions to compare label expressions, property maps, and path patterns
+// to detect redundant joins for Phase 8 optimization.
+
+bool is_equivalent_label_expr(const std::shared_ptr<LabelExpression>& e1, const std::shared_ptr<LabelExpression>& e2) {
+    if (!e1 && !e2) return true;
+    if (!e1 || !e2) return false;
+    if (e1->kind != e2->kind) return false;
+    if (e1->kind == LabelExprKind::LITERAL) {
+        return e1->name == e2->name;
+    }
+    if (e1->kind == LabelExprKind::NOT) {
+        return is_equivalent_label_expr(e1->expr, e2->expr);
+    }
+    return is_equivalent_label_expr(e1->left, e2->left) && is_equivalent_label_expr(e1->right, e2->right);
+}
+
+bool is_equivalent_properties(const std::map<std::string, property_type_t>& p1, const std::map<std::string, property_type_t>& p2) {
+    if (p1.size() != p2.size()) return false;
+    for (const auto& [k, v] : p1) {
+        auto it = p2.find(k);
+        if (it == p2.end()) return false;
+        if (compare_properties(v, it->second) != 0) return false;
+    }
+    return true;
+}
+
+bool is_equivalent_pattern(const PathPattern& p1, const PathPattern& p2) {
+    if (p1.nodes.size() != p2.nodes.size() || p1.edges.size() != p2.edges.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < p1.nodes.size(); ++i) {
+        const auto& n1 = p1.nodes[i];
+        const auto& n2 = p2.nodes[i];
+        if (n1.variable != n2.variable) return false;
+        if (!is_equivalent_label_expr(n1.label_expr, n2.label_expr)) return false;
+        if (!is_equivalent_properties(n1.properties, n2.properties)) return false;
+    }
+    for (size_t i = 0; i < p1.edges.size(); ++i) {
+        const auto& e1 = p1.edges[i];
+        const auto& e2 = p2.edges[i];
+        if (e1.variable != e2.variable) return false;
+        if (e1.direction != e2.direction) return false;
+        if (e1.is_variable_length != e2.is_variable_length) return false;
+        if (e1.min_hops != e2.min_hops || e1.max_hops != e2.max_hops) return false;
+        if (!is_equivalent_label_expr(e1.label_expr, e2.label_expr)) return false;
+        if (!is_equivalent_properties(e1.properties, e2.properties)) return false;
+    }
+    return true;
+}
+
+} // namespace
 
 /**
  * @brief Recursively traverses the expression tree to extract property filters for variables.
@@ -281,6 +336,27 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         if (query.left) optimize(*query.left);
         if (query.right) optimize(*query.right);
         return;
+    }
+
+    // --- Phase 8: Unnecessary Join Removal ---
+    // Identify and remove duplicate/redundant MATCH patterns.
+    for (auto it = query.matches.begin(); it != query.matches.end(); ) {
+        bool duplicate_found = false;
+        for (auto prev_it = query.matches.begin(); prev_it != it; ++prev_it) {
+            if (is_equivalent_pattern(it->pattern, prev_it->pattern)) {
+                // Promote first match to non-optional if the duplicate was non-optional
+                if (!it->is_optional && prev_it->is_optional) {
+                    prev_it->is_optional = false;
+                }
+                duplicate_found = true;
+                break;
+            }
+        }
+        if (duplicate_found) {
+            it = query.matches.erase(it);
+        } else {
+            ++it;
+        }
     }
 
     // --- Relationship Count / Degree Optimization ---

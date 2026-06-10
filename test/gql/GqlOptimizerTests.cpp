@@ -119,10 +119,40 @@ TEST_CASE("GQL Optimizer ignores OR predicates", "[gql_optimizer]") {
     auto query = GqlParser::parse(query_str);
 
     GqlOptimizer::optimize(query);
-
-    REQUIRE(query.matches[0].pattern.nodes[0].property_filters.empty());
-    REQUIRE(query.where_expr != nullptr);
-    REQUIRE(query.where_expr->kind == ExpressionKind::BINARY_OP);
-    auto* bin = static_cast<const BinaryOpExpr*>(query.where_expr.get());
-    REQUIRE(bin->op == BinaryOpKind::OR);
-}
+ 
+     REQUIRE(query.matches[0].pattern.nodes[0].property_filters.empty());
+     REQUIRE(query.where_expr != nullptr);
+     REQUIRE(query.where_expr->kind == ExpressionKind::BINARY_OP);
+     auto* bin = static_cast<const BinaryOpExpr*>(query.where_expr.get());
+     REQUIRE(bin->op == BinaryOpKind::OR);
+ }
+ 
+ TEST_CASE("GQL Optimizer redundant match pattern removal", "[gql_optimizer]") {
+     std::string query_str = "MATCH (p:Person) MATCH (p:Person) RETURN p.name";
+     auto query = GqlParser::parse(query_str);
+ 
+     REQUIRE(query.matches.size() == 2);
+ 
+     GqlOptimizer::optimize(query);
+ 
+     // Redundant MATCH pattern should be pruned
+     REQUIRE(query.matches.size() == 1);
+     REQUIRE(query.matches[0].pattern.nodes[0].variable == "p");
+     REQUIRE_FALSE(query.matches[0].is_optional);
+ }
+ 
+ TEST_CASE("GQL Optimizer redundant optional match promotion", "[gql_optimizer]") {
+     std::string query_str = "OPTIONAL MATCH (p:Person) MATCH (p:Person) RETURN p.name";
+     auto query = GqlParser::parse(query_str);
+ 
+     REQUIRE(query.matches.size() == 2);
+     REQUIRE(query.matches[0].is_optional);
+     REQUIRE_FALSE(query.matches[1].is_optional);
+ 
+     GqlOptimizer::optimize(query);
+ 
+     // Redundant match should be pruned, and the kept match should be promoted to non-optional
+     REQUIRE(query.matches.size() == 1);
+     REQUIRE(query.matches[0].pattern.nodes[0].variable == "p");
+     REQUIRE_FALSE(query.matches[0].is_optional);
+ }
