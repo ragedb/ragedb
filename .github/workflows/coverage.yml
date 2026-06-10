@@ -109,7 +109,7 @@ jobs:
       - name: SonarQube
         working-directory: '${{ github.workspace }}/build'
         run: |        
-          sudo pip install --break-system-packages gcovr
+          sudo pip install --break-system-packages gcovr cpp-coveralls
           gcovr -r .. --gcov-ignore-parse-errors=negative_hits.warn --sonarqube coverage.xml
           mv coverage.xml ..
 
@@ -118,10 +118,5 @@ jobs:
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         run: |
-          sudo apt install python3-setuptools python3-idna python3-requests python3-urllib3
-          git clone https://github.com/PredatorCZ/cpp-coveralls.git
-          pushd cpp-coveralls
-          sudo python3 setup.py install --break-system-packages
-          popd
           export COVERALLS_SERVICE_NAME="github-workflows"
           coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake -e eve -e luajit -e sol2 --gcov /usr/bin/gcov --gcov-options '\-lp' > /dev/null
