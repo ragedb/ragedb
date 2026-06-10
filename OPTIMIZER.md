@@ -240,6 +240,26 @@ Optimize multi-match query patterns that share a single central variable (e.g. `
 
 ---
 
+## Completed Phase 12: GqlExecutor Refactoring & Modularization
+
+To improve code readability, maintainability, and clean separation of concerns, the large `src/gql/GqlExecutor.cpp` (~2300 lines) was refactored into logical components located under a new `src/gql/executor/` subfolder.
+
+### Changes Made
+
+1. **Modular Code Extraction**:
+   - **[FactorNode](file:///home/maxdemarzi/ragedb/src/gql/executor/FactorNode.h)**: Defines `FactorNodeType`, `FactorNode`, and `IntermediateResult` classes/structs representing factorized nodes in the join graph.
+   - **[JoinHelpers](file:///home/maxdemarzi/ragedb/src/gql/executor/JoinHelpers.h)**: Houses hashing functors (`PropertyHash`, `GqlValueHash`, `GqlValueVectorHash`, `GqlValueVectorEqual`), natural join, left outer join, and other flat/factorized join helper utilities.
+   - **[ExpressionEvaluator](file:///home/maxdemarzi/ragedb/src/gql/executor/ExpressionEvaluator.h)**: Houses AST expression evaluation, functional dependency checking, and aggregate detection functions (`has_aggregates`, `find_aggregates`, etc.).
+   - **[PathTraverser](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.h)**: Contains path traversal routines (`get_start_nodes`, `traverse_step`, `traverse_var_len_async`, `traverse_path_pattern`, `traverse_match_statement`), the recursive `execute_match_chain_factorized` star-join rewriter, and its associated `StarJoinCandidate` helper struct.
+
+2. **Clean Driver Separation**:
+   - Rewrote **[GqlExecutor.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlExecutor.cpp)** to import the modularized headers. It now acts as a high-level query execution orchestrator (parsing variables, managing locks, resolving groupings, executing return projections, and coordinating calls to the sub-modules).
+
+3. **Build Configuration Updating**:
+   - Added all new files to CMake targets in **[CMakeLists.txt](file:///home/maxdemarzi/ragedb/CMakeLists.txt)** and **[test/CMakeLists.txt](file:///home/maxdemarzi/ragedb/test/CMakeLists.txt)**.
+
+---
+
 ## Verification Results
 
 ### Automated Tests
