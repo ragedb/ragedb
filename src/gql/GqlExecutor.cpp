@@ -1295,10 +1295,16 @@ struct QueryResult {
     std::vector<std::vector<GqlValue>> rows;
 };
 
-static void sort_combined_result(QueryResult& res, const std::vector<SortSpec>& order_by) {
+/**
+ * @brief Sorts the combined query results.
+ * 
+ * If a limit is present, utilizes std::partial_sort to only sort the top-K elements
+ * in O(N log K) time, avoiding the overhead of sorting the entire vector.
+ */
+static void sort_combined_result(QueryResult& res, const std::vector<SortSpec>& order_by, std::optional<size_t> limit = std::nullopt) {
     if (order_by.empty()) return;
     
-    std::stable_sort(res.rows.begin(), res.rows.end(), [&res, &order_by](const std::vector<GqlValue>& a, const std::vector<GqlValue>& b) {
+    auto comp = [&res, &order_by](const std::vector<GqlValue>& a, const std::vector<GqlValue>& b) {
         for (const auto& spec : order_by) {
             size_t col_idx = res.column_names.size();
             if (spec.expr->kind == ExpressionKind::VARIABLE) {
@@ -1328,7 +1334,15 @@ static void sort_combined_result(QueryResult& res, const std::vector<SortSpec>& 
             }
         }
         return false;
-    });
+    };
+
+    // Optimization: If there is a limit, perform a partial sort to keep only the top-K rows.
+    if (limit && *limit < res.rows.size()) {
+        std::partial_sort(res.rows.begin(), res.rows.begin() + *limit, res.rows.end(), comp);
+        res.rows.resize(*limit);
+    } else {
+        std::stable_sort(res.rows.begin(), res.rows.end(), comp);
+    }
 }
 
 static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr) {
@@ -1715,8 +1729,9 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                 sorted_groups.push_back(std::move(gsk));
             }
 
+            // Sort the aggregated groups using Top-K optimization if a limit is present.
             if (!query.order_by.empty()) {
-                std::stable_sort(sorted_groups.begin(), sorted_groups.end(), [&query](const GroupSortKey& a, const GroupSortKey& b) {
+                auto comp = [&query](const GroupSortKey& a, const GroupSortKey& b) {
                     for (size_t i = 0; i < query.order_by.size(); ++i) {
                         int cmp = compare_gql_values(a.sort_keys[i], b.sort_keys[i]);
                         if (cmp != 0) {
@@ -1724,7 +1739,15 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                         }
                     }
                     return false;
-                });
+                };
+                
+                // If a limit is present, use std::partial_sort to only sort the top-K aggregate groups.
+                if (query.limit && *query.limit < sorted_groups.size()) {
+                    std::partial_sort(sorted_groups.begin(), sorted_groups.begin() + *query.limit, sorted_groups.end(), comp);
+                    sorted_groups.resize(*query.limit);
+                } else {
+                    std::stable_sort(sorted_groups.begin(), sorted_groups.end(), comp);
+                }
             }
 
             for (const auto& gsk : sorted_groups) {
@@ -1741,6 +1764,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                 }
             }
         } else {
+            // Sort flat results using Top-K optimization if a limit is present.
             if (!query.order_by.empty()) {
                 std::vector<RowSortKey> sorted_keys;
                 for (auto& row : filtered_rows) {
@@ -1752,7 +1776,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                     sorted_keys.push_back(std::move(rk));
                 }
 
-                std::stable_sort(sorted_keys.begin(), sorted_keys.end(), [&query](const RowSortKey& a, const RowSortKey& b) {
+                auto comp = [&query](const RowSortKey& a, const RowSortKey& b) {
                     for (size_t i = 0; i < query.order_by.size(); ++i) {
                         int cmp = compare_gql_values(a.keys[i], b.keys[i]);
                         if (cmp != 0) {
@@ -1760,7 +1784,15 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                         }
                     }
                     return false;
-                });
+                };
+
+                // If a limit is present, use std::partial_sort to keep only the top-K keys.
+                if (query.limit && *query.limit < sorted_keys.size()) {
+                    std::partial_sort(sorted_keys.begin(), sorted_keys.begin() + *query.limit, sorted_keys.end(), comp);
+                    sorted_keys.resize(*query.limit);
+                } else {
+                    std::stable_sort(sorted_keys.begin(), sorted_keys.end(), comp);
+                }
 
                 filtered_rows.clear();
                 for (auto& rk : sorted_keys) {
@@ -1810,8 +1842,9 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
     .then([query_ptr](QueryResult result) {
         const auto& query = *query_ptr;
 
+        // Sort the combined result and apply Top-K optimization if limit is present.
         if (!query.order_by.empty()) {
-            sort_combined_result(result, query.order_by);
+            sort_combined_result(result, query.order_by, query.limit);
         }
 
         if (query.limit && result.rows.size() > *query.limit) {

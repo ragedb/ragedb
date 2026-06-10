@@ -104,6 +104,16 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
         }
     }
 
+    SECTION("Top-K push down query") {
+        std::string query_str = "MATCH (p:Person) RETURN p.name, p.age ORDER BY p.age DESC LIMIT 1";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results_json.find("Bob") != std::string::npos);
+        REQUIRE(results_json.find("35") != std::string::npos);
+        REQUIRE(results_json.find("Alice") == std::string::npos);
+    }
+
     graph.Stop().get();
 }
 
