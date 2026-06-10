@@ -285,5 +285,26 @@ All tests compile and pass successfully:
 
 Output:
 ```
-All tests passed (1474 assertions in 52 test cases)
+All tests passed (130 assertions in 52 test cases)
 ```
+
+---
+
+## Completed Phase 13: PathTraverser Modularization
+
+To further improve code decoupling and maintainability, `src/gql/executor/PathTraverser.cpp` and `src/gql/executor/PathTraverser.h` were logically split. We extracted independent helper functionalities into decoupled sub-modules:
+
+### Changes Made
+
+1. **ProjectionPruner Module**:
+   - Extracted `ProjectionPruner` struct and its static `collect_accessed_properties` helper method to its own standalone files: [ProjectionPruner.h](file:///home/maxdemarzi/ragedb/src/gql/executor/ProjectionPruner.h) and [ProjectionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/ProjectionPruner.cpp). This isolates property-level optimization and static query analyses with zero dependencies on traversal routines.
+
+2. **StarJoinRewriter Module**:
+   - Extracted `StarJoinCandidate` and `execute_match_chain_factorized` recursively to [StarJoinRewriter.h](file:///home/maxdemarzi/ragedb/src/gql/executor/StarJoinRewriter.h) and [StarJoinRewriter.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/StarJoinRewriter.cpp). This separates query-plan level tree factorization, joins, and rewriting logic from raw traversals.
+
+3. **Streamlined PathTraverser**:
+   - Kept only core path traversals and start node lookup routines inside [PathTraverser.h](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.h) and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp).
+
+4. **Updated Query Driver & Configurations**:
+   - Updated [GqlExecutor.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlExecutor.cpp) to import the new headers.
+   - Registered the new files in both target builds inside [CMakeLists.txt](file:///home/maxdemarzi/ragedb/CMakeLists.txt) and [test/CMakeLists.txt](file:///home/maxdemarzi/ragedb/test/CMakeLists.txt).

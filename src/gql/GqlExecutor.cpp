@@ -24,6 +24,8 @@
 #include "executor/JoinHelpers.h"
 #include "executor/ExpressionEvaluator.h"
 #include "executor/PathTraverser.h"
+#include "executor/ProjectionPruner.h"
+#include "executor/StarJoinRewriter.h"
 #include <sstream>
 #include <unordered_set>
 #include <unordered_map>

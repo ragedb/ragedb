@@ -149,6 +149,8 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/executor/JoinHelpers.cpp src/gql/executor/JoinHelpers.h
         src/gql/executor/ExpressionEvaluator.cpp src/gql/executor/ExpressionEvaluator.h
         src/gql/executor/PathTraverser.cpp src/gql/executor/PathTraverser.h
+        src/gql/executor/ProjectionPruner.cpp src/gql/executor/ProjectionPruner.h
+        src/gql/executor/StarJoinRewriter.cpp src/gql/executor/StarJoinRewriter.h
         src/gql/GqlCatalog.cpp src/gql/GqlCatalog.h
         src/gql/GqlTypechecker.cpp src/gql/GqlTypechecker.h
         src/gql/GqlValue.cpp src/gql/GqlValue.h

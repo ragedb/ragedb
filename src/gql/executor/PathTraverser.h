@@ -26,6 +26,7 @@
 #include "../graph/Graph.h"
 #include "GqlAst.h"
 #include "FactorNode.h"
+#include "ProjectionPruner.h"
 
 /**
  * @brief Handles vertex and edge traversals, start node index lookups, and factorized match execution.
@@ -37,46 +38,34 @@
  *    RETURN b
  *    PathTraverser looks up start nodes (Alice) via indices, and performs
  *    multi-hop variable-length traversals matching constraints along the way.
- * 
- * 2. Factorized Match Chain Execution / Star-Join candidates:
- *    MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d)
- *    RETURN a, b, c, d
- *    execute_match_chain_factorized detects "b" as a star-join candidate, splits
- *    the execution branches, and runs them factorized to bypass Cartesian products.
  */
 namespace ragedb::gql {
 
-struct ProjectionPruner {
-    std::map<std::string, std::set<std::string>> accessed_props;
-    std::set<std::string> whole_objects;
-
-    bool should_prune(const std::string& var) const {
-        if (var.empty()) return false;
-        if (whole_objects.count(var)) return false;
-        return true;
-    }
-
-    const std::set<std::string>& get_keys(const std::string& var) const {
-        static const std::set<std::string> empty_keys;
-        auto it = accessed_props.find(var);
-        if (it != accessed_props.end()) {
-            return it->second;
-        }
-        return empty_keys;
-    }
-};
-
-void collect_accessed_properties(
-    const Expression* expr,
-    std::map<std::string, std::set<std::string>>& accessed_props,
-    std::set<std::string>& whole_objects
+seastar::future<std::vector<Node>> get_start_nodes(
+    ragedb::Graph& graph,
+    const PatternNode& node,
+    size_t limit = 0,
+    const ProjectionPruner& pruner = {},
+    std::string sort_property = "",
+    bool sort_ascending = true,
+    bool sort_by_id = false
 );
 
-seastar::future<IntermediateResult> execute_match_chain_factorized(
+seastar::future<std::vector<GqlRow>> traverse_path_pattern(
     ragedb::Graph& graph,
-    std::vector<MatchStatement> matches,
-    size_t match_idx,
-    IntermediateResult incoming,
+    const PathPattern& pattern,
+    const GqlRow& base_row,
+    size_t limit = 0,
+    const ProjectionPruner& pruner = {},
+    std::string sort_property = "",
+    bool sort_ascending = true,
+    bool sort_by_id = false
+);
+
+seastar::future<std::vector<GqlRow>> traverse_match_statement(
+    ragedb::Graph& graph,
+    const MatchStatement& stmt,
+    const GqlRow& row,
     size_t limit = 0,
     const ProjectionPruner& pruner = {},
     std::string sort_property = "",

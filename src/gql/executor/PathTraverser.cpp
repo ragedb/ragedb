@@ -23,59 +23,9 @@
 
 /**
  * @file PathTraverser.cpp
- * @brief Implementation of path traversal, index lookups, and factorized match chain execution.
- * 
- * Example Queries context:
- *   1. `get_start_nodes` (Index scans):
- *      MATCH (a:Person {name: 'Alice', age: 30})
- *      Queries shard-local indices and applies range/equality filters.
- *   2. `execute_match_chain_factorized` (Factorized Star Join):
- *      MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d)
- *      Determines that "b" is a central variable, partitions matches, and executes branches asynchronously.
+ * @brief Implementation of path traversal, index lookups, and step-wise GQL pattern matching.
  */
 namespace ragedb::gql {
-
-/**
- * @brief Statically analyzes an expression to collect which variables and properties are accessed.
- * 
- * Used for Projection Pruning to identify variables that require loading only a subset of properties.
- */
-void collect_accessed_properties(const Expression* expr,
-                                 std::map<std::string, std::set<std::string>>& accessed_props,
-                                 std::set<std::string>& whole_objects) {
-    if (!expr) return;
-    switch (expr->kind) {
-        case ExpressionKind::VARIABLE: {
-            auto* var = static_cast<const VariableExpr*>(expr);
-            whole_objects.insert(var->name);
-            break;
-        }
-        case ExpressionKind::PROPERTY_LOOKUP: {
-            auto* prop_lookup = static_cast<const PropertyLookupExpr*>(expr);
-            accessed_props[prop_lookup->variable].insert(prop_lookup->property);
-            break;
-        }
-        case ExpressionKind::UNARY_OP: {
-            auto* un = static_cast<const UnaryOpExpr*>(expr);
-            collect_accessed_properties(un->expr.get(), accessed_props, whole_objects);
-            break;
-        }
-        case ExpressionKind::BINARY_OP: {
-            auto* bin = static_cast<const BinaryOpExpr*>(expr);
-            collect_accessed_properties(bin->left.get(), accessed_props, whole_objects);
-            collect_accessed_properties(bin->right.get(), accessed_props, whole_objects);
-            break;
-        }
-        case ExpressionKind::AGGREGATION: {
-            auto* agg = static_cast<const AggregateExpr*>(expr);
-            collect_accessed_properties(agg->expr.get(), accessed_props, whole_objects);
-            break;
-        }
-        case ExpressionKind::LITERAL:
-        default:
-            break;
-    }
-}
 
 bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<LabelExpression>& expr) {
     if (!expr) return true;
@@ -92,13 +42,7 @@ bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<La
     return false;
 }
 
-/**
- * @brief Retrieves start nodes for a pattern match, utilizing index lookup or scan.
- * 
- * Performs shard-local index queries for label, inline properties, and pushed-down property filters,
- * optionally sorting results at the storage layer if sort parameters are pushed down.
- */
-seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
+seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
     size_t scan_limit = (limit > 0) ? limit : 100000;
     std::string single_label = "";
     if (node.label_expr && node.label_expr->kind == LabelExprKind::LITERAL) {
@@ -344,11 +288,6 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     }
 }
 
-/**
- * @brief Performs a single traversal step from a matched node across a relationship pattern.
- * 
- * Handles direction, label matching, inline properties, property filters, and variable-length steps.
- */
 static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx, size_t limit, const ProjectionPruner& pruner) {
     auto it = row.bindings.find("_n_" + std::to_string(node_idx));
     if (it == row.bindings.end()) {
@@ -481,12 +420,7 @@ static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(rage
     });
 }
 
-/**
- * @brief Traverses a full path pattern iteratively.
- * 
- * Fetches start nodes and recursively executes single-step traversals across the edges of the pattern.
- */
-seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
+seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
     PathPattern prep_pattern = pattern;
     for (size_t j = 0; j < prep_pattern.nodes.size(); ++j) {
         if (prep_pattern.nodes[j].variable.empty()) {
@@ -532,12 +466,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     });
 }
 
-/**
- * @brief Evaluates a MATCH statement relative to a row context.
- * 
- * Performs traversal and pads optional MATCHes with null values if no paths are found.
- */
-seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
+seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
     return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner, sort_property, sort_ascending, sort_by_id)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
         if (traversed_rows.empty() && stmt.is_optional) {
@@ -556,249 +485,6 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
         }
         return traversed_rows;
     });
-}
-
-struct StarJoinCandidate {
-    std::string central_var;
-    std::vector<size_t> match_indices;
-};
-
-/**
- * @brief Identifies if remaining MATCH statements form a star-join pattern around a central variable.
- * 
- * Used for Factorization Rewriting to execute branches independently and avoid Cartesian products.
- */
-std::optional<StarJoinCandidate> find_star_join_candidate(
-    const std::vector<MatchStatement>& matches,
-    size_t match_idx,
-    const std::set<std::string>& incoming_vars
-) {
-    if (matches.size() - match_idx < 2) {
-        return std::nullopt;
-    }
-
-    std::vector<std::set<std::string>> remaining_vars;
-    for (size_t i = match_idx; i < matches.size(); ++i) {
-        std::set<std::string> vars;
-        for (const auto& node : matches[i].pattern.nodes) {
-            if (!node.variable.empty()) vars.insert(node.variable);
-        }
-        for (const auto& edge : matches[i].pattern.edges) {
-            if (!edge.variable.empty()) vars.insert(edge.variable);
-        }
-        remaining_vars.push_back(std::move(vars));
-    }
-
-    std::set<std::string> all_candidates;
-    for (const auto& vars : remaining_vars) {
-        all_candidates.insert(vars.begin(), vars.end());
-    }
-
-    for (const auto& central_var : all_candidates) {
-        if (central_var.rfind("_exists_", 0) == 0) {
-            continue;
-        }
-
-        std::vector<size_t> indices;
-        for (size_t i = 0; i < remaining_vars.size(); ++i) {
-            if (remaining_vars[i].count(central_var)) {
-                indices.push_back(match_idx + i);
-            }
-        }
-
-        if (indices.size() < 2) {
-            continue;
-        }
-
-        bool valid = true;
-        for (size_t i = 0; i < indices.size(); ++i) {
-            for (size_t j = i + 1; j < indices.size(); ++j) {
-                size_t idx_i = indices[i] - match_idx;
-                size_t idx_j = indices[j] - match_idx;
-                for (const auto& var : remaining_vars[idx_i]) {
-                    if (var != central_var && remaining_vars[idx_j].count(var)) {
-                        valid = false;
-                        break;
-                    }
-                }
-                if (!valid) break;
-            }
-            if (!valid) break;
-        }
-
-        if (!valid) continue;
-
-        for (size_t idx : indices) {
-            size_t rel_idx = idx - match_idx;
-            for (const auto& var : remaining_vars[rel_idx]) {
-                if (var != central_var && incoming_vars.count(var)) {
-                    valid = false;
-                    break;
-                }
-            }
-            if (!valid) break;
-        }
-
-        if (valid) {
-            return StarJoinCandidate{ central_var, std::move(indices) };
-        }
-    }
-
-    return std::nullopt;
-}
-
-/**
- * @brief Recursively executes a chain of MATCH statements using factorized sub-trees.
- * 
- * Partitions star-join branches, executes them independently, and combines results
- * using lazy natural joins.
- */
-seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, std::vector<MatchStatement> matches, size_t match_idx, IntermediateResult incoming, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
-    // Base Case: All MATCH statements have been processed
-    if (match_idx >= matches.size()) {
-        return seastar::make_ready_future<IntermediateResult>(std::move(incoming));
-    }
-
-    auto incoming_vars = incoming.freevars();
-    
-    // Check if the remaining MATCH statements can be optimized via Factorized Star Join
-    if (auto candidate = find_star_join_candidate(matches, match_idx, incoming_vars)) {
-        std::string central_var = candidate->central_var;
-        const auto& indices = candidate->match_indices;
-
-        if (incoming_vars.count(central_var)) {
-            // Case A: The central variable is already bound in the incoming results.
-            // We partition the star branches and execute each branch independently
-            // relative to the incoming context.
-            std::vector<MatchStatement> branch_matches;
-            std::vector<MatchStatement> remaining_matches;
-            std::set<size_t> S_set(indices.begin(), indices.end());
-
-            for (size_t i = match_idx; i < matches.size(); ++i) {
-                if (S_set.count(i)) {
-                    branch_matches.push_back(std::move(matches[i]));
-                } else {
-                    remaining_matches.push_back(std::move(matches[i]));
-                }
-            }
-
-            std::vector<seastar::future<IntermediateResult>> futs;
-            for (auto& branch_stmt : branch_matches) {
-                std::vector<MatchStatement> single_stmt_vec;
-                single_stmt_vec.push_back(std::move(branch_stmt));
-                futs.push_back(execute_match_chain_factorized(graph, std::move(single_stmt_vec), 0, incoming, limit, pruner));
-            }
-
-            // Asynchronously wait for all star branches, and natural-join the results
-            return seastar::when_all_succeed(futs.begin(), futs.end())
-            .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id](std::vector<IntermediateResult> branch_results) mutable {
-                if (branch_results.empty()) {
-                    return seastar::make_ready_future<IntermediateResult>(IntermediateResult::empty());
-                }
-                
-                IntermediateResult joined = std::move(branch_results[0]);
-                for (size_t i = 1; i < branch_results.size(); ++i) {
-                    joined = natural_join(std::move(joined), std::move(branch_results[i]), limit);
-                }
-
-                if (remaining_matches.empty()) {
-                    return seastar::make_ready_future<IntermediateResult>(std::move(joined));
-                }
-
-                return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(joined), limit, pruner, sort_property, sort_ascending, sort_by_id);
-            });
-        } else {
-            // Case B: The central variable is not yet bound.
-            // We execute the first branch to bind the central variable, then recurse.
-            size_t first_idx = indices[0];
-            std::vector<MatchStatement> first_stmt_vec;
-            first_stmt_vec.push_back(std::move(matches[first_idx]));
-            
-            std::vector<MatchStatement> remaining_matches;
-            for (size_t i = match_idx; i < matches.size(); ++i) {
-                if (i != first_idx) {
-                    remaining_matches.push_back(std::move(matches[i]));
-                }
-            }
-
-            return execute_match_chain_factorized(graph, std::move(first_stmt_vec), 0, std::move(incoming), limit, pruner)
-            .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id](IntermediateResult res_first) mutable {
-                return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(res_first), limit, pruner, sort_property, sort_ascending, sort_by_id);
-            });
-        }
-    }
-
-    const auto stmt = matches[match_idx];
-
-    // Determine if the current MATCH statement shares variables with incoming results
-    bool has_shared = false;
-    for (const auto& node : stmt.pattern.nodes) {
-        if (!node.variable.empty() && incoming_vars.count(node.variable)) {
-            has_shared = true;
-            break;
-        }
-    }
-    for (const auto& edge : stmt.pattern.edges) {
-        if (!edge.variable.empty() && incoming_vars.count(edge.variable)) {
-            has_shared = true;
-            break;
-        }
-    }
-
-    if (!has_shared && !incoming_vars.empty()) {
-        // Disjoint Match Optimization: execute the match independently and factor join with incoming
-        return traverse_path_pattern(graph, stmt.pattern, GqlRow{}, limit, pruner)
-        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), stmt, limit, pruner](std::vector<GqlRow> pattern_rows) mutable {
-            IntermediateResult pattern_res(std::move(pattern_rows));
-            IntermediateResult joined;
-            if (stmt.is_optional) {
-                std::set<std::string> new_vars;
-                for (const auto& node : stmt.pattern.nodes) {
-                    if (!node.variable.empty()) new_vars.insert(node.variable);
-                }
-                for (const auto& edge : stmt.pattern.edges) {
-                    if (!edge.variable.empty()) new_vars.insert(edge.variable);
-                }
-                joined = left_outer_join(std::move(incoming), std::move(pattern_res), incoming.freevars(), new_vars);
-            } else {
-                joined = natural_join(std::move(incoming), std::move(pattern_res), limit);
-            }
-            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(joined), limit, pruner);
-        });
-    } else {
-        // Fallback Path: Flatten incoming results and traverse the pattern relative to each row context
-        incoming.ensure_flat();
-        if (limit > 0 && incoming.rows.size() > limit) {
-            incoming.rows.resize(limit);
-        }
-        std::vector<seastar::future<std::vector<GqlRow>>> futs;
-        for (const auto& row : incoming.rows) {
-            if (match_idx == 0) {
-                futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner, sort_property, sort_ascending, sort_by_id));
-            } else {
-                futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner));
-            }
-        }
-
-        return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), limit, pruner, sort_property, sort_ascending, sort_by_id](std::vector<std::vector<GqlRow>> nested) mutable {
-            std::vector<GqlRow> next_rows;
-            for (const auto& vec : nested) {
-                next_rows.insert(next_rows.end(), vec.begin(), vec.end());
-                if (limit > 0 && next_rows.size() >= limit) {
-                    next_rows.resize(limit);
-                    break;
-                }
-            }
-            IntermediateResult res(std::move(next_rows));
-            if (match_idx == 0 && (!sort_property.empty() || sort_by_id)) {
-                res.is_sorted = true;
-            } else {
-                res.is_sorted = incoming.is_sorted;
-            }
-            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(res), limit, pruner);
-        });
-    }
 }
 
 } // namespace ragedb::gql
