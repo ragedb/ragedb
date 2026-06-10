@@ -250,6 +250,21 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
         REQUIRE(results.find("Charlie") != std::string::npos);
     }
 
+    SECTION("Star join utilizing factorization rewriter") {
+        // Set up FRIEND edge between Bob and Charlie's friend
+        uint64_t id_dan = graph.shard.local().NodeAddPeered("Person", "dan", "{\"name\": \"Dan\"}").get();
+        graph.shard.local().RelationshipAddPeered("FRIEND", id2, id_dan, "{}").get();
+
+        std::string query_str = "MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d) RETURN a.name, b.name, c.name, d.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Alice") != std::string::npos);
+        REQUIRE(results.find("Bob") != std::string::npos);
+        REQUIRE(results.find("Charlie") != std::string::npos);
+        REQUIRE(results.find("Dan") != std::string::npos);
+    }
+
     SECTION("Cartesian product join query") {
         // Query matches two disjoint patterns with no shared variables.
         // This should trigger the Cartesian product fallback in join_flat_rows_variable.
