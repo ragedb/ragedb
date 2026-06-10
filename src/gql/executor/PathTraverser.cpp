@@ -241,19 +241,23 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     size_t limit,
     const ProjectionPruner& pruner
 ) {
+    // Base Case 1: Exceeded maximum hops allowed
     if (current_depth > edge.max_hops) {
         return seastar::make_ready_future<std::vector<PathHop>>();
     }
 
     std::vector<PathHop> local_results;
+    // Base Case 2: Within allowed hop range, record the current path
     if (current_depth >= edge.min_hops) {
         local_results.push_back({current_path_rels, current_path_nodes});
     }
 
+    // Base Case 3: Reached maximum hops allowed, stop traversing further
     if (current_depth == edge.max_hops) {
         return seastar::make_ready_future<std::vector<PathHop>>(std::move(local_results));
     }
 
+    // Determine traversal direction
     Direction dir = Direction::BOTH;
     if (edge.direction == EdgeDirection::RIGHT) dir = Direction::OUT;
     else if (edge.direction == EdgeDirection::LEFT) dir = Direction::IN;
@@ -263,6 +267,7 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
         edge_type = edge.label_expr->name;
     }
 
+    // Callback to process retrieved relationships on the current node
     auto handle_rels = [&graph, edge, next_node, current_node_id, current_depth, visited_rel_ids = std::move(visited_rel_ids),
            current_path_rels = std::move(current_path_rels), current_path_nodes = std::move(current_path_nodes),
            local_results = std::move(local_results), limit, pruner](std::vector<Relationship> rels) mutable {
@@ -649,16 +654,22 @@ std::optional<StarJoinCandidate> find_star_join_candidate(
  * using lazy natural joins.
  */
 seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, std::vector<MatchStatement> matches, size_t match_idx, IntermediateResult incoming, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
+    // Base Case: All MATCH statements have been processed
     if (match_idx >= matches.size()) {
         return seastar::make_ready_future<IntermediateResult>(std::move(incoming));
     }
 
     auto incoming_vars = incoming.freevars();
+    
+    // Check if the remaining MATCH statements can be optimized via Factorized Star Join
     if (auto candidate = find_star_join_candidate(matches, match_idx, incoming_vars)) {
         std::string central_var = candidate->central_var;
         const auto& indices = candidate->match_indices;
 
         if (incoming_vars.count(central_var)) {
+            // Case A: The central variable is already bound in the incoming results.
+            // We partition the star branches and execute each branch independently
+            // relative to the incoming context.
             std::vector<MatchStatement> branch_matches;
             std::vector<MatchStatement> remaining_matches;
             std::set<size_t> S_set(indices.begin(), indices.end());
@@ -678,6 +689,7 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
                 futs.push_back(execute_match_chain_factorized(graph, std::move(single_stmt_vec), 0, incoming, limit, pruner));
             }
 
+            // Asynchronously wait for all star branches, and natural-join the results
             return seastar::when_all_succeed(futs.begin(), futs.end())
             .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id](std::vector<IntermediateResult> branch_results) mutable {
                 if (branch_results.empty()) {
@@ -696,6 +708,8 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
                 return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(joined), limit, pruner, sort_property, sort_ascending, sort_by_id);
             });
         } else {
+            // Case B: The central variable is not yet bound.
+            // We execute the first branch to bind the central variable, then recurse.
             size_t first_idx = indices[0];
             std::vector<MatchStatement> first_stmt_vec;
             first_stmt_vec.push_back(std::move(matches[first_idx]));
@@ -716,6 +730,7 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
 
     const auto stmt = matches[match_idx];
 
+    // Determine if the current MATCH statement shares variables with incoming results
     bool has_shared = false;
     for (const auto& node : stmt.pattern.nodes) {
         if (!node.variable.empty() && incoming_vars.count(node.variable)) {
@@ -731,6 +746,7 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
     }
 
     if (!has_shared && !incoming_vars.empty()) {
+        // Disjoint Match Optimization: execute the match independently and factor join with incoming
         return traverse_path_pattern(graph, stmt.pattern, GqlRow{}, limit, pruner)
         .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), stmt, limit, pruner](std::vector<GqlRow> pattern_rows) mutable {
             IntermediateResult pattern_res(std::move(pattern_rows));
@@ -750,6 +766,7 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
             return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(joined), limit, pruner);
         });
     } else {
+        // Fallback Path: Flatten incoming results and traverse the pattern relative to each row context
         incoming.ensure_flat();
         if (limit > 0 && incoming.rows.size() > limit) {
             incoming.rows.resize(limit);
