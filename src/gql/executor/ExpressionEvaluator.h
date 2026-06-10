@@ -22,6 +22,20 @@
 #include "GqlAst.h"
 #include "GqlValue.h"
 
+/**
+ * @brief Utilities for checking, extracting, and evaluating GQL expressions and aggregations.
+ * 
+ * Example Query utilizing ExpressionEvaluator:
+ *   MATCH (p:Person)
+ *   RETURN p.city, count(*), avg(p.age)
+ * 
+ * 1. Detection: has_aggregates is used to determine if return items or sort specs
+ *    contain aggregate expressions (like count(*) or avg(p.age)).
+ * 2. Collection: find_aggregates extracts the AggregateExpr nodes.
+ * 3. Group Evaluation: evaluate_group_expression computes final values for the group's
+ *    projected items by looking up the precomputed aggregate values (e.g. from the map)
+ *    and evaluating remaining non-aggregate sub-expressions.
+ */
 namespace ragedb::gql {
 
 bool has_aggregates(const Expression* expr);

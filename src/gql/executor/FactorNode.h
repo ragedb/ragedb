@@ -25,6 +25,17 @@
 #include "GqlAst.h"
 #include "GqlValue.h"
 
+/**
+ * @brief Classes representing factorized execution trees, nesting, and sub-trees.
+ * 
+ * Example Query utilizing FactorNode / factorized representation:
+ *   MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d)
+ *   RETURN a, b, c, d
+ * 
+ * Here, "b" is a central variable. Instead of generating a flat Cartesian product
+ * of size O(A * C * D), we construct a FactorNode of type PRODUCT containing
+ * children for the disjoint paths, reducing intermediate storage and processing cost.
+ */
 namespace ragedb::gql {
 
 enum class FactorNodeType {

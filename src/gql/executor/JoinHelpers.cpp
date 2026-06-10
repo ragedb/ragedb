@@ -18,6 +18,18 @@
 #include <variant>
 #include <algorithm>
 
+/**
+ * @file JoinHelpers.cpp
+ * @brief Implementation of hash join functions, natural joins, and left outer joins.
+ * 
+ * Example Queries context:
+ *   1. `join_flat_rows_variable` (Accumulator Hash Join):
+ *      MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c)
+ *      Joins on shared variable "b" by hashing the smaller table's rows and probing with the larger.
+ *   2. `left_outer_join` (EXISTS unnesting / OPTIONAL MATCH):
+ *      MATCH (a:Person) OPTIONAL MATCH (a)-[:FRIEND]->(b)
+ *      Retains rows from "left" (a) even if "right" has no match, padding new variable "b" with monostate (NIL).
+ */
 namespace ragedb::gql {
 
 size_t PropertyHash::operator()(const property_type_t& val) const {
@@ -96,6 +108,12 @@ bool GqlValueVectorEqual::operator()(const std::vector<GqlValue>& a, const std::
     return true;
 }
 
+/**
+ * @brief Joins two flat tables of rows, using an Accumulator Hash Join if variables are shared.
+ * 
+ * Intersects row schemas to find shared join variables. If none exist, falls back to a nested-loop
+ * Cartesian product. Otherwise, builds a hash table on the smaller side and probes it with the larger.
+ */
 std::vector<GqlRow> join_flat_rows_variable(const std::vector<GqlRow>& left, const std::vector<GqlRow>& right) {
     if (left.empty() || right.empty()) return {};
 
@@ -193,6 +211,12 @@ std::vector<GqlRow> join_flat_rows_variable(const std::vector<GqlRow>& left, con
     return result;
 }
 
+/**
+ * @brief Performs a factorized natural join between two intermediate results.
+ * 
+ * If shared join variables exist, performs a factorized tree join on the first shared variable.
+ * Otherwise, creates a factorized PRODUCT node of the two sub-trees.
+ */
 IntermediateResult natural_join(IntermediateResult left, IntermediateResult right, size_t limit) {
     auto lk = left.freevars();
     auto rk = right.freevars();
@@ -232,6 +256,12 @@ IntermediateResult natural_join(IntermediateResult left, IntermediateResult righ
     }
 }
 
+/**
+ * @brief Performs a factorized left outer join between left and right results (e.g. for OPTIONAL MATCH).
+ * 
+ * For rows/values in left that do not match right, pads the unbound subquery/new variables
+ * with GqlValue() (NIL/monostate).
+ */
 IntermediateResult left_outer_join(
     IntermediateResult left,
     IntermediateResult right,

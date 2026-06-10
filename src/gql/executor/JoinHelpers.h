@@ -24,6 +24,24 @@
 #include "GqlValue.h"
 #include "FactorNode.h"
 
+/**
+ * @brief Helper functions and functors for performing natural joins and left outer joins.
+ * 
+ * Example Queries utilizing JoinHelpers:
+ * 
+ * 1. Accumulator Hash Join / natural_join:
+ *    MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c)
+ *    RETURN a, b, c
+ *    Here, "b" is a shared join variable. JoinHelpers hashes the smaller side
+ *    on "b" and probes it with the larger side to perform a natural join in O(N+M) time.
+ * 
+ * 2. Left Outer Join (Unnested Correlated Subqueries):
+ *    MATCH (a:Person) WHERE EXISTS { MATCH (a)-[:FRIEND]->(b) WHERE b.age > 30 }
+ *    After optimizer unnesting, this translates to:
+ *    MATCH (a:Person) OPTIONAL MATCH (a)-[:FRIEND]->(b) WHERE b.age > 30
+ *    JoinHelpers performs a left_outer_join on variable "a", keeping "a" even if
+ *    no matching friend "b" exists, then validates existence based on whether "b" is bound.
+ */
 namespace ragedb::gql {
 
 struct PropertyHash {

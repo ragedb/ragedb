@@ -21,8 +21,25 @@
 #include <algorithm>
 #include <unordered_set>
 
+/**
+ * @file PathTraverser.cpp
+ * @brief Implementation of path traversal, index lookups, and factorized match chain execution.
+ * 
+ * Example Queries context:
+ *   1. `get_start_nodes` (Index scans):
+ *      MATCH (a:Person {name: 'Alice', age: 30})
+ *      Queries shard-local indices and applies range/equality filters.
+ *   2. `execute_match_chain_factorized` (Factorized Star Join):
+ *      MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d)
+ *      Determines that "b" is a central variable, partitions matches, and executes branches asynchronously.
+ */
 namespace ragedb::gql {
 
+/**
+ * @brief Statically analyzes an expression to collect which variables and properties are accessed.
+ * 
+ * Used for Projection Pruning to identify variables that require loading only a subset of properties.
+ */
 void collect_accessed_properties(const Expression* expr,
                                  std::map<std::string, std::set<std::string>>& accessed_props,
                                  std::set<std::string>& whole_objects) {
@@ -75,6 +92,12 @@ bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<La
     return false;
 }
 
+/**
+ * @brief Retrieves start nodes for a pattern match, utilizing index lookup or scan.
+ * 
+ * Performs shard-local index queries for label, inline properties, and pushed-down property filters,
+ * optionally sorting results at the storage layer if sort parameters are pushed down.
+ */
 seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
     size_t scan_limit = (limit > 0) ? limit : 100000;
     std::string single_label = "";
@@ -316,6 +339,11 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     }
 }
 
+/**
+ * @brief Performs a single traversal step from a matched node across a relationship pattern.
+ * 
+ * Handles direction, label matching, inline properties, property filters, and variable-length steps.
+ */
 static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx, size_t limit, const ProjectionPruner& pruner) {
     auto it = row.bindings.find("_n_" + std::to_string(node_idx));
     if (it == row.bindings.end()) {
@@ -448,6 +476,11 @@ static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(rage
     });
 }
 
+/**
+ * @brief Traverses a full path pattern iteratively.
+ * 
+ * Fetches start nodes and recursively executes single-step traversals across the edges of the pattern.
+ */
 seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
     PathPattern prep_pattern = pattern;
     for (size_t j = 0; j < prep_pattern.nodes.size(); ++j) {
@@ -494,6 +527,11 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     });
 }
 
+/**
+ * @brief Evaluates a MATCH statement relative to a row context.
+ * 
+ * Performs traversal and pads optional MATCHes with null values if no paths are found.
+ */
 seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
     return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner, sort_property, sort_ascending, sort_by_id)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
@@ -520,6 +558,11 @@ struct StarJoinCandidate {
     std::vector<size_t> match_indices;
 };
 
+/**
+ * @brief Identifies if remaining MATCH statements form a star-join pattern around a central variable.
+ * 
+ * Used for Factorization Rewriting to execute branches independently and avoid Cartesian products.
+ */
 std::optional<StarJoinCandidate> find_star_join_candidate(
     const std::vector<MatchStatement>& matches,
     size_t match_idx,
@@ -599,6 +642,12 @@ std::optional<StarJoinCandidate> find_star_join_candidate(
     return std::nullopt;
 }
 
+/**
+ * @brief Recursively executes a chain of MATCH statements using factorized sub-trees.
+ * 
+ * Partitions star-join branches, executes them independently, and combines results
+ * using lazy natural joins.
+ */
 seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, std::vector<MatchStatement> matches, size_t match_idx, IntermediateResult incoming, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
     if (match_idx >= matches.size()) {
         return seastar::make_ready_future<IntermediateResult>(std::move(incoming));

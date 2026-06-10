@@ -27,6 +27,23 @@
 #include "GqlAst.h"
 #include "FactorNode.h"
 
+/**
+ * @brief Handles vertex and edge traversals, start node index lookups, and factorized match execution.
+ * 
+ * Example Queries utilizing PathTraverser:
+ * 
+ * 1. Path Traversals and Variable Length patterns:
+ *    MATCH (a:Person {name: 'Alice'})-[:FRIEND*1..3]->(b)
+ *    RETURN b
+ *    PathTraverser looks up start nodes (Alice) via indices, and performs
+ *    multi-hop variable-length traversals matching constraints along the way.
+ * 
+ * 2. Factorized Match Chain Execution / Star-Join candidates:
+ *    MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d)
+ *    RETURN a, b, c, d
+ *    execute_match_chain_factorized detects "b" as a star-join candidate, splits
+ *    the execution branches, and runs them factorized to bypass Cartesian products.
+ */
 namespace ragedb::gql {
 
 struct ProjectionPruner {

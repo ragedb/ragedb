@@ -18,6 +18,18 @@
 #include "JoinHelpers.h"
 #include <algorithm>
 
+/**
+ * @file FactorNode.cpp
+ * @brief Logic for creating, partitioning, joining, and flattening factorized nodes.
+ * 
+ * Example Query utilizing factorized trees (PRODUCT, UNION, FLAT):
+ *   MATCH (a)-[:FRIEND]->(b) MATCH (b)-[:KNOWS]->(c) MATCH (b)-[:FRIEND]->(d)
+ *   RETURN a, b, c, d
+ *   - The results of a-b, b-c, b-d match branches are partitioned on the central variable "b"
+ *     using `FactorNode::partition`.
+ *   - Branches are combined via `FactorNode::join` into nested sub-trees, avoiding early Cartesian products.
+ *   - Finally, `FactorNode::flatten` generates flat GqlRows for projection / output.
+ */
 namespace ragedb::gql {
 
 bool GqlValueLess::operator()(const GqlValue& a, const GqlValue& b) const {
@@ -27,6 +39,9 @@ bool GqlValueLess::operator()(const GqlValue& a, const GqlValue& b) const {
 FactorNode::FactorNode(FactorNodeType t) : type(t) {}
 FactorNode::FactorNode(std::vector<GqlRow> rows) : type(FactorNodeType::FLAT), flat_rows(std::move(rows)) {}
 
+/**
+ * @brief Checks if this FactorNode represents an empty set of rows.
+ */
 bool FactorNode::is_empty() const {
     switch (type) {
         case FactorNodeType::FLAT:
@@ -48,6 +63,11 @@ bool FactorNode::is_empty() const {
     return false;
 }
 
+/**
+ * @brief Computes the set of bound user variables in this sub-tree.
+ * 
+ * Excludes internal path matching trackers starting with "_n_" or "_e_".
+ */
 std::set<std::string> FactorNode::freevars() const {
     std::set<std::string> vars;
     if (type == FactorNodeType::FLAT) {
@@ -67,6 +87,11 @@ std::set<std::string> FactorNode::freevars() const {
     return vars;
 }
 
+/**
+ * @brief Partitions this factorized node on the value of a given join variable.
+ * 
+ * Returns a map of GQL values to factorized sub-nodes, enabling factorized joins.
+ */
 std::map<GqlValue, FactorNodePtr, GqlValueLess> FactorNode::partition(const std::string& var) const {
     std::map<GqlValue, FactorNodePtr, GqlValueLess> partition_map;
     if (type == FactorNodeType::FLAT) {
@@ -116,6 +141,12 @@ std::map<GqlValue, FactorNodePtr, GqlValueLess> FactorNode::partition(const std:
     return partition_map;
 }
 
+/**
+ * @brief Joins this factorized node with another factorized node on a shared join variable.
+ * 
+ * Computes partitions on both sides, intersects the matching values, and builds
+ * a UNION of PRODUCT sub-nodes.
+ */
 FactorNodePtr FactorNode::join(const FactorNodePtr& other, const std::string& join_var) const {
     auto left_parts = partition(join_var);
     auto right_parts = other->partition(join_var);
@@ -133,6 +164,9 @@ FactorNodePtr FactorNode::join(const FactorNodePtr& other, const std::string& jo
     return union_node;
 }
 
+/**
+ * @brief Flattens this factorized sub-tree back into a standard vector of flat GqlRows.
+ */
 std::vector<GqlRow> FactorNode::flatten() const {
     if (type == FactorNodeType::FLAT) {
         return flat_rows;
@@ -177,6 +211,9 @@ IntermediateResult IntermediateResult::empty() {
     return IntermediateResult(std::vector<GqlRow>{});
 }
 
+/**
+ * @brief Ensures the flat row representation is populated by flattening the factorized root if necessary.
+ */
 void IntermediateResult::ensure_flat() {
     if (rows.empty() && root) {
         rows = root->flatten();
