@@ -25,8 +25,15 @@
 #include <optional>
 #include "../graph/PropertyType.h"
 #include "../graph/Operation.h"
+#include "../graph/Direction.h"
 
 namespace ragedb::gql {
+
+struct DegreePopulateInfo {
+    std::string property_name;
+    std::vector<std::string> rel_types;
+    Direction direction;
+};
 
 struct PropertyFilter {
     std::string property;
@@ -183,6 +190,7 @@ struct PatternNode {
     std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
     std::vector<PropertyFilter> property_filters;     ///< Pushed down property filters.
+    std::vector<DegreePopulateInfo> degree_opt_info;  ///< Instructions to populate degree properties for optimization.
 };
 
 /**

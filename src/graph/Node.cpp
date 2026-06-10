@@ -102,6 +102,10 @@ namespace ragedb {
         });
     }
 
+    void Node::setProperty(const std::string& property, property_type_t value) {
+        properties[property] = value;
+    }
+
     std::ostream& operator<<(std::ostream& os, const Node& node) {
         os << "{ \"id\": " << node.id << R"(, "type": ")" << node.type << R"(", "key": )" << "\"" << node.key << "\"" << ", \"properties\": { ";
         bool initial = true;

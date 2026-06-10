@@ -623,14 +623,50 @@ seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const P
         fut = graph.shard.local().AllNodesPeered(0, scan_limit);
     }
 
-    return fut.then([var = node.variable, pruner](std::vector<Node> result_list) {
-        if (pruner.should_prune(var)) {
-            auto keys = pruner.get_keys(var);
-            for (auto& n : result_list) {
-                n.pruneProperties(keys);
+    return fut.then([&graph, degree_opt_info = node.degree_opt_info, var = node.variable, pruner](std::vector<Node> result_list) {
+        // Optimization: If relationship count optimization is active, retrieve node degrees asynchronously.
+        if (degree_opt_info.empty()) {
+            if (pruner.should_prune(var)) {
+                auto keys = pruner.get_keys(var);
+                for (auto& n : result_list) {
+                    n.pruneProperties(keys);
+                }
+            }
+            return seastar::make_ready_future<std::vector<Node>>(std::move(result_list));
+        }
+
+        // Retrieve node degrees asynchronously and write them as temporary node properties.
+        std::vector<seastar::future<>> futs;
+        auto shared_list = std::make_shared<std::vector<Node>>(std::move(result_list));
+
+        for (auto& n : *shared_list) {
+            for (const auto& info : degree_opt_info) {
+                // Initialize the degree future directly using ternary expression to bypass Seastar future's lack of default constructor.
+                seastar::future<uint64_t> deg_fut = info.rel_types.empty()
+                    ? graph.shard.local().NodeGetDegreePeered(n.getId(), info.direction)
+                    : (info.rel_types.size() == 1
+                        ? graph.shard.local().NodeGetDegreePeered(n.getId(), info.direction, info.rel_types[0])
+                        : graph.shard.local().NodeGetDegreePeered(n.getId(), info.direction, info.rel_types));
+                
+                Node* node_ptr = &n;
+                futs.push_back(deg_fut.then([node_ptr, prop_name = info.property_name](uint64_t deg) {
+                    // Store the degree count directly as a node property using public setProperty.
+                    node_ptr->setProperty(prop_name, static_cast<int64_t>(deg));
+                }));
             }
         }
-        return result_list;
+
+        return seastar::when_all_succeed(futs.begin(), futs.end())
+        .then([shared_list, var, pruner]() {
+            std::vector<Node> final_list = std::move(*shared_list);
+            if (pruner.should_prune(var)) {
+                auto keys = pruner.get_keys(var);
+                for (auto& n : final_list) {
+                    n.pruneProperties(keys);
+                }
+            }
+            return final_list;
+        });
     });
 }
 

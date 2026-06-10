@@ -60,6 +60,8 @@ namespace ragedb {
 
         void pruneProperties(const std::set<std::string>& keys);
 
+        void setProperty(const std::string& property, property_type_t value);
+
         friend std::ostream& operator<<(std::ostream& os, const Node& node);
 
     };

@@ -23,10 +23,31 @@
 using namespace ragedb;
 using namespace ragedb::gql;
 
+struct GraphStopGuard {
+    Graph& g;
+    bool stopped = false;
+    explicit GraphStopGuard(Graph& graph) : g(graph) {}
+    ~GraphStopGuard() {
+        if (!stopped) {
+            try {
+                g.Stop().get();
+            } catch (...) {}
+            stopped = true;
+        }
+    }
+    void stop() {
+        if (!stopped) {
+            g.Stop().get();
+            stopped = true;
+        }
+    }
+};
+
 TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
     auto graph = Graph("gql_test");
     graph.Start().get();
     graph.Clear();
+    GraphStopGuard guard(graph);
     
     // Setup schemas
     graph.shard.local().NodeTypeInsertPeered("Person").get();
@@ -114,13 +135,14 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
         REQUIRE(results_json.find("Alice") == std::string::npos);
     }
 
-    graph.Stop().get();
+    guard.stop();
 }
 
 TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_complex]") {
     auto graph = Graph("gql_test_complex");
     graph.Start().get();
     graph.Clear();
+    GraphStopGuard guard(graph);
     
     // Setup schemas
     graph.shard.local().NodeTypeInsertPeered("Person").get();
@@ -192,5 +214,17 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
         REQUIRE(results_json.find("Alice") == std::string::npos);
     }
 
-    graph.Stop().get();
+    SECTION("Relationship count degree optimization query") {
+        std::string query_str = "MATCH (p:Person)-[:FRIEND]->(f) RETURN p.name, count(f)";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.matches[0].pattern.nodes.size() == 1);
+        REQUIRE(query.matches[0].pattern.edges.empty());
+
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results_json.find("Alice") != std::string::npos);
+        REQUIRE(results_json.find("1") != std::string::npos);
+    }
+
+    guard.stop();
 }

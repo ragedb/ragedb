@@ -156,6 +156,12 @@ GqlType GqlTypechecker::get_property_type(const std::string& var_name, const std
         return GqlType::STRING;
     }
 
+    // Bypass typechecking for relationship count optimization temporary properties (e.g., _degree_p_opt).
+    // These properties are injected dynamically at query execution time and hold integer values.
+    if (prop_name.size() > 8 && prop_name.substr(0, 8) == "_degree_") {
+        return GqlType::INTEGER;
+    }
+
     if (it->second.type != GqlType::NODE && it->second.type != GqlType::RELATIONSHIP && it->second.type != GqlType::ANY) {
         throw std::runtime_error("Cannot lookup property '" + prop_name + "' on non-graph variable '" + var_name + "' of type " + to_string(it->second.type));
     }
