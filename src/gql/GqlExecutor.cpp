@@ -1637,9 +1637,28 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                 find_aggregates(spec.expr.get(), aggregate_exprs);
             }
 
+            // Extract and optimize grouping keys.
+            // If a node/relationship variable is present as a grouping key, we prune any of its property lookups
+            // from the grouping keys list because they are functionally dependent on the variable.
+            std::set<std::string> group_variables;
+            for (const auto& item : query.returns) {
+                if (item.expr && !has_aggregates(item.expr.get())) {
+                    if (item.expr->kind == ExpressionKind::VARIABLE) {
+                        group_variables.insert(static_cast<const VariableExpr*>(item.expr.get())->name);
+                    }
+                }
+            }
+
             std::vector<const Expression*> grouping_keys;
             for (const auto& item : query.returns) {
-                if (!has_aggregates(item.expr.get())) {
+                if (item.expr && !has_aggregates(item.expr.get())) {
+                    if (item.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                        auto* pl = static_cast<const PropertyLookupExpr*>(item.expr.get());
+                        if (group_variables.count(pl->variable)) {
+                            // Skip functionally dependent property lookup to reduce hashing/comparison overhead.
+                            continue;
+                        }
+                    }
                     grouping_keys.push_back(item.expr.get());
                 }
             }

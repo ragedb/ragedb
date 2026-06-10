@@ -226,5 +226,16 @@ TEST_CASE("GQL Execution Label Algebra and Repetition Tests", "[gql_executor_com
         REQUIRE(results_json.find("1") != std::string::npos);
     }
 
+    SECTION("Aggregate key dependency optimization query") {
+        // Query groups by both node variable 'p' and its property 'p.name'.
+        // The optimization should prune 'p.name' from grouping keys, grouping only by 'p',
+        // but still projecting 'p.name' successfully in the output.
+        std::string query_str = "MATCH (p:Person) RETURN p, p.name, count(*)";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results_json.find("Alice") != std::string::npos);
+    }
+
     guard.stop();
 }
