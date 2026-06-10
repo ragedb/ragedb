@@ -18,6 +18,15 @@
 
 namespace ragedb {
     seastar::future<uint64_t> Shard::FindNodeCountPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value) {
+        uint16_t type_id = node_types.getTypeId(type);
+        auto type_it = node_indexes.find(type_id);
+        if (operation == Operation::EQ && type_it != node_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
+            uint16_t target = CalculateShardId(type, property, value);
+            return container().invoke_on(target, [type, property, operation, value] (Shard &local) {
+                return local.FindNodeCount(type, property, operation, value);
+            });
+        }
+
         seastar::future<std::vector<uint64_t>> v = container().map([type, property, operation, value] (Shard &local) {
             return local.FindNodeCount(type, property, operation, value);
         });
@@ -28,6 +37,15 @@ namespace ragedb {
     }
 
     seastar::future<uint64_t> Shard::FindRelationshipCountPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        auto type_it = relationship_indexes.find(type_id);
+        if (operation == Operation::EQ && type_it != relationship_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
+            uint16_t target = CalculateShardId(type, property, value);
+            return container().invoke_on(target, [type, property, operation, value] (Shard &local) {
+                return local.FindRelationshipCount(type, property, operation, value);
+            });
+        }
+
         seastar::future<std::vector<uint64_t>> v = container().map([type, property, operation, value] (Shard &local) {
             return local.FindRelationshipCount(type, property, operation, value);
         });
@@ -38,6 +56,15 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<uint64_t>> Shard::FindNodeIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+        uint16_t type_id = node_types.getTypeId(type);
+        auto type_it = node_indexes.find(type_id);
+        if (operation == Operation::EQ && type_it != node_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
+            uint16_t target = CalculateShardId(type, property, value);
+            return container().invoke_on(target, [type, property, operation, value, skip, limit] (Shard &local) {
+                return local.FindNodeIds(type, property, operation, value, skip, limit);
+            });
+        }
+
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -70,6 +97,15 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<uint64_t>> Shard::FindRelationshipIdsPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        auto type_it = relationship_indexes.find(type_id);
+        if (operation == Operation::EQ && type_it != relationship_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
+            uint16_t target = CalculateShardId(type, property, value);
+            return container().invoke_on(target, [type, property, operation, value, skip, limit] (Shard &local) {
+                return local.FindRelationshipIds(type, property, operation, value, skip, limit);
+            });
+        }
+
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<uint64_t>>> futures;
@@ -102,6 +138,15 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Node>> Shard::FindNodesPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+        uint16_t type_id = node_types.getTypeId(type);
+        auto type_it = node_indexes.find(type_id);
+        if (operation == Operation::EQ && type_it != node_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
+            uint16_t target = CalculateShardId(type, property, value);
+            return container().invoke_on(target, [type, property, operation, value, skip, limit] (Shard &local) {
+                return local.FindNodes(type, property, operation, value, skip, limit);
+            });
+        }
+
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<Node>>> futures;
@@ -119,7 +164,7 @@ namespace ragedb {
             std::vector<Node> nodes;
 
             for (const auto& result : results) {
-                for(const auto& node : result) {
+                for (const auto& node : result) {
                     if (++current > skip) {
                         nodes.push_back(node);
                     }
@@ -133,6 +178,15 @@ namespace ragedb {
     }
 
     seastar::future<std::vector<Relationship>> Shard::FindRelationshipsPeered(const std::string& type, const std::string& property, const Operation& operation, const property_type_t& value, uint64_t skip, uint64_t limit) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        auto type_it = relationship_indexes.find(type_id);
+        if (operation == Operation::EQ && type_it != relationship_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
+            uint16_t target = CalculateShardId(type, property, value);
+            return container().invoke_on(target, [type, property, operation, value, skip, limit] (Shard &local) {
+                return local.FindRelationships(type, property, operation, value, skip, limit);
+            });
+        }
+
         uint64_t max = skip + limit;
 
         std::vector<seastar::future<std::vector<Relationship>>> futures;
@@ -150,7 +204,7 @@ namespace ragedb {
             std::vector<Relationship> relationships;
 
             for (const auto& result : results) {
-                for(const auto& relationship : result) {
+                for (const auto& relationship : result) {
                     if (++current > skip) {
                         relationships.push_back(relationship);
                     }

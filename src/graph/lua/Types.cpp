@@ -79,4 +79,20 @@ namespace ragedb {
         return RelationshipPropertyTypeDeletePeered(type, key).get0();
     }
 
+    bool Shard::NodeIndexCreateViaLua(const std::string& type, const std::string& property) {
+        return NodeIndexCreatePeered(type, property).get0();
+    }
+
+    bool Shard::NodeIndexDeleteViaLua(const std::string& type, const std::string& property) {
+        return NodeIndexDeletePeered(type, property).get0();
+    }
+
+    bool Shard::RelationshipIndexCreateViaLua(const std::string& type, const std::string& property) {
+        return RelationshipIndexCreatePeered(type, property).get0();
+    }
+
+    bool Shard::RelationshipIndexDeleteViaLua(const std::string& type, const std::string& property) {
+        return RelationshipIndexDeletePeered(type, property).get0();
+    }
+
 }

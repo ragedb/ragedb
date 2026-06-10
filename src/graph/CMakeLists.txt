@@ -13,6 +13,7 @@ set(HEADER_FILES
 
         Permission.h
         Properties.h
+        PropertyIndex.h
         PropertyType.h
         Relationship.h
         RelationshipTypes.h
@@ -62,6 +63,7 @@ set(SOURCE_FILES
         node/Filter.cpp relationship/Filter.cpp
 
         shard/Ids.cpp
+        shard/Index.cpp
         peered/Restore.cpp
         types/Date.cpp shard/NodeLinks.cpp lua/KHop.cpp peered/KHop.cpp
         paths/WeightedLink.cpp paths/Path.cpp paths/WeightedPath.cpp lua/Join.cpp lua/Triangles.cpp

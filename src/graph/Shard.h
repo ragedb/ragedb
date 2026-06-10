@@ -53,6 +53,7 @@
 #include "Relationship.h"
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
+#include "PropertyIndex.h"
 #include "eve/CollectIndexes.h"
 #include "overload/Disambiguate.h"
 #include "Sort.h"
@@ -84,6 +85,9 @@ namespace ragedb {
 
         NodeTypes node_types;                           // Store string and id of node types
         RelationshipTypes relationship_types;           // Store string and id of relationship types
+
+        tsl::sparse_map<uint16_t, tsl::sparse_map<std::string, std::unique_ptr<PropertyIndex>>> node_indexes;
+        tsl::sparse_map<uint16_t, tsl::sparse_map<std::string, std::unique_ptr<PropertyIndex>>> relationship_indexes;
 
 
         inline static const std::string EXCEPTION = "An exception has occurred: ";
@@ -166,6 +170,18 @@ namespace ragedb {
         std::string RelationshipPropertyTypeGet(const std::string& type,  const std::string& key);
         bool NodePropertyTypeDelete(uint16_t type_id, const std::string& key);
         bool RelationshipPropertyTypeDelete(uint16_t type_id, const std::string& key);
+
+        // Property Indexes
+        bool NodeIndexCreate(uint16_t type_id, const std::string& property);
+        bool NodeIndexDelete(uint16_t type_id, const std::string& property);
+        bool RelationshipIndexCreate(uint16_t type_id, const std::string& property);
+        bool RelationshipIndexDelete(uint16_t type_id, const std::string& property);
+        void NodeIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        void NodeIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        void RelationshipIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        void RelationshipIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        std::vector<uint64_t> NodeIndexLookup(uint16_t type_id, const std::string& property, Operation operation, const property_type_t& value);
+        std::vector<uint64_t> RelationshipIndexLookup(uint16_t type_id, const std::string& property, Operation operation, const property_type_t& value);
 
         // Helpers
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> NodeRemoveGetIncoming(uint64_t external_id);
@@ -502,6 +518,12 @@ namespace ragedb {
         seastar::future<uint8_t> RelationshipPropertyTypeAddPeered(const std::string& relationship_type, const std::string& key, const std::string& type);
         seastar::future<bool> NodePropertyTypeDeletePeered(const std::string& type, const std::string& key);
         seastar::future<bool> RelationshipPropertyTypeDeletePeered(const std::string& type, const std::string& key);
+
+        // Property Indexes
+        seastar::future<bool> NodeIndexCreatePeered(const std::string& type, const std::string& property);
+        seastar::future<bool> NodeIndexDeletePeered(const std::string& type, const std::string& property);
+        seastar::future<bool> RelationshipIndexCreatePeered(const std::string& type, const std::string& property);
+        seastar::future<bool> RelationshipIndexDeletePeered(const std::string& type, const std::string& property);
 
         // Node Properties
         seastar::future<property_type_t> NodeGetPropertyPeered(const std::string& type, const std::string& key, const std::string& property);
@@ -853,6 +875,12 @@ namespace ragedb {
         uint8_t RelationshipPropertyTypeAddViaLua(const std::string& relationship_type, const std::string& key, const std::string& type);
         bool NodePropertyTypeDeleteViaLua(const std::string& type, const std::string& key);
         bool RelationshipPropertyTypeDeleteViaLua(const std::string& type, const std::string& key);
+
+        // Property Indexes
+        bool NodeIndexCreateViaLua(const std::string& type, const std::string& property);
+        bool NodeIndexDeleteViaLua(const std::string& type, const std::string& property);
+        bool RelationshipIndexCreateViaLua(const std::string& type, const std::string& property);
+        bool RelationshipIndexDeleteViaLua(const std::string& type, const std::string& property);
 
         // Node Properties
         sol::object NodeGetPropertyViaLua(const std::string& type, const std::string& key, const std::string& property);

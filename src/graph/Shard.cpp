@@ -166,6 +166,12 @@ namespace ragedb {
         lua.set_function("NodePropertyTypeDelete", &Shard::NodePropertyTypeDeleteViaLua, this);
         lua.set_function("RelationshipPropertyTypeDelete", &Shard::RelationshipPropertyTypeDeleteViaLua, this);
 
+        // Property Indexes
+        lua.set_function("NodeIndexCreate", &Shard::NodeIndexCreateViaLua, this);
+        lua.set_function("NodeIndexDelete", &Shard::NodeIndexDeleteViaLua, this);
+        lua.set_function("RelationshipIndexCreate", &Shard::RelationshipIndexCreateViaLua, this);
+        lua.set_function("RelationshipIndexDelete", &Shard::RelationshipIndexDeleteViaLua, this);
+
         //Node
         lua.set_function("NodeAdd", sol::overload(
             [this](const std::string& type, const std::string& key) { return this->NodeAddEmptyViaLua(type, key); },
@@ -491,6 +497,8 @@ namespace ragedb {
     void Shard::Clear() {
         node_types.Clear();
         relationship_types.Clear();
+        node_indexes.clear();
+        relationship_indexes.clear();
     }
 
     seastar::future<std::string> Shard::RunLua(const std::string &script, const sol::environment& environment) {

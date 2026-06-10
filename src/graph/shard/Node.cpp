@@ -20,6 +20,38 @@
 
 namespace ragedb {
 
+    namespace {
+        void node_index_add_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            if (value.index() >= 1 && value.index() <= 4) {
+                uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+                std::string type_name = shard.NodeGetType(external_id);
+                uint16_t target_shard = shard.CalculateShardId(type_name, property, value);
+                if (target_shard == seastar::this_shard_id()) {
+                    shard.NodeIndexInsert(type_id, property, value, external_id);
+                } else {
+                    (void)shard.container().invoke_on(target_shard, [type_id, property, value, external_id](Shard &target) {
+                        target.NodeIndexInsert(type_id, property, value, external_id);
+                    });
+                }
+            }
+        }
+
+        void node_index_remove_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            if (value.index() >= 1 && value.index() <= 4) {
+                uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+                std::string type_name = shard.NodeGetType(external_id);
+                uint16_t target_shard = shard.CalculateShardId(type_name, property, value);
+                if (target_shard == seastar::this_shard_id()) {
+                    shard.NodeIndexRemove(type_id, property, value, external_id);
+                } else {
+                    (void)shard.container().invoke_on(target_shard, [type_id, property, value, external_id](Shard &target) {
+                        target.NodeIndexRemove(type_id, property, value, external_id);
+                    });
+                }
+            }
+        }
+    }
+
     uint64_t Shard::NodeAddEmpty(uint16_t type_id, const std::string &key) {
         uint64_t internal_id = node_types.getCount(type_id);
         uint64_t external_id = 0;
@@ -74,6 +106,14 @@ namespace ragedb {
             node_types.addId(type_id, internal_id);
             node_types.setPropertiesFromJSON(type_id, internal_id, properties);
             keysToNodeId.insert({key, external_id });
+
+            auto type_indexes_it = node_indexes.find(type_id);
+            if (type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    property_type_t val = node_types.getNodeProperty(type_id, internal_id, property);
+                    node_index_add_helper(*this, type_id, internal_id, property, val);
+                }
+            }
         }
 
         return external_id;
@@ -107,6 +147,14 @@ namespace ragedb {
           node_types.setPropertiesFromJSON(type_id, internal_id, properties);
           keysToNodeId.insert({key, external_id });
           ids.push_back(external_id);
+
+          auto type_indexes_it = node_indexes.find(type_id);
+          if (type_indexes_it != node_indexes.end()) {
+              for (const auto& [property, index] : type_indexes_it->second) {
+                  property_type_t val = node_types.getNodeProperty(type_id, internal_id, property);
+                  node_index_add_helper(*this, type_id, internal_id, property, val);
+              }
+          }
         }
 
       }
@@ -151,6 +199,14 @@ namespace ragedb {
             uint16_t node_type_id = externalToTypeId(id);
             uint64_t internal_id = externalToInternal(id);
             std::string key = node_types.getNodeKey(node_type_id, internal_id);
+
+            auto type_indexes_it = node_indexes.find(node_type_id);
+            if (type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    property_type_t val = node_types.getNodeProperty(node_type_id, internal_id, property);
+                    node_index_remove_helper(*this, node_type_id, internal_id, property, val);
+                }
+            }
 
             // remove the key
             node_types.getKeysToNodeId(node_type_id).erase(key);
@@ -243,14 +299,51 @@ namespace ragedb {
 
     bool Shard::NodeSetProperty(uint64_t id, const std::string& property, const property_type_t& value) {
         if (ValidNodeId(id)) {
-            return node_types.setNodeProperty(id, property, value);
+            uint16_t type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            bool indexed = false;
+            auto type_indexes_it = node_indexes.find(type_id);
+            if (type_indexes_it != node_indexes.end()) {
+                indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
+            }
+            property_type_t old_value;
+            if (indexed) {
+                old_value = node_types.getNodeProperty(id, property);
+            }
+            bool success = node_types.setNodeProperty(id, property, value);
+            if (success && indexed) {
+                if (old_value != value) {
+                    node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                    node_index_add_helper(*this, type_id, internal_id, property, value);
+                }
+            }
+            return success;
         }
         return false;
     }
 
     bool Shard::NodeSetPropertyFromJson(uint64_t id, const std::string& property, const std::string& value) {
         if (ValidNodeId(id)) {
-            return node_types.setNodePropertyFromJson(id, property, value);
+            uint16_t type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            bool indexed = false;
+            auto type_indexes_it = node_indexes.find(type_id);
+            if (type_indexes_it != node_indexes.end()) {
+                indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
+            }
+            property_type_t old_value;
+            if (indexed) {
+                old_value = node_types.getNodeProperty(id, property);
+            }
+            bool success = node_types.setNodePropertyFromJson(id, property, value);
+            if (success && indexed) {
+                property_type_t new_value = node_types.getNodeProperty(id, property);
+                if (old_value != new_value) {
+                    node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                    node_index_add_helper(*this, type_id, internal_id, property, new_value);
+                }
+            }
+            return success;
         }
         return false;
     }
@@ -277,7 +370,22 @@ namespace ragedb {
 
     bool Shard::NodeDeleteProperty(uint64_t id, const std::string& property) {
         if (ValidNodeId(id)) {
-            return node_types.deleteNodeProperty(id, property);
+            uint16_t type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            bool indexed = false;
+            auto type_indexes_it = node_indexes.find(type_id);
+            if (type_indexes_it != node_indexes.end()) {
+                indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
+            }
+            property_type_t old_value;
+            if (indexed) {
+                old_value = node_types.getNodeProperty(id, property);
+            }
+            bool success = node_types.deleteNodeProperty(id, property);
+            if (success && indexed) {
+                node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+            }
+            return success;
         }
         return false;
     }
@@ -303,7 +411,27 @@ namespace ragedb {
     bool Shard::NodeSetPropertiesFromJson(uint64_t id, const std::string& value) {
         // If the node is valid
         if (ValidNodeId(id)) {
-            return node_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
+            uint16_t type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            auto type_indexes_it = node_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_values;
+            if (type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    old_values[property] = node_types.getNodeProperty(id, property);
+                }
+            }
+            bool success = node_types.setPropertiesFromJSON(type_id, internal_id, value);
+            if (success && type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    property_type_t old_val = old_values[property];
+                    property_type_t new_val = node_types.getNodeProperty(id, property);
+                    if (old_val != new_val) {
+                        node_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                        node_index_add_helper(*this, type_id, internal_id, property, new_val);
+                    }
+                }
+            }
+            return success;
         }
         return false;
     }
@@ -316,8 +444,30 @@ namespace ragedb {
     bool Shard::NodeResetPropertiesFromJson(uint64_t id, const std::string& value) {
         // If the node is valid
         if (ValidNodeId(id)) {
-            node_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
-            return node_types.setPropertiesFromJSON(externalToTypeId(id), externalToInternal(id), value);
+            uint16_t type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            auto type_indexes_it = node_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_values;
+            if (type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    old_values[property] = node_types.getNodeProperty(id, property);
+                }
+            }
+            node_types.deleteProperties(type_id, internal_id);
+            if (type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    property_type_t old_val = old_values[property];
+                    node_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                }
+            }
+            bool success = node_types.setPropertiesFromJSON(type_id, internal_id, value);
+            if (success && type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    property_type_t new_val = node_types.getNodeProperty(id, property);
+                    node_index_add_helper(*this, type_id, internal_id, property, new_val);
+                }
+            }
+            return success;
         }
         return false;
     }
@@ -330,7 +480,23 @@ namespace ragedb {
     bool Shard::NodeDeleteProperties(uint64_t id) {
         // If the node is valid
         if (ValidNodeId(id)) {
-            return node_types.deleteProperties(externalToTypeId(id), externalToInternal(id));
+            uint16_t type_id = externalToTypeId(id);
+            uint64_t internal_id = externalToInternal(id);
+            auto type_indexes_it = node_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_values;
+            if (type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    old_values[property] = node_types.getNodeProperty(id, property);
+                }
+            }
+            bool success = node_types.deleteProperties(type_id, internal_id);
+            if (success && type_indexes_it != node_indexes.end()) {
+                for (const auto& [property, index] : type_indexes_it->second) {
+                    property_type_t old_val = old_values[property];
+                    node_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                }
+            }
+            return success;
         }
         return false;
     }

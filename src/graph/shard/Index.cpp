@@ -1,0 +1,247 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "../Shard.h"
+
+namespace ragedb {
+
+    bool Shard::NodeIndexCreate(uint16_t type_id, const std::string& property) {
+        if (node_indexes.find(type_id) != node_indexes.end()) {
+            auto& type_map = node_indexes[type_id];
+            if (type_map.find(property) != type_map.end()) {
+                return false;
+            }
+        }
+        node_indexes[type_id].emplace(property, std::make_unique<PropertyIndex>());
+        return true;
+    }
+
+    bool Shard::NodeIndexDelete(uint16_t type_id, const std::string& property) {
+        if (node_indexes.find(type_id) == node_indexes.end()) {
+            return false;
+        }
+        auto& type_map = node_indexes[type_id];
+        auto it = type_map.find(property);
+        if (it == type_map.end()) {
+            return false;
+        }
+        type_map.erase(it);
+        return true;
+    }
+
+    bool Shard::RelationshipIndexCreate(uint16_t type_id, const std::string& property) {
+        if (relationship_indexes.find(type_id) != relationship_indexes.end()) {
+            auto& type_map = relationship_indexes[type_id];
+            if (type_map.find(property) != type_map.end()) {
+                return false;
+            }
+        }
+        relationship_indexes[type_id].emplace(property, std::make_unique<PropertyIndex>());
+        return true;
+    }
+
+    bool Shard::RelationshipIndexDelete(uint16_t type_id, const std::string& property) {
+        if (relationship_indexes.find(type_id) == relationship_indexes.end()) {
+            return false;
+        }
+        auto& type_map = relationship_indexes[type_id];
+        auto it = type_map.find(property);
+        if (it == type_map.end()) {
+            return false;
+        }
+        type_map.erase(it);
+        return true;
+    }
+
+    void Shard::NodeIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id) {
+        auto type_it = node_indexes.find(type_id);
+        if (type_it != node_indexes.end()) {
+            auto prop_it = type_it->second.find(property);
+            if (prop_it != type_it->second.end() && prop_it->second) {
+                prop_it->second->insert(value, external_id);
+            }
+        }
+    }
+
+    void Shard::NodeIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id) {
+        auto type_it = node_indexes.find(type_id);
+        if (type_it != node_indexes.end()) {
+            auto prop_it = type_it->second.find(property);
+            if (prop_it != type_it->second.end() && prop_it->second) {
+                prop_it->second->remove(value, external_id);
+            }
+        }
+    }
+
+    void Shard::RelationshipIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id) {
+        auto type_it = relationship_indexes.find(type_id);
+        if (type_it != relationship_indexes.end()) {
+            auto prop_it = type_it->second.find(property);
+            if (prop_it != type_it->second.end() && prop_it->second) {
+                prop_it->second->insert(value, external_id);
+            }
+        }
+    }
+
+    void Shard::RelationshipIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id) {
+        auto type_it = relationship_indexes.find(type_id);
+        if (type_it != relationship_indexes.end()) {
+            auto prop_it = type_it->second.find(property);
+            if (prop_it != type_it->second.end() && prop_it->second) {
+                prop_it->second->remove(value, external_id);
+            }
+        }
+    }
+
+    seastar::future<bool> Shard::NodeIndexCreatePeered(const std::string& type, const std::string& property) {
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id == 0) {
+            return seastar::make_ready_future<bool>(false);
+        }
+
+        return container().map([type_id, property] (Shard &local_shard) {
+            return local_shard.NodeIndexCreate(type_id, property);
+        }).then([type, type_id, property, this](std::vector<bool> results) {
+            bool success = true;
+            for (bool r : results) {
+                success = success && r;
+            }
+            if (!success) {
+                return seastar::make_ready_future<bool>(false);
+            }
+
+            return container().map([type, type_id, property, this](Shard &local_shard) {
+                std::vector<seastar::future<>> futures;
+                size_t max_id = local_shard.node_types.getKeys(type_id).size();
+                for (uint64_t internal_id = 0; internal_id < max_id; ++internal_id) {
+                    if (local_shard.node_types.ValidNodeId(type_id, internal_id)) {
+                        property_type_t val = local_shard.node_types.getNodeProperty(type_id, internal_id, property);
+                        if (val.index() >= 1 && val.index() <= 4) {
+                            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+                            uint16_t target_shard = CalculateShardId(type, property, val);
+                            futures.push_back(container().invoke_on(target_shard, [type_id, property, val, external_id](Shard &target) {
+                                target.NodeIndexInsert(type_id, property, val, external_id);
+                            }));
+                        }
+                    }
+                }
+                return seastar::when_all_succeed(futures.begin(), futures.end()).then([]() {
+                    return true;
+                });
+            }).then([](std::vector<bool> results) {
+                return seastar::make_ready_future<bool>(true);
+            });
+        });
+    }
+
+    seastar::future<bool> Shard::NodeIndexDeletePeered(const std::string& type, const std::string& property) {
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id == 0) {
+            return seastar::make_ready_future<bool>(false);
+        }
+
+        return container().map([type_id, property] (Shard &local_shard) {
+            return local_shard.NodeIndexDelete(type_id, property);
+        }).then([](std::vector<bool> results) {
+            bool success = true;
+            for (bool r : results) {
+                success = success && r;
+            }
+            return seastar::make_ready_future<bool>(success);
+        });
+    }
+
+    seastar::future<bool> Shard::RelationshipIndexCreatePeered(const std::string& type, const std::string& property) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        if (type_id == 0) {
+            return seastar::make_ready_future<bool>(false);
+        }
+
+        return container().map([type_id, property] (Shard &local_shard) {
+            return local_shard.RelationshipIndexCreate(type_id, property);
+        }).then([type, type_id, property, this](std::vector<bool> results) {
+            bool success = true;
+            for (bool r : results) {
+                success = success && r;
+            }
+            if (!success) {
+                return seastar::make_ready_future<bool>(false);
+            }
+
+            return container().map([type, type_id, property, this](Shard &local_shard) {
+                std::vector<seastar::future<>> futures;
+                size_t max_id = local_shard.relationship_types.getStartingNodeIds(type_id).size();
+                for (uint64_t internal_id = 0; internal_id < max_id; ++internal_id) {
+                    if (local_shard.relationship_types.ValidRelationshipId(type_id, internal_id)) {
+                        property_type_t val = local_shard.relationship_types.getRelationshipProperty(type_id, internal_id, property);
+                        if (val.index() >= 1 && val.index() <= 4) {
+                            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+                            uint16_t target_shard = CalculateShardId(type, property, val);
+                            futures.push_back(container().invoke_on(target_shard, [type_id, property, val, external_id](Shard &target) {
+                                target.RelationshipIndexInsert(type_id, property, val, external_id);
+                            }));
+                        }
+                    }
+                }
+                return seastar::when_all_succeed(futures.begin(), futures.end()).then([]() {
+                    return true;
+                });
+            }).then([](std::vector<bool> results) {
+                return seastar::make_ready_future<bool>(true);
+            });
+        });
+    }
+
+    seastar::future<bool> Shard::RelationshipIndexDeletePeered(const std::string& type, const std::string& property) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        if (type_id == 0) {
+            return seastar::make_ready_future<bool>(false);
+        }
+
+        return container().map([type_id, property] (Shard &local_shard) {
+            return local_shard.RelationshipIndexDelete(type_id, property);
+        }).then([](std::vector<bool> results) {
+            bool success = true;
+            for (bool r : results) {
+                success = success && r;
+            }
+            return seastar::make_ready_future<bool>(success);
+        });
+    }
+
+    std::vector<uint64_t> Shard::NodeIndexLookup(uint16_t type_id, const std::string& property, Operation operation, const property_type_t& value) {
+        auto type_it = node_indexes.find(type_id);
+        if (type_it != node_indexes.end()) {
+            auto prop_it = type_it->second.find(property);
+            if (prop_it != type_it->second.end() && prop_it->second) {
+                return prop_it->second->lookup_range(operation, value);
+            }
+        }
+        return {};
+    }
+
+    std::vector<uint64_t> Shard::RelationshipIndexLookup(uint16_t type_id, const std::string& property, Operation operation, const property_type_t& value) {
+        auto type_it = relationship_indexes.find(type_id);
+        if (type_it != relationship_indexes.end()) {
+            auto prop_it = type_it->second.find(property);
+            if (prop_it != type_it->second.end() && prop_it->second) {
+                return prop_it->second->lookup_range(operation, value);
+            }
+        }
+        return {};
+    }
+
+}

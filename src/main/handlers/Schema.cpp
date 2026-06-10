@@ -108,6 +108,38 @@ void Schema::set_routes(seastar::httpd::routes &routes) {
     deleteRelationshipTypeProperty->add_param("property");
     routes.add(deleteRelationshipTypeProperty, seastar::httpd::operation_type::DELETE);
 
+    auto postNodeTypePropertyIndex = new seastar::httpd::match_rule(&postNodeTypePropertyIndexHandler);
+    postNodeTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    postNodeTypePropertyIndex->add_param("type");
+    postNodeTypePropertyIndex->add_str("/properties");
+    postNodeTypePropertyIndex->add_param("property");
+    postNodeTypePropertyIndex->add_str("/index");
+    routes.add(postNodeTypePropertyIndex, seastar::httpd::operation_type::POST);
+
+    auto deleteNodeTypePropertyIndex = new seastar::httpd::match_rule(&deleteNodeTypePropertyIndexHandler);
+    deleteNodeTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/nodes");
+    deleteNodeTypePropertyIndex->add_param("type");
+    deleteNodeTypePropertyIndex->add_str("/properties");
+    deleteNodeTypePropertyIndex->add_param("property");
+    deleteNodeTypePropertyIndex->add_str("/index");
+    routes.add(deleteNodeTypePropertyIndex, seastar::httpd::operation_type::DELETE);
+
+    auto postRelationshipTypePropertyIndex = new seastar::httpd::match_rule(&postRelationshipTypePropertyIndexHandler);
+    postRelationshipTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    postRelationshipTypePropertyIndex->add_param("type");
+    postRelationshipTypePropertyIndex->add_str("/properties");
+    postRelationshipTypePropertyIndex->add_param("property");
+    postRelationshipTypePropertyIndex->add_str("/index");
+    routes.add(postRelationshipTypePropertyIndex, seastar::httpd::operation_type::POST);
+
+    auto deleteRelationshipTypePropertyIndex = new seastar::httpd::match_rule(&deleteRelationshipTypePropertyIndexHandler);
+    deleteRelationshipTypePropertyIndex->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    deleteRelationshipTypePropertyIndex->add_param("type");
+    deleteRelationshipTypePropertyIndex->add_str("/properties");
+    deleteRelationshipTypePropertyIndex->add_param("property");
+    deleteRelationshipTypePropertyIndex->add_str("/index");
+    routes.add(deleteRelationshipTypePropertyIndex, seastar::httpd::operation_type::DELETE);
+
 }
 
 future<std::unique_ptr<seastar::http::reply>>
@@ -342,6 +374,82 @@ Schema::DeleteRelationshipTypePropertyHandler::handle([[maybe_unused]] const sea
     if(valid_type && valid_property) {
         parent.graph.Log(req->_method, req->get_url());
         return parent.graph.shard.local().RelationshipPropertyTypeDeletePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(seastar::http::reply::status_type::no_content);
+            } else {
+                rep->set_status(seastar::http::reply::status_type::not_modified);
+            }
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+        });
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostNodeTypePropertyIndexHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
+
+    if (valid_type && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
+        return parent.graph.shard.local().NodeIndexCreatePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(seastar::http::reply::status_type::created);
+            } else {
+                rep->set_status(seastar::http::reply::status_type::not_modified);
+            }
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+        });
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::DeleteNodeTypePropertyIndexHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
+
+    if (valid_type && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
+        return parent.graph.shard.local().NodeIndexDeletePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(seastar::http::reply::status_type::no_content);
+            } else {
+                rep->set_status(seastar::http::reply::status_type::not_modified);
+            }
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+        });
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostRelationshipTypePropertyIndexHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
+
+    if (valid_type && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
+        return parent.graph.shard.local().RelationshipIndexCreatePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
+            if (success) {
+                rep->set_status(seastar::http::reply::status_type::created);
+            } else {
+                rep->set_status(seastar::http::reply::status_type::not_modified);
+            }
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+        });
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::DeleteRelationshipTypePropertyIndexHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req, std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+    bool valid_property = Utilities::validate_parameter(Utilities::PROPERTY, req, rep, "Invalid property");
+
+    if (valid_type && valid_property) {
+        parent.graph.Log(req->_method, req->get_url());
+        return parent.graph.shard.local().RelationshipIndexDeletePeered(req->get_path_param(Utilities::TYPE), req->get_path_param(Utilities::PROPERTY)).then([rep = std::move(rep)](bool success) mutable {
             if (success) {
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {

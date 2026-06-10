@@ -102,6 +102,14 @@ if(ENABLE_FUZZING)
 endif()
 
 include(FetchContent)
+FetchContent_Declare(
+  unodb
+  GIT_REPOSITORY https://github.com/unodb-dev/unodb.git
+  GIT_TAG        master
+)
+set(TESTS OFF CACHE BOOL "Build uNoDB tests" FORCE)
+set(BENCHMARKS OFF CACHE BOOL "Build uNoDB benchmarks" FORCE)
+FetchContent_MakeAvailable(unodb)
 
 find_package(Seastar REQUIRED)
 find_library(SYSTEM_FMT_LIB NAMES fmt PATHS /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
@@ -176,6 +184,7 @@ target_link_libraries(
         cpr::cpr
         boost::boost
         unordered_dense::unordered_dense
+        unodb
 )
 
 target_link_libraries(

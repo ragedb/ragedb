@@ -18,11 +18,36 @@
 
 namespace ragedb {
 
+    namespace {
+        void relationship_index_remove_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            if (value.index() >= 1 && value.index() <= 4) {
+                uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+                std::string type_name = shard.RelationshipGetType(external_id);
+                uint16_t target_shard = shard.CalculateShardId(type_name, property, value);
+                if (target_shard == seastar::this_shard_id()) {
+                    shard.RelationshipIndexRemove(type_id, property, value, external_id);
+                } else {
+                    (void)shard.container().invoke_on(target_shard, [type_id, property, value, external_id](Shard &target) {
+                        target.RelationshipIndexRemove(type_id, property, value, external_id);
+                    });
+                }
+            }
+        }
+    }
+
     // Helpers
     std::pair <uint16_t, uint64_t> Shard::RelationshipRemoveGetIncoming(uint64_t external_id) {
 
       uint16_t rel_type_id = externalToTypeId(external_id);
       uint64_t internal_id = externalToInternal(external_id);
+
+      auto type_indexes_it = relationship_indexes.find(rel_type_id);
+      if (type_indexes_it != relationship_indexes.end()) {
+          for (const auto& [property, index] : type_indexes_it->second) {
+              property_type_t val = relationship_types.getRelationshipProperty(rel_type_id, internal_id, property);
+              relationship_index_remove_helper(*this, rel_type_id, internal_id, property, val);
+          }
+      }
 
       uint64_t id1 = relationship_types.getStartingNodeId(rel_type_id, internal_id);
       uint64_t id2 = relationship_types.getEndingNodeId(rel_type_id, internal_id);

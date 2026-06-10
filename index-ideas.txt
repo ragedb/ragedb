@@ -1,0 +1,71 @@
+When you are working within Seastar, your architectural mindset has to flip completely. Seastar relies on a strict shared-nothing, thread-per-core model. Because each core runs its own cooperative event loop (an engine pinning a single OS thread to a hardware core) and communicates with other cores only via explicit asynchronous message passing, traditional multi-threaded, lock-based data structures are an absolute anti-pattern.
+
+You should unconditionally choose multiple single-threaded index instances shards (one per core) over a multi-threaded, lock-based index.
+
+Here is exactly why, how to design it, and where the performance traps hide.
+
+Why Lock-Based Indexes Fail in Seastar
+If you drop a multi-threaded index with internal locks (or even atomic-heavy lock-free structures like BzTree or Masstree) into Seastar, you break the framework's fundamental core guarantees:
+
+Reactor Stall: In Seastar, if a thread blocks on a mutex, the entire reactor loop stops dead in its tracks. No other fibers, network I/O pollers, or disk tasks on that core can execute. A 10-microsecond lock contention stall can easily tank your throughput.
+
+Atomic Cache Line Bouncing: Lock-free structures rely heavily on atomic operations (like CAS). When multiple cores try to update the same atomic variable or pointer, the hardware cache coherency protocol bounces that cache line back and forth between CPU L1/L2 caches. This completely destroys the instruction-level cache locality you are trying to achieve on "regular hardware."
+
+The Correct Architecture: Partitioned Single-Threaded Indexes
+Instead of a single global tree, you instantiate one single-threaded index (like a clean C++ ART or Abseil B-Tree) per Seastar shard.
+
+Data is partitioned deterministically using a hashing algorithm (like Murmur3 or xxHash) on the key.
+
+Incoming Request -> Hash(Key) % Total_Cores -> Route via seastar::smp::submit_to
+                                                     |
+             +-----------------------+---------------+-----------------------+
+             |                       |                                       |
+     [ Core 0 / Shard 0 ]    [ Core 1 / Shard 1 ]                    [ Core N / Shard N ]
+    +--------------------+  +--------------------+                  +--------------------+
+    |  Seastar Reactor   |  |  Seastar Reactor   |                  |  Seastar Reactor   |
+    |                    |  |                    |                  |                    |
+    | [Single-Threaded]  |  | [Single-Threaded]  |                  | [Single-Threaded]  |
+    |      Index 0       |  |      Index 1       |                  |      Index N       |
+    +--------------------+  +--------------------+                  +--------------------+
+Point Lookups (Blistering Fast)
+Request arrives on an arbitrary core.
+
+You hash the key to find the target shard.
+
+If it belongs to the current core, execute a synchronous lookup on the local index (zero allocation, zero locks, pure cache-locality).
+
+If it belongs to another core, use seastar::smp::submit_to(target_core, [key] { ... }) to hand off the task. Seastar transfers this via ultra-fast, lockless ring buffers. The target core executes the lookup on its own index and returns a seastar::future.
+
+Range Queries & Scans (The "Combine at the End" Strategy)
+This is where the trade-off happens. Since data is split across cores, a range query (X to Y) means you cannot scan a single contiguous leaf array. Instead, you perform a Scatter-Gather operation:
+
+Use seastar::parallel_for_each to concurrently dispatch the range query to all shards (or a subset if your partitioning scheme allows range-aware sharding).
+
+Each shard scans its local single-threaded index and extracts a sorted vector of matching elements.
+
+The originating core gathers these individual futures, receiving N sorted vectors.
+
+You merge these vectors into a single result set using a fast multi-way stream merge (e.g., std::merge or a min-heap structure).
+
+Which Single-Threaded Index Should You Choose?
+Because Seastar ensures that no other thread will ever touch a shard's memory, you can pick the absolute rawest, fastest single-threaded libraries without a single atomic variable inside them:
+
+For Strings / Radix: A clean, non-thread-safe implementation of the Adaptive Radix Tree (ART). Without lock-coupling code or atomic reference counts on nodes, traversal is purely a sequence of array lookups and SIMD vector instructions.
+
+For Integers / Densely Packed Keys: absl::btree_map. Because it's entirely single-threaded and keeps layout contiguous in memory cache lines, it plays incredibly well with Seastar’s memory allocators (which allocate page chunks per-core to eliminate allocator lock contention).
+
+Summary of Performance Trade-offs
+Operation	Shared-Nothing Sharded Index (Recommended)	Global Multi-Threaded Lock/Lock-Free
+Point Lookup	Winner. Zero cross-core chatter if request lands on the correct shard; minimal lockless hop if not.	Heavy cache-line bouncing on root/inner nodes across cores.
+Point Insertion	Winner. Single-threaded append/split with absolute zero lock overhead.	High lock contention or cascade CAS failures on node splits.
+Range Queries	Requires scatter-gather + merge reduction overhead.	Slightly cleaner conceptually, but performance degrades heavily under concurrent writes.
+
+Which Single-Threaded C++ ART Library to Choose?
+When building on top of Seastar, your requirement is strict: you need a highly optimized, single-threaded C++ implementation that avoids internal atomic operations. For this architectural profile, look at uNoDB (specifically its single-threaded component).
+
+Why uNoDB Fits a Seastar Architecture:
+Isolated Single-Threaded Implementation: While the library includes a concurrent engine based on lock-coupling, it explicitly separates out a pure, single-threaded ART class layout (unodb::art_db). This class completely avoids atomic instructions, reference counting across threads, or fence overheads.
+
+Modern SIMD Vectorization: The original ART paper relied on older SSE2 instructions to scan its internal node architectures (like Node16). uNoDB modernizes this by leveraging AVX2 on Intel/AMD chips and NEON intrinsics on ARM architectures. When a Seastar shard searches a node for a byte match, it executes it in a single vectorized CPU cycle.
+
+Cache-Conscious Path Compression: It implements pessimistic path compression (storing up to 7 bytes of key data directly inside internal routing nodes). This dramatically cuts down on "pointer-chasing" through the trie for long string keys, ensuring you stay within local cache lines as much as possible.
