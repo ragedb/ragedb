@@ -90,6 +90,7 @@ enum class BinaryOpKind {
 struct Expression {
     ExpressionKind kind;
     virtual ~Expression() = default;
+    virtual std::unique_ptr<Expression> clone() const = 0;
 };
 
 /**
@@ -101,6 +102,9 @@ struct LiteralExpr : public Expression {
         kind = ExpressionKind::LITERAL;
         value = std::move(val);
     }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<LiteralExpr>(value);
+    }
 };
 
 /**
@@ -111,6 +115,9 @@ struct VariableExpr : public Expression {
     explicit VariableExpr(std::string n) {
         kind = ExpressionKind::VARIABLE;
         name = std::move(n);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<VariableExpr>(name);
     }
 };
 
@@ -125,6 +132,9 @@ struct PropertyLookupExpr : public Expression {
         variable = std::move(var);
         property = std::move(prop);
     }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<PropertyLookupExpr>(variable, property);
+    }
 };
 
 /**
@@ -137,6 +147,9 @@ struct UnaryOpExpr : public Expression {
         kind = ExpressionKind::UNARY_OP;
         op = o;
         expr = std::move(e);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<UnaryOpExpr>(op, expr ? expr->clone() : nullptr);
     }
 };
 
@@ -153,6 +166,9 @@ struct BinaryOpExpr : public Expression {
         left = std::move(l);
         right = std::move(r);
     }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<BinaryOpExpr>(op, left ? left->clone() : nullptr, right ? right->clone() : nullptr);
+    }
 };
 
 /**
@@ -165,6 +181,9 @@ struct AggregateExpr : public Expression {
         kind = ExpressionKind::AGGREGATION;
         fn_kind = kind_val;
         expr = std::move(e);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<AggregateExpr>(fn_kind, expr ? expr->clone() : nullptr);
     }
 };
 
@@ -231,6 +250,7 @@ struct PathPattern {
  * @brief Represents a single MATCH or OPTIONAL MATCH statement.
  */
 struct MatchStatement {
+    int id = -1;
     bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
     PathPattern pattern;      ///< Path pattern to match.
 };
@@ -248,6 +268,11 @@ struct ExistsExpr : public Expression {
         matches = std::move(m);
         where_expr = std::move(w);
     }
+    std::unique_ptr<Expression> clone() const override {
+        auto copy = std::make_unique<ExistsExpr>(matches, where_expr ? where_expr->clone() : nullptr);
+        copy->target_variable = target_variable;
+        return copy;
+    }
 };
 
 /**
@@ -256,6 +281,9 @@ struct ExistsExpr : public Expression {
 struct ReturnItem {
     std::unique_ptr<Expression> expr; ///< Projection expression.
     std::optional<std::string> alias;  ///< Optional alias name (AS alias).
+    ReturnItem clone() const {
+        return ReturnItem{ expr ? expr->clone() : nullptr, alias };
+    }
 };
 
 /**
@@ -264,6 +292,9 @@ struct ReturnItem {
 struct SortSpec {
     std::unique_ptr<Expression> expr; ///< Expression to sort by.
     bool ascending = true;             ///< True for ascending order, false for descending.
+    SortSpec clone() const {
+        return SortSpec{ expr ? expr->clone() : nullptr, ascending };
+    }
 };
 
 /**
@@ -292,6 +323,20 @@ struct WriteOp {
     // DELETE details
     std::string delete_var;   ///< Variable pointing to the node/relationship to delete.
     bool detach = false;      ///< True if associated relationships should be deleted implicitly (RageDB behavior).
+
+    WriteOp clone() const {
+        WriteOp copy;
+        copy.type = type;
+        copy.insert_pattern = insert_pattern;
+        copy.set_var = set_var;
+        copy.set_prop = set_prop;
+        copy.set_expr = set_expr ? set_expr->clone() : nullptr;
+        copy.remove_var = remove_var;
+        copy.remove_prop = remove_prop;
+        copy.delete_var = delete_var;
+        copy.detach = detach;
+        return copy;
+    }
 };
 
 struct SchemaOperation {
@@ -316,6 +361,17 @@ struct SchemaOperation {
     } alter_op;
     std::string alter_property_name;
     std::string alter_property_type; // For ALTER ADD
+};
+
+struct PlanNode {
+    std::string operator_name;
+    std::string detail;
+    std::string variables;
+    std::string key;
+    std::optional<int64_t> estimated_rows;
+    std::optional<int64_t> actual_rows;
+    std::optional<double> time_ms;
+    std::vector<std::shared_ptr<PlanNode>> children;
 };
 
 enum class QueryKind {
@@ -353,6 +409,53 @@ struct GqlQuery {
     // Optimization tracking fields
     std::set<std::string> outer_vars;
     bool has_unnested_subquery = false;
+
+    // Explain & Profile
+    bool explain = false;
+    bool profile = false;
+    std::shared_ptr<PlanNode> plan_root;
+    std::map<std::string, std::shared_ptr<PlanNode>> plan_nodes;
+
+    // Cache tracking
+    bool plan_cache_hit = false;
+    bool clear_cache = false;
+
+    GqlQuery clone() const {
+        GqlQuery copy;
+        copy.kind = kind;
+        if (left) copy.left = std::make_unique<GqlQuery>(left->clone());
+        if (right) copy.right = std::make_unique<GqlQuery>(right->clone());
+        copy.matches = matches;
+        if (where_expr) copy.where_expr = where_expr->clone();
+        
+        copy.writes.reserve(writes.size());
+        for (const auto& w : writes) {
+            copy.writes.push_back(w.clone());
+        }
+        
+        copy.returns.reserve(returns.size());
+        for (const auto& r : returns) {
+            copy.returns.push_back(r.clone());
+        }
+        
+        copy.distinct = distinct;
+        
+        copy.order_by.reserve(order_by.size());
+        for (const auto& s : order_by) {
+            copy.order_by.push_back(s.clone());
+        }
+        
+        copy.limit = limit;
+        copy.schema_op = schema_op;
+        copy.outer_vars = outer_vars;
+        copy.has_unnested_subquery = has_unnested_subquery;
+        copy.explain = explain;
+        copy.profile = profile;
+        copy.plan_cache_hit = plan_cache_hit;
+        copy.clear_cache = clear_cache;
+        // plan_root and plan_nodes are generated fresh during execution
+        return copy;
+    }
 };
 
 } // namespace ragedb::gql

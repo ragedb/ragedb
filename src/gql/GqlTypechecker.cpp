@@ -465,6 +465,10 @@ void GqlTypechecker::check_return_item(const ReturnItem& return_item) {
 }
 
 void GqlTypechecker::check_query(const GqlQuery& query) {
+    if (query.clear_cache) {
+        return;
+    }
+
     if (query.kind != QueryKind::SINGLE) {
         if (query.left) {
             check_query(*query.left);

@@ -49,10 +49,7 @@ seastar::future<std::unique_ptr<seastar::http::reply>> Gql::PostGqlHandler::hand
 
     try {
         std::string query_str = req->content;
-        auto query = ragedb::gql::GqlParser::parse(query_str);
-        ragedb::gql::GqlOptimizer::optimize(query);
-
-        return ragedb::gql::GqlExecutor::execute(parent.graph, std::move(query))
+        return ragedb::gql::GqlExecutor::execute(parent.graph, query_str)
         .then([rep = std::move(rep)](std::string result_json) mutable {
             rep->write_body("json", seastar::sstring(result_json));
             return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));

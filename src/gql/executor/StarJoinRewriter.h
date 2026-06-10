@@ -55,7 +55,8 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
     const ProjectionPruner& pruner = {},
     std::string sort_property = "",
     bool sort_ascending = true,
-    bool sort_by_id = false
+    bool sort_by_id = false,
+    std::shared_ptr<GqlQuery> query_ptr = nullptr
 );
 
 } // namespace ragedb::gql

@@ -110,6 +110,7 @@ static void validate_insert_label_expr(const std::shared_ptr<LabelExpression>& e
 GqlQuery GqlParser::parse_single_query() {
     GqlQuery query;
 
+    int match_id_counter = 0;
     // Parse MATCH/OPTIONAL MATCH clauses
     while (check(TokenType::MATCH) || (check(TokenType::OPTIONAL) && peek(1).type == TokenType::MATCH)) {
         MatchStatement stmt;
@@ -118,7 +119,8 @@ GqlQuery GqlParser::parse_single_query() {
         }
         consume(TokenType::MATCH, "Expected MATCH");
         stmt.pattern = parse_path_pattern();
-        query.matches.push_back(stmt);
+        stmt.id = match_id_counter++;
+        query.matches.push_back(std::move(stmt));
     }
 
     // Parse optional global WHERE clause
@@ -222,6 +224,24 @@ GqlQuery GqlParser::parse_single_query() {
 }
 
 GqlQuery GqlParser::parse_query() {
+    bool explain = false;
+    bool profile = false;
+    if (match(TokenType::EXPLAIN)) {
+        explain = true;
+    } else if (match(TokenType::PROFILE)) {
+        profile = true;
+    }
+
+    if (match(TokenType::CALL)) {
+        consume(TokenType::CLEAR, "Expected 'CLEAR' after 'CALL'");
+        consume(TokenType::CACHE, "Expected 'CACHE' after 'CLEAR'");
+        GqlQuery query;
+        query.clear_cache = true;
+        query.explain = explain;
+        query.profile = profile;
+        return query;
+    }
+
     if (check(TokenType::CREATE) || check(TokenType::DROP) || check(TokenType::ALTER)) {
         GqlQuery query;
         SchemaOperation schema;
@@ -333,6 +353,8 @@ GqlQuery GqlParser::parse_query() {
         }
         
         query.schema_op = std::move(schema);
+        query.explain = explain;
+        query.profile = profile;
         consume(TokenType::EOF_TOK, "Expected end of query");
         return query;
     }
@@ -361,6 +383,9 @@ GqlQuery GqlParser::parse_query() {
         consume(TokenType::NUMBER, "Expected integer limit value");
         query.limit = std::stoull(num_str);
     }
+
+    query.explain = explain;
+    query.profile = profile;
 
     consume(TokenType::EOF_TOK, "Expected end of query");
     return query;

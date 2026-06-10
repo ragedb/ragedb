@@ -145,6 +145,7 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/GqlParser.cpp src/gql/GqlParser.h
         src/gql/GqlOptimizer.cpp src/gql/GqlOptimizer.h
         src/gql/GqlExecutor.cpp src/gql/GqlExecutor.h
+        src/gql/GqlQueryCache.cpp src/gql/GqlQueryCache.h
         src/gql/executor/FactorNode.cpp src/gql/executor/FactorNode.h
         src/gql/executor/JoinHelpers.cpp src/gql/executor/JoinHelpers.h
         src/gql/executor/ExpressionEvaluator.cpp src/gql/executor/ExpressionEvaluator.h

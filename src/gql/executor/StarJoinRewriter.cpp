@@ -19,6 +19,7 @@
 #include "JoinHelpers.h"
 #include <seastar/core/when_all.hh>
 #include <algorithm>
+#include <chrono>
 
 namespace ragedb::gql {
 
@@ -101,7 +102,18 @@ std::optional<StarJoinCandidate> find_star_join_candidate(
     return std::nullopt;
 }
 
-seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, std::vector<MatchStatement> matches, size_t match_idx, IntermediateResult incoming, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
+seastar::future<IntermediateResult> execute_match_chain_factorized(
+    ragedb::Graph& graph,
+    std::vector<MatchStatement> matches,
+    size_t match_idx,
+    IntermediateResult incoming,
+    size_t limit,
+    const ProjectionPruner& pruner,
+    std::string sort_property,
+    bool sort_ascending,
+    bool sort_by_id,
+    std::shared_ptr<GqlQuery> query_ptr
+) {
     if (match_idx >= matches.size()) {
         return seastar::make_ready_future<IntermediateResult>(std::move(incoming));
     }
@@ -129,25 +141,35 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
             for (auto& branch_stmt : branch_matches) {
                 std::vector<MatchStatement> single_stmt_vec;
                 single_stmt_vec.push_back(std::move(branch_stmt));
-                futs.push_back(execute_match_chain_factorized(graph, std::move(single_stmt_vec), 0, incoming, limit, pruner));
+                futs.push_back(execute_match_chain_factorized(graph, std::move(single_stmt_vec), 0, incoming, limit, pruner, "", true, false, query_ptr));
             }
 
             return seastar::when_all_succeed(futs.begin(), futs.end())
-            .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id](std::vector<IntermediateResult> branch_results) mutable {
+            .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr, central_var](std::vector<IntermediateResult> branch_results) mutable {
                 if (branch_results.empty()) {
                     return seastar::make_ready_future<IntermediateResult>(IntermediateResult::empty());
                 }
                 
+                auto start = std::chrono::steady_clock::now();
                 IntermediateResult joined = std::move(branch_results[0]);
                 for (size_t i = 1; i < branch_results.size(); ++i) {
                     joined = natural_join(std::move(joined), std::move(branch_results[i]), limit);
+                }
+
+                if (query_ptr && query_ptr->profile) {
+                    auto end = std::chrono::steady_clock::now();
+                    auto node = query_ptr->plan_nodes["star_join_" + central_var];
+                    if (node) {
+                        node->actual_rows = joined.rows.size();
+                        node->time_ms = std::chrono::duration<double, std::milli>(end - start).count();
+                    }
                 }
 
                 if (remaining_matches.empty()) {
                     return seastar::make_ready_future<IntermediateResult>(std::move(joined));
                 }
 
-                return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(joined), limit, pruner, sort_property, sort_ascending, sort_by_id);
+                return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(joined), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr);
             });
         } else {
             size_t first_idx = indices[0];
@@ -161,9 +183,9 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
                 }
             }
 
-            return execute_match_chain_factorized(graph, std::move(first_stmt_vec), 0, std::move(incoming), limit, pruner)
-            .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id](IntermediateResult res_first) mutable {
-                return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(res_first), limit, pruner, sort_property, sort_ascending, sort_by_id);
+            return execute_match_chain_factorized(graph, std::move(first_stmt_vec), 0, std::move(incoming), limit, pruner, "", true, false, query_ptr)
+            .then([&graph, remaining_matches = std::move(remaining_matches), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr](IntermediateResult res_first) mutable {
+                return execute_match_chain_factorized(graph, std::move(remaining_matches), 0, std::move(res_first), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr);
             });
         }
     }
@@ -185,10 +207,21 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
     }
 
     if (!has_shared && !incoming_vars.empty()) {
+        auto start = std::chrono::steady_clock::now();
         return traverse_path_pattern(graph, stmt.pattern, GqlRow{}, limit, pruner)
-        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), stmt, limit, pruner](std::vector<GqlRow> pattern_rows) mutable {
+        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), stmt, limit, pruner, query_ptr, start](std::vector<GqlRow> pattern_rows) mutable {
+            if (query_ptr && query_ptr->profile) {
+                auto end = std::chrono::steady_clock::now();
+                auto node = query_ptr->plan_nodes["match_" + std::to_string(stmt.id)];
+                if (node) {
+                    node->actual_rows = pattern_rows.size();
+                    node->time_ms = std::chrono::duration<double, std::milli>(end - start).count();
+                }
+            }
+
             IntermediateResult pattern_res(std::move(pattern_rows));
             IntermediateResult joined;
+            auto join_start = std::chrono::steady_clock::now();
             if (stmt.is_optional) {
                 std::set<std::string> new_vars;
                 for (const auto& node : stmt.pattern.nodes) {
@@ -201,7 +234,18 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
             } else {
                 joined = natural_join(std::move(incoming), std::move(pattern_res), limit);
             }
-            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(joined), limit, pruner);
+
+            if (query_ptr && query_ptr->profile) {
+                auto join_end = std::chrono::steady_clock::now();
+                std::string join_key = (stmt.is_optional ? "left_outer_join_" : "natural_join_") + std::to_string(stmt.id);
+                auto node = query_ptr->plan_nodes[join_key];
+                if (node) {
+                    node->actual_rows = joined.rows.size();
+                    node->time_ms = std::chrono::duration<double, std::milli>(join_end - join_start).count();
+                }
+            }
+
+            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(joined), limit, pruner, "", true, false, query_ptr);
         });
     } else {
         incoming.ensure_flat();
@@ -217,8 +261,9 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
             }
         }
 
+        auto start = std::chrono::steady_clock::now();
         return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), limit, pruner, sort_property, sort_ascending, sort_by_id](std::vector<std::vector<GqlRow>> nested) mutable {
+        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr, start, stmt](std::vector<std::vector<GqlRow>> nested) mutable {
             std::vector<GqlRow> next_rows;
             for (const auto& vec : nested) {
                 next_rows.insert(next_rows.end(), vec.begin(), vec.end());
@@ -227,13 +272,23 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
                     break;
                 }
             }
+
+            if (query_ptr && query_ptr->profile) {
+                auto end = std::chrono::steady_clock::now();
+                auto node = query_ptr->plan_nodes["match_" + std::to_string(stmt.id)];
+                if (node) {
+                    node->actual_rows = next_rows.size();
+                    node->time_ms = std::chrono::duration<double, std::milli>(end - start).count();
+                }
+            }
+
             IntermediateResult res(std::move(next_rows));
             if (match_idx == 0 && (!sort_property.empty() || sort_by_id)) {
                 res.is_sorted = true;
             } else {
                 res.is_sorted = incoming.is_sorted;
             }
-            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(res), limit, pruner);
+            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(res), limit, pruner, "", true, false, query_ptr);
         });
     }
 }

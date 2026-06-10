@@ -291,6 +291,8 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "INTERSECT") type = TokenType::INTERSECT;
             else if (upper_name == "ALL") type = TokenType::ALL_KW;
             else if (upper_name == "EXISTS") type = TokenType::EXISTS;
+            else if (upper_name == "EXPLAIN") type = TokenType::EXPLAIN;
+            else if (upper_name == "PROFILE") type = TokenType::PROFILE;
             else if (upper_name == "CREATE") type = TokenType::CREATE;
             else if (upper_name == "DROP") type = TokenType::DROP;
             else if (upper_name == "ALTER") type = TokenType::ALTER;
@@ -306,6 +308,9 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "INTEGER_LIST" || upper_name == "INT_LIST") type = TokenType::INTEGER_LIST_KW;
             else if (upper_name == "DOUBLE_LIST") type = TokenType::DOUBLE_LIST_KW;
             else if (upper_name == "BOOLEAN_LIST" || upper_name == "BOOL_LIST") type = TokenType::BOOLEAN_LIST_KW;
+            else if (upper_name == "CALL") type = TokenType::CALL;
+            else if (upper_name == "CLEAR") type = TokenType::CLEAR;
+            else if (upper_name == "CACHE") type = TokenType::CACHE;
             // Compound keyword check: ORDER BY
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;

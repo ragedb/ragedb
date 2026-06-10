@@ -26,6 +26,7 @@ namespace ragedb::gql {
 class GqlExecutor {
 public:
     static seastar::future<std::string> execute(ragedb::Graph& graph, GqlQuery query);
+    static seastar::future<std::string> execute(ragedb::Graph& graph, const std::string& query_str);
 };
 
 } // namespace ragedb::gql

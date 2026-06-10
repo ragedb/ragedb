@@ -56,6 +56,8 @@ enum class TokenType {
     INTERSECT,
     ALL_KW,
     EXISTS,
+    EXPLAIN,
+    PROFILE,
 
     // DDL Keywords
     CREATE,
@@ -73,6 +75,11 @@ enum class TokenType {
     INTEGER_LIST_KW,
     DOUBLE_LIST_KW,
     BOOLEAN_LIST_KW,
+
+    // Admin Keywords
+    CALL,
+    CLEAR,
+    CACHE,
 
     // Symbols
     LPAREN,      // (

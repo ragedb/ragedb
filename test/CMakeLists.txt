@@ -20,6 +20,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlExecutorAggregationTests.cpp
         gql/GqlExecutorSchemaTests.cpp
         gql/GqlTypecheckerTests.cpp
+        gql/GqlQueryCacheTests.cpp
 
         ../src/main/util/stop_signal.hh
         ../src/main/handlers/HealthCheck.cpp ../src/main/handlers/HealthCheck.h
@@ -43,6 +44,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlQueryCache.cpp ../src/gql/GqlQueryCache.h
         ../src/gql/executor/FactorNode.cpp ../src/gql/executor/FactorNode.h
         ../src/gql/executor/JoinHelpers.cpp ../src/gql/executor/JoinHelpers.h
         ../src/gql/executor/ExpressionEvaluator.cpp ../src/gql/executor/ExpressionEvaluator.h
@@ -107,6 +109,7 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
+        ../src/gql/GqlQueryCache.cpp ../src/gql/GqlQueryCache.h
         ../src/gql/executor/FactorNode.cpp ../src/gql/executor/FactorNode.h
         ../src/gql/executor/JoinHelpers.cpp ../src/gql/executor/JoinHelpers.h
         ../src/gql/executor/ExpressionEvaluator.cpp ../src/gql/executor/ExpressionEvaluator.h
