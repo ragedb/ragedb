@@ -32,6 +32,16 @@ namespace ragedb::gql {
  * @return int -1 if lhs < rhs, 1 if lhs > rhs, 0 if equal or incompatible.
  */
 int compare_properties(const property_type_t& lhs, const property_type_t& rhs) {
+    if (lhs.index() == 0 && rhs.index() != 0) {
+        return -1;
+    }
+    if (lhs.index() != 0 && rhs.index() == 0) {
+        return 1;
+    }
+    if (lhs.index() == 0 && rhs.index() == 0) {
+        return 0;
+    }
+
     if (lhs.index() == rhs.index()) {
         if (std::holds_alternative<int64_t>(lhs)) {
             int64_t l = std::get<int64_t>(lhs);

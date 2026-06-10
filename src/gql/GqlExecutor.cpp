@@ -433,6 +433,7 @@ struct FactorNode {
 struct IntermediateResult {
     std::vector<GqlRow> rows;      ///< Flat rows (lazily populated on ensure_flat).
     FactorNodePtr root;            ///< The root factorized node of the query execution tree.
+    bool is_sorted = false;
 
     IntermediateResult() {
         root = std::make_shared<FactorNode>(std::vector<GqlRow>{});
@@ -527,6 +528,7 @@ IntermediateResult natural_join(IntermediateResult left, IntermediateResult righ
         factorized->children.push_back(left.into_root());
         factorized->children.push_back(right.into_root());
         auto combined = IntermediateResult(factorized);
+        combined.is_sorted = left.is_sorted;
         if (limit > 0) {
             combined.ensure_flat();
             if (combined.rows.size() > limit) {
@@ -606,12 +608,16 @@ IntermediateResult left_outer_join(
             auto factorized = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
             factorized->children.push_back(left.into_root());
             factorized->children.push_back(pad_node);
-            return IntermediateResult(factorized);
+            auto combined = IntermediateResult(factorized);
+            combined.is_sorted = left.is_sorted;
+            return combined;
         } else {
             auto factorized = std::make_shared<FactorNode>(FactorNodeType::PRODUCT);
             factorized->children.push_back(left.into_root());
             factorized->children.push_back(right.into_root());
-            return IntermediateResult(factorized);
+            auto combined = IntermediateResult(factorized);
+            combined.is_sorted = left.is_sorted;
+            return combined;
         }
     }
 }
@@ -711,7 +717,7 @@ static void collect_accessed_properties(const Expression* expr,
  * @param pruner The projection properties pruner.
  * @return seastar::future<std::vector<Node>> Future wrapping matching start nodes.
  */
-seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node, size_t limit = 0, const ProjectionPruner& pruner = {}) {
+seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const PatternNode& node, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
     size_t scan_limit = (limit > 0) ? limit : 100000;
     std::string single_label = "";
     if (node.label_expr && node.label_expr->kind == LabelExprKind::LITERAL) {
@@ -779,9 +785,28 @@ seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const P
         fut = graph.shard.local().AllNodesPeered(0, scan_limit);
     }
 
-    return fut.then([&graph, degree_opt_info = node.degree_opt_info, var = node.variable, pruner](std::vector<Node> result_list) {
+    auto sort_nodes = [sort_property, sort_ascending, sort_by_id](std::vector<Node>& list) {
+        if (!sort_property.empty()) {
+            std::stable_sort(list.begin(), list.end(), [&sort_property, sort_ascending](const Node& a, const Node& b) {
+                property_type_t val_a = a.getProperty(sort_property);
+                property_type_t val_b = b.getProperty(sort_property);
+                int cmp = compare_properties(val_a, val_b);
+                if (cmp != 0) {
+                    return sort_ascending ? (cmp < 0) : (cmp > 0);
+                }
+                return a.getId() < b.getId();
+            });
+        } else if (sort_by_id) {
+            std::stable_sort(list.begin(), list.end(), [sort_ascending](const Node& a, const Node& b) {
+                return sort_ascending ? (a.getId() < b.getId()) : (a.getId() > b.getId());
+            });
+        }
+    };
+
+    return fut.then([&graph, degree_opt_info = node.degree_opt_info, var = node.variable, pruner, sort_nodes](std::vector<Node> result_list) mutable {
         // Optimization: If relationship count optimization is active, retrieve node degrees asynchronously.
         if (degree_opt_info.empty()) {
+            sort_nodes(result_list);
             if (pruner.should_prune(var)) {
                 auto keys = pruner.get_keys(var);
                 for (auto& n : result_list) {
@@ -813,8 +838,9 @@ seastar::future<std::vector<Node>> get_start_nodes(ragedb::Graph& graph, const P
         }
 
         return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([shared_list, var, pruner]() {
+        .then([shared_list, var, pruner, sort_nodes]() mutable {
             std::vector<Node> final_list = std::move(*shared_list);
+            sort_nodes(final_list);
             if (pruner.should_prune(var)) {
                 auto keys = pruner.get_keys(var);
                 for (auto& n : final_list) {
@@ -1111,7 +1137,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Gra
  * @param limit Optional limit for traversal paths.
  * @return seastar::future<std::vector<GqlRow>> Future wrapping matches.
  */
-seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit = 0, const ProjectionPruner& pruner = {}) {
+seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
     // Prep pattern with variables if missing
     PathPattern prep_pattern = pattern;
     for (size_t j = 0; j < prep_pattern.nodes.size(); ++j) {
@@ -1133,7 +1159,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     if (bound_it != base_row.bindings.end() && bound_it->second.type == GqlValue::NODE) {
         start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_it->second.node });
     } else {
-        start_nodes_fut = get_start_nodes(graph, prep_pattern.nodes[0], start_node_limit, pruner);
+        start_nodes_fut = get_start_nodes(graph, prep_pattern.nodes[0], start_node_limit, pruner, sort_property, sort_ascending, sort_by_id);
     }
 
     return start_nodes_fut.then([base_row, prep_pattern, &graph, limit, pruner](std::vector<Node> start_nodes) {
@@ -1170,8 +1196,8 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
  * @param limit Optional limit for traversing.
  * @return seastar::future<std::vector<GqlRow>> Future wrapping evaluated rows.
  */
-seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit = 0, const ProjectionPruner& pruner = {}) {
-    return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner)
+seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
+    return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner, sort_property, sort_ascending, sort_by_id)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
         if (traversed_rows.empty() && stmt.is_optional) {
             GqlRow opt_row = row;
@@ -1205,7 +1231,7 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
  * @param limit Optional limit to truncate query paths.
  * @return seastar::future<IntermediateResult> Future wrapping the factorized matched rows.
  */
-seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, const std::vector<MatchStatement>& matches, size_t match_idx, IntermediateResult incoming, size_t limit = 0, const ProjectionPruner& pruner = {}) {
+seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph& graph, const std::vector<MatchStatement>& matches, size_t match_idx, IntermediateResult incoming, size_t limit = 0, const ProjectionPruner& pruner = {}, std::string sort_property = "", bool sort_ascending = true, bool sort_by_id = false) {
     if (match_idx >= matches.size()) {
         return seastar::make_ready_future<IntermediateResult>(std::move(incoming));
     }
@@ -1256,11 +1282,15 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
         }
         std::vector<seastar::future<std::vector<GqlRow>>> futs;
         for (const auto& row : incoming.rows) {
-            futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner));
+            if (match_idx == 0) {
+                futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner, sort_property, sort_ascending, sort_by_id));
+            } else {
+                futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner));
+            }
         }
 
         return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([&graph, &matches, match_idx, incoming = std::move(incoming), limit, pruner](std::vector<std::vector<GqlRow>> nested) {
+        .then([&graph, &matches, match_idx, incoming = std::move(incoming), limit, pruner, sort_property, sort_ascending, sort_by_id](std::vector<std::vector<GqlRow>> nested) mutable {
             std::vector<GqlRow> next_rows;
             for (const auto& vec : nested) {
                 next_rows.insert(next_rows.end(), vec.begin(), vec.end());
@@ -1269,7 +1299,13 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(ragedb::Graph
                     break;
                 }
             }
-            return execute_match_chain_factorized(graph, matches, match_idx + 1, IntermediateResult(std::move(next_rows)), limit, pruner);
+            IntermediateResult res(std::move(next_rows));
+            if (match_idx == 0 && (!sort_property.empty() || sort_by_id)) {
+                res.is_sorted = true;
+            } else {
+                res.is_sorted = incoming.is_sorted;
+            }
+            return execute_match_chain_factorized(graph, matches, match_idx + 1, std::move(res), limit, pruner);
         });
     }
 }
@@ -1485,6 +1521,7 @@ struct RowSortKey {
 struct QueryResult {
     std::vector<std::string> column_names;
     std::vector<std::vector<GqlValue>> rows;
+    bool is_sorted = false;
 };
 
 /**
@@ -1693,10 +1730,46 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
     }
 
-    IntermediateResult initial_res(std::vector<GqlRow>{ GqlRow{} });
+    std::string sort_property = "";
+    bool sort_ascending = true;
+    bool sort_by_id = false;
 
-    return execute_match_chain_factorized(graph, query_ptr->matches, 0, std::move(initial_res), limit_val, pruner)
-    .then([&graph, query_ptr](IntermediateResult matched_res) {
+    if (query_ptr->order_by.size() == 1 && !query_ptr->matches.empty()) {
+        const auto& spec = query_ptr->order_by[0];
+        std::string var_name = "";
+        std::string prop_name = "";
+        bool ok = false;
+        
+        if (spec.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+            auto* pl = static_cast<const PropertyLookupExpr*>(spec.expr.get());
+            var_name = pl->variable;
+            prop_name = pl->property;
+            ok = true;
+        } else if (spec.expr->kind == ExpressionKind::VARIABLE) {
+            auto* ve = static_cast<const VariableExpr*>(spec.expr.get());
+            var_name = ve->name;
+            ok = true;
+            sort_by_id = true;
+        }
+        
+        if (ok) {
+            const auto& first_match = query_ptr->matches[0];
+            if (!first_match.pattern.nodes.empty()) {
+                std::string start_var = first_match.pattern.nodes[0].variable;
+                if (start_var == var_name || (start_var.empty() && var_name == "_n_0_user_empty")) {
+                    sort_property = prop_name;
+                    sort_ascending = spec.ascending;
+                }
+            }
+        }
+    }
+
+    IntermediateResult initial_res(std::vector<GqlRow>{ GqlRow{} });
+    auto is_sorted_shared = std::make_shared<bool>(false);
+
+    return execute_match_chain_factorized(graph, query_ptr->matches, 0, std::move(initial_res), limit_val, pruner, sort_property, sort_ascending, sort_by_id)
+    .then([&graph, query_ptr, is_sorted_shared](IntermediateResult matched_res) {
+        *is_sorted_shared = matched_res.is_sorted;
         matched_res.ensure_flat();
         std::vector<GqlRow> matched_rows = std::move(matched_res.rows);
         const auto& query = *query_ptr;
@@ -1719,7 +1792,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
         return seastar::when_all_succeed(futs.begin(), futs.end());
     })
-    .then([query_ptr](std::vector<GqlRow> written_rows) {
+    .then([query_ptr, is_sorted_shared](std::vector<GqlRow> written_rows) {
         const auto& query = *query_ptr;
         std::vector<GqlRow> filtered_rows = std::move(written_rows);
 
@@ -1741,6 +1814,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
 
         QueryResult query_res;
+        query_res.is_sorted = *is_sorted_shared;
 
         // Resolve column names
         for (size_t i = 0; i < query.returns.size(); ++i) {
@@ -1976,7 +2050,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             }
         } else {
             // Sort flat results using Top-K optimization if a limit is present.
-            if (!query.order_by.empty()) {
+            if (!query.order_by.empty() && !query_res.is_sorted) {
                 std::vector<RowSortKey> sorted_keys;
                 for (auto& row : filtered_rows) {
                     RowSortKey rk;
@@ -2009,6 +2083,8 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                 for (auto& rk : sorted_keys) {
                     filtered_rows.push_back(std::move(rk.row));
                 }
+            } else if (query.limit && *query.limit < filtered_rows.size()) {
+                filtered_rows.resize(*query.limit);
             }
 
             for (const auto& row : filtered_rows) {
@@ -2054,7 +2130,7 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
         const auto& query = *query_ptr;
 
         // Sort the combined result and apply Top-K optimization if limit is present.
-        if (!query.order_by.empty()) {
+        if (!query.order_by.empty() && !result.is_sorted) {
             sort_combined_result(result, query.order_by, query.limit);
         }
 
