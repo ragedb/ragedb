@@ -178,6 +178,8 @@ namespace ragedb {
         bool RelationshipIndexDelete(uint16_t type_id, const std::string& property);
         std::map<std::string, std::vector<std::string>> NodeIndexesGet();
         std::map<std::string, std::vector<std::string>> RelationshipIndexesGet();
+        bool NodeIndexExists(const std::string& type, const std::string& property);
+        bool RelationshipIndexExists(const std::string& type, const std::string& property);
         void NodeIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
         void NodeIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
         void RelationshipIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);

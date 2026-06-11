@@ -41,7 +41,7 @@
 
 namespace ragedb::gql {
 
-static std::shared_ptr<PlanNode> build_query_plan(const GqlQuery& query);
+static std::shared_ptr<PlanNode> build_query_plan(ragedb::Graph& graph, const GqlQuery& query);
 static void index_plan_nodes(
     const std::shared_ptr<PlanNode>& node,
     std::map<std::string, std::shared_ptr<PlanNode>>& plan_nodes
@@ -851,6 +851,7 @@ static std::string join_strings(const std::set<std::string>& strings, const std:
 }
 
 static std::shared_ptr<PlanNode> build_match_plan(
+    ragedb::Graph& graph,
     const std::vector<MatchStatement>& matches,
     size_t match_idx,
     std::set<std::string>& incoming_vars,
@@ -885,7 +886,7 @@ static std::shared_ptr<PlanNode> build_match_plan(
             std::set<std::string> current_vars = incoming_vars;
             for (const auto& branch_stmt : branch_matches) {
                 std::vector<MatchStatement> single_stmt_vec = { branch_stmt };
-                auto branch_plan = build_match_plan(single_stmt_vec, 0, current_vars, input_plan);
+                auto branch_plan = build_match_plan(graph, single_stmt_vec, 0, current_vars, input_plan);
                 if (branch_plan) {
                     join_node->children.push_back(branch_plan);
                 }
@@ -901,7 +902,7 @@ static std::shared_ptr<PlanNode> build_match_plan(
             if (remaining_matches.empty()) {
                 return join_node;
             } else {
-                return build_match_plan(remaining_matches, 0, current_vars, join_node);
+                return build_match_plan(graph, remaining_matches, 0, current_vars, join_node);
             }
         } else {
             size_t first_idx = indices[0];
@@ -914,8 +915,8 @@ static std::shared_ptr<PlanNode> build_match_plan(
                 }
             }
 
-            auto first_plan = build_match_plan(first_stmt_vec, 0, incoming_vars, input_plan);
-            return build_match_plan(remaining_matches, 0, incoming_vars, first_plan);
+            auto first_plan = build_match_plan(graph, first_stmt_vec, 0, incoming_vars, input_plan);
+            return build_match_plan(graph, remaining_matches, 0, incoming_vars, first_plan);
         }
     }
 
@@ -938,7 +939,7 @@ static std::shared_ptr<PlanNode> build_match_plan(
     if (!has_shared && !incoming_vars.empty()) {
         std::set<std::string> pattern_vars;
         std::vector<MatchStatement> single_stmt_vec = { stmt };
-        auto pattern_plan = build_match_plan(single_stmt_vec, 0, pattern_vars, nullptr);
+        auto pattern_plan = build_match_plan(graph, single_stmt_vec, 0, pattern_vars, nullptr);
 
         auto join_node = std::make_shared<PlanNode>();
         join_node->operator_name = stmt.is_optional ? "LeftOuterJoin" : "NaturalJoin";
@@ -957,12 +958,69 @@ static std::shared_ptr<PlanNode> build_match_plan(
         join_node->variables = join_strings(incoming_vars, ", ");
 
         std::vector<MatchStatement> remaining_matches(matches.begin() + match_idx + 1, matches.end());
-        return build_match_plan(remaining_matches, 0, incoming_vars, join_node);
+        return build_match_plan(graph, remaining_matches, 0, incoming_vars, join_node);
     } else {
         auto node = std::make_shared<PlanNode>();
         if (incoming_vars.empty()) {
-            node->operator_name = "Scan / Traverse";
-            node->detail = describe_pattern(stmt.pattern);
+            bool has_node_seek = false;
+            std::string node_indexed_prop = "";
+            const auto& start_node = stmt.pattern.nodes[0];
+            if (start_node.label_expr && start_node.label_expr->kind == LabelExprKind::LITERAL) {
+                std::string label = start_node.label_expr->name;
+                for (const auto& [prop, val] : start_node.properties) {
+                    if (graph.shard.local().NodeIndexExists(label, prop)) {
+                        has_node_seek = true;
+                        node_indexed_prop = prop;
+                        break;
+                    }
+                }
+                if (!has_node_seek) {
+                    for (const auto& filter : start_node.property_filters) {
+                        if (filter.op == Operation::EQ && graph.shard.local().NodeIndexExists(label, filter.property)) {
+                            has_node_seek = true;
+                            node_indexed_prop = filter.property;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            bool has_edge_seek = false;
+            std::string edge_indexed_prop = "";
+            if (!has_node_seek && !stmt.pattern.edges.empty()) {
+                const auto& edge = stmt.pattern.edges[0];
+                if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+                    std::string label = edge.label_expr->name;
+                    for (const auto& [prop, val] : edge.properties) {
+                        if (graph.shard.local().RelationshipIndexExists(label, prop)) {
+                            has_edge_seek = true;
+                            edge_indexed_prop = prop;
+                            break;
+                        }
+                    }
+                    if (!has_edge_seek) {
+                        for (const auto& filter : edge.property_filters) {
+                            if (filter.op == Operation::EQ && graph.shard.local().RelationshipIndexExists(label, filter.property)) {
+                                has_edge_seek = true;
+                                edge_indexed_prop = filter.property;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (has_node_seek) {
+                node->operator_name = "NodeIndexSeek";
+                node->detail = "Seek (" + start_node.variable + ":" + start_node.label_expr->name + "(" + node_indexed_prop + ")) via index";
+            } else if (has_edge_seek) {
+                node->operator_name = "RelationshipIndexSeek";
+                const auto& edge = stmt.pattern.edges[0];
+                node->detail = "Seek [" + edge.variable + ":" + edge.label_expr->name + "(" + edge_indexed_prop + ")] via index";
+            } else {
+                node->operator_name = "Scan / Traverse";
+                node->detail = describe_pattern(stmt.pattern);
+            }
         } else {
             node->operator_name = stmt.is_optional ? "OptionalExpand" : "Expand / Traverse";
             node->detail = describe_pattern(stmt.pattern);
@@ -981,13 +1039,13 @@ static std::shared_ptr<PlanNode> build_match_plan(
         node->variables = join_strings(incoming_vars, ", ");
 
         std::vector<MatchStatement> remaining_matches(matches.begin() + match_idx + 1, matches.end());
-        return build_match_plan(remaining_matches, 0, incoming_vars, node);
+        return build_match_plan(graph, remaining_matches, 0, incoming_vars, node);
     }
 }
 
-static std::shared_ptr<PlanNode> build_single_query_plan(const GqlQuery& query) {
+static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, const GqlQuery& query) {
     std::set<std::string> incoming_vars;
-    std::shared_ptr<PlanNode> current = build_match_plan(query.matches, 0, incoming_vars, nullptr);
+    std::shared_ptr<PlanNode> current = build_match_plan(graph, query.matches, 0, incoming_vars, nullptr);
 
     if (!query.writes.empty()) {
         auto write_node = std::make_shared<PlanNode>();
@@ -1101,7 +1159,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(const GqlQuery& query) 
     return current;
 }
 
-static std::shared_ptr<PlanNode> build_query_plan(const GqlQuery& query) {
+static std::shared_ptr<PlanNode> build_query_plan(ragedb::Graph& graph, const GqlQuery& query) {
     if (query.clear_cache) {
         auto node = std::make_shared<PlanNode>();
         node->operator_name = "ClearCache";
@@ -1125,14 +1183,14 @@ static std::shared_ptr<PlanNode> build_query_plan(const GqlQuery& query) {
         
         node->key = "set_operation";
         if (query.left) {
-            node->children.push_back(build_query_plan(*query.left));
+            node->children.push_back(build_query_plan(graph, *query.left));
         }
         if (query.right) {
-            node->children.push_back(build_query_plan(*query.right));
+            node->children.push_back(build_query_plan(graph, *query.right));
         }
         return node;
     }
-    return build_single_query_plan(query);
+    return build_single_query_plan(graph, query);
 }
 
 static void index_plan_nodes(
@@ -1187,7 +1245,7 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
     GqlTypechecker::typecheck(graph, query_val);
 
     if (query_val.explain) {
-        auto plan = build_query_plan(query_val);
+        auto plan = build_query_plan(graph, query_val);
         std::vector<std::vector<GqlValue>> plan_rows;
         flatten_plan_tree(plan, plan_rows, "", true);
 
@@ -1229,7 +1287,7 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
     auto query_ptr = std::make_shared<GqlQuery>(std::move(query_val));
 
     if (query_ptr->profile) {
-        query_ptr->plan_root = build_query_plan(*query_ptr);
+        query_ptr->plan_root = build_query_plan(graph, *query_ptr);
         index_plan_nodes(query_ptr->plan_root, query_ptr->plan_nodes);
     }
 
@@ -1313,7 +1371,7 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, const st
 
     try {
         auto query = GqlParser::parse(key);
-        GqlOptimizer::optimize(query);
+        GqlOptimizer::optimize(graph, query);
 
         if (query.schema_op.has_value()) {
             return execute(graph, std::move(query))

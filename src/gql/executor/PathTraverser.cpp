@@ -420,6 +420,163 @@ static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(rage
     });
 }
 
+static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(
+    ragedb::Graph& graph,
+    const PathPattern& prep_pattern,
+    const GqlRow& base_row,
+    size_t limit,
+    const ProjectionPruner& pruner
+) {
+    size_t scan_limit = (limit > 0) ? limit : 100000;
+    const auto& edge = prep_pattern.edges[0];
+    std::string single_label = "";
+    if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+        single_label = edge.label_expr->name;
+    }
+
+    std::string indexed_prop = "";
+    property_type_t indexed_val;
+    Operation indexed_op = Operation::EQ;
+    bool found = false;
+    for (const auto& [prop, val] : edge.properties) {
+        if (graph.shard.local().RelationshipIndexExists(single_label, prop)) {
+            indexed_prop = prop;
+            indexed_val = val;
+            indexed_op = Operation::EQ;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        for (const auto& filter : edge.property_filters) {
+            if (filter.op == Operation::EQ && graph.shard.local().RelationshipIndexExists(single_label, filter.property)) {
+                indexed_prop = filter.property;
+                indexed_val = filter.value;
+                indexed_op = filter.op;
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if (!found) {
+        return seastar::make_ready_future<std::vector<GqlRow>>();
+    }
+
+    return graph.shard.local().FindRelationshipsPeered(single_label, indexed_prop, indexed_op, indexed_val, 0, scan_limit)
+    .then([&graph, prep_pattern, base_row, limit, pruner](std::vector<Relationship> rels) {
+        const auto& pattern_edge = prep_pattern.edges[0];
+        
+        std::vector<Relationship> matched_rels;
+        for (const auto& rel : rels) {
+            if (pattern_edge.label_expr && !matches_label_expr(rel.getType(), pattern_edge.label_expr)) {
+                continue;
+            }
+            if (!matches_properties(rel.getProperties(), pattern_edge.properties) || !matches_filters(rel.getProperties(), pattern_edge.property_filters)) {
+                continue;
+            }
+            matched_rels.push_back(rel);
+        }
+        
+        if (matched_rels.empty()) {
+            return seastar::make_ready_future<std::vector<GqlRow>>();
+        }
+        
+        struct RelEndPoints {
+            Relationship rel;
+            uint64_t node_0_id;
+            uint64_t node_1_id;
+        };
+        
+        std::vector<RelEndPoints> endpoints;
+        for (const auto& rel : matched_rels) {
+            if (pattern_edge.direction == EdgeDirection::RIGHT) {
+                endpoints.push_back({rel, rel.getStartingNodeId(), rel.getEndingNodeId()});
+            } else if (pattern_edge.direction == EdgeDirection::LEFT) {
+                endpoints.push_back({rel, rel.getEndingNodeId(), rel.getStartingNodeId()});
+            } else {
+                endpoints.push_back({rel, rel.getStartingNodeId(), rel.getEndingNodeId()});
+                endpoints.push_back({rel, rel.getEndingNodeId(), rel.getStartingNodeId()});
+            }
+        }
+        
+        std::vector<seastar::future<std::vector<GqlRow>>> row_futs;
+        for (const auto& ep : endpoints) {
+            std::vector<seastar::future<Node>> node_futs;
+            node_futs.push_back(graph.shard.local().NodeGetPeered(ep.node_0_id));
+            node_futs.push_back(graph.shard.local().NodeGetPeered(ep.node_1_id));
+            
+            auto combined = seastar::when_all_succeed(node_futs.begin(), node_futs.end())
+            .then([ep, prep_pattern, base_row, pruner](std::vector<Node> nodes) -> std::vector<GqlRow> {
+                const auto& node_0 = nodes[0];
+                const auto& node_1 = nodes[1];
+                const auto& p_node_0 = prep_pattern.nodes[0];
+                const auto& p_node_1 = prep_pattern.nodes[1];
+                const auto& inner_pattern_edge = prep_pattern.edges[0];
+                
+                if (p_node_0.label_expr && !matches_label_expr(node_0.getType(), p_node_0.label_expr)) {
+                    return {};
+                }
+                if (!matches_properties(node_0.getProperties(), p_node_0.properties) || !matches_filters(node_0.getProperties(), p_node_0.property_filters)) {
+                    return {};
+                }
+                
+                if (p_node_1.label_expr && !matches_label_expr(node_1.getType(), p_node_1.label_expr)) {
+                    return {};
+                }
+                if (!matches_properties(node_1.getProperties(), p_node_1.properties) || !matches_filters(node_1.getProperties(), p_node_1.property_filters)) {
+                    return {};
+                }
+                
+                GqlRow new_row = base_row;
+                
+                Node pruned_node_0 = node_0;
+                if (pruner.should_prune(p_node_0.variable)) {
+                    pruned_node_0.pruneProperties(pruner.get_keys(p_node_0.variable));
+                }
+                Node pruned_node_1 = node_1;
+                if (pruner.should_prune(p_node_1.variable)) {
+                    pruned_node_1.pruneProperties(pruner.get_keys(p_node_1.variable));
+                }
+                Relationship pruned_rel = ep.rel;
+                if (pruner.should_prune(inner_pattern_edge.variable)) {
+                    pruned_rel.pruneProperties(pruner.get_keys(inner_pattern_edge.variable));
+                }
+                
+                new_row.bindings[p_node_0.variable] = GqlValue(pruned_node_0);
+                new_row.bindings["_n_0"] = GqlValue(pruned_node_0);
+                
+                new_row.bindings[inner_pattern_edge.variable] = GqlValue(pruned_rel);
+                new_row.bindings["_e_0"] = GqlValue(pruned_rel);
+                
+                new_row.bindings[p_node_1.variable] = GqlValue(pruned_node_1);
+                new_row.bindings["_n_1"] = GqlValue(pruned_node_1);
+                
+                return {new_row};
+            });
+            row_futs.push_back(std::move(combined));
+        }
+        
+        return seastar::when_all_succeed(row_futs.begin(), row_futs.end())
+        .then([&graph, prep_pattern, limit, pruner](std::vector<std::vector<GqlRow>> nested_rows) {
+            std::vector<GqlRow> initial_rows;
+            for (const auto& vec : nested_rows) {
+                for (const auto& row : vec) {
+                    initial_rows.push_back(row);
+                    if (limit > 0 && prep_pattern.edges.size() == 1 && initial_rows.size() >= limit) {
+                        break;
+                    }
+                }
+                if (limit > 0 && prep_pattern.edges.size() == 1 && initial_rows.size() >= limit) {
+                    break;
+                }
+            }
+            
+            return traverse_path_pattern_iterative(graph, prep_pattern, 1, std::move(initial_rows), limit, pruner);
+        });
+    });
+}
+
 seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
     PathPattern prep_pattern = pattern;
     for (size_t j = 0; j < prep_pattern.nodes.size(); ++j) {
@@ -433,8 +590,53 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
         }
     }
 
+    bool has_node_seek = false;
+    if (prep_pattern.nodes[0].label_expr && prep_pattern.nodes[0].label_expr->kind == LabelExprKind::LITERAL) {
+        std::string label = prep_pattern.nodes[0].label_expr->name;
+        for (const auto& [prop, val] : prep_pattern.nodes[0].properties) {
+            if (graph.shard.local().NodeIndexExists(label, prop)) {
+                has_node_seek = true;
+                break;
+            }
+        }
+        if (!has_node_seek) {
+            for (const auto& filter : prep_pattern.nodes[0].property_filters) {
+                if (filter.op == Operation::EQ && graph.shard.local().NodeIndexExists(label, filter.property)) {
+                    has_node_seek = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    bool has_edge_seek = false;
+    if (!prep_pattern.edges.empty()) {
+        const auto& edge = prep_pattern.edges[0];
+        if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+            std::string label = edge.label_expr->name;
+            for (const auto& [prop, val] : edge.properties) {
+                if (graph.shard.local().RelationshipIndexExists(label, prop)) {
+                    has_edge_seek = true;
+                    break;
+                }
+            }
+            if (!has_edge_seek) {
+                for (const auto& filter : edge.property_filters) {
+                    if (filter.op == Operation::EQ && graph.shard.local().RelationshipIndexExists(label, filter.property)) {
+                        has_edge_seek = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     auto start_node_var = prep_pattern.nodes[0].variable;
     auto bound_it = base_row.bindings.find(start_node_var);
+
+    if (bound_it == base_row.bindings.end() && !has_node_seek && has_edge_seek) {
+        return traverse_from_relationship_index(graph, prep_pattern, base_row, limit, pruner);
+    }
 
     size_t start_node_limit = prep_pattern.edges.empty() ? limit : 0;
     seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();

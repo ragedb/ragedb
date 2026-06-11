@@ -16,6 +16,7 @@
 
 #include "GqlOptimizer.h"
 #include "GqlValue.h"
+#include "../graph/Graph.h"
 
 namespace ragedb::gql {
 
@@ -651,6 +652,81 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     }
 
     query.where_expr = rebuild_expression_without_pushed_predicates(std::move(query.where_expr), pushdowns);
+}
+
+void GqlOptimizer::reverse_path_pattern(PathPattern& pattern) {
+    std::reverse(pattern.nodes.begin(), pattern.nodes.end());
+    std::reverse(pattern.edges.begin(), pattern.edges.end());
+    for (auto& edge : pattern.edges) {
+        if (edge.direction == EdgeDirection::RIGHT) {
+            edge.direction = EdgeDirection::LEFT;
+        } else if (edge.direction == EdgeDirection::LEFT) {
+            edge.direction = EdgeDirection::RIGHT;
+        }
+    }
+}
+
+bool GqlOptimizer::has_node_index_seek(ragedb::Graph& graph, const PatternNode& node) {
+    if (!node.label_expr || node.label_expr->kind != LabelExprKind::LITERAL) {
+        return false;
+    }
+    std::string label = node.label_expr->name;
+    for (const auto& [prop, val] : node.properties) {
+        if (graph.shard.local().NodeIndexExists(label, prop)) {
+            return true;
+        }
+    }
+    for (const auto& filter : node.property_filters) {
+        if (filter.op == Operation::EQ && graph.shard.local().NodeIndexExists(label, filter.property)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GqlOptimizer::has_relationship_index_seek(ragedb::Graph& graph, const PatternEdge& edge) {
+    if (!edge.label_expr || edge.label_expr->kind != LabelExprKind::LITERAL) {
+        return false;
+    }
+    std::string label = edge.label_expr->name;
+    for (const auto& [prop, val] : edge.properties) {
+        if (graph.shard.local().RelationshipIndexExists(label, prop)) {
+            return true;
+        }
+    }
+    for (const auto& filter : edge.property_filters) {
+        if (filter.op == Operation::EQ && graph.shard.local().RelationshipIndexExists(label, filter.property)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void GqlOptimizer::optimize(ragedb::Graph& graph, GqlQuery& query) {
+    optimize(query);
+
+    if (query.kind == QueryKind::SINGLE) {
+        for (auto& match : query.matches) {
+            auto& pattern = match.pattern;
+            if (pattern.nodes.size() >= 2) {
+                bool start_node_idx = has_node_index_seek(graph, pattern.nodes.front());
+                bool end_node_idx = has_node_index_seek(graph, pattern.nodes.back());
+                
+                if (end_node_idx && !start_node_idx) {
+                    reverse_path_pattern(pattern);
+                } else if (!start_node_idx && !end_node_idx && !pattern.edges.empty()) {
+                    bool first_edge_idx = has_relationship_index_seek(graph, pattern.edges.front());
+                    bool last_edge_idx = has_relationship_index_seek(graph, pattern.edges.back());
+                    if (last_edge_idx && !first_edge_idx) {
+                        reverse_path_pattern(pattern);
+                    }
+                }
+            }
+        }
+    } else {
+        if (query.left) optimize(graph, *query.left);
+        if (query.right) optimize(graph, *query.right);
+    }
 }
 
 } // namespace ragedb::gql

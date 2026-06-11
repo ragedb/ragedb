@@ -284,4 +284,20 @@ namespace ragedb {
         return result;
     }
 
+    bool Shard::NodeIndexExists(const std::string& type, const std::string& property) {
+        uint16_t type_id = node_types.getTypeId(type);
+        if (type_id == 0) return false;
+        auto type_it = node_indexes.find(type_id);
+        if (type_it == node_indexes.end()) return false;
+        return type_it->second.find(property) != type_it->second.end();
+    }
+
+    bool Shard::RelationshipIndexExists(const std::string& type, const std::string& property) {
+        uint16_t type_id = relationship_types.getTypeId(type);
+        if (type_id == 0) return false;
+        auto type_it = relationship_indexes.find(type_id);
+        if (type_it == relationship_indexes.end()) return false;
+        return type_it->second.find(property) != type_it->second.end();
+    }
+
 }

@@ -87,3 +87,44 @@ DROP INDEX WORKS_AT.since;
 SHOW INDEXES;
 SHOW INDEXES ON Person;
 SHOW INDEXES ON WORKS_AT;
+
+Full Text Search:
+
+ IResearch 
+ A pure, zero-dependency Apache 2.0 native search engine library, 
+ IResearch is arguably the most performant option available.  
+ The Architecture: It was designed specifically to be embedded directly into database 
+ architectures as an index provider. 
+ It abstracts physical storage behind a clean Directory interface, allowing it 
+ to execute completely in DRAM via mmap, or asynchronously flush to disk using 
+ modern Linux mechanisms like io_uring.Why it's fast: In recent open-source 
+ search benchmarks, IResearch has outpaced both Lucene and Tantivy on core 
+ query execution categories (term matching, intersections, unions, and top-K document 
+ retrieval). It achieves this via heavily vectorized AVX2 scoring paths, adaptive 
+ block posting list compression, and leveraging std::nth_element over traditional
+priority queues for collecting top-K matches.  
+  
+Database Integration Real-World Example: It is the native search core that powers the
+complex search and view layer inside ArangoDB.  
+   
+Repository: serenedb/iresearch (under the core libs/iresearch architecture).
+
+Designing FTS for a Shared-Nothing (Seastar) Engine
+If you wanted to implement a full-text search layout using an embedded library 
+like Tantivy or IResearch within a thread-per-core architecture like Seastar,
+you would apply the exact same partitioned philosophy as before:
+Shard the Documents: When a document is ingested, hash its primary ID or a routing key 
+to assign it to Core $X$.
+ 
+Local Segment Pools: Each core owns an entirely independent, 
+isolated single-threaded instance of the FTS index directory. 
+No segments are shared or read across cores.
+ 
+Local Tokenization: Text analysis, stemming, and tokenization occur entirely in 
+local CPU cache on the target core.
+
+Scatter-Gather Search: For a search query, you broadcast the text query to all cores. 
+Each core searches its internal inverted index segments, scores its local matching 
+documents using BM25, and returns its local top 100 matching IDs. 
+The originating core gathers these localized pools and performs a final heap-merge 
+sorting operation to deliver the global top 100 matches to the user.

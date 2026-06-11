@@ -23,10 +23,31 @@
 using namespace ragedb;
 using namespace ragedb::gql;
 
+struct GraphStopGuard {
+    Graph& g;
+    bool stopped = false;
+    explicit GraphStopGuard(Graph& graph) : g(graph) {}
+    ~GraphStopGuard() {
+        if (!stopped) {
+            try {
+                g.Stop().get();
+            } catch (...) {}
+            stopped = true;
+        }
+    }
+    void stop() {
+        if (!stopped) {
+            g.Stop().get();
+            stopped = true;
+        }
+    }
+};
+
 TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
     auto graph = Graph("gql_test");
     graph.Start().get();
     graph.Clear();
+    GraphStopGuard guard(graph);
 
     SECTION("CREATE NODE TYPE and retrieve it") {
         std::string query = "CREATE NODE TYPE User";
@@ -212,6 +233,78 @@ TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
         std::string res_show_final = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
         REQUIRE(res_show_final.find("\"label\": \"User\"") == std::string::npos);
     }
+    
+    SECTION("GQL Seek Operators & Path Reordering Optimizer Tests") {
+        // Setup schema
+        graph.shard.local().NodeTypeInsertPeered("Person").get();
+        graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+        graph.shard.local().NodePropertyTypeAddPeered("Person", "age", "integer").get();
+        graph.shard.local().RelationshipTypeInsertPeered("KNOWS").get();
+        graph.shard.local().RelationshipPropertyTypeAddPeered("KNOWS", "since", "integer").get();
 
-    graph.Stop().get();
+        // Register indexes
+        graph.shard.local().NodeIndexCreatePeered("Person", "name").get();
+        graph.shard.local().RelationshipIndexCreatePeered("KNOWS", "since").get();
+
+        // 1. Check EXPLAIN for NodeIndexSeek
+        {
+            std::string query = "EXPLAIN MATCH (p:Person {name: 'Alice'}) RETURN p";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("NodeIndexSeek") != std::string::npos);
+            REQUIRE(res.find("Seek (p:Person(name)) via index") != std::string::npos);
+        }
+
+        // 2. Check EXPLAIN for RelationshipIndexSeek
+        {
+            std::string query = "EXPLAIN MATCH (p1)-[e:KNOWS {since: 2020}]->(p2) RETURN e";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("RelationshipIndexSeek") != std::string::npos);
+            REQUIRE(res.find("Seek [e:KNOWS(since)] via index") != std::string::npos);
+        }
+
+        // 3. Check EXPLAIN for Path Reordering (Node Index Seek at end of pattern)
+        {
+            std::string query = "EXPLAIN MATCH (p1)-[e:KNOWS]->(p2:Person {name: 'Bob'}) RETURN p1";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("NodeIndexSeek") != std::string::npos);
+            REQUIRE(res.find("Seek (p2:Person(name)) via index") != std::string::npos);
+        }
+
+        // 4. Check EXPLAIN for Path Reordering (Edge Index Seek at end of pattern)
+        {
+            std::string query = "EXPLAIN MATCH (p1)-[e1]->(p2)-[e2:KNOWS {since: 2020}]->(p3) RETURN p1";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("RelationshipIndexSeek") != std::string::npos);
+            REQUIRE(res.find("Seek [e2:KNOWS(since)] via index") != std::string::npos);
+        }
+
+        // 5. End-to-end execution verification with real data
+        GqlExecutor::execute(graph, "INSERT (a:Person {name: 'Alice', age: 30, key: 'alice'})").get();
+        GqlExecutor::execute(graph, "INSERT (b:Person {name: 'Bob', age: 35, key: 'bob'})").get();
+        GqlExecutor::execute(graph, "MATCH (a:Person) MATCH (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' INSERT (a)-[:KNOWS {since: 2020}]->(b)").get();
+
+        // Query using NodeIndexSeek
+        {
+            std::string query = "MATCH (p:Person {name: 'Alice'}) RETURN p.age";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("\"p.age\": 30") != std::string::npos);
+        }
+
+        // Query using RelationshipIndexSeek
+        {
+            std::string query = "MATCH (p1)-[e:KNOWS {since: 2020}]->(p2) RETURN p1.name, p2.name";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("\"p1.name\": \"Alice\"") != std::string::npos);
+            REQUIRE(res.find("\"p2.name\": \"Bob\"") != std::string::npos);
+        }
+
+        // Query with path reordering (Bob name is indexed, start at Bob, traverse backward)
+        {
+            std::string query = "MATCH (p1)-[e:KNOWS]->(p2:Person {name: 'Bob'}) RETURN p1.name";
+            std::string res = GqlExecutor::execute(graph, query).get();
+            REQUIRE(res.find("\"p1.name\": \"Alice\"") != std::string::npos);
+        }
+    }
+
+    guard.stop();
 }

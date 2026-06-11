@@ -143,7 +143,14 @@ namespace ragedb {
         if (operation == Operation::EQ && type_it != node_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
             uint16_t target = CalculateShardId(type, property, value);
             return container().invoke_on(target, [type, property, operation, value, skip, limit] (Shard &local) {
-                return local.FindNodes(type, property, operation, value, skip, limit);
+                return local.FindNodeIds(type, property, operation, value, skip, limit);
+            }).then([this](std::vector<uint64_t> ids) {
+                std::vector<seastar::future<Node>> futures;
+                futures.reserve(ids.size());
+                for (uint64_t id : ids) {
+                    futures.push_back(NodeGetPeered(id));
+                }
+                return seastar::when_all_succeed(futures.begin(), futures.end());
             });
         }
 
@@ -183,7 +190,14 @@ namespace ragedb {
         if (operation == Operation::EQ && type_it != relationship_indexes.end() && type_it->second.find(property) != type_it->second.end()) {
             uint16_t target = CalculateShardId(type, property, value);
             return container().invoke_on(target, [type, property, operation, value, skip, limit] (Shard &local) {
-                return local.FindRelationships(type, property, operation, value, skip, limit);
+                return local.FindRelationshipIds(type, property, operation, value, skip, limit);
+            }).then([this](std::vector<uint64_t> ids) {
+                std::vector<seastar::future<Relationship>> futures;
+                futures.reserve(ids.size());
+                for (uint64_t id : ids) {
+                    futures.push_back(RelationshipGetPeered(id));
+                }
+                return seastar::when_all_succeed(futures.begin(), futures.end());
             });
         }
 
