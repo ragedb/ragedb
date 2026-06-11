@@ -128,3 +128,54 @@ Each core searches its internal inverted index segments, scores its local matchi
 documents using BM25, and returns its local top 100 matching IDs. 
 The originating core gathers these localized pools and performs a final heap-merge 
 sorting operation to deliver the global top 100 matches to the user.
+
+
+Return relevance scores along with entity IDs.
+
+Add a special FULLTEXT qualifier in front of index creation.
+DROP and SHOW stay the same. 
+Maybe add something to differentiate between the different types of indexes when SHOW INDEXES is called.
+
+// for nodes
+CREATE FULLTEXT INDEX Person.name;
+for relationships
+CREATE FULLTEXT INDEX WORKS_AT.since;
+
+How to search:
+MATCH p IN SEARCH Person.bio
+FOR 'graph database'
+RETURN p
+
+MATCH r IN SEARCH REVIEW.comment
+FOR 'excellent service'
+RETURN r
+
+MATCH r IN SEARCH REVIEW.comment
+FOR 'excellent service'
+MATCH (c)-[r]->(p)
+RETURN c, r, p;
+
+MATCH (c)-[
+    r IN SEARCH REVIEW.comment
+    FOR 'excellent service'
+]->(p)
+RETURN c, p;
+
+EBNF grammar:
+SearchSource :=
+    SEARCH PropertyList FOR SearchString
+
+MatchBinding :=
+      variable IN SearchSource
+
+where the property list may refer to either:
+
+Person.name
+(Person.name, Person.bio)
+REVIEW.comment
+(REVIEW.title, REVIEW.comment)
+
+and the type of the yielded variable (node or relationship) is inferred from the schema.
+
+CREATE FULLTEXT INDEX Person.name;
+MATCH p IN SEARCH Person.name FOR "alic" OPTIONS { fuzzy: "true" } YIELD p, score;

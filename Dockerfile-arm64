@@ -5,7 +5,9 @@ RUN apt-get -qq update -y && apt-get -qq dist-upgrade -y
 RUN apt install -y build-essential git sudo pkg-config ccache python3-pip \
     valgrind libfmt-dev ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
     libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
-    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev doxygen
+    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev doxygen wget lsb-release gnupg software-properties-common meson
+RUN wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && ./llvm.sh 23
+RUN ln -s /usr/bin/clang-23 /usr/bin/clang && ln -s /usr/bin/clang++-23 /usr/bin/clang++
 RUN pip install --break-system-packages --user conan -v "conan>=2.0"
 RUN ln -s ~/.local/bin/conan /usr/bin/conan
 RUN git clone https://github.com/scylladb/seastar.git /data/seastar
@@ -16,10 +18,13 @@ RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
 RUN git clone https://github.com/ragedb/ragedb.git /data/rage
 WORKDIR /data/rage
-RUN conan profile detect --force
-RUN conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
+RUN CC=clang-23 CXX=clang++-23 conan profile detect --force
+RUN sed -i 's/"18", "19", "20", "21", "22"/"18", "19", "20", "21", "22", "23"/' ~/.conan2/settings.yml
+RUN printf "\n[replace_requires]\nfmt/*: fmt/11.0.2\n" >> ~/.conan2/profiles/default
+RUN CC=clang-23 CXX=clang++-23 CXXFLAGS="-Wno-error=c2y-extensions" conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
+RUN python3 -c "import glob; f = glob.glob('/root/.conan2/p/**/optional_implementation.hpp', recursive=True)[0]; c = open(f).read(); pos = c.find('T& emplace(Args&&... args) noexcept'); target = 'this->construct(std::forward<Args>(args)...);'; idx = c.find(target, pos); c = c[:idx] + '::new (static_cast<void*>(this)) optional(std::forward<Args>(args)...);\n\t\t\treturn *m_value;' + c[idx + len(target):]; open(f, 'w').write(c)"
 WORKDIR /data/rage/build
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF
+RUN CC=clang-23 CXX=clang++-23 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF
 RUN cmake --build . --target ragedb
 
 ARG ARCH=

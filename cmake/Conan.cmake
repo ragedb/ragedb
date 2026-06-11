@@ -13,7 +13,7 @@ macro(run_conan)
     ${CONAN_EXTRA_REQUIRES}
     catch2/2.13.10
     docopt.cpp/0.6.3
-    fmt/10.0.0
+    fmt/11.0.2
     spdlog/1.12.0
 #   sol2/3.2.3-luajit
     sol2/3.3.0
