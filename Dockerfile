@@ -16,7 +16,7 @@ RUN git checkout seastar-25.05.0
 RUN ./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
 RUN ninja -C build/release install
 RUN rm -rf /data/seastar/*
-RUN git clone https://github.com/ragedb/ragedb.git /data/rage
+RUN git clone --recursive https://github.com/ragedb/ragedb.git /data/rage
 WORKDIR /data/rage
 RUN CC=clang-23 CXX=clang++-23 conan profile detect --force
 RUN sed -i 's/"18", "19", "20", "21", "22"/"18", "19", "20", "21", "22", "23"/' ~/.conan2/settings.yml
