@@ -483,3 +483,56 @@ TEST_CASE("GQL Execution EXPLAIN and PROFILE Tests", "[gql_explain_profile]") {
 
     guard.stop();
 }
+
+TEST_CASE("GQL Execution Full-Text Search Tests", "[gql_executor_fts]") {
+    auto graph = Graph("gql_test_fts");
+    graph.Start().get();
+    graph.Clear();
+    GraphStopGuard guard(graph);
+    
+    // Setup schemas
+    graph.shard.local().NodeTypeInsertPeered("Product").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Product", "name", "string").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Product", "description", "string").get();
+
+    // Create FTS Index
+    GqlExecutor::execute(graph, GqlParser::parse("CREATE FULLTEXT INDEX Product.description")).get();
+
+    // Create test nodes
+    graph.shard.local().NodeAddPeered("Product", "p1", "{\"name\": \"Database Book\", \"description\": \"A great book about relational databases and SQL.\"}").get();
+    graph.shard.local().NodeAddPeered("Product", "p2", "{\"name\": \"Graph DB Book\", \"description\": \"An introduction to graph databases and graph traversal algorithms.\"}").get();
+    graph.shard.local().NodeAddPeered("Product", "p3", "{\"name\": \"Novel\", \"description\": \"A science fiction novel about agentic artificial intelligence and space travel.\"}").get();
+
+    SECTION("FTS Exact term match") {
+        std::string query_str = "MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score RETURN p.name, score";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        
+        REQUIRE(results.find("Database Book") != std::string::npos);
+        REQUIRE(results.find("Graph DB Book") != std::string::npos);
+        REQUIRE(results.find("Novel") == std::string::npos);
+    }
+
+    SECTION("FTS Fuzzy match") {
+        std::string query_str = "MATCH p IN SEARCH Product.description FOR 'databas~' OPTIONS { fuzzy: 'true' } YIELD p, score RETURN p.name, score";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        
+        REQUIRE(results.find("Database Book") != std::string::npos);
+        REQUIRE(results.find("Graph DB Book") != std::string::npos);
+        REQUIRE(results.find("Novel") == std::string::npos);
+    }
+
+    SECTION("FTS No match") {
+        std::string query_str = "MATCH p IN SEARCH Product.description FOR 'cooking' YIELD p, score RETURN p.name, score";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        
+        REQUIRE(results == "[]");
+    }
+
+    guard.stop();
+}

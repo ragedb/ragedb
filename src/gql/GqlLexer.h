@@ -80,6 +80,14 @@ enum class TokenType {
     ON,
     SHOW,
 
+    // FTS Keywords
+    FULLTEXT,
+    SEARCH,
+    FOR,
+    OPTIONS,
+    YIELD,
+    IN_KW,
+
     // Admin Keywords
     CALL,
     CLEAR,

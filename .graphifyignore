@@ -1,0 +1,10 @@
+build
+build_debug
+examples
+scripts
+third_party/serenedb/third_party   
+third_party/serenedb/build
+third_party/serenedb/scripts
+third_party/serenedb/serene-ui 
+.git
+.gemini

@@ -315,6 +315,12 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "INDEXES") type = TokenType::INDEXES;
             else if (upper_name == "ON") type = TokenType::ON;
             else if (upper_name == "SHOW") type = TokenType::SHOW;
+            else if (upper_name == "FULLTEXT") type = TokenType::FULLTEXT;
+            else if (upper_name == "SEARCH") type = TokenType::SEARCH;
+            else if (upper_name == "FOR") type = TokenType::FOR;
+            else if (upper_name == "OPTIONS") type = TokenType::OPTIONS;
+            else if (upper_name == "YIELD") type = TokenType::YIELD;
+            else if (upper_name == "IN") type = TokenType::IN_KW;
             // Compound keyword check: ORDER BY
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;

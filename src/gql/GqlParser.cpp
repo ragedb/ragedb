@@ -118,7 +118,79 @@ GqlQuery GqlParser::parse_single_query() {
             stmt.is_optional = true;
         }
         consume(TokenType::MATCH, "Expected MATCH");
-        stmt.pattern = parse_path_pattern();
+        if (check(TokenType::NAME) && peek(1).type == TokenType::IN_KW) {
+            stmt.is_search = true;
+            stmt.search_var = peek().text;
+            consume(TokenType::NAME, "Expected variable name before 'IN'");
+            consume(TokenType::IN_KW, "Expected 'IN'");
+            consume(TokenType::SEARCH, "Expected 'SEARCH'");
+            
+            if (match(TokenType::LPAREN)) {
+                do {
+                    std::string type_name = peek().text;
+                    consume(TokenType::NAME, "Expected type name");
+                    consume(TokenType::DOT, "Expected '.'");
+                    std::string prop_name = peek().text;
+                    consume(TokenType::NAME, "Expected property name");
+                    
+                    stmt.search_type = type_name;
+                    stmt.search_properties.push_back(prop_name);
+                } while (match(TokenType::COMMA));
+                consume(TokenType::RPAREN, "Expected ')' after property list");
+            } else {
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name");
+                consume(TokenType::DOT, "Expected '.'");
+                std::string prop_name = peek().text;
+                consume(TokenType::NAME, "Expected property name");
+                
+                stmt.search_type = type_name;
+                stmt.search_properties.push_back(prop_name);
+            }
+            
+            consume(TokenType::FOR, "Expected 'FOR'");
+            stmt.search_string = peek().text;
+            consume(TokenType::STRING_LIT, "Expected query string literal after 'FOR'");
+            
+            if (match(TokenType::OPTIONS)) {
+                consume(TokenType::LBRACE, "Expected '{' after OPTIONS");
+                if (!check(TokenType::RBRACE)) {
+                    do {
+                        std::string opt_key = peek().text;
+                        consume(TokenType::NAME, "Expected option key identifier");
+                        consume(TokenType::COLON, "Expected ':' after option key");
+                        
+                        std::string opt_val;
+                        if (check(TokenType::STRING_LIT)) {
+                            opt_val = peek().text;
+                            consume(TokenType::STRING_LIT, "Expected string literal");
+                        } else if (check(TokenType::TRUE_KW)) {
+                            opt_val = "true";
+                            consume(TokenType::TRUE_KW, "Expected true");
+                        } else if (check(TokenType::FALSE_KW)) {
+                            opt_val = "false";
+                            consume(TokenType::FALSE_KW, "Expected false");
+                        } else if (check(TokenType::NAME)) {
+                            opt_val = peek().text;
+                            consume(TokenType::NAME, "Expected name identifier");
+                        } else {
+                            throw std::runtime_error("Expected option value");
+                        }
+                        stmt.search_options[opt_key] = opt_val;
+                    } while (match(TokenType::COMMA));
+                }
+                consume(TokenType::RBRACE, "Expected '}' to close OPTIONS");
+            }
+            
+            consume(TokenType::YIELD, "Expected 'YIELD'");
+            stmt.yield_var = peek().text;
+            consume(TokenType::NAME, "Expected variable name to bind search result");
+            consume(TokenType::COMMA, "Expected ','");
+            stmt.yield_score_var = peek().text;
+            consume(TokenType::NAME, "Expected score variable name");
+        } else {
+            stmt.pattern = parse_path_pattern();
+        }
         stmt.id = match_id_counter++;
         query.matches.push_back(std::move(stmt));
     }
@@ -247,7 +319,17 @@ GqlQuery GqlParser::parse_query() {
         SchemaOperation schema;
         
         if (match(TokenType::CREATE)) {
-            if (match(TokenType::INDEX)) {
+            if (match(TokenType::FULLTEXT)) {
+                consume(TokenType::INDEX, "Expected 'INDEX' after 'FULLTEXT'");
+                std::string type_name = peek().text;
+                consume(TokenType::NAME, "Expected type name identifier");
+                consume(TokenType::DOT, "Expected '.'");
+                std::string property_name = peek().text;
+                consume(TokenType::NAME, "Expected property name identifier");
+                schema.op = SchemaOperation::Op::CREATE_FULLTEXT_INDEX;
+                schema.name = type_name;
+                schema.alter_property_name = property_name;
+            } else if (match(TokenType::INDEX)) {
                 std::string type_name = peek().text;
                 consume(TokenType::NAME, "Expected type name identifier");
                 consume(TokenType::DOT, "Expected '.'");
@@ -739,14 +821,88 @@ std::unique_ptr<Expression> GqlParser::parse_primary() {
     if (match(TokenType::EXISTS)) {
         consume(TokenType::LBRACE, "Expected '{' after EXISTS");
         std::vector<MatchStatement> matches;
+        int sub_match_id = 0;
         while (check(TokenType::MATCH) || (check(TokenType::OPTIONAL) && peek(1).type == TokenType::MATCH)) {
             MatchStatement stmt;
             if (match(TokenType::OPTIONAL)) {
                 stmt.is_optional = true;
             }
             consume(TokenType::MATCH, "Expected MATCH");
-            stmt.pattern = parse_path_pattern();
-            matches.push_back(stmt);
+            if (check(TokenType::NAME) && peek(1).type == TokenType::IN_KW) {
+                stmt.is_search = true;
+                stmt.search_var = peek().text;
+                consume(TokenType::NAME, "Expected variable name before 'IN'");
+                consume(TokenType::IN_KW, "Expected 'IN'");
+                consume(TokenType::SEARCH, "Expected 'SEARCH'");
+                
+                if (match(TokenType::LPAREN)) {
+                    do {
+                        std::string type_name = peek().text;
+                        consume(TokenType::NAME, "Expected type name");
+                        consume(TokenType::DOT, "Expected '.'");
+                        std::string prop_name = peek().text;
+                        consume(TokenType::NAME, "Expected property name");
+                        
+                        stmt.search_type = type_name;
+                        stmt.search_properties.push_back(prop_name);
+                    } while (match(TokenType::COMMA));
+                    consume(TokenType::RPAREN, "Expected ')' after property list");
+                } else {
+                    std::string type_name = peek().text;
+                    consume(TokenType::NAME, "Expected type name");
+                    consume(TokenType::DOT, "Expected '.'");
+                    std::string prop_name = peek().text;
+                    consume(TokenType::NAME, "Expected property name");
+                    
+                    stmt.search_type = type_name;
+                    stmt.search_properties.push_back(prop_name);
+                }
+                
+                consume(TokenType::FOR, "Expected 'FOR'");
+                stmt.search_string = peek().text;
+                consume(TokenType::STRING_LIT, "Expected query string literal after 'FOR'");
+                
+                if (match(TokenType::OPTIONS)) {
+                    consume(TokenType::LBRACE, "Expected '{' after OPTIONS");
+                    if (!check(TokenType::RBRACE)) {
+                        do {
+                            std::string opt_key = peek().text;
+                            consume(TokenType::NAME, "Expected option key identifier");
+                            consume(TokenType::COLON, "Expected ':' after option key");
+                            
+                            std::string opt_val;
+                            if (check(TokenType::STRING_LIT)) {
+                                opt_val = peek().text;
+                                consume(TokenType::STRING_LIT, "Expected string literal");
+                            } else if (check(TokenType::TRUE_KW)) {
+                                opt_val = "true";
+                                consume(TokenType::TRUE_KW, "Expected true");
+                            } else if (check(TokenType::FALSE_KW)) {
+                                opt_val = "false";
+                                consume(TokenType::FALSE_KW, "Expected false");
+                            } else if (check(TokenType::NAME)) {
+                                opt_val = peek().text;
+                                consume(TokenType::NAME, "Expected name identifier");
+                            } else {
+                                throw std::runtime_error("Expected option value");
+                            }
+                            stmt.search_options[opt_key] = opt_val;
+                        } while (match(TokenType::COMMA));
+                    }
+                    consume(TokenType::RBRACE, "Expected '}' to close OPTIONS");
+                }
+                
+                consume(TokenType::YIELD, "Expected 'YIELD'");
+                stmt.yield_var = peek().text;
+                consume(TokenType::NAME, "Expected variable name to bind search result");
+                consume(TokenType::COMMA, "Expected ','");
+                stmt.yield_score_var = peek().text;
+                consume(TokenType::NAME, "Expected score variable name");
+            } else {
+                stmt.pattern = parse_path_pattern();
+            }
+            stmt.id = sub_match_id++;
+            matches.push_back(std::move(stmt));
         }
         std::unique_ptr<Expression> sub_where = nullptr;
         if (match(TokenType::WHERE)) {

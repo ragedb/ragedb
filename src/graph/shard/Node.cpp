@@ -50,6 +50,16 @@ namespace ragedb {
                 }
             }
         }
+
+        void node_fts_add_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+            shard.NodeIndexFTSInsert(type_id, property, value, external_id);
+        }
+
+        void node_fts_remove_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+            shard.NodeIndexFTSRemove(type_id, property, value, external_id);
+        }
     }
 
     uint64_t Shard::NodeAddEmpty(uint16_t type_id, const std::string &key) {
@@ -114,6 +124,14 @@ namespace ragedb {
                     node_index_add_helper(*this, type_id, internal_id, property, val);
                 }
             }
+
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    property_type_t val = node_types.getNodeProperty(type_id, internal_id, property);
+                    node_fts_add_helper(*this, type_id, internal_id, property, val);
+                }
+            }
         }
 
         return external_id;
@@ -153,6 +171,14 @@ namespace ragedb {
               for (const auto& [property, index] : type_indexes_it->second) {
                   property_type_t val = node_types.getNodeProperty(type_id, internal_id, property);
                   node_index_add_helper(*this, type_id, internal_id, property, val);
+              }
+          }
+
+          auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+          if (type_fts_indexes_it != node_fts_indexes.end()) {
+              for (const auto& [property, index] : type_fts_indexes_it->second) {
+                  property_type_t val = node_types.getNodeProperty(type_id, internal_id, property);
+                  node_fts_add_helper(*this, type_id, internal_id, property, val);
               }
           }
         }
@@ -205,6 +231,14 @@ namespace ragedb {
                 for (const auto& [property, index] : type_indexes_it->second) {
                     property_type_t val = node_types.getNodeProperty(node_type_id, internal_id, property);
                     node_index_remove_helper(*this, node_type_id, internal_id, property, val);
+                }
+            }
+
+            auto type_fts_indexes_it = node_fts_indexes.find(node_type_id);
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    property_type_t val = node_types.getNodeProperty(node_type_id, internal_id, property);
+                    node_fts_remove_helper(*this, node_type_id, internal_id, property, val);
                 }
             }
 
@@ -306,15 +340,26 @@ namespace ragedb {
             if (type_indexes_it != node_indexes.end()) {
                 indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
             }
+            bool fts_indexed = false;
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                fts_indexed = (type_fts_indexes_it->second.find(property) != type_fts_indexes_it->second.end());
+            }
             property_type_t old_value;
-            if (indexed) {
+            if (indexed || fts_indexed) {
                 old_value = node_types.getNodeProperty(id, property);
             }
             bool success = node_types.setNodeProperty(id, property, value);
-            if (success && indexed) {
+            if (success && (indexed || fts_indexed)) {
                 if (old_value != value) {
-                    node_index_remove_helper(*this, type_id, internal_id, property, old_value);
-                    node_index_add_helper(*this, type_id, internal_id, property, value);
+                    if (indexed) {
+                        node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                        node_index_add_helper(*this, type_id, internal_id, property, value);
+                    }
+                    if (fts_indexed) {
+                        node_fts_remove_helper(*this, type_id, internal_id, property, old_value);
+                        node_fts_add_helper(*this, type_id, internal_id, property, value);
+                    }
                 }
             }
             return success;
@@ -331,16 +376,27 @@ namespace ragedb {
             if (type_indexes_it != node_indexes.end()) {
                 indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
             }
+            bool fts_indexed = false;
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                fts_indexed = (type_fts_indexes_it->second.find(property) != type_fts_indexes_it->second.end());
+            }
             property_type_t old_value;
-            if (indexed) {
+            if (indexed || fts_indexed) {
                 old_value = node_types.getNodeProperty(id, property);
             }
             bool success = node_types.setNodePropertyFromJson(id, property, value);
-            if (success && indexed) {
+            if (success && (indexed || fts_indexed)) {
                 property_type_t new_value = node_types.getNodeProperty(id, property);
                 if (old_value != new_value) {
-                    node_index_remove_helper(*this, type_id, internal_id, property, old_value);
-                    node_index_add_helper(*this, type_id, internal_id, property, new_value);
+                    if (indexed) {
+                        node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                        node_index_add_helper(*this, type_id, internal_id, property, new_value);
+                    }
+                    if (fts_indexed) {
+                        node_fts_remove_helper(*this, type_id, internal_id, property, old_value);
+                        node_fts_add_helper(*this, type_id, internal_id, property, new_value);
+                    }
                 }
             }
             return success;
@@ -377,13 +433,23 @@ namespace ragedb {
             if (type_indexes_it != node_indexes.end()) {
                 indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
             }
+            bool fts_indexed = false;
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                fts_indexed = (type_fts_indexes_it->second.find(property) != type_fts_indexes_it->second.end());
+            }
             property_type_t old_value;
-            if (indexed) {
+            if (indexed || fts_indexed) {
                 old_value = node_types.getNodeProperty(id, property);
             }
             bool success = node_types.deleteNodeProperty(id, property);
-            if (success && indexed) {
-                node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+            if (success) {
+                if (indexed) {
+                    node_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                }
+                if (fts_indexed) {
+                    node_fts_remove_helper(*this, type_id, internal_id, property, old_value);
+                }
             }
             return success;
         }
@@ -420,14 +486,33 @@ namespace ragedb {
                     old_values[property] = node_types.getNodeProperty(id, property);
                 }
             }
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_fts_values;
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    old_fts_values[property] = node_types.getNodeProperty(id, property);
+                }
+            }
             bool success = node_types.setPropertiesFromJSON(type_id, internal_id, value);
-            if (success && type_indexes_it != node_indexes.end()) {
-                for (const auto& [property, index] : type_indexes_it->second) {
-                    property_type_t old_val = old_values[property];
-                    property_type_t new_val = node_types.getNodeProperty(id, property);
-                    if (old_val != new_val) {
-                        node_index_remove_helper(*this, type_id, internal_id, property, old_val);
-                        node_index_add_helper(*this, type_id, internal_id, property, new_val);
+            if (success) {
+                if (type_indexes_it != node_indexes.end()) {
+                    for (const auto& [property, index] : type_indexes_it->second) {
+                        property_type_t old_val = old_values[property];
+                        property_type_t new_val = node_types.getNodeProperty(id, property);
+                        if (old_val != new_val) {
+                            node_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                            node_index_add_helper(*this, type_id, internal_id, property, new_val);
+                        }
+                    }
+                }
+                if (type_fts_indexes_it != node_fts_indexes.end()) {
+                    for (const auto& [property, index] : type_fts_indexes_it->second) {
+                        property_type_t old_val = old_fts_values[property];
+                        property_type_t new_val = node_types.getNodeProperty(id, property);
+                        if (old_val != new_val) {
+                            node_fts_remove_helper(*this, type_id, internal_id, property, old_val);
+                            node_fts_add_helper(*this, type_id, internal_id, property, new_val);
+                        }
                     }
                 }
             }
@@ -453,6 +538,13 @@ namespace ragedb {
                     old_values[property] = node_types.getNodeProperty(id, property);
                 }
             }
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_fts_values;
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    old_fts_values[property] = node_types.getNodeProperty(id, property);
+                }
+            }
             node_types.deleteProperties(type_id, internal_id);
             if (type_indexes_it != node_indexes.end()) {
                 for (const auto& [property, index] : type_indexes_it->second) {
@@ -460,11 +552,25 @@ namespace ragedb {
                     node_index_remove_helper(*this, type_id, internal_id, property, old_val);
                 }
             }
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    property_type_t old_val = old_fts_values[property];
+                    node_fts_remove_helper(*this, type_id, internal_id, property, old_val);
+                }
+            }
             bool success = node_types.setPropertiesFromJSON(type_id, internal_id, value);
-            if (success && type_indexes_it != node_indexes.end()) {
-                for (const auto& [property, index] : type_indexes_it->second) {
-                    property_type_t new_val = node_types.getNodeProperty(id, property);
-                    node_index_add_helper(*this, type_id, internal_id, property, new_val);
+            if (success) {
+                if (type_indexes_it != node_indexes.end()) {
+                    for (const auto& [property, index] : type_indexes_it->second) {
+                        property_type_t new_val = node_types.getNodeProperty(id, property);
+                        node_index_add_helper(*this, type_id, internal_id, property, new_val);
+                    }
+                }
+                if (type_fts_indexes_it != node_fts_indexes.end()) {
+                    for (const auto& [property, index] : type_fts_indexes_it->second) {
+                        property_type_t new_val = node_types.getNodeProperty(id, property);
+                        node_fts_add_helper(*this, type_id, internal_id, property, new_val);
+                    }
                 }
             }
             return success;
@@ -489,11 +595,26 @@ namespace ragedb {
                     old_values[property] = node_types.getNodeProperty(id, property);
                 }
             }
+            auto type_fts_indexes_it = node_fts_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_fts_values;
+            if (type_fts_indexes_it != node_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    old_fts_values[property] = node_types.getNodeProperty(id, property);
+                }
+            }
             bool success = node_types.deleteProperties(type_id, internal_id);
-            if (success && type_indexes_it != node_indexes.end()) {
-                for (const auto& [property, index] : type_indexes_it->second) {
-                    property_type_t old_val = old_values[property];
-                    node_index_remove_helper(*this, type_id, internal_id, property, old_val);
+            if (success) {
+                if (type_indexes_it != node_indexes.end()) {
+                    for (const auto& [property, index] : type_indexes_it->second) {
+                        property_type_t old_val = old_values[property];
+                        node_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                    }
+                }
+                if (type_fts_indexes_it != node_fts_indexes.end()) {
+                    for (const auto& [property, index] : type_fts_indexes_it->second) {
+                        property_type_t old_val = old_fts_values[property];
+                        node_fts_remove_helper(*this, type_id, internal_id, property, old_val);
+                    }
                 }
             }
             return success;

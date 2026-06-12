@@ -54,6 +54,7 @@
 #include "NodeTypes.h"
 #include "RelationshipTypes.h"
 #include "PropertyIndex.h"
+#include "FullTextIndex.h"
 #include "eve/CollectIndexes.h"
 #include "overload/Disambiguate.h"
 #include "Sort.h"
@@ -88,6 +89,8 @@ namespace ragedb {
 
         tsl::sparse_map<uint16_t, tsl::sparse_map<std::string, std::unique_ptr<PropertyIndex>>> node_indexes;
         tsl::sparse_map<uint16_t, tsl::sparse_map<std::string, std::unique_ptr<PropertyIndex>>> relationship_indexes;
+        tsl::sparse_map<uint16_t, tsl::sparse_map<std::string, std::unique_ptr<FullTextIndex>>> node_fts_indexes;
+        tsl::sparse_map<uint16_t, tsl::sparse_map<std::string, std::unique_ptr<FullTextIndex>>> relationship_fts_indexes;
 
 
         inline static const std::string EXCEPTION = "An exception has occurred: ";
@@ -178,6 +181,8 @@ namespace ragedb {
         bool RelationshipIndexDelete(uint16_t type_id, const std::string& property);
         std::map<std::string, std::vector<std::string>> NodeIndexesGet();
         std::map<std::string, std::vector<std::string>> RelationshipIndexesGet();
+        std::map<std::string, std::vector<std::string>> NodeIndexesFTSGet();
+        std::map<std::string, std::vector<std::string>> RelationshipIndexesFTSGet();
         bool NodeIndexExists(const std::string& type, const std::string& property);
         bool RelationshipIndexExists(const std::string& type, const std::string& property);
         void NodeIndexInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
@@ -186,6 +191,20 @@ namespace ragedb {
         void RelationshipIndexRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
         std::vector<uint64_t> NodeIndexLookup(uint16_t type_id, const std::string& property, Operation operation, const property_type_t& value);
         std::vector<uint64_t> RelationshipIndexLookup(uint16_t type_id, const std::string& property, Operation operation, const property_type_t& value);
+
+        // Full-Text Search Property Indexes
+        bool NodeIndexFTSCreate(uint16_t type_id, const std::string& property);
+        bool NodeIndexFTSDelete(uint16_t type_id, const std::string& property);
+        bool RelationshipIndexFTSCreate(uint16_t type_id, const std::string& property);
+        bool RelationshipIndexFTSDelete(uint16_t type_id, const std::string& property);
+        bool NodeIndexFTSExists(const std::string& type, const std::string& property);
+        bool RelationshipIndexFTSExists(const std::string& type, const std::string& property);
+        void NodeIndexFTSInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        void NodeIndexFTSRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        void RelationshipIndexFTSInsert(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        void RelationshipIndexFTSRemove(uint16_t type_id, const std::string& property, const property_type_t& value, uint64_t external_id);
+        std::vector<std::pair<uint64_t, double>> NodeIndexFTSSearch(const std::string& type, const std::vector<std::string>& properties, const std::string& query, const std::map<std::string, std::string>& options);
+        std::vector<std::pair<uint64_t, double>> RelationshipIndexFTSSearch(const std::string& type, const std::vector<std::string>& properties, const std::string& query, const std::map<std::string, std::string>& options);
 
         // Helpers
         std::map<uint16_t, std::map<uint16_t, std::vector<uint64_t>>> NodeRemoveGetIncoming(uint64_t external_id);
@@ -528,6 +547,14 @@ namespace ragedb {
         seastar::future<bool> NodeIndexDeletePeered(const std::string& type, const std::string& property);
         seastar::future<bool> RelationshipIndexCreatePeered(const std::string& type, const std::string& property);
         seastar::future<bool> RelationshipIndexDeletePeered(const std::string& type, const std::string& property);
+
+        // Full-Text Search Property Indexes
+        seastar::future<bool> NodeIndexFTSCreatePeered(const std::string& type, const std::string& property);
+        seastar::future<bool> NodeIndexFTSDeletePeered(const std::string& type, const std::string& property);
+        seastar::future<bool> RelationshipIndexFTSCreatePeered(const std::string& type, const std::string& property);
+        seastar::future<bool> RelationshipIndexFTSDeletePeered(const std::string& type, const std::string& property);
+        seastar::future<std::vector<std::pair<uint64_t, double>>> NodeIndexFTSSearchPeered(const std::string& type, const std::vector<std::string>& properties, const std::string& query, const std::map<std::string, std::string>& options);
+        seastar::future<std::vector<std::pair<uint64_t, double>>> RelationshipIndexFTSSearchPeered(const std::string& type, const std::vector<std::string>& properties, const std::string& query, const std::map<std::string, std::string>& options);
 
         // Node Properties
         seastar::future<property_type_t> NodeGetPropertyPeered(const std::string& type, const std::string& key, const std::string& property);

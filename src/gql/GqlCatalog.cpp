@@ -217,6 +217,56 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 });
             }
         }
+        case SchemaOperation::Op::CREATE_FULLTEXT_INDEX: {
+            std::string type_name = schema_op.name;
+            std::string property_name = schema_op.alter_property_name;
+            
+            auto node_types = graph.shard.local().NodeTypesGetPeered();
+            if (node_types.find(type_name) != node_types.end()) {
+                std::string prop_type = graph.shard.local().NodePropertyTypeGet(type_name, property_name);
+                if (prop_type.empty()) {
+                    return seastar::make_exception_future<std::string>(
+                        std::runtime_error("Property '" + property_name + "' does not exist on NodeType '" + type_name + "'")
+                    );
+                }
+                return graph.shard.local().NodeIndexFTSCreatePeered(type_name, property_name)
+                .then([type_name, property_name](bool success) {
+                    if (!success) {
+                        return seastar::make_exception_future<std::string>(
+                            std::runtime_error("Failed to create fulltext index on " + type_name + "." + property_name)
+                        );
+                    }
+                    return seastar::make_ready_future<std::string>(
+                        "{\"status\": \"created\", \"index\": \"" + type_name + "." + property_name + "\", \"kind\": \"fulltext\"}"
+                    );
+                });
+            }
+            
+            auto rel_types = graph.shard.local().RelationshipTypesGetPeered();
+            if (rel_types.find(type_name) != rel_types.end()) {
+                std::string prop_type = graph.shard.local().RelationshipPropertyTypeGet(type_name, property_name);
+                if (prop_type.empty()) {
+                    return seastar::make_exception_future<std::string>(
+                        std::runtime_error("Property '" + property_name + "' does not exist on RelationshipType '" + type_name + "'")
+                    );
+                }
+                return graph.shard.local().RelationshipIndexFTSCreatePeered(type_name, property_name)
+                .then([type_name, property_name](bool success) {
+                    if (!success) {
+                        return seastar::make_exception_future<std::string>(
+                            std::runtime_error("Failed to create fulltext index on " + type_name + "." + property_name)
+                        );
+                    }
+                    return seastar::make_ready_future<std::string>(
+                        "{\"status\": \"created\", \"index\": \"" + type_name + "." + property_name + "\", \"kind\": \"fulltext\"}"
+                    );
+                });
+            }
+            
+            return seastar::make_exception_future<std::string>(
+                std::runtime_error("NodeType or RelationshipType '" + type_name + "' does not exist")
+            );
+        }
         case SchemaOperation::Op::CREATE_INDEX: {
             std::string type_name = schema_op.name;
             std::string property_name = schema_op.alter_property_name;
@@ -321,6 +371,17 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 }
             }
             
+            auto node_fts_indexes_map = graph.shard.local().NodeIndexesFTSGet();
+            for (const auto& [type_name, properties] : node_fts_indexes_map) {
+                if (filter_type_name.empty() || filter_type_name == type_name) {
+                    for (const auto& property : properties) {
+                        if (!first) json += ", ";
+                        first = false;
+                        json += "{\"type\": \"Node\", \"label\": \"" + type_name + "\", \"property\": \"" + property + "\", \"kind\": \"fulltext\"}";
+                    }
+                }
+            }
+            
             auto rel_indexes_map = graph.shard.local().RelationshipIndexesGet();
             for (const auto& [type_name, properties] : rel_indexes_map) {
                 if (filter_type_name.empty() || filter_type_name == type_name) {
@@ -328,6 +389,17 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                         if (!first) json += ", ";
                         first = false;
                         json += "{\"type\": \"Relationship\", \"label\": \"" + type_name + "\", \"property\": \"" + property + "\"}";
+                    }
+                }
+            }
+            
+            auto rel_fts_indexes_map = graph.shard.local().RelationshipIndexesFTSGet();
+            for (const auto& [type_name, properties] : rel_fts_indexes_map) {
+                if (filter_type_name.empty() || filter_type_name == type_name) {
+                    for (const auto& property : properties) {
+                        if (!first) json += ", ";
+                        first = false;
+                        json += "{\"type\": \"Relationship\", \"label\": \"" + type_name + "\", \"property\": \"" + property + "\", \"kind\": \"fulltext\"}";
                     }
                 }
             }

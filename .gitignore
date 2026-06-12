@@ -62,5 +62,6 @@ test/cmake-build-release-coverage/
 *.out
 *.app
 
-#FrogQL
-frogql_src
+# graphify
+graphify-out/cost.json
+graphify-out/cache/

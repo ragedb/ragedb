@@ -233,6 +233,30 @@ TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
         std::string res_show_final = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
         REQUIRE(res_show_final.find("\"label\": \"User\"") == std::string::npos);
     }
+
+    SECTION("Full-Text Search Index Management") {
+        // Setup schema
+        graph.shard.local().NodeTypeInsertPeered("Product").get();
+        graph.shard.local().NodePropertyTypeAddPeered("Product", "description", "string").get();
+
+        // 1. Create fulltext index
+        std::string query_create = "CREATE FULLTEXT INDEX Product.description";
+        std::string res_create = GqlExecutor::execute(graph, GqlParser::parse(query_create)).get();
+        REQUIRE(res_create == "{\"status\": \"created\", \"index\": \"Product.description\", \"kind\": \"fulltext\"}");
+
+        // 2. Show indexes
+        std::string query_show = "SHOW INDEXES ON Product";
+        std::string res_show = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
+        REQUIRE(res_show == "[{\"type\": \"Node\", \"label\": \"Product\", \"property\": \"description\", \"kind\": \"fulltext\"}]");
+
+        // 3. Drop index
+        std::string query_drop = "DROP INDEX Product.description";
+        std::string res_drop = GqlExecutor::execute(graph, GqlParser::parse(query_drop)).get();
+        REQUIRE(res_drop == "{\"status\": \"dropped\", \"index\": \"Product.description\"}");
+
+        std::string res_show_after = GqlExecutor::execute(graph, GqlParser::parse(query_show)).get();
+        REQUIRE(res_show_after == "[]");
+    }
     
     SECTION("GQL Seek Operators & Path Reordering Optimizer Tests") {
         // Setup schema

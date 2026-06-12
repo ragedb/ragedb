@@ -35,11 +35,16 @@ std::optional<StarJoinCandidate> find_star_join_candidate(
     std::vector<std::set<std::string>> remaining_vars;
     for (size_t i = match_idx; i < matches.size(); ++i) {
         std::set<std::string> vars;
-        for (const auto& node : matches[i].pattern.nodes) {
-            if (!node.variable.empty()) vars.insert(node.variable);
-        }
-        for (const auto& edge : matches[i].pattern.edges) {
-            if (!edge.variable.empty()) vars.insert(edge.variable);
+        if (matches[i].is_search) {
+            if (!matches[i].yield_var.empty()) vars.insert(matches[i].yield_var);
+            if (!matches[i].yield_score_var.empty()) vars.insert(matches[i].yield_score_var);
+        } else {
+            for (const auto& node : matches[i].pattern.nodes) {
+                if (!node.variable.empty()) vars.insert(node.variable);
+            }
+            for (const auto& edge : matches[i].pattern.edges) {
+                if (!edge.variable.empty()) vars.insert(edge.variable);
+            }
         }
         remaining_vars.push_back(std::move(vars));
     }
@@ -118,6 +123,77 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
         return seastar::make_ready_future<IntermediateResult>(std::move(incoming));
     }
 
+    const auto& stmt = matches[match_idx];
+    if (stmt.is_search) {
+        bool is_node = graph.shard.local().NodeTypesGet().count(stmt.search_type) > 0;
+        seastar::future<std::vector<std::pair<uint64_t, double>>> search_fut = is_node ?
+            graph.shard.local().NodeIndexFTSSearchPeered(stmt.search_type, stmt.search_properties, stmt.search_string, stmt.search_options) :
+            graph.shard.local().RelationshipIndexFTSSearchPeered(stmt.search_type, stmt.search_properties, stmt.search_string, stmt.search_options);
+
+        auto start = std::chrono::steady_clock::now();
+        return search_fut.then([&graph, stmt, is_node, matches = std::move(matches), match_idx, incoming = std::move(incoming), limit, pruner, query_ptr, start](std::vector<std::pair<uint64_t, double>> search_res) mutable {
+            if (search_res.empty()) {
+                IntermediateResult empty_res = stmt.is_optional ? incoming : IntermediateResult::empty();
+                return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(empty_res), limit, pruner, "", true, false, query_ptr);
+            }
+
+            std::vector<seastar::future<GqlRow>> row_futs;
+            for (const auto& [id, score] : search_res) {
+                if (is_node) {
+                    row_futs.push_back(graph.shard.local().NodeGetPeered(id).then([yield_var = stmt.yield_var, yield_score_var = stmt.yield_score_var, score](Node node) {
+                        GqlRow row;
+                        row.bindings[yield_var] = GqlValue(node);
+                        row.bindings[yield_score_var] = GqlValue(property_type_t(score));
+                        return row;
+                    }));
+                } else {
+                    row_futs.push_back(graph.shard.local().RelationshipGetPeered(id).then([yield_var = stmt.yield_var, yield_score_var = stmt.yield_score_var, score](Relationship rel) {
+                        GqlRow row;
+                        row.bindings[yield_var] = GqlValue(rel);
+                        row.bindings[yield_score_var] = GqlValue(property_type_t(score));
+                        return row;
+                    }));
+                }
+            }
+
+            return seastar::when_all_succeed(row_futs.begin(), row_futs.end())
+            .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), stmt, limit, pruner, query_ptr, start](std::vector<GqlRow> search_rows) mutable {
+                if (query_ptr && query_ptr->profile) {
+                    auto end = std::chrono::steady_clock::now();
+                    auto node = query_ptr->plan_nodes["match_" + std::to_string(stmt.id)];
+                    if (node) {
+                        node->actual_rows = search_rows.size();
+                        node->time_ms = std::chrono::duration<double, std::milli>(end - start).count();
+                    }
+                }
+
+                IntermediateResult search_res(std::move(search_rows));
+                IntermediateResult joined;
+                if (incoming.rows.size() == 1 && incoming.rows[0].bindings.empty()) {
+                    joined = std::move(search_res);
+                } else {
+                    auto join_start = std::chrono::steady_clock::now();
+                    if (stmt.is_optional) {
+                        joined = left_outer_join(std::move(incoming), std::move(search_res), incoming.freevars(), {stmt.yield_var, stmt.yield_score_var});
+                    } else {
+                        joined = natural_join(std::move(incoming), std::move(search_res), limit);
+                    }
+                    if (query_ptr && query_ptr->profile) {
+                        auto join_end = std::chrono::steady_clock::now();
+                        std::string join_key = (stmt.is_optional ? "left_outer_join_" : "natural_join_") + std::to_string(stmt.id);
+                        auto join_node = query_ptr->plan_nodes[join_key];
+                        if (join_node) {
+                            join_node->actual_rows = joined.rows.size();
+                            join_node->time_ms = std::chrono::duration<double, std::milli>(join_end - join_start).count();
+                        }
+                    }
+                }
+
+                return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, std::move(joined), limit, pruner, "", true, false, query_ptr);
+            });
+        });
+    }
+
     auto incoming_vars = incoming.freevars();
     
     if (auto candidate = find_star_join_candidate(matches, match_idx, incoming_vars)) {
@@ -189,8 +265,6 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
             });
         }
     }
-
-    const auto stmt = matches[match_idx];
 
     bool has_shared = false;
     for (const auto& node : stmt.pattern.nodes) {

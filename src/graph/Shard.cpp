@@ -358,7 +358,7 @@ namespace ragedb {
 
         // Date
         lua.set_function("DateToISO", &Date::toISO);
-        lua.set_function("DateToDouble", &Date::value);
+        lua.set_function("DateToDouble", [](const Date& date) { return date.value; });
 
         // Load CSV
         lua.set_function("LoadCSV", &Shard::LoadCSVViaLua, this);

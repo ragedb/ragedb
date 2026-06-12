@@ -11,6 +11,11 @@ target_compile_features(project_options INTERFACE cxx_std_23)
 set_property(TARGET project_options PROPERTY CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Workaround for Clang compiling with libstdc++ where hardware destructive/constructive size is not defined.
+if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+  add_compile_definitions(__GCC_DESTRUCTIVE_SIZE=64 __GCC_CONSTRUCTIVE_SIZE=64)
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
@@ -69,6 +74,8 @@ if(ENABLE_PCH)
     <utility>)
 endif()
 
+find_package(ZLIB REQUIRED)
+find_package(CURL REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(sol2 REQUIRED)
@@ -92,8 +99,6 @@ endif()
 
 if(ENABLE_TESTING)
   enable_testing()
-  message("Building Tests. Be sure to check out test/constexpr_tests for constexpr testing")
-  add_subdirectory(test)
 endif()
 
 if(ENABLE_FUZZING)
@@ -110,6 +115,52 @@ FetchContent_Declare(
 set(TESTS OFF CACHE BOOL "Build uNoDB tests" FORCE)
 set(BENCHMARKS OFF CACHE BOOL "Build uNoDB benchmarks" FORCE)
 FetchContent_MakeAvailable(unodb)
+
+FetchContent_Declare(
+  snowball
+  GIT_REPOSITORY https://github.com/snowballstem/snowball.git
+  GIT_TAG        v2.1.0
+)
+FetchContent_MakeAvailable(snowball)
+set(SNOWBALL_ROOT "${snowball_SOURCE_DIR}" CACHE PATH "Path to Snowball source directory" FORCE)
+
+FetchContent_Declare(
+  iresearch
+  GIT_REPOSITORY https://github.com/iresearch-toolkit/iresearch.git
+  GIT_TAG        master
+)
+set(USE_UTILS OFF CACHE BOOL "Build utils" FORCE)
+set(USE_TESTS OFF CACHE BOOL "Build tests" FORCE)
+set(USE_MICROBENCH OFF CACHE BOOL "Build micro-benchmark project" FORCE)
+set(USE_PYRESEARCH OFF CACHE BOOL "Build iresearch python bridge" FORCE)
+FetchContent_MakeAvailable(iresearch)
+set(CMAKE_CXX_STANDARD 23 CACHE STRING "Force C++23 standard" FORCE)
+
+# Create a symlink in the binary directory so that #include <iresearch/...> works.
+# This is necessary because in-tree FetchContent builds of iresearch do not expose
+# a structured "iresearch" subdirectory for headers, keeping them directly under "core/".
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/include")
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/include/iresearch")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+    "${iresearch_SOURCE_DIR}/core"
+    "${CMAKE_BINARY_DIR}/include/iresearch"
+  )
+endif()
+target_include_directories(iresearch-static INTERFACE
+  "${CMAKE_BINARY_DIR}/include"
+  "${iresearch_SOURCE_DIR}/core"
+  "${iresearch_BINARY_DIR}/core"
+  "${iresearch_SOURCE_DIR}/external"
+  "${iresearch_SOURCE_DIR}/external/text/include"
+  "${iresearch_SOURCE_DIR}/external/simdcomp/include"
+  "${iresearch_SOURCE_DIR}/external/frozen/include"
+  "${iresearch_SOURCE_DIR}/external/velocypack/include"
+  "${iresearch_SOURCE_DIR}/external/highway"
+  "${iresearch_SOURCE_DIR}/external/fastText/src"
+  "${iresearch_SOURCE_DIR}/external/abseil-cpp"
+)
+
 
 find_package(Seastar REQUIRED)
 find_library(SYSTEM_FMT_LIB NAMES fmt PATHS /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
@@ -185,6 +236,7 @@ target_link_libraries(
         boost::boost
         unordered_dense::unordered_dense
         unodb
+        iresearch-static
 )
 
 target_link_libraries(
@@ -193,4 +245,9 @@ target_link_libraries(
         project_warnings
         Graph
 )
+
+if(ENABLE_TESTING)
+  message("Building Tests. Be sure to check out test/constexpr_tests for constexpr testing")
+  add_subdirectory(test)
+endif()
 

@@ -98,15 +98,17 @@ void GqlTypechecker::meet_variable(const std::string& name, GqlType type, const 
         if (type != GqlType::ANY) {
             it->second.type = type;
         }
-        std::set<std::string> intersection;
-        std::set_intersection(it->second.labels.begin(), it->second.labels.end(), labels.begin(), labels.end(),
-                              std::inserter(intersection, intersection.begin()));
-        if (intersection.empty()) {
-            throw std::runtime_error("Variable '" + name + "' has no possible matching types due to disjoint label constraints");
+        if (type == GqlType::NODE || type == GqlType::RELATIONSHIP) {
+            std::set<std::string> intersection;
+            std::set_intersection(it->second.labels.begin(), it->second.labels.end(), labels.begin(), labels.end(),
+                                  std::inserter(intersection, intersection.begin()));
+            if (intersection.empty()) {
+                throw std::runtime_error("Variable '" + name + "' has no possible matching types due to disjoint label constraints");
+            }
+            it->second.labels = std::move(intersection);
         }
-        it->second.labels = std::move(intersection);
     } else {
-        if (labels.empty()) {
+        if ((type == GqlType::NODE || type == GqlType::RELATIONSHIP) && labels.empty()) {
             throw std::runtime_error("Variable '" + name + "' matches no valid types in the database schema");
         }
         env[name] = {type, labels};
@@ -399,7 +401,17 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
             const auto& exists = static_cast<const ExistsExpr&>(expr);
             auto parent_env = this->env;
             for (const auto& match : exists.matches) {
-                check_path_pattern(match.pattern);
+                if (match.is_search) {
+                    bool is_node = graph.shard.local().NodeTypesGet().count(match.search_type) > 0;
+                    bool is_rel = graph.shard.local().RelationshipTypesGet().count(match.search_type) > 0;
+                    if (!is_node && !is_rel) {
+                        throw std::runtime_error("Search type '" + match.search_type + "' does not exist in the schema");
+                    }
+                    meet_variable(match.yield_var, is_node ? GqlType::NODE : GqlType::RELATIONSHIP, {match.search_type});
+                    meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
+                } else {
+                    check_path_pattern(match.pattern);
+                }
             }
             if (exists.where_expr) {
                 GqlType t = check_expression(*exists.where_expr);
@@ -498,7 +510,17 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
 
     // Process all MATCH patterns first to populate variables in env
     for (const auto& match : query.matches) {
-        check_path_pattern(match.pattern);
+        if (match.is_search) {
+            bool is_node = graph.shard.local().NodeTypesGet().count(match.search_type) > 0;
+            bool is_rel = graph.shard.local().RelationshipTypesGet().count(match.search_type) > 0;
+            if (!is_node && !is_rel) {
+                throw std::runtime_error("Search type '" + match.search_type + "' does not exist in the schema");
+            }
+            meet_variable(match.yield_var, is_node ? GqlType::NODE : GqlType::RELATIONSHIP, {match.search_type});
+            meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
+        } else {
+            check_path_pattern(match.pattern);
+        }
     }
 
     // Process WHERE condition

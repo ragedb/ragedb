@@ -48,6 +48,16 @@ namespace ragedb {
                 }
             }
         }
+
+        void relationship_fts_add_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+            shard.RelationshipIndexFTSInsert(type_id, property, value, external_id);
+        }
+
+        void relationship_fts_remove_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+            shard.RelationshipIndexFTSRemove(type_id, property, value, external_id);
+        }
     }
 
     void Shard::insert_sorted(uint64_t id1, uint64_t external_id, std::vector<Link> &links) const {
@@ -132,6 +142,13 @@ namespace ragedb {
                 for (const auto& [property, index] : type_indexes_it->second) {
                     property_type_t val = relationship_types.getRelationshipProperty(rel_type_id, internal_id, property);
                     relationship_index_add_helper(*this, rel_type_id, internal_id, property, val);
+                }
+            }
+            auto type_fts_indexes_it = relationship_fts_indexes.find(rel_type_id);
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    property_type_t val = relationship_types.getRelationshipProperty(rel_type_id, internal_id, property);
+                    relationship_fts_add_helper(*this, rel_type_id, internal_id, property, val);
                 }
             }
 
@@ -237,6 +254,13 @@ namespace ragedb {
                 relationship_index_add_helper(*this, rel_type_id, internal_id, property, val);
             }
         }
+        auto type_fts_indexes_it = relationship_fts_indexes.find(rel_type_id);
+        if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+            for (const auto& [property, index] : type_fts_indexes_it->second) {
+                property_type_t val = relationship_types.getRelationshipProperty(rel_type_id, internal_id, property);
+                relationship_fts_add_helper(*this, rel_type_id, internal_id, property, val);
+            }
+        }
 
         // Add the relationship to the outgoing node
         auto group = std::ranges::find_if(node_types.getOutgoingRelationships(id1_type_id).at(internal_id1),
@@ -324,15 +348,26 @@ namespace ragedb {
             if (type_indexes_it != relationship_indexes.end()) {
                 indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
             }
+            bool fts_indexed = false;
+            auto type_fts_indexes_it = relationship_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                fts_indexed = (type_fts_indexes_it->second.find(property) != type_fts_indexes_it->second.end());
+            }
             property_type_t old_value;
-            if (indexed) {
+            if (indexed || fts_indexed) {
                 old_value = relationship_types.getRelationshipProperty(id, property);
             }
             bool success = relationship_types.setRelationshipProperty(id, property, value);
-            if (success && indexed) {
+            if (success && (indexed || fts_indexed)) {
                 if (old_value != value) {
-                    relationship_index_remove_helper(*this, type_id, internal_id, property, old_value);
-                    relationship_index_add_helper(*this, type_id, internal_id, property, value);
+                    if (indexed) {
+                        relationship_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                        relationship_index_add_helper(*this, type_id, internal_id, property, value);
+                    }
+                    if (fts_indexed) {
+                        relationship_fts_remove_helper(*this, type_id, internal_id, property, old_value);
+                        relationship_fts_add_helper(*this, type_id, internal_id, property, value);
+                    }
                 }
             }
             return success;
@@ -349,16 +384,27 @@ namespace ragedb {
             if (type_indexes_it != relationship_indexes.end()) {
                 indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
             }
+            bool fts_indexed = false;
+            auto type_fts_indexes_it = relationship_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                fts_indexed = (type_fts_indexes_it->second.find(property) != type_fts_indexes_it->second.end());
+            }
             property_type_t old_value;
-            if (indexed) {
+            if (indexed || fts_indexed) {
                 old_value = relationship_types.getRelationshipProperty(id, property);
             }
             bool success = relationship_types.setRelationshipPropertyFromJson(id, property, value);
-            if (success && indexed) {
+            if (success && (indexed || fts_indexed)) {
                 property_type_t new_value = relationship_types.getRelationshipProperty(id, property);
                 if (old_value != new_value) {
-                    relationship_index_remove_helper(*this, type_id, internal_id, property, old_value);
-                    relationship_index_add_helper(*this, type_id, internal_id, property, new_value);
+                    if (indexed) {
+                        relationship_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                        relationship_index_add_helper(*this, type_id, internal_id, property, new_value);
+                    }
+                    if (fts_indexed) {
+                        relationship_fts_remove_helper(*this, type_id, internal_id, property, old_value);
+                        relationship_fts_add_helper(*this, type_id, internal_id, property, new_value);
+                    }
                 }
             }
             return success;
@@ -375,13 +421,23 @@ namespace ragedb {
             if (type_indexes_it != relationship_indexes.end()) {
                 indexed = (type_indexes_it->second.find(property) != type_indexes_it->second.end());
             }
+            bool fts_indexed = false;
+            auto type_fts_indexes_it = relationship_fts_indexes.find(type_id);
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                fts_indexed = (type_fts_indexes_it->second.find(property) != type_fts_indexes_it->second.end());
+            }
             property_type_t old_value;
-            if (indexed) {
+            if (indexed || fts_indexed) {
                 old_value = relationship_types.getRelationshipProperty(id, property);
             }
             bool success = relationship_types.deleteRelationshipProperty(id, property);
-            if (success && indexed) {
-                relationship_index_remove_helper(*this, type_id, internal_id, property, old_value);
+            if (success) {
+                if (indexed) {
+                    relationship_index_remove_helper(*this, type_id, internal_id, property, old_value);
+                }
+                if (fts_indexed) {
+                    relationship_fts_remove_helper(*this, type_id, internal_id, property, old_value);
+                }
             }
             return success;
         }
@@ -406,14 +462,33 @@ namespace ragedb {
                     old_values[property] = relationship_types.getRelationshipProperty(id, property);
                 }
             }
+            auto type_fts_indexes_it = relationship_fts_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_fts_values;
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    old_fts_values[property] = relationship_types.getRelationshipProperty(id, property);
+                }
+            }
             bool success = relationship_types.setPropertiesFromJSON(type_id, internal_id, value);
-            if (success && type_indexes_it != relationship_indexes.end()) {
-                for (const auto& [property, index] : type_indexes_it->second) {
-                    property_type_t old_val = old_values[property];
-                    property_type_t new_val = relationship_types.getRelationshipProperty(id, property);
-                    if (old_val != new_val) {
-                        relationship_index_remove_helper(*this, type_id, internal_id, property, old_val);
-                        relationship_index_add_helper(*this, type_id, internal_id, property, new_val);
+            if (success) {
+                if (type_indexes_it != relationship_indexes.end()) {
+                    for (const auto& [property, index] : type_indexes_it->second) {
+                        property_type_t old_val = old_values[property];
+                        property_type_t new_val = relationship_types.getRelationshipProperty(id, property);
+                        if (old_val != new_val) {
+                            relationship_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                            relationship_index_add_helper(*this, type_id, internal_id, property, new_val);
+                        }
+                    }
+                }
+                if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                    for (const auto& [property, index] : type_fts_indexes_it->second) {
+                        property_type_t old_val = old_fts_values[property];
+                        property_type_t new_val = relationship_types.getRelationshipProperty(id, property);
+                        if (old_val != new_val) {
+                            relationship_fts_remove_helper(*this, type_id, internal_id, property, old_val);
+                            relationship_fts_add_helper(*this, type_id, internal_id, property, new_val);
+                        }
                     }
                 }
             }
@@ -433,6 +508,13 @@ namespace ragedb {
                     old_values[property] = relationship_types.getRelationshipProperty(id, property);
                 }
             }
+            auto type_fts_indexes_it = relationship_fts_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_fts_values;
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    old_fts_values[property] = relationship_types.getRelationshipProperty(id, property);
+                }
+            }
             relationship_types.deleteProperties(type_id, internal_id);
             if (type_indexes_it != relationship_indexes.end()) {
                 for (const auto& [property, index] : type_indexes_it->second) {
@@ -440,11 +522,25 @@ namespace ragedb {
                     relationship_index_remove_helper(*this, type_id, internal_id, property, old_val);
                 }
             }
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    property_type_t old_val = old_fts_values[property];
+                    relationship_fts_remove_helper(*this, type_id, internal_id, property, old_val);
+                }
+            }
             bool success = relationship_types.setPropertiesFromJSON(type_id, internal_id, value);
-            if (success && type_indexes_it != relationship_indexes.end()) {
-                for (const auto& [property, index] : type_indexes_it->second) {
-                    property_type_t new_val = relationship_types.getRelationshipProperty(id, property);
-                    relationship_index_add_helper(*this, type_id, internal_id, property, new_val);
+            if (success) {
+                if (type_indexes_it != relationship_indexes.end()) {
+                    for (const auto& [property, index] : type_indexes_it->second) {
+                        property_type_t new_val = relationship_types.getRelationshipProperty(id, property);
+                        relationship_index_add_helper(*this, type_id, internal_id, property, new_val);
+                    }
+                }
+                if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                    for (const auto& [property, index] : type_fts_indexes_it->second) {
+                        property_type_t new_val = relationship_types.getRelationshipProperty(id, property);
+                        relationship_fts_add_helper(*this, type_id, internal_id, property, new_val);
+                    }
                 }
             }
             return success;
@@ -463,11 +559,26 @@ namespace ragedb {
                     old_values[property] = relationship_types.getRelationshipProperty(id, property);
                 }
             }
+            auto type_fts_indexes_it = relationship_fts_indexes.find(type_id);
+            std::map<std::string, property_type_t> old_fts_values;
+            if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                for (const auto& [property, index] : type_fts_indexes_it->second) {
+                    old_fts_values[property] = relationship_types.getRelationshipProperty(id, property);
+                }
+            }
             bool success = relationship_types.deleteProperties(type_id, internal_id);
-            if (success && type_indexes_it != relationship_indexes.end()) {
-                for (const auto& [property, index] : type_indexes_it->second) {
-                    property_type_t old_val = old_values[property];
-                    relationship_index_remove_helper(*this, type_id, internal_id, property, old_val);
+            if (success) {
+                if (type_indexes_it != relationship_indexes.end()) {
+                    for (const auto& [property, index] : type_indexes_it->second) {
+                        property_type_t old_val = old_values[property];
+                        relationship_index_remove_helper(*this, type_id, internal_id, property, old_val);
+                    }
+                }
+                if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+                    for (const auto& [property, index] : type_fts_indexes_it->second) {
+                        property_type_t old_val = old_fts_values[property];
+                        relationship_fts_remove_helper(*this, type_id, internal_id, property, old_val);
+                    }
                 }
             }
             return success;

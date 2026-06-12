@@ -253,6 +253,16 @@ struct MatchStatement {
     int id = -1;
     bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
     PathPattern pattern;      ///< Path pattern to match.
+
+    // FTS parameters
+    bool is_search = false;
+    std::string search_var;
+    std::string search_type;
+    std::vector<std::string> search_properties;
+    std::string search_string;
+    std::map<std::string, std::string> search_options;
+    std::string yield_var;
+    std::string yield_score_var;
 };
 
 /**
@@ -348,6 +358,7 @@ struct SchemaOperation {
         ALTER_NODE_TYPE,
         ALTER_REL_TYPE,
         CREATE_INDEX,
+        CREATE_FULLTEXT_INDEX,
         DROP_INDEX,
         SHOW_INDEXES
     } op;

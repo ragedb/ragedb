@@ -287,11 +287,16 @@ void extract_rel_types(const LabelExpression* expr, std::vector<std::string>& re
 
 void collect_variables_from_matches(const std::vector<MatchStatement>& matches, std::set<std::string>& vars) {
     for (const auto& match : matches) {
-        for (const auto& node : match.pattern.nodes) {
-            if (!node.variable.empty()) vars.insert(node.variable);
-        }
-        for (const auto& edge : match.pattern.edges) {
-            if (!edge.variable.empty()) vars.insert(edge.variable);
+        if (match.is_search) {
+            if (!match.yield_var.empty()) vars.insert(match.yield_var);
+            if (!match.yield_score_var.empty()) vars.insert(match.yield_score_var);
+        } else {
+            for (const auto& node : match.pattern.nodes) {
+                if (!node.variable.empty()) vars.insert(node.variable);
+            }
+            for (const auto& edge : match.pattern.edges) {
+                if (!edge.variable.empty()) vars.insert(edge.variable);
+            }
         }
     }
 }
@@ -495,8 +500,13 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     // --- Phase 8: Unnecessary Join Removal ---
     // Identify and remove duplicate/redundant MATCH patterns.
     for (auto it = query.matches.begin(); it != query.matches.end(); ) {
+        if (it->is_search) {
+            ++it;
+            continue;
+        }
         bool duplicate_found = false;
         for (auto prev_it = query.matches.begin(); prev_it != it; ++prev_it) {
+            if (prev_it->is_search) continue;
             if (is_equivalent_pattern(it->pattern, prev_it->pattern)) {
                 // Promote first match to non-optional if the duplicate was non-optional
                 if (!it->is_optional && prev_it->is_optional) {
@@ -629,6 +639,7 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     if (pushdowns.empty()) return;
 
     for (auto& match : query.matches) {
+        if (match.is_search) continue;
         for (auto& node : match.pattern.nodes) {
             if (!node.variable.empty()) {
                 auto it = pushdowns.find(node.variable);
@@ -707,6 +718,7 @@ void GqlOptimizer::optimize(ragedb::Graph& graph, GqlQuery& query) {
 
     if (query.kind == QueryKind::SINGLE) {
         for (auto& match : query.matches) {
+            if (match.is_search) continue;
             auto& pattern = match.pattern;
             if (pattern.nodes.size() >= 2) {
                 bool start_node_idx = has_node_index_seek(graph, pattern.nodes.front());

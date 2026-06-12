@@ -33,6 +33,11 @@ namespace ragedb {
                 }
             }
         }
+
+        void relationship_fts_remove_helper(Shard& shard, uint16_t type_id, uint64_t internal_id, const std::string& property, const property_type_t& value) {
+            uint64_t external_id = Shard::internalToExternal(type_id, internal_id);
+            shard.RelationshipIndexFTSRemove(type_id, property, value, external_id);
+        }
     }
 
     // Helpers
@@ -46,6 +51,14 @@ namespace ragedb {
           for (const auto& [property, index] : type_indexes_it->second) {
               property_type_t val = relationship_types.getRelationshipProperty(rel_type_id, internal_id, property);
               relationship_index_remove_helper(*this, rel_type_id, internal_id, property, val);
+          }
+      }
+
+      auto type_fts_indexes_it = relationship_fts_indexes.find(rel_type_id);
+      if (type_fts_indexes_it != relationship_fts_indexes.end()) {
+          for (const auto& [property, index] : type_fts_indexes_it->second) {
+              property_type_t val = relationship_types.getRelationshipProperty(rel_type_id, internal_id, property);
+              relationship_fts_remove_helper(*this, rel_type_id, internal_id, property, val);
           }
       }
 
