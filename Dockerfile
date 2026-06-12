@@ -24,7 +24,7 @@ RUN printf "\n[replace_requires]\nfmt/*: fmt/11.0.2\n" >> ~/.conan2/profiles/def
 RUN CC=clang-23 CXX=clang++-23 CXXFLAGS="-Wno-error=c2y-extensions" conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
 RUN python3 -c "import glob; f = glob.glob('/root/.conan2/p/**/optional_implementation.hpp', recursive=True)[0]; c = open(f).read(); pos = c.find('T& emplace(Args&&... args) noexcept'); target = 'this->construct(std::forward<Args>(args)...);'; idx = c.find(target, pos); c = c[:idx] + '::new (static_cast<void*>(this)) optional(std::forward<Args>(args)...);\n\t\t\treturn *m_value;' + c[idx + len(target):]; open(f, 'w').write(c)"
 WORKDIR /data/rage/build
-RUN CC=clang-23 CXX=clang++-23 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF
+RUN CC=clang-23 CXX=clang++-23 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF -DUSE_IPO=OFF -DUseIPO=OFF
 RUN sed -i 's/isymbols_ = impl.isymbols_ ? impl.isymbols_->Copy() : nullptr;/isymbols_.reset(impl.isymbols_ ? impl.isymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
 RUN sed -i 's/osymbols_ = impl.osymbols_ ? impl.osymbols_->Copy() : nullptr;/osymbols_.reset(impl.osymbols_ ? impl.osymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
 RUN sed -i 's/maker_t::template make(std::forward<Args>(args)...);/maker_t::template make<Args...>(std::forward<Args>(args)...);/g' _deps/iresearch-src/core/utils/memory.hpp
@@ -57,9 +57,13 @@ COPY --from=build /lib/x86_64-linux-gnu/libgmp.so.10 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libudev.so.1 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libffi.so.8 /lib/x86_64-linux-gnu/
 COPY --from=build /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/
+COPY --from=build /lib/x86_64-linux-gnu/libcares.so.2 /lib/x86_64-linux-gnu/
+COPY --from=build /lib/x86_64-linux-gnu/libatomic.so.1 /lib/x86_64-linux-gnu/
+COPY --from=build /lib/x86_64-linux-gnu/libsctp.so.1 /lib/x86_64-linux-gnu/
+COPY --from=build /lib/x86_64-linux-gnu/libprotobuf.so.32 /lib/x86_64-linux-gnu/
 RUN apt-get install -y libluajit-5.1-2
 WORKDIR /ragedb
-COPY --from=build /data/rage/build/ragedb ragedb
+COPY --from=build /data/rage/build/bin/ragedb ragedb
 COPY --from=build /data/rage/build/bin/public public
 EXPOSE 7243/tcp
 ENTRYPOINT ["./ragedb"]
