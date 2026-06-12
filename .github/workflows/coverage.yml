@@ -102,7 +102,11 @@ jobs:
 
       - name: Run build-wrapper
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF -DUSE_IPO=OFF -DUseIPO=OFF
+          sed -i 's/isymbols_ = impl.isymbols_ ? impl.isymbols_->Copy() : nullptr;/isymbols_.reset(impl.isymbols_ ? impl.isymbols_->Copy() : nullptr);/g' build/_deps/iresearch-src/external/openfst/fst/fst.h
+          sed -i 's/osymbols_ = impl.osymbols_ ? impl.osymbols_->Copy() : nullptr;/osymbols_.reset(impl.osymbols_ ? impl.osymbols_->Copy() : nullptr);/g' build/_deps/iresearch-src/external/openfst/fst/fst.h
+          sed -i 's/maker_t::template make(std::forward<Args>(args)...);/maker_t::template make<Args...>(std::forward<Args>(args)...);/g' build/_deps/iresearch-src/core/utils/memory.hpp
+          sed -i 's/selector_(table.s_)/selector_(table.selector_)/g' build/_deps/iresearch-src/external/openfst/fst/bi-table.h
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Debug
 
       - name: Test
