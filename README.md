@@ -74,68 +74,89 @@ RageDB exposes a rich HTTP API for schema management, node and relationship CRUD
 
 ## Building
 
-RageDB uses Seastar which only runs on *nix servers (no windows or mac) so use your local linux desktop or use EC2. A compiler supporting C++23 (such as GCC 12 or newer) is required.
+RageDB utilizes the high-performance Seastar framework and C++23. It runs natively on Linux (Ubuntu 24.04 recommended) and compiles using Clang 23.
 
-On EC2 launch an instance:
+### EC2 Setup (Optional)
 
-    Step 1: Choose an Amazon Machine Image
-    Ubuntu Server 24.04 LTS (HVM), SSD Volume Type (as it comes with GCC 13 by default, providing full C++23 support)
+If setting up on AWS EC2, choose an **Ubuntu Server 24.04 LTS (HVM)** instance (e.g. `r5.2xlarge`) configured with 100 GiB of storage. For optimal performance, specify CPU options with **Threads per core = 1** (disabling Hyper-Threading).
 
-    Step 2: Choose Instance Type
-    r5.2xlarge
+### Build Instructions
 
-    Step 3: Configure Instance
-    Specify CPU options
-    Threads per core = 1
+Once connected to your server, follow these steps to install the toolchain, dependencies, Seastar, and compile RageDB:
 
-    Step 4: Add Storage
-    100 GiB
+#### 1. Install System Dependencies
 
-    Launch
+```bash
+sudo apt-get update && sudo apt-get dist-upgrade -y
+sudo apt-get install -y build-essential git sudo pkg-config ccache python3-pip \
+    valgrind libfmt-dev ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
+    libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
+    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev doxygen wget lsb-release gnupg software-properties-common meson
+```
 
-Once the instance is running, connect to it and start a "screen" session, then follow these steps:
+#### 2. Install LLVM Clang 23 Compiler
 
-First let's update and upgrade to the latest versions of local software:
+```bash
+wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 23
+sudo ln -sf /usr/bin/clang-23 /usr/bin/clang && sudo ln -sf /usr/bin/clang++-23 /usr/bin/clang++
+```
 
-    sudo apt-get update && sudo apt-get dist-upgrade
+#### 3. Install and Configure Conan 2
 
-Install Seastar (this will take a while, that's why we are using screen):
+```bash
+pip install --break-system-packages --user conan -v "conan>=2.0"
+sudo ln -sf ~/.local/bin/conan /usr/bin/conan
+```
 
-    git clone -b seastar-25.05.0 https://github.com/scylladb/seastar.git
-    cd seastar
-    sudo ./install-dependencies.sh
-    # Note: On older Ubuntu 22.04, install gcc-12/g++-12 and configure with:
-    # ./configure.py --mode=release --prefix=/usr/local --compiler=g++-12 --c-compiler=gcc-12 --without-tests --without-apps --without-demos
-    ./configure.py --mode=release --prefix=/usr/local
-    sudo ninja -C build/release install
+#### 4. Compile and Install Seastar
 
-Install Additional Dependencies
+```bash
+git clone https://github.com/scylladb/seastar.git /tmp/seastar
+cd /tmp/seastar
+git checkout seastar-25.05.0
+./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
+ninja -C build/release install
+rm -rf /tmp/seastar
+cd ~
+```
 
-    sudo apt-get install -y ccache python3-pip
+#### 5. Clone and Build RageDB
 
-Install conan
+```bash
+git clone --recursive https://github.com/ragedb/ragedb.git
+cd ragedb
 
-    pip install --user conan
-    sudo ln -s ~/.local/bin/conan /usr/bin/conan
+# Detect Conan profile with Clang 23
+CC=clang-23 CXX=clang++-23 conan profile detect --force
+sed -i 's/"18", "19", "20", "21", "22"/"18", "19", "20", "21", "22", "23"/' ~/.conan2/settings.yml
+printf "\n[replace_requires]\nfmt/*: fmt/11.0.2\n" >> ~/.conan2/profiles/default
 
+# Install package dependencies via Conan
+CC=clang-23 CXX=clang++-23 CXXFLAGS="-Wno-error=c2y-extensions" conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
 
+# Patch conan dependencies for modern compiler compatibility
+python3 -c "from pathlib import Path; import glob; f = glob.glob(str(Path.home() / '.conan2/p/**/optional_implementation.hpp'), recursive=True)[0]; c = open(f).read(); pos = c.find('T& emplace(Args&&... args) noexcept'); target = 'this->construct(std::forward<Args>(args)...);'; idx = c.find(target, pos); c = c[:idx] + '::new (static_cast<void*>(this)) optional(std::forward<Args>(args)...);\n\t\t\treturn *m_value;' + c[idx + len(target):]; open(f, 'w').write(c)"
 
-Install LuaJIT
+# Configure with CMake (disabling LTO/IPO for dependencies compiling under Clang 23)
+cd build
+CC=clang-23 CXX=clang++-23 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF -DUSE_IPO=OFF -DUseIPO=OFF
 
-    sudo apt-get install -y luajit luajit-5.1-dev
+# Apply OpenFST and IResearch compilation patches
+sed -i 's/isymbols_ = impl.isymbols_ ? impl.isymbols_->Copy() : nullptr;/isymbols_.reset(impl.isymbols_ ? impl.isymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
+sed -i 's/osymbols_ = impl.osymbols_ ? impl.osymbols_->Copy() : nullptr;/osymbols_.reset(impl.osymbols_ ? impl.osymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
+sed -i 's/maker_t::template make(std::forward<Args>(args)...);/maker_t::template make<Args...>(std::forward<Args>(args)...);/g' _deps/iresearch-src/core/utils/memory.hpp
+sed -i 's/selector_(table.s_)/selector_(table.selector_)/g' _deps/iresearch-src/external/openfst/fst/bi-table.h
 
-Install RageDB
+# Build RageDB
+cmake --build . --target ragedb
+```
 
-    git clone https://github.com/ragedb/ragedb.git
-    cd ragedb
-    mkdir build
-    cd build
-    # On Ubuntu 22.04 with GCC 12, run:
-    # CC=gcc-12 CXX=g++-12 cmake .. -DCMAKE_BUILD_TYPE=Release
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-    cmake --build . --target ragedb
-    cd bin
-    sudo ./ragedb
+#### 6. Start the Server
+
+```bash
+cd bin
+./ragedb
+```
 
 ### Troubleshooting
 
