@@ -25,6 +25,8 @@ RUN CC=clang-23 CXX=clang++-23 CXXFLAGS="-Wno-error=c2y-extensions" conan instal
 RUN python3 -c "import glob; f = glob.glob('/root/.conan2/p/**/optional_implementation.hpp', recursive=True)[0]; c = open(f).read(); pos = c.find('T& emplace(Args&&... args) noexcept'); target = 'this->construct(std::forward<Args>(args)...);'; idx = c.find(target, pos); c = c[:idx] + '::new (static_cast<void*>(this)) optional(std::forward<Args>(args)...);\n\t\t\treturn *m_value;' + c[idx + len(target):]; open(f, 'w').write(c)"
 WORKDIR /data/rage/build
 RUN CC=clang-23 CXX=clang++-23 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF
+RUN sed -i 's/isymbols_ = impl.isymbols_ ? impl.isymbols_->Copy() : nullptr;/isymbols_.reset(impl.isymbols_ ? impl.isymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
+RUN sed -i 's/osymbols_ = impl.osymbols_ ? impl.osymbols_->Copy() : nullptr;/osymbols_.reset(impl.osymbols_ ? impl.osymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
 RUN cmake --build . --target ragedb
 
 ARG ARCH=
