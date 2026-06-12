@@ -35,7 +35,7 @@ jobs:
           sudo apt-get -qq update -y
           sudo apt-get -qq install -y git sudo pkg-config ccache python3-pip libluajit-5.1-2 luajit luajit-5.1-dev libcrypto++8t64 libcrypto++-dev liburing-dev doxygen wget lsb-release gnupg software-properties-common
           wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 23
-          sudo ln -s /usr/bin/clang-23 /usr/bin/clang && sudo ln -s /usr/bin/clang++-23 /usr/bin/clang++
+          sudo ln -sf /usr/bin/clang-23 /usr/bin/clang && sudo ln -sf /usr/bin/clang++-23 /usr/bin/clang++
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
