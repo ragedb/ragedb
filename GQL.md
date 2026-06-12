@@ -8,6 +8,7 @@ RageDB features a native C++ Graph Query Language (GQL) execution engine built o
 
 ### MATCH & Projections
 - **MATCH / OPTIONAL MATCH**: Thread-safe peered shard traversal read logic.
+- **SEARCH (Full-Text Search)**: Querying string properties using the `SEARCH` operator within the `MATCH` pattern (e.g. `MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score`). Supports options like `{ fuzzy: 'true' }` for Levenshtein-based matching.
 - **WHERE Filtering**: Supports logical conjunctive precedence (`NOT` > `AND` > `OR`) and standard comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`).
 - **RETURN**: Projection return list with optional aliasing (`AS alias`).
 - **ORDER BY & LIMIT**: Sorting and pagination at the query and set operation levels.
@@ -68,6 +69,27 @@ GQL DDL keywords are case-insensitive and support standard type names along with
 - `INTEGER_LIST` / `INT_LIST` -> `"integer_list"`
 - `DOUBLE_LIST` -> `"double_list"`
 - `BOOLEAN_LIST` / `BOOL_LIST` -> `"boolean_list"`
+
+### Index Management
+
+#### Indexable Data Types
+RageDB supports indexing of specific scalar data types depending on the index type:
+*   **Standard Property Index (`CREATE INDEX`)**:
+    *   `BOOLEAN`: Indexed via compressed `roaring::Roaring64Map` bitmaps.
+    *   `INTEGER` & `DOUBLE`: Indexed via `std::multimap`.
+    *   `STRING`: Indexed via `unodb::art_db` (Adaptive Radix Tree).
+*   **Full-Text Search Index (`CREATE FULLTEXT INDEX`)**:
+    *   `STRING`: Indexed via Apache `iresearch` using standard text segmentation.
+*   *Note*: List types (`STRING_LIST`, `INTEGER_LIST`, `DOUBLE_LIST`, `BOOLEAN_LIST`) cannot be indexed.
+
+* **Create Index**:
+  - Property Index: `CREATE INDEX Person.name`
+  - Full-Text Index: `CREATE FULLTEXT INDEX Person.bio`
+* **Drop Index**:
+  - `DROP INDEX Person.name` (drops standard or full-text indexes)
+* **Show Indexes**:
+  - `SHOW INDEXES` (returns list of all indexes; full-text indexes are marked with `"kind": "fulltext"`)
+  - `SHOW INDEXES ON Person` (filters indexes by a specific label/type)
 
 ---
 

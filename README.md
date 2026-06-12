@@ -378,6 +378,48 @@ A second example:
 
 
 
+### GQL & Full-Text Search (FTS)
+
+RageDB supports GQL (Graph Query Language) queries, including high-performance full-text search capabilities powered by a native, partitioned `iresearch` integration. For the complete reference of GQL features, grammar compliance, and catalog schema controls, see [GQL.md](GQL.md).
+
+#### Running a GQL Query
+
+To execute a GQL query, send a `POST` request to the `/db/{graph}/gql` endpoint with the GQL query string as the body:
+
+    :POST /db/{graph}/gql
+    Body: MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score RETURN p.name, score
+
+#### Full-Text Search Indexing DDL
+
+You can create full-text indexes on node or relationship property fields to search matching terms:
+
+*   **Create Full-Text Index**:
+    ```cypher
+    CREATE FULLTEXT INDEX Product.description
+    CREATE FULLTEXT INDEX WORKS_AT.since
+    ```
+*   **Show Indexes** (returns JSON array of active indexes with `"kind": "fulltext"` for FTS indexes):
+    ```cypher
+    SHOW INDEXES
+    ```
+*   **Drop Full-Text Index**:
+    ```cypher
+    DROP INDEX Product.description
+    ```
+
+#### Full-Text Search Queries
+
+Full-text search queries match property terms and yield the matched entity alongside a BM25 relevance `score`.
+
+*   **Exact match**:
+    ```cypher
+    MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score RETURN p.name, score
+    ```
+*   **Fuzzy match** (supports Levenshtein distance matching up to 2 edits using `~` or fuzzy options):
+    ```cypher
+    MATCH p IN SEARCH Product.description FOR 'databas~' OPTIONS { fuzzy: 'true' } YIELD p, score RETURN p.name, score
+    ```
+
 ## Building
 
 RageDB uses Seastar which only runs on *nix servers (no windows or mac) so use your local linux desktop or use EC2. A compiler supporting C++23 (such as GCC 12 or newer) is required.

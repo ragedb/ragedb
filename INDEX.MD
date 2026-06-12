@@ -21,7 +21,6 @@ You can create property indexes on **scalar** property types:
 ### Unsupported Property Types
 Currently, the following types **cannot** be indexed:
 - List/Vector properties (`boolean_list`, `integer_list`, `double_list`, `string_list`).
-- Full-text indexes (phrase match, wildcard, fuzzy search).
 - Vector embeddings (similarity search / vector search).
 
 ---
@@ -171,4 +170,55 @@ When running `SHOW INDEXES`, the engine returns a JSON array of active indexes:
   {"type": "Node", "label": "Person", "property": "name"},
   {"type": "Relationship", "label": "WORKS_AT", "property": "since"}
 ]
+```
+
+---
+
+## Full-Text Search Indexing (FTS)
+
+RageDB supports native, high-performance full-text search indexing on both node and relationship properties.
+
+### Storage & Execution Architecture
+
+FTS indexing is backed by standard, zero-dependency **Apache 2.0 `iresearch`** (statically linked).
+*   **Shared-Nothing Multi-Segment Partitioning**: Each Seastar core runs its own isolated, single-threaded instance of `iresearch::memory_directory`.
+*   **Zero Cross-Core Contention**: Text analysis, tokenization (using the standard segmentation tokenizer), and indexing happen concurrently and locally within each CPU core.
+*   **Top-K Scatter-Gather Search**: Queries are broadcasted to all shards, matching documents are scored using BM25, and local top-K results are returned. The peered coordinator performs a fast heap-merge to return the globally sorted top-100 results.
+
+### Full-Text Search Management (GQL DDL)
+
+*   **Create Full-Text Index**:
+    ```cypher
+    CREATE FULLTEXT INDEX Person.bio;
+    CREATE FULLTEXT INDEX WORKS_AT.description;
+    ```
+*   **Show Indexes**:
+    ```cypher
+    SHOW INDEXES;
+    ```
+    Full-text indexes are indicated by `"kind": "fulltext"` in the returned JSON structure.
+*   **Drop Full-Text Index**:
+    ```cypher
+    DROP INDEX Person.bio;
+    ```
+
+---
+
+## Querying via Full-Text Search
+
+Full-text queries are executed inside `MATCH` blocks using the `SEARCH` operator. FTS searches return the matching entity and a relevance score.
+
+### 1. Exact Term Search
+```cypher
+MATCH p IN SEARCH Person.bio FOR 'database'
+YIELD p, score
+RETURN p.name, score;
+```
+
+### 2. Fuzzy Search (Levenshtein Distance)
+Fuzzy matching supports Levenshtein edit distance (up to distance of `2`) by using the `~` suffix or specifying the `fuzzy: 'true'` option.
+```cypher
+MATCH p IN SEARCH Person.bio FOR 'databas~' OPTIONS { fuzzy: 'true' }
+YIELD p, score
+RETURN p.name, score;
 ```
