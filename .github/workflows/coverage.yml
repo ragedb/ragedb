@@ -118,17 +118,24 @@ jobs:
       - name: SonarQube
         working-directory: '${{ github.workspace }}/build'
         run: |        
-          sudo pip install --break-system-packages gcovr cpp-coveralls
-          gcovr -r .. --gcov-ignore-parse-errors=negative_hits.warn --gcov-executable "llvm-cov-23 gcov" --sonarqube coverage.xml
+          sudo pip install --break-system-packages gcovr
+          gcovr -r .. --gcov-ignore-parse-errors=negative_hits.warn --gcov-executable "llvm-cov-23 gcov" \
+            --exclude '.*build/.*' \
+            --exclude 'test/' \
+            --exclude 'seastar/' \
+            --exclude 'fuzz_test/' \
+            --exclude 'cmake/' \
+            --exclude 'eve/' \
+            --exclude 'luajit/' \
+            --exclude 'sol2/' \
+            --sonarqube coverage.xml \
+            --cobertura cobertura.xml
           mv coverage.xml ..
+          mv cobertura.xml ..
 
       - name: Upload coverage report
-        working-directory: ${{github.workspace}}
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: |
-          echo '#!/bin/sh' | sudo tee /usr/bin/gcov-wrapper
-          echo 'exec llvm-cov-23 gcov "$@"' | sudo tee -a /usr/bin/gcov-wrapper
-          sudo chmod +x /usr/bin/gcov-wrapper
-          export COVERALLS_SERVICE_NAME="github-workflows"
-          coveralls -E ".*/build/.*.c((pp)|(c)|(xx))?$" -e test -e seastar -e fuzz_test -e cmake -e eve -e luajit -e sol2 --gcov /usr/bin/gcov-wrapper --gcov-options '\-lp' > /dev/null
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          format: cobertura
+          file: cobertura.xml
