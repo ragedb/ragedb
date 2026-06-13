@@ -9,7 +9,7 @@ find_package(Seastar REQUIRED)
 
 add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.cpp Properties.cpp shard/Shards.cpp
         shard/Nodes.cpp shard/AllNodes.cpp shard/AllRelationships.cpp shard/NodeDegrees.cpp shard/NodeProperties.cpp
-        shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp shard/Index.cpp
+        shard/Relationships.cpp shard/RelationshipTypes.cpp shard/RelationshipProperties.cpp shard/Index.cpp shard/ShortestPathTests.cpp
         Link.cpp Node.cpp Graph.cpp
         types/Date.cpp
         gql/GqlTokenizerTests.cpp

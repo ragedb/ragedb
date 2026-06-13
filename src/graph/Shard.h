@@ -59,6 +59,9 @@
 #include "overload/Disambiguate.h"
 #include "Sort.h"
 #include "Roar.h"
+#include "paths/Path.h"
+#include "paths/WeightedPath.h"
+#include <optional>
 #include <cppcodec/base64_default_url_unpadded.hpp>
 #include <cpr/cpr.h>
 
@@ -1190,25 +1193,28 @@ namespace ragedb {
         uint64_t TriangleCount(const std::string& rel_type);
         uint64_t TriangleCount(const std::vector<std::string> &rel_types);
 
-        sol::table ShortestPathViaLua(uint64_t id, uint64_t id2);
-        sol::table ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction);
-        sol::table ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
-        sol::table ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::table ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
-        sol::table ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
-        sol::table ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
-        sol::table ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::table ShortestWeightedPathViaLua(uint64_t id, uint64_t id2);
-        sol::table ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction);
-        sol::table ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
-        sol::table ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(uint64_t id, uint64_t id2);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
-        sol::table ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
-        sol::table ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
-        sol::table ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
-        sol::table ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
+        std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
+
+        seastar::future<std::optional<Path>> ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::optional<WeightedPath>> ShortestWeightedPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // Partition by Shards
         std::map<uint16_t, std::vector<size_t>> PartitionNodesInCSV(const std::string& type, const std::string& filename, const char csv_separator);

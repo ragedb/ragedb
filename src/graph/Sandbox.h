@@ -62,9 +62,11 @@ namespace ragedb {
       "Link",
       "Node",
       "Operation",
+      "Path",
       "Relationship",
       "Roar",
-      "Sort"
+      "Sort",
+      "WeightedPath"
     };
 
 
@@ -182,6 +184,9 @@ namespace ragedb {
       "RelationshipTypeGetType",
       "RelationshipTypesGet",
       "RelationshipTypesGetCount",
+
+      "ShortestPath",
+      "ShortestWeightedPath",
 
       "TriangleCount"
     };
