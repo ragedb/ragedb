@@ -1193,15 +1193,15 @@ namespace ragedb {
         uint64_t TriangleCount(const std::string& rel_type);
         uint64_t TriangleCount(const std::vector<std::string> &rel_types);
 
-        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2);
-        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction);
-        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type);
-        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, uint64_t max_hops = 15);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, uint64_t max_hops = 15);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type, uint64_t max_hops = 15);
+        std::optional<Path> ShortestPathViaLua(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types, uint64_t max_hops = 15);
 
-        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2);
-        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction);
-        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
-        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, uint64_t max_hops = 15);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, uint64_t max_hops = 15);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type, uint64_t max_hops = 15);
+        std::optional<Path> ShortestPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types, uint64_t max_hops = 15);
 
         std::optional<WeightedPath> ShortestWeightedPathViaLua(uint64_t id, uint64_t id2);
         std::optional<WeightedPath> ShortestWeightedPathViaLua(uint64_t id, uint64_t id2, Direction direction);
@@ -1213,7 +1213,7 @@ namespace ragedb {
         std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type);
         std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
 
-        seastar::future<std::optional<Path>> ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::optional<Path>> ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types, uint64_t max_hops = 15);
         seastar::future<std::optional<WeightedPath>> ShortestWeightedPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // Partition by Shards

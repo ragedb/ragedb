@@ -19,7 +19,7 @@
 
 namespace ragedb {
 
-    seastar::future<std::optional<Path>> Shard::ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<std::optional<Path>> Shard::ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types, uint64_t max_hops) {
         if (id == id2) {
             auto nodes = co_await NodesGetPeered({id});
             co_return Path(nodes);
@@ -37,9 +37,8 @@ namespace ragedb {
 
         bool found = false;
         uint64_t hops = 0;
-        const uint64_t MAX_HOPS = 15;
 
-        while (!current_level.empty() && !found && hops < MAX_HOPS) {
+        while (!current_level.empty() && !found && hops < max_hops) {
             hops++;
             std::vector<seastar::future<std::vector<Link>>> futures;
             for (uint64_t node_id : current_level) {

@@ -461,17 +461,29 @@ namespace ragedb {
 
         lua.set_function("ShortestPath", sol::overload(
             [this](Node node, Node node2) { return this->ShortestPathViaLua(node.getId(), node2.getId()); },
+            [this](Node node, Node node2, uint64_t max_hops) { return this->ShortestPathViaLua(node.getId(), node2.getId(), max_hops); },
             [this](Node node, Node node2, Direction direction) { return this->ShortestPathViaLua(node.getId(), node2.getId(), direction); },
+            [this](Node node, Node node2, Direction direction, uint64_t max_hops) { return this->ShortestPathViaLua(node.getId(), node2.getId(), direction, max_hops); },
             [this](Node node, Node node2, Direction direction, const std::string& rel_type) { return this->ShortestPathViaLua(node.getId(), node2.getId(), direction, rel_type); },
+            [this](Node node, Node node2, Direction direction, const std::string& rel_type, uint64_t max_hops) { return this->ShortestPathViaLua(node.getId(), node2.getId(), direction, rel_type, max_hops); },
             [this](Node node, Node node2, Direction direction, const std::vector<std::string> rel_types) { return this->ShortestPathViaLua(node.getId(), node2.getId(), direction, rel_types); },
+            [this](Node node, Node node2, Direction direction, const std::vector<std::string> rel_types, uint64_t max_hops) { return this->ShortestPathViaLua(node.getId(), node2.getId(), direction, rel_types, max_hops); },
             [this](uint64_t id, uint64_t id2) { return this->ShortestPathViaLua(id, id2); },
+            [this](uint64_t id, uint64_t id2, uint64_t max_hops) { return this->ShortestPathViaLua(id, id2, max_hops); },
             [this](uint64_t id, uint64_t id2, Direction direction) { return this->ShortestPathViaLua(id, id2, direction); },
+            [this](uint64_t id, uint64_t id2, Direction direction, uint64_t max_hops) { return this->ShortestPathViaLua(id, id2, direction, max_hops); },
             [this](uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type) { return this->ShortestPathViaLua(id, id2, direction, rel_type); },
+            [this](uint64_t id, uint64_t id2, Direction direction, const std::string& rel_type, uint64_t max_hops) { return this->ShortestPathViaLua(id, id2, direction, rel_type, max_hops); },
             [this](uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> rel_types) { return this->ShortestPathViaLua(id, id2, direction, rel_types); },
+            [this](uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> rel_types, uint64_t max_hops) { return this->ShortestPathViaLua(id, id2, direction, rel_types, max_hops); },
             [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2) { return this->ShortestPathViaLua(type, key, type2, key2); },
+            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, uint64_t max_hops) { return this->ShortestPathViaLua(type, key, type2, key2, max_hops); },
             [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction) { return this->ShortestPathViaLua(type, key, type2, key2, direction); },
+            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, uint64_t max_hops) { return this->ShortestPathViaLua(type, key, type2, key2, direction, max_hops); },
             [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type) { return this->ShortestPathViaLua(type, key, type2, key2, direction, rel_type); },
-            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> rel_types) { return this->ShortestPathViaLua(type, key, type2, key2, direction, rel_types); }
+            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::string& rel_type, uint64_t max_hops) { return this->ShortestPathViaLua(type, key, type2, key2, direction, rel_type, max_hops); },
+            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> rel_types) { return this->ShortestPathViaLua(type, key, type2, key2, direction, rel_types); },
+            [this](const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> rel_types, uint64_t max_hops) { return this->ShortestPathViaLua(type, key, type2, key2, direction, rel_types, max_hops); }
         ));
 
         lua.set_function("ShortestWeightedPath", sol::overload(

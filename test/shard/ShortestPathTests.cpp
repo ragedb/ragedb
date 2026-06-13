@@ -139,6 +139,17 @@ SCENARIO( "Shard can compute Shortest Path", "[shortest_path]" ) {
                 auto path_isolated = graph.shard.local().ShortestPathPeered(idA, idE, Direction::BOTH, {}).get();
                 REQUIRE_FALSE(path_isolated.has_value());
             }
+
+            THEN("Path from A to D with max_hops=1 is not found") {
+                auto path_opt = graph.shard.local().ShortestPathPeered(idA, idD, Direction::OUT, {}, 1).get();
+                REQUIRE_FALSE(path_opt.has_value());
+            }
+
+            THEN("Path from A to D with max_hops=2 is found") {
+                auto path_opt = graph.shard.local().ShortestPathPeered(idA, idD, Direction::OUT, {}, 2).get();
+                REQUIRE(path_opt.has_value());
+                REQUIRE(path_opt->length() == 2);
+            }
         }
 
         WHEN("We query ShortestWeightedPathPeered (Dijkstra)") {
@@ -232,6 +243,22 @@ SCENARIO( "Shard can compute Shortest Path", "[shortest_path]" ) {
                                      "res";
                 std::string res = graph.shard.local().RunRWLua(script).get();
                 REQUIRE(res == "1");
+            }
+
+            THEN("Lua ShortestPath respects max_hops parameter") {
+                std::string script = "local p = ShortestPath('Person', 'A', 'Person', 'D', Direction.OUT, 1)\n"
+                                     "local res = 0\n"
+                                     "if p then res = 1 end\n"
+                                     "res";
+                std::string res = graph.shard.local().RunRWLua(script).get();
+                REQUIRE(res == "0");
+
+                std::string script2 = "local p = ShortestPath('Person', 'A', 'Person', 'D', Direction.OUT, 2)\n"
+                                      "local res = 0\n"
+                                      "if p then res = 1 end\n"
+                                      "res";
+                std::string res2 = graph.shard.local().RunRWLua(script2).get();
+                REQUIRE(res2 == "1");
             }
 
             THEN("Lua execution integrates ShortestWeightedPath correctly") {
