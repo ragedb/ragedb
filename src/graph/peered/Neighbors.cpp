@@ -116,7 +116,7 @@ namespace ragedb {
 
         std::vector<seastar::future<roaring::Roaring64Map>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, &direction] (Shard &local_shard) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction] (Shard &local_shard) {
                 return local_shard.NodeIdsGetNeighborIds(grouped_node_ids, direction);
             });
 
@@ -146,7 +146,7 @@ namespace ragedb {
 
         std::vector<seastar::future<roaring::Roaring64Map>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, &direction, rel_type] (Shard &local_shard) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_type] (Shard &local_shard) {
                 return local_shard.NodeIdsGetNeighborIds(grouped_node_ids, direction, rel_type);
             });
 
@@ -176,7 +176,7 @@ namespace ragedb {
 
         std::vector<seastar::future<roaring::Roaring64Map>> futures;
         for (const auto& [their_shard, grouped_node_ids] : sharded_nodes_ids ) {
-            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, &direction, rel_types] (Shard &local_shard) {
+            auto future = container().invoke_on(their_shard, [grouped_node_ids = grouped_node_ids, direction, rel_types] (Shard &local_shard) {
                 return local_shard.NodeIdsGetNeighborIds(grouped_node_ids, direction, rel_types);
             });
 

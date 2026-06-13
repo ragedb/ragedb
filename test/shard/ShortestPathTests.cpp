@@ -292,5 +292,7 @@ SCENARIO( "Shard can compute Shortest Path", "[shortest_path]" ) {
                 REQUIRE(res == "2.5");
             }
         }
+
     }
 }
+

@@ -113,4 +113,36 @@ namespace ragedb {
     uint64_t Shard::KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
         return KHopCountPeered(type, key, hops, direction, rel_types).get0();
     }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(uint64_t id, uint64_t hops) {
+        return KHopCountsPeered(id, hops).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(uint64_t id, uint64_t hops, Direction direction) {
+        return KHopCountsPeered(id, hops, direction).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type) {
+        return KHopCountsPeered(id, hops, direction, rel_type).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        return KHopCountsPeered(id, hops, direction, rel_types).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops) {
+        return KHopCountsPeered(type, key, hops).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction) {
+        return KHopCountsPeered(type, key, hops, direction).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type) {
+        return KHopCountsPeered(type, key, hops, direction, rel_type).get0();
+    }
+
+    sol::as_table_t<std::vector<uint64_t>> Shard::KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types) {
+        return KHopCountsPeered(type, key, hops, direction, rel_types).get0();
+    }
 }

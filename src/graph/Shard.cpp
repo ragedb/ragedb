@@ -454,6 +454,27 @@ namespace ragedb {
             [this](const std::string& type, const std::string& key, uint64_t hops, const std::vector<std::string> rel_types) { return this->KHopCountViaLua(type, key, hops, Direction::BOTH, rel_types); }
             ));
 
+        lua.set_function("KHopCounts", sol::overload(
+            [this](Node node, uint64_t hops) { return this->KHopCountsViaLua(node.getId(), hops); },
+            [this](Node node, uint64_t hops, Direction direction) { return this->KHopCountsViaLua(node.getId(), hops, direction); },
+            [this](Node node, uint64_t hops, Direction direction, const std::string& rel_type) { return this->KHopCountsViaLua(node.getId(), hops, direction, rel_type); },
+            [this](Node node, uint64_t hops, Direction direction, const std::vector<std::string> rel_types) { return this->KHopCountsViaLua(node.getId(), hops, direction, rel_types); },
+            [this](Node node, uint64_t hops, const std::string& rel_type) { return this->KHopCountsViaLua(node.getId(), hops, Direction::BOTH, rel_type); },
+            [this](Node node, uint64_t hops, const std::vector<std::string> rel_types) { return this->KHopCountsViaLua(node.getId(), hops, Direction::BOTH, rel_types); },
+            [this](uint64_t id, uint64_t hops) { return this->KHopCountsViaLua(id, hops); },
+            [this](uint64_t id, uint64_t hops, Direction direction) { return this->KHopCountsViaLua(id, hops, direction); },
+            [this](uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type) { return this->KHopCountsViaLua(id, hops, direction, rel_type); },
+            [this](uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> rel_types) { return this->KHopCountsViaLua(id, hops, direction, rel_types); },
+            [this](uint64_t id, uint64_t hops, const std::string& rel_type) { return this->KHopCountsViaLua(id, hops, Direction::BOTH, rel_type); },
+            [this](uint64_t id, uint64_t hops, const std::vector<std::string> rel_types) { return this->KHopCountsViaLua(id, hops, Direction::BOTH, rel_types); },
+            [this](const std::string& type, const std::string& key, uint64_t hops) { return this->KHopCountsViaLua(type, key, hops); },
+            [this](const std::string& type, const std::string& key, uint64_t hops, Direction direction) { return this->KHopCountsViaLua(type, key, hops, direction); },
+            [this](const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type) { return this->KHopCountsViaLua(type, key, hops, direction, rel_type); },
+            [this](const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> rel_types) { return this->KHopCountsViaLua(type, key, hops, direction, rel_types); },
+            [this](const std::string& type, const std::string& key, uint64_t hops, const std::string& rel_type) { return this->KHopCountsViaLua(type, key, hops, Direction::BOTH, rel_type); },
+            [this](const std::string& type, const std::string& key, uint64_t hops, const std::vector<std::string> rel_types) { return this->KHopCountsViaLua(type, key, hops, Direction::BOTH, rel_types); }
+            ));
+
         lua.set_function("TriangleCount", sol::overload(
             [this](const std::string& type) { return this->TriangleCount(type); },
             [this](const std::vector<std::string> rel_types) { return this->TriangleCount(rel_types); }

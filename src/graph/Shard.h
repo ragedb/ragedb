@@ -852,6 +852,15 @@ namespace ragedb {
         seastar::future<uint64_t> KHopCountPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
         seastar::future<uint64_t> KHopCountPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
 
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(uint64_t id, uint64_t hops);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(uint64_t id, uint64_t hops, Direction direction);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(const std::string& type, const std::string& key, uint64_t hops);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        seastar::future<std::vector<uint64_t>> KHopCountsPeered(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
         // *****************************************************************************************************************************
         //                                                              Via Lua
         // *****************************************************************************************************************************
@@ -1189,6 +1198,15 @@ namespace ragedb {
         uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
         uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
         uint64_t KHopCountViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(uint64_t id, uint64_t hops);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(uint64_t id, uint64_t hops, Direction direction);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(uint64_t id, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::string& rel_type);
+        sol::as_table_t<std::vector<uint64_t>> KHopCountsViaLua(const std::string& type, const std::string& key, uint64_t hops, Direction direction, const std::vector<std::string> &rel_types);
 
         uint64_t TriangleCount(const std::string& rel_type);
         uint64_t TriangleCount(const std::vector<std::string> &rel_types);
