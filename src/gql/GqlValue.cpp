@@ -117,6 +117,29 @@ int compare_gql_values(const GqlValue& a, const GqlValue& b) {
         }
         return 0;
     }
+    // Compare two Path values.
+    // Paths are compared first by length. If lengths match, they are compared node-by-node by ID,
+    // and then relationship-by-relationship by ID.
+    if (a.type == GqlValue::PATH) {
+        if (a.path->length() != b.path->length()) {
+            return (a.path->length() < b.path->length()) ? -1 : 1;
+        }
+        const auto& a_nodes = a.path->GetNodes();
+        const auto& b_nodes = b.path->GetNodes();
+        for (size_t i = 0; i < a_nodes.size(); ++i) {
+            if (a_nodes[i].getId() != b_nodes[i].getId()) {
+                return (a_nodes[i].getId() < b_nodes[i].getId()) ? -1 : 1;
+            }
+        }
+        const auto& a_rels = a.path->GetRelationships();
+        const auto& b_rels = b.path->GetRelationships();
+        for (size_t i = 0; i < a_rels.size(); ++i) {
+            if (a_rels[i].getId() != b_rels[i].getId()) {
+                return (a_rels[i].getId() < b_rels[i].getId()) ? -1 : 1;
+            }
+        }
+        return 0;
+    }
     return 0;
 }
 
@@ -412,6 +435,25 @@ std::string serialize_gql_value(const GqlValue& val) {
             init = false;
         }
         s += "]";
+        return s;
+    }
+    // Serialize a Path to a JSON object containing lists of serialized nodes and relationships.
+    if (val.type == GqlValue::PATH) {
+        std::string s = "{\"nodes\": [";
+        bool init = true;
+        for (const auto& node : val.path->GetNodes()) {
+            if (!init) s += ", ";
+            s += serialize_gql_value(GqlValue(node));
+            init = false;
+        }
+        s += "], \"relationships\": [";
+        init = true;
+        for (const auto& rel : val.path->GetRelationships()) {
+            if (!init) s += ", ";
+            s += serialize_gql_value(GqlValue(rel));
+            init = false;
+        }
+        s += "]}";
         return s;
     }
     return "null";

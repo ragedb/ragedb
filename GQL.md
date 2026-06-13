@@ -8,6 +8,8 @@ RageDB features a native C++ Graph Query Language (GQL) execution engine built o
 
 ### MATCH & Projections
 - **MATCH / OPTIONAL MATCH**: Thread-safe peered shard traversal read logic.
+- **Path Variables**: Binding whole traversed paths to path variables (e.g. `p = (a)-[e]->(b)`).
+- **Shortest Paths**: Standard shortest path selectors including `ALL SHORTEST`, `ANY SHORTEST`, `SHORTEST k`, and `SHORTEST k GROUP` (executed in trail mode with sharded bidirectional BFS).
 - **SEARCH (Full-Text Search)**: Querying string properties using the `SEARCH` operator within the `MATCH` pattern (e.g. `MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score`). Supports options like `{ fuzzy: 'true' }` for Levenshtein-based matching.
 - **WHERE Filtering**: Supports logical conjunctive precedence (`NOT` > `AND` > `OR`) and standard comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`).
 - **RETURN**: Projection return list with optional aliasing (`AS alias`).
@@ -118,6 +120,5 @@ While RageDB supports the core operational subsets of GQL required for graph tra
 - **Transaction Commands**: Transaction boundary markers like `START TRANSACTION`, `COMMIT`, and `ROLLBACK` (RageDB transactions are handled natively at the HTTP request or Seastar sharding level).
 
 ### Advanced Pattern Matching
-- **Path Variables**: Binding whole traversed paths to path variables (e.g. `p = (a)-[e]->(b)`).
-- **Match Modes & Keep Clauses**: Special path matching modes (e.g. repeatable path elements, shortest path search selectors, and path filtration clauses).
+- **Match Modes & Keep Clauses**: Special path matching modes (e.g. repeatable path elements and path filtration clauses).
 - **SQL-like SELECT Syntax**: The grammar defines a SQL-styled `SELECT * FROM ...` query format. RageDB focuses strictly on the standard GQL `MATCH ... RETURN` query structure.

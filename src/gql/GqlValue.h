@@ -23,6 +23,7 @@
 #include <variant>
 #include <vector>
 #include "../graph/Graph.h"
+#include "../graph/paths/Path.h"
 #include "GqlAst.h"
 
 namespace ragedb::gql {
@@ -33,17 +34,19 @@ namespace ragedb::gql {
  * Can wrap null/nil, a graph node, a relationship, or a property type variant.
  */
 struct GqlValue {
-    enum Type { NIL, NODE, RELATIONSHIP, RELATIONSHIP_LIST, PROPERTY } type = NIL;
-    std::optional<Node> node;
-    std::optional<Relationship> relationship;
-    std::optional<std::vector<Relationship>> relationship_list;
-    property_type_t property = std::monostate{};
+    enum Type { NIL, NODE, RELATIONSHIP, RELATIONSHIP_LIST, PROPERTY, PATH } type = NIL; ///< Type tag for the held value.
+    std::optional<Node> node;                       ///< Wrapped Node value.
+    std::optional<Relationship> relationship;       ///< Wrapped Relationship value.
+    std::optional<std::vector<Relationship>> relationship_list; ///< Wrapped list of Relationships.
+    std::optional<Path> path;                       ///< Wrapped Path value.
+    property_type_t property = std::monostate{};    ///< Wrapped property value (primitive variants).
 
     GqlValue() : type(NIL) {}
     explicit GqlValue(Node n) : type(NODE), node(std::move(n)) {}
     explicit GqlValue(Relationship r) : type(RELATIONSHIP), relationship(std::move(r)) {}
     explicit GqlValue(std::vector<Relationship> rl) : type(RELATIONSHIP_LIST), relationship_list(std::move(rl)) {}
     explicit GqlValue(property_type_t p) : type(PROPERTY), property(std::move(p)) {}
+    explicit GqlValue(Path pt) : type(PATH), path(std::move(pt)) {} ///< Construct a GqlValue wrapping a Path.
 
     /**
      * @brief Checks whether the GqlValue evaluates to a truthy value (used in WHERE filters, AND/OR logic).

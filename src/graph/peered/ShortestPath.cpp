@@ -318,4 +318,142 @@ namespace ragedb {
         }
     }
 
+    seastar::future<std::vector<Path>> Shard::ShortestPathsPeered(uint64_t id, uint64_t id2, Direction direction, std::vector<std::string> rel_types, uint64_t min_hops, uint64_t max_hops, ShortestPathKind kind, uint64_t k) {
+        // If the start and end nodes are identical, and 0 hops is allowed by min_hops,
+        // return a single-node path of length 0.
+        if (id == id2) {
+            if (min_hops == 0) {
+                auto nodes = co_await NodesGetPeered({id});
+                co_return std::vector<Path>{ Path(nodes) };
+            }
+        }
+
+        // Validate the starting and ending node IDs on their respective shards.
+        bool valid_start = co_await container().invoke_on(CalculateShardId(id), [id](Shard &local_shard) { return local_shard.ValidNodeId(id); });
+        bool valid_end = co_await container().invoke_on(CalculateShardId(id2), [id2](Shard &local_shard) { return local_shard.ValidNodeId(id2); });
+        if (!valid_start || !valid_end) {
+            co_return std::vector<Path>{};
+        }
+
+        // Helper struct representing the intermediate traversal state of a path.
+        struct PathState {
+            std::vector<uint64_t> node_ids;
+            std::vector<uint64_t> rel_ids;
+        };
+
+        // Initialize the queue with the starting node path.
+        std::vector<PathState> current_paths = { PathState{{id}, {}} };
+        std::vector<PathState> found_paths;
+        uint64_t groups_found = 0; // Tracks levels/depth groups containing valid shortest paths.
+
+        // BFS traversal, expanding level-by-level up to the maximum permitted depth.
+        for (uint64_t depth = 1; depth <= max_hops; ++depth) {
+            if (current_paths.empty()) {
+                break;
+            }
+
+            // Asynchronously fetch links for the last node of each active path at this level.
+            std::vector<seastar::future<std::vector<Link>>> futures;
+            for (const auto& path : current_paths) {
+                uint64_t last_node = path.node_ids.back();
+                futures.push_back(NodeGetLinksPeered(last_node, direction, rel_types));
+            }
+
+            // Wait for all peered link queries to complete.
+            std::vector<std::vector<Link>> links_results = co_await seastar::when_all_succeed(futures.begin(), futures.end());
+
+            std::vector<PathState> next_paths;
+            std::vector<PathState> paths_this_level;
+
+            // Expand paths using the retrieved adjacent links.
+            for (size_t i = 0; i < current_paths.size(); ++i) {
+                const auto& path = current_paths[i];
+                for (const auto& link : links_results[i]) {
+                    // Trail semantics enforcement: avoid traversing the same relationship twice in a single path.
+                    if (std::find(path.rel_ids.begin(), path.rel_ids.end(), link.rel_id) != path.rel_ids.end()) {
+                        continue;
+                    }
+
+                    PathState new_path = path;
+                    new_path.node_ids.push_back(link.node_id);
+                    new_path.rel_ids.push_back(link.rel_id);
+
+                    // If the neighbor is the destination node and we satisfy min_hops, record it as a found path.
+                    if (link.node_id == id2 && depth >= min_hops) {
+                        paths_this_level.push_back(new_path);
+                    } else {
+                        // Otherwise, queue it for expansion at the next BFS level.
+                        next_paths.push_back(std::move(new_path));
+                    }
+                }
+            }
+
+            // If we found any valid shortest paths at the current level:
+            if (!paths_this_level.empty()) {
+                groups_found++;
+                found_paths.insert(found_paths.end(), paths_this_level.begin(), paths_this_level.end());
+
+                // Evaluate early-termination conditions based on the requested ShortestPathKind.
+                // ANY / ALL: BFS guarantees these paths of minimal length are the shortest, so stop.
+                if (kind == ShortestPathKind::ANY) {
+                    break;
+                }
+                if (kind == ShortestPathKind::ALL) {
+                    break;
+                }
+                // K: Stop if we have accumulated at least k paths.
+                if (kind == ShortestPathKind::K && found_paths.size() >= k) {
+                    break;
+                }
+                // K_GROUP: Stop if we have found paths spanning at least k distinct depth levels.
+                if (kind == ShortestPathKind::K_GROUP && groups_found >= k) {
+                    break;
+                }
+            }
+
+            current_paths = std::move(next_paths);
+            // Yield control to allow other Seastar fibers to execute.
+            co_await seastar::coroutine::maybe_yield();
+        }
+
+        // Apply any post-traversal constraints on the results size.
+        if (kind == ShortestPathKind::K && found_paths.size() > k) {
+            found_paths.resize(k);
+        }
+        if (kind == ShortestPathKind::ANY && found_paths.size() > 1) {
+            found_paths.resize(1);
+        }
+
+        // Bulk-retrieve all traversed node and relationship records to assemble the final Path objects.
+        std::vector<Path> results;
+        for (const auto& path_state : found_paths) {
+            auto nodes = co_await NodesGetPeered(path_state.node_ids);
+            auto rels = co_await RelationshipsGetPeered(path_state.rel_ids);
+            
+            // Reconstruct the node sequence in traversal order.
+            std::unordered_map<uint64_t, Node> node_map;
+            for (auto&& node : nodes) {
+                node_map.emplace(node.getId(), std::move(node));
+            }
+            std::vector<Node> ordered_nodes;
+            for (uint64_t nid : path_state.node_ids) {
+                ordered_nodes.push_back(std::move(node_map.at(nid)));
+            }
+
+            // Reconstruct the relationship sequence in traversal order.
+            std::unordered_map<uint64_t, Relationship> rel_map;
+            for (auto&& rel : rels) {
+                rel_map.emplace(rel.getId(), std::move(rel));
+            }
+            std::vector<Relationship> ordered_rels;
+            for (uint64_t rid : path_state.rel_ids) {
+                ordered_rels.push_back(std::move(rel_map.at(rid)));
+            }
+
+            results.push_back(Path(ordered_nodes, ordered_rels));
+        }
+
+        co_return results;
+    }
+
 }

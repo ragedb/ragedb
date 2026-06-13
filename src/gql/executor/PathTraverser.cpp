@@ -669,8 +669,138 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
 }
 
 seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
+    // Case 1: Shortest Path Traversal.
+    // If the Match statement specifies a shortest path selector (ALL, ANY, K, K_GROUP),
+    // we bypass standard traversal and perform sharded BFS pathfinding between all valid start/end node pairs.
+    if (stmt.shortest_path_kind != ShortestPathKind::NONE) {
+        // Resolve start nodes candidate set.
+        seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        auto start_node_var = stmt.pattern.nodes[0].variable;
+        auto bound_start_it = row.bindings.find(start_node_var);
+        if (bound_start_it != row.bindings.end() && bound_start_it->second.type == GqlValue::NODE) {
+            start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_start_it->second.node });
+        } else {
+            start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+        }
+
+        // Resolve end nodes candidate set.
+        seastar::future<std::vector<Node>> end_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        auto end_node_var = stmt.pattern.nodes[1].variable;
+        auto bound_end_it = row.bindings.find(end_node_var);
+        if (bound_end_it != row.bindings.end() && bound_end_it->second.type == GqlValue::NODE) {
+            end_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_end_it->second.node });
+        } else {
+            end_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[1], 0, pruner);
+        }
+
+        return seastar::when_all_succeed(std::move(start_nodes_fut), std::move(end_nodes_fut))
+        .then([&graph, stmt, row, start_node_var, end_node_var](std::tuple<std::vector<Node>, std::vector<Node>> nodes_tuple) {
+            auto& start_nodes = std::get<0>(nodes_tuple);
+            auto& end_nodes = std::get<1>(nodes_tuple);
+
+            // Filter start node candidates by labels and property constraint expressions.
+            std::vector<Node> valid_starts;
+            for (const auto& node : start_nodes) {
+                if (stmt.pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[0].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[0].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[0].property_filters)) {
+                    continue;
+                }
+                valid_starts.push_back(node);
+            }
+
+            // Filter end node candidates by labels and property constraint expressions.
+            std::vector<Node> valid_ends;
+            for (const auto& node : end_nodes) {
+                if (stmt.pattern.nodes[1].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[1].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                    continue;
+                }
+                valid_ends.push_back(node);
+            }
+
+            // Map GQL edge direction to RageDB internal Direction enum.
+            const auto& edge = stmt.pattern.edges[0];
+            Direction dir = Direction::BOTH;
+            if (edge.direction == EdgeDirection::RIGHT) dir = Direction::OUT;
+            else if (edge.direction == EdgeDirection::LEFT) dir = Direction::IN;
+
+            // Restrict relationships to the parsed label literal if specified.
+            std::vector<std::string> rel_types;
+            if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+                rel_types.push_back(edge.label_expr->name);
+            }
+
+            uint64_t min_hops = edge.is_variable_length ? edge.min_hops : 1;
+            uint64_t max_hops = edge.is_variable_length ? edge.max_hops : 15;
+
+            // Compute shortest paths within each (start node, end node) partition pair.
+            std::vector<seastar::future<std::vector<Path>>> traversal_futs;
+            struct PartitionInfo {
+                Node start_node;
+                Node end_node;
+            };
+            auto partitions = std::make_shared<std::vector<PartitionInfo>>();
+
+            for (const auto& s : valid_starts) {
+                for (const auto& e : valid_ends) {
+                    partitions->push_back({s, e});
+                    traversal_futs.push_back(
+                        graph.shard.local().ShortestPathsPeered(
+                            s.getId(),
+                            e.getId(),
+                            dir,
+                            rel_types,
+                            min_hops,
+                            max_hops,
+                            stmt.shortest_path_kind,
+                            stmt.shortest_path_k
+                        )
+                    );
+                }
+            }
+
+            if (traversal_futs.empty()) {
+                return seastar::make_ready_future<std::vector<GqlRow>>(std::vector<GqlRow>{});
+            }
+
+            // Once all partition-level shortest path searches finish, bind results to GqlValue.
+            return seastar::when_all_succeed(traversal_futs.begin(), traversal_futs.end())
+            .then([row, stmt, start_node_var, end_node_var, partitions, edge_var = edge.variable](std::vector<std::vector<Path>> path_results) {
+                std::vector<GqlRow> out_rows;
+                for (size_t i = 0; i < path_results.size(); ++i) {
+                    const auto& partition = (*partitions)[i];
+                    const auto& paths = path_results[i];
+
+                    // Bind variables for the start/end nodes, traversed edge relationships list, and path object.
+                    for (const auto& path : paths) {
+                        GqlRow new_row = row;
+                        new_row.bindings[start_node_var] = GqlValue(partition.start_node);
+                        new_row.bindings["_n_0"] = GqlValue(partition.start_node);
+                        new_row.bindings[end_node_var] = GqlValue(partition.end_node);
+                        new_row.bindings["_n_1"] = GqlValue(partition.end_node);
+
+                        if (!edge_var.empty()) {
+                            new_row.bindings[edge_var] = GqlValue(path.GetRelationships());
+                        }
+                        new_row.bindings["_e_0"] = GqlValue(path.GetRelationships());
+
+                        new_row.bindings[stmt.path_variable] = GqlValue(path);
+                        out_rows.push_back(new_row);
+                    }
+                }
+                return out_rows;
+            });
+        });
+    }
+
+    // Case 2: Standard MATCH Traversal.
     return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner, sort_property, sort_ascending, sort_by_id)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
+        // Handle OPTIONAL MATCH returning null bindings if no matches found.
         if (traversed_rows.empty() && stmt.is_optional) {
             GqlRow opt_row = row;
             for (const auto& node : stmt.pattern.nodes) {
@@ -685,6 +815,39 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
             }
             return std::vector<GqlRow>{opt_row};
         }
+
+        // If a path variable was assigned to this pattern (e.g. p = (a)-[b]->(c)),
+        // reconstruct the Path object from the individual node/edge bindings and assign it.
+        if (!stmt.path_variable.empty()) {
+            std::vector<GqlRow> updated_rows;
+            for (const auto& traversed_row : traversed_rows) {
+                GqlRow new_row = traversed_row;
+                std::vector<Node> path_nodes;
+                for (size_t i = 0; i < stmt.pattern.nodes.size(); ++i) {
+                    auto nit = new_row.bindings.find("_n_" + std::to_string(i));
+                    if (nit != new_row.bindings.end() && nit->second.type == GqlValue::NODE) {
+                        path_nodes.push_back(*nit->second.node);
+                    }
+                }
+                std::vector<Relationship> path_rels;
+                for (size_t i = 0; i < stmt.pattern.edges.size(); ++i) {
+                    auto eit = new_row.bindings.find("_e_" + std::to_string(i));
+                    if (eit != new_row.bindings.end()) {
+                        if (eit->second.type == GqlValue::RELATIONSHIP) {
+                            path_rels.push_back(*eit->second.relationship);
+                        } else if (eit->second.type == GqlValue::RELATIONSHIP_LIST) {
+                            for (const auto& rel : *eit->second.relationship_list) {
+                                path_rels.push_back(rel);
+                            }
+                        }
+                    }
+                }
+                new_row.bindings[stmt.path_variable] = GqlValue(Path(path_nodes, path_rels));
+                updated_rows.push_back(std::move(new_row));
+            }
+            return updated_rows;
+        }
+
         return traversed_rows;
     });
 }

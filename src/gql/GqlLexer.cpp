@@ -290,6 +290,9 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "UNION") type = TokenType::UNION;
             else if (upper_name == "INTERSECT") type = TokenType::INTERSECT;
             else if (upper_name == "ALL") type = TokenType::ALL_KW;
+            else if (upper_name == "SHORTEST") type = TokenType::SHORTEST_KW;
+            else if (upper_name == "ANY") type = TokenType::ANY_KW;
+            else if (upper_name == "GROUP") type = TokenType::GROUP_KW;
             else if (upper_name == "EXISTS") type = TokenType::EXISTS;
             else if (upper_name == "EXPLAIN") type = TokenType::EXPLAIN;
             else if (upper_name == "PROFILE") type = TokenType::PROFILE;

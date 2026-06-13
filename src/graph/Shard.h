@@ -1232,6 +1232,7 @@ namespace ragedb {
         std::optional<WeightedPath> ShortestWeightedPathViaLua(const std::string& type, const std::string& key, const std::string& type2, const std::string& key2, Direction direction, const std::vector<std::string> &rel_types);
 
         seastar::future<std::optional<Path>> ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types, uint64_t max_hops = 15);
+        seastar::future<std::vector<Path>> ShortestPathsPeered(uint64_t id, uint64_t id2, Direction direction, std::vector<std::string> rel_types, uint64_t min_hops, uint64_t max_hops, ShortestPathKind kind, uint64_t k);
         seastar::future<std::optional<WeightedPath>> ShortestWeightedPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types);
 
         // Partition by Shards

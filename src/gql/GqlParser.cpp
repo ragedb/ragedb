@@ -118,6 +118,39 @@ GqlQuery GqlParser::parse_single_query() {
             stmt.is_optional = true;
         }
         consume(TokenType::MATCH, "Expected MATCH");
+        // Parse optional path variable assignment (e.g. p = ALL SHORTEST ...)
+        if (check(TokenType::NAME) && peek(1).type == TokenType::EQ) {
+            stmt.path_variable = peek().text;
+            advance(); // Consume variable
+            advance(); // Consume '='
+
+            // Parse shortest path selectors:
+            // 1. ALL SHORTEST paths
+            if (check(TokenType::ALL_KW) && peek(1).type == TokenType::SHORTEST_KW) {
+                stmt.shortest_path_kind = ShortestPathKind::ALL;
+                advance();
+                advance();
+            // 2. ANY SHORTEST paths
+            } else if (check(TokenType::ANY_KW) && peek(1).type == TokenType::SHORTEST_KW) {
+                stmt.shortest_path_kind = ShortestPathKind::ANY;
+                advance();
+                advance();
+            // 3. SHORTEST k or SHORTEST k GROUP
+            } else if (check(TokenType::SHORTEST_KW)) {
+                advance(); // consume SHORTEST
+                uint64_t k = 1;
+                if (check(TokenType::NUMBER)) {
+                    k = peek().int_value;
+                    advance();
+                }
+                stmt.shortest_path_k = k;
+                if (match(TokenType::GROUP_KW)) {
+                    stmt.shortest_path_kind = ShortestPathKind::K_GROUP;
+                } else {
+                    stmt.shortest_path_kind = ShortestPathKind::K;
+                }
+            }
+        }
         if (check(TokenType::NAME) && peek(1).type == TokenType::IN_KW) {
             stmt.is_search = true;
             stmt.search_var = peek().text;
@@ -613,11 +646,43 @@ PathPattern GqlParser::parse_path_pattern() {
                 consume(TokenType::RB_DASH, "Expected ']-' or ']->' to end relationship description");
                 edge.direction = EdgeDirection::ANY;
             }
+            // Parse repetition suffix if present (e.g. -[e]->+ or -[e]->{1, 5})
+            if (match(TokenType::PLUS)) {
+                // '+' denotes 1 or more hops
+                edge.is_variable_length = true;
+                edge.min_hops = 1;
+                edge.max_hops = std::numeric_limits<uint64_t>::max();
+            } else if (match(TokenType::LBRACE)) {
+                // '{min, max}' denotes specific repetitions range
+                edge.is_variable_length = true;
+                edge.min_hops = peek().int_value;
+                consume(TokenType::NUMBER, "Expected minimum hops");
+                consume(TokenType::COMMA, "Expected ','");
+                edge.max_hops = peek().int_value;
+                consume(TokenType::NUMBER, "Expected maximum hops");
+                consume(TokenType::RBRACE, "Expected '}'");
+            }
         } else if (match(TokenType::LT_DASH_LB)) {
             // Incoming Edge with detail: <-[e:L {p:v}]-
             parse_edge_details(edge);
             consume(TokenType::RB_DASH, "Expected ']-' to end incoming relationship description");
             edge.direction = EdgeDirection::LEFT;
+            // Parse repetition suffix if present (e.g. <-[e]-+ or <-[e]-{1, 5})
+            if (match(TokenType::PLUS)) {
+                // '+' denotes 1 or more hops
+                edge.is_variable_length = true;
+                edge.min_hops = 1;
+                edge.max_hops = std::numeric_limits<uint64_t>::max();
+            } else if (match(TokenType::LBRACE)) {
+                // '{min, max}' denotes specific repetitions range
+                edge.is_variable_length = true;
+                edge.min_hops = peek().int_value;
+                consume(TokenType::NUMBER, "Expected minimum hops");
+                consume(TokenType::COMMA, "Expected ','");
+                edge.max_hops = peek().int_value;
+                consume(TokenType::NUMBER, "Expected maximum hops");
+                consume(TokenType::RBRACE, "Expected '}'");
+            }
         }
 
         pattern.edges.push_back(edge);

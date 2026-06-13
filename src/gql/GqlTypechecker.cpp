@@ -411,6 +411,10 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
                     meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
                 } else {
                     check_path_pattern(match.pattern);
+                    // Register path variable (e.g. p) as GqlType::PATH in typechecker environment
+                    if (!match.path_variable.empty()) {
+                        meet_variable(match.path_variable, GqlType::PATH, {});
+                    }
                 }
             }
             if (exists.where_expr) {
@@ -520,6 +524,10 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
             meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
         } else {
             check_path_pattern(match.pattern);
+            // Register path variable (e.g. p) as GqlType::PATH in typechecker environment
+            if (!match.path_variable.empty()) {
+                meet_variable(match.path_variable, GqlType::PATH, {});
+            }
         }
     }
 

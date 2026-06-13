@@ -18,33 +18,42 @@
 
 namespace ragedb {
 
+    // Constructs a path containing just the start node (0 relationships).
     Path::Path(Node start_node) {
         nodes.emplace_back(start_node);
     }
+    // Constructs a path from a list of nodes.
     Path::Path(std::vector<Node> nodes) : nodes(nodes) {}
+    // Constructs a path from lists of nodes and relationships.
     Path::Path(std::vector<Node> nodes, std::vector<Relationship> relationships) : nodes(nodes), relationships(relationships) {}
 
-    Node Path::GetEndNode() {
+    // Returns the final node in the path sequence.
+    Node Path::GetEndNode() const {
         return nodes.back();
     }
 
-    Node Path::GetStartNode() {
+    // Returns the initial starting node of the path.
+    Node Path::GetStartNode() const {
         return nodes.front();
     }
 
-    std::vector<Node> Path::GetNodes() {
+    // Returns all nodes in traversal order.
+    std::vector<Node> Path::GetNodes() const {
         return nodes;
     }
 
-    Relationship Path::GetLastRelationship() {
+    // Returns the last traversed relationship in the path sequence.
+    Relationship Path::GetLastRelationship() const {
         return relationships.back();
     }
 
-    std::vector<Relationship> Path::GetRelationships() {
+    // Returns all relationships in traversal order.
+    std::vector<Relationship> Path::GetRelationships() const {
         return relationships;
     }
 
-    int Path::length() {
+    // Returns the path length (the number of relationships).
+    int Path::length() const {
         return relationships.size();
     }
 }

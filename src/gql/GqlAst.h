@@ -27,6 +27,7 @@
 #include "../graph/PropertyType.h"
 #include "../graph/Operation.h"
 #include "../graph/Direction.h"
+#include "../graph/paths/Path.h"
 
 namespace ragedb::gql {
 
@@ -253,6 +254,10 @@ struct MatchStatement {
     int id = -1;
     bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
     PathPattern pattern;      ///< Path pattern to match.
+
+    std::string path_variable;                              ///< Optional variable name to bind the entire matched path.
+    ShortestPathKind shortest_path_kind = ShortestPathKind::NONE; ///< The shortest path selection mode (e.g. ALL, ANY, K).
+    uint64_t shortest_path_k = 0;                           ///< The parameter 'k' specifying the path count for K / K_GROUP.
 
     // FTS parameters
     bool is_search = false;
