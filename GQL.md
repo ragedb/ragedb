@@ -10,6 +10,7 @@ RageDB features a native C++ Graph Query Language (GQL) execution engine built o
 - **MATCH / OPTIONAL MATCH**: Thread-safe peered shard traversal read logic.
 - **Path Variables**: Binding whole traversed paths to path variables (e.g. `p = (a)-[e]->(b)`).
 - **Shortest Paths**: Standard shortest path selectors including `ALL SHORTEST`, `ANY SHORTEST`, `SHORTEST k`, and `SHORTEST k GROUP` (executed in trail mode with sharded bidirectional BFS).
+- **K-Hop Traversal**: Native `MATCH KHOP (start)-[edge]->{min, max}(end)` sharded traversal, including automated count-only sharding optimizations (e.g. `RETURN count(end)`) that bypass full node retrieval in favor of metadata counts or ID bitmaps.
 - **SEARCH (Full-Text Search)**: Querying string properties using the `SEARCH` operator within the `MATCH` pattern (e.g. `MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score`). Supports options like `{ fuzzy: 'true' }` for Levenshtein-based matching.
 - **WHERE Filtering**: Supports logical conjunctive precedence (`NOT` > `AND` > `OR`) and standard comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`).
 - **RETURN**: Projection return list with optional aliasing (`AS alias`).

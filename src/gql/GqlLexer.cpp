@@ -275,6 +275,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             TokenType type = TokenType::NAME;
 
             if (upper_name == "MATCH") type = TokenType::MATCH;
+            else if (upper_name == "KHOP") type = TokenType::KHOP;
             else if (upper_name == "OPTIONAL") type = TokenType::OPTIONAL;
             else if (upper_name == "WHERE") type = TokenType::WHERE;
             else if (upper_name == "RETURN") type = TokenType::RETURN;

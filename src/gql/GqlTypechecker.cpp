@@ -544,6 +544,17 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
             meet_variable(match.yield_var, is_node ? GqlType::NODE : GqlType::RELATIONSHIP, {match.search_type});
             meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
         } else {
+            if (match.is_khop) {
+                if (match.pattern.nodes.size() != 2 || match.pattern.edges.size() != 1) {
+                    throw std::runtime_error("KHOP pattern must contain exactly 2 nodes and 1 edge");
+                }
+                if (!match.pattern.edges[0].is_variable_length) {
+                    throw std::runtime_error("KHOP edge pattern must specify repetition range");
+                }
+                if (match.pattern.nodes[1].variable.empty()) {
+                    throw std::runtime_error("KHOP end node must specify a variable name");
+                }
+            }
             check_path_pattern(match.pattern);
             // Register path variable (e.g. p) as GqlType::PATH in typechecker environment
             if (!match.path_variable.empty()) {

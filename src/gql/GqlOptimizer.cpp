@@ -285,6 +285,35 @@ void extract_rel_types(const LabelExpression* expr, std::vector<std::string>& re
     }
 }
 
+void rewrite_khop_count_to_var(std::unique_ptr<Expression>& expr, const std::string& var_name) {
+    if (!expr) return;
+
+    if (expr->kind == ExpressionKind::AGGREGATION) {
+        auto* agg = static_cast<AggregateExpr*>(expr.get());
+        if (agg->fn_kind == AggregateKind::COUNT) {
+            bool target_matches = false;
+            if (!agg->expr) {
+                target_matches = true;
+            } else if (agg->expr->kind == ExpressionKind::VARIABLE) {
+                auto* ve = static_cast<const VariableExpr*>(agg->expr.get());
+                if (ve->name == var_name) {
+                    target_matches = true;
+                }
+            }
+            if (target_matches) {
+                expr = std::make_unique<VariableExpr>(var_name);
+            }
+        }
+    } else if (expr->kind == ExpressionKind::UNARY_OP) {
+        auto* un = static_cast<UnaryOpExpr*>(expr.get());
+        rewrite_khop_count_to_var(un->expr, var_name);
+    } else if (expr->kind == ExpressionKind::BINARY_OP) {
+        auto* bin = static_cast<BinaryOpExpr*>(expr.get());
+        rewrite_khop_count_to_var(bin->left, var_name);
+        rewrite_khop_count_to_var(bin->right, var_name);
+    }
+}
+
 void collect_variables_from_matches(const std::vector<MatchStatement>& matches, std::set<std::string>& vars) {
     for (const auto& match : matches) {
         if (match.is_search) {
@@ -497,6 +526,8 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         query.outer_vars = std::move(outer_vars);
     }
 
+
+
     // --- Phase 8: Unnecessary Join Removal ---
     // Identify and remove duplicate/redundant MATCH patterns.
     for (auto it = query.matches.begin(); it != query.matches.end(); ) {
@@ -663,6 +694,51 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     }
 
     query.where_expr = rebuild_expression_without_pushed_predicates(std::move(query.where_expr), pushdowns);
+
+    // --- KHOP Count-Only Optimization ---
+    for (auto& match : query.matches) {
+        if (match.is_khop && match.pattern.nodes.size() == 2 && !match.pattern.nodes[1].variable.empty()) {
+            std::string end_var = match.pattern.nodes[1].variable;
+            bool referenced_outside = false;
+            if (query.where_expr && is_variable_referenced_outside_count(query.where_expr.get(), end_var)) {
+                referenced_outside = true;
+            }
+            for (const auto& item : query.returns) {
+                if (is_variable_referenced_outside_count(item.expr.get(), end_var)) {
+                    referenced_outside = true;
+                    break;
+                }
+            }
+            for (const auto& spec : query.order_by) {
+                if (is_variable_referenced_outside_count(spec.expr.get(), end_var)) {
+                    referenced_outside = true;
+                    break;
+                }
+            }
+            
+            if (!referenced_outside) {
+                match.khop_count_only = true;
+                for (auto& item : query.returns) {
+                    if (!item.alias.has_value()) {
+                        if (item.expr && item.expr->kind == ExpressionKind::AGGREGATION) {
+                            auto* agg = static_cast<AggregateExpr*>(item.expr.get());
+                            if (agg->fn_kind == AggregateKind::COUNT) {
+                                if (!agg->expr) {
+                                    item.alias = "count(*)";
+                                } else if (agg->expr->kind == ExpressionKind::VARIABLE) {
+                                    item.alias = "count(" + static_cast<VariableExpr*>(agg->expr.get())->name + ")";
+                                }
+                            }
+                        }
+                    }
+                    rewrite_khop_count_to_var(item.expr, end_var);
+                }
+                for (auto& spec : query.order_by) {
+                    rewrite_khop_count_to_var(spec.expr, end_var);
+                }
+            }
+        }
+    }
 }
 
 void GqlOptimizer::reverse_path_pattern(PathPattern& pattern) {

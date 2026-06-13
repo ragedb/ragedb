@@ -93,6 +93,7 @@ enum class TokenType {
     OPTIONS,
     YIELD,
     IN_KW,
+    KHOP,
 
     // Admin Keywords
     CALL,

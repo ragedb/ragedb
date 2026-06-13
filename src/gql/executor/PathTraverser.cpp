@@ -20,6 +20,7 @@
 #include <seastar/core/when_all.hh>
 #include <algorithm>
 #include <unordered_set>
+#include <iterator>
 
 /**
  * @file PathTraverser.cpp
@@ -669,6 +670,265 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
 }
 
 seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
+    // Case 0: K-Hop Traversal.
+    if (stmt.is_khop) {
+        // Resolve start nodes candidate set.
+        seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        auto start_node_var = stmt.pattern.nodes[0].variable;
+        if (!start_node_var.empty()) {
+            auto bound_start_it = row.bindings.find(start_node_var);
+            if (bound_start_it != row.bindings.end() && bound_start_it->second.type == GqlValue::NODE) {
+                start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_start_it->second.node });
+            } else {
+                start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+            }
+        } else {
+            start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+        }
+
+        return start_nodes_fut.then([&graph, stmt, row](std::vector<Node> start_nodes) {
+            // Filter start node candidates by labels and property constraint expressions.
+            std::vector<Node> valid_starts;
+            for (const auto& node : start_nodes) {
+                if (stmt.pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[0].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[0].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[0].property_filters)) {
+                    continue;
+                }
+                valid_starts.push_back(node);
+            }
+
+            auto start_node_var = stmt.pattern.nodes[0].variable;
+            auto end_node_var = stmt.pattern.nodes[1].variable;
+
+            if (valid_starts.empty()) {
+                if (stmt.is_optional) {
+                    GqlRow opt_row = row;
+                    if (!start_node_var.empty() && opt_row.bindings.find(start_node_var) == opt_row.bindings.end()) {
+                        opt_row.bindings[start_node_var] = GqlValue();
+                    }
+                    if (!end_node_var.empty() && opt_row.bindings.find(end_node_var) == opt_row.bindings.end()) {
+                        opt_row.bindings[end_node_var] = GqlValue();
+                    }
+                    return seastar::make_ready_future<std::vector<GqlRow>>(std::vector<GqlRow>{opt_row});
+                }
+                return seastar::make_ready_future<std::vector<GqlRow>>(std::vector<GqlRow>{});
+            }
+
+            const auto& edge = stmt.pattern.edges[0];
+            Direction dir = Direction::BOTH;
+            if (edge.direction == EdgeDirection::RIGHT) dir = Direction::OUT;
+            else if (edge.direction == EdgeDirection::LEFT) dir = Direction::IN;
+
+            std::vector<std::string> rel_types;
+            if (edge.label_expr) {
+                auto extract_types = [](auto& self, const LabelExpression* expr, std::vector<std::string>& types) -> void {
+                    if (!expr) return;
+                    if (expr->kind == LabelExprKind::LITERAL) {
+                        types.push_back(expr->name);
+                    } else if (expr->kind == LabelExprKind::OR) {
+                        self(self, expr->left.get(), types);
+                        self(self, expr->right.get(), types);
+                    }
+                };
+                extract_types(extract_types, edge.label_expr.get(), rel_types);
+            }
+
+            uint64_t min_hops = edge.is_variable_length ? edge.min_hops : 1;
+            uint64_t max_hops = edge.is_variable_length ? edge.max_hops : 1;
+
+            // Check if the end node is bound in row.
+            bool end_node_bound = false;
+            Node bound_end_node;
+            auto bound_end_it = row.bindings.find(end_node_var);
+            if (bound_end_it != row.bindings.end() && bound_end_it->second.type == GqlValue::NODE) {
+                end_node_bound = true;
+                bound_end_node = *bound_end_it->second.node;
+            }
+
+            bool end_has_constraints = stmt.pattern.nodes[1].label_expr || 
+                                       !stmt.pattern.nodes[1].properties.empty() || 
+                                       !stmt.pattern.nodes[1].property_filters.empty() || 
+                                       end_node_bound;
+
+            if (stmt.khop_count_only) {
+                if (!end_has_constraints) {
+                    // Optimized: Use KHopCountPeered directly.
+                    std::vector<seastar::future<uint64_t>> futs;
+                    for (const auto& s : valid_starts) {
+                        futs.push_back(graph.shard.local().KHopCountPeered(s.getId(), max_hops, dir, rel_types));
+                    }
+                    seastar::future<std::vector<uint64_t>> max_counts_fut = seastar::when_all_succeed(futs.begin(), futs.end());
+
+                    seastar::future<std::vector<uint64_t>> min_counts_fut = seastar::make_ready_future<std::vector<uint64_t>>();
+                    if (min_hops > 1) {
+                        std::vector<seastar::future<uint64_t>> min_futs;
+                        for (const auto& s : valid_starts) {
+                            min_futs.push_back(graph.shard.local().KHopCountPeered(s.getId(), min_hops - 1, dir, rel_types));
+                        }
+                        min_counts_fut = seastar::when_all_succeed(min_futs.begin(), min_futs.end());
+                    } else {
+                        min_counts_fut = seastar::make_ready_future<std::vector<uint64_t>>(std::vector<uint64_t>(valid_starts.size(), 0));
+                    }
+
+                    return seastar::when_all_succeed(std::move(max_counts_fut), std::move(min_counts_fut))
+                    .then([row, valid_starts, start_node_var, end_node_var](std::tuple<std::vector<uint64_t>, std::vector<uint64_t>> counts_tuple) {
+                        auto& max_counts = std::get<0>(counts_tuple);
+                        auto& min_counts = std::get<1>(counts_tuple);
+                        std::vector<GqlRow> out_rows;
+                        for (size_t i = 0; i < valid_starts.size(); ++i) {
+                            int64_t count = static_cast<int64_t>(max_counts[i]) - static_cast<int64_t>(min_counts[i]);
+                            if (count < 0) count = 0;
+                            GqlRow new_row = row;
+                            if (!start_node_var.empty()) {
+                                new_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                            }
+                            new_row.bindings[end_node_var] = GqlValue(property_type_t(count));
+                            out_rows.push_back(std::move(new_row));
+                        }
+                        return out_rows;
+                    });
+                } else {
+                    // Count only but end node has constraints/filters or is bound.
+                    // We must retrieve the IDs, subtract if min_hops > 1, fetch nodes, filter them, and count.
+                    std::vector<seastar::future<std::vector<uint64_t>>> max_futs;
+                    for (const auto& s : valid_starts) {
+                        max_futs.push_back(graph.shard.local().KHopIdsPeered(s.getId(), max_hops, dir, rel_types));
+                    }
+                    seastar::future<std::vector<std::vector<uint64_t>>> max_ids_fut = seastar::when_all_succeed(max_futs.begin(), max_futs.end());
+
+                    seastar::future<std::vector<std::vector<uint64_t>>> min_ids_fut = seastar::make_ready_future<std::vector<std::vector<uint64_t>>>();
+                    if (min_hops > 1) {
+                        std::vector<seastar::future<std::vector<uint64_t>>> min_futs;
+                        for (const auto& s : valid_starts) {
+                            min_futs.push_back(graph.shard.local().KHopIdsPeered(s.getId(), min_hops - 1, dir, rel_types));
+                        }
+                        min_ids_fut = seastar::when_all_succeed(min_futs.begin(), min_futs.end());
+                    } else {
+                        min_ids_fut = seastar::make_ready_future<std::vector<std::vector<uint64_t>>>(std::vector<std::vector<uint64_t>>(valid_starts.size()));
+                    }
+
+                    return seastar::when_all_succeed(std::move(max_ids_fut), std::move(min_ids_fut))
+                    .then([&graph, stmt, row, valid_starts, start_node_var, end_node_var, end_node_bound, bound_end_node](std::tuple<std::vector<std::vector<uint64_t>>, std::vector<std::vector<uint64_t>>> ids_tuple) {
+                        auto& max_ids_list = std::get<0>(ids_tuple);
+                        auto& min_ids_list = std::get<1>(ids_tuple);
+
+                        std::vector<seastar::future<std::vector<Node>>> fetch_futs;
+                        auto remaining_ids_list = std::make_shared<std::vector<std::vector<uint64_t>>>();
+                        for (size_t i = 0; i < valid_starts.size(); ++i) {
+                            std::vector<uint64_t> max_ids = max_ids_list[i];
+                            std::vector<uint64_t> min_ids = min_ids_list[i];
+                            std::sort(max_ids.begin(), max_ids.end());
+                            std::sort(min_ids.begin(), min_ids.end());
+                            std::vector<uint64_t> diff_ids;
+                            std::set_difference(max_ids.begin(), max_ids.end(), min_ids.begin(), min_ids.end(), std::back_inserter(diff_ids));
+                            remaining_ids_list->push_back(diff_ids);
+                            fetch_futs.push_back(graph.shard.local().NodesGetPeered(diff_ids));
+                        }
+
+                        return seastar::when_all_succeed(fetch_futs.begin(), fetch_futs.end())
+                        .then([row, stmt, valid_starts, start_node_var, end_node_var, end_node_bound, bound_end_node](std::vector<std::vector<Node>> fetched_nodes_list) {
+                            std::vector<GqlRow> out_rows;
+                            for (size_t i = 0; i < valid_starts.size(); ++i) {
+                                int64_t filtered_count = 0;
+                                for (const auto& node : fetched_nodes_list[i]) {
+                                    if (end_node_bound && node.getId() != bound_end_node.getId()) {
+                                        continue;
+                                    }
+                                    if (stmt.pattern.nodes[1].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[1].label_expr)) {
+                                        continue;
+                                    }
+                                    if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                                        continue;
+                                    }
+                                    filtered_count++;
+                                }
+                                GqlRow new_row = row;
+                                if (!start_node_var.empty()) {
+                                    new_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                                }
+                                new_row.bindings[end_node_var] = GqlValue(property_type_t(filtered_count));
+                                out_rows.push_back(std::move(new_row));
+                            }
+                            return out_rows;
+                        });
+                    });
+                }
+            } else {
+                // khop_count_only is false. Return rows binding start_node and end_node (each valid neighbor node).
+                std::vector<seastar::future<std::vector<uint64_t>>> max_futs;
+                for (const auto& s : valid_starts) {
+                    max_futs.push_back(graph.shard.local().KHopIdsPeered(s.getId(), max_hops, dir, rel_types));
+                }
+                seastar::future<std::vector<std::vector<uint64_t>>> max_ids_fut = seastar::when_all_succeed(max_futs.begin(), max_futs.end());
+
+                seastar::future<std::vector<std::vector<uint64_t>>> min_ids_fut = seastar::make_ready_future<std::vector<std::vector<uint64_t>>>();
+                if (min_hops > 1) {
+                    std::vector<seastar::future<std::vector<uint64_t>>> min_futs;
+                    for (const auto& s : valid_starts) {
+                        min_futs.push_back(graph.shard.local().KHopIdsPeered(s.getId(), min_hops - 1, dir, rel_types));
+                    }
+                    min_ids_fut = seastar::when_all_succeed(min_futs.begin(), min_futs.end());
+                } else {
+                    min_ids_fut = seastar::make_ready_future<std::vector<std::vector<uint64_t>>>(std::vector<std::vector<uint64_t>>(valid_starts.size()));
+                }
+
+                return seastar::when_all_succeed(std::move(max_ids_fut), std::move(min_ids_fut))
+                .then([&graph, stmt, row, valid_starts, start_node_var, end_node_var, end_node_bound, bound_end_node](std::tuple<std::vector<std::vector<uint64_t>>, std::vector<std::vector<uint64_t>>> ids_tuple) {
+                    auto& max_ids_list = std::get<0>(ids_tuple);
+                    auto& min_ids_list = std::get<1>(ids_tuple);
+
+                    std::vector<seastar::future<std::vector<Node>>> fetch_futs;
+                    for (size_t i = 0; i < valid_starts.size(); ++i) {
+                        std::vector<uint64_t> max_ids = max_ids_list[i];
+                        std::vector<uint64_t> min_ids = min_ids_list[i];
+                        std::sort(max_ids.begin(), max_ids.end());
+                        std::sort(min_ids.begin(), min_ids.end());
+                        std::vector<uint64_t> diff_ids;
+                        std::set_difference(max_ids.begin(), max_ids.end(), min_ids.begin(), min_ids.end(), std::back_inserter(diff_ids));
+                        fetch_futs.push_back(graph.shard.local().NodesGetPeered(diff_ids));
+                    }
+
+                    return seastar::when_all_succeed(fetch_futs.begin(), fetch_futs.end())
+                    .then([row, stmt, valid_starts, start_node_var, end_node_var, end_node_bound, bound_end_node](std::vector<std::vector<Node>> fetched_nodes_list) {
+                        std::vector<GqlRow> out_rows;
+                        for (size_t i = 0; i < valid_starts.size(); ++i) {
+                            bool has_any_match = false;
+                            for (const auto& node : fetched_nodes_list[i]) {
+                                if (end_node_bound && node.getId() != bound_end_node.getId()) {
+                                    continue;
+                                }
+                                if (stmt.pattern.nodes[1].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[1].label_expr)) {
+                                    continue;
+                                }
+                                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                                    continue;
+                                }
+                                has_any_match = true;
+                                GqlRow new_row = row;
+                                if (!start_node_var.empty()) {
+                                    new_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                                }
+                                new_row.bindings[end_node_var] = GqlValue(node);
+                                out_rows.push_back(std::move(new_row));
+                            }
+                            if (!has_any_match && stmt.is_optional) {
+                                GqlRow opt_row = row;
+                                if (!start_node_var.empty()) {
+                                    opt_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                                }
+                                opt_row.bindings[end_node_var] = GqlValue();
+                                out_rows.push_back(std::move(opt_row));
+                            }
+                        }
+                        return out_rows;
+                    });
+                });
+            }
+        });
+    }
+
     // Case 1: Shortest Path Traversal.
     // If the Match statement specifies a shortest path selector (ALL, ANY, K, K_GROUP),
     // we bypass standard traversal and perform sharded BFS pathfinding between all valid start/end node pairs.

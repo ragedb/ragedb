@@ -118,6 +118,9 @@ GqlQuery GqlParser::parse_single_query() {
             stmt.is_optional = true;
         }
         consume(TokenType::MATCH, "Expected MATCH");
+        if (match(TokenType::KHOP)) {
+            stmt.is_khop = true;
+        }
         // Parse optional path variable assignment (e.g. p = ALL SHORTEST ...)
         if (check(TokenType::NAME) && peek(1).type == TokenType::EQ) {
             stmt.path_variable = peek().text;

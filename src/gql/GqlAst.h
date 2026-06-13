@@ -279,6 +279,9 @@ struct MatchStatement {
     ShortestPathKind shortest_path_kind = ShortestPathKind::NONE; ///< The shortest path selection mode (e.g. ALL, ANY, K).
     uint64_t shortest_path_k = 0;                           ///< The parameter 'k' specifying the path count for K / K_GROUP.
 
+    bool is_khop = false;
+    bool khop_count_only = false;
+
     // FTS parameters
     bool is_search = false;
     std::string search_var;
