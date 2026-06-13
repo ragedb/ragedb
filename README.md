@@ -74,89 +74,37 @@ RageDB exposes a rich HTTP API for schema management, node and relationship CRUD
 
 ## Building
 
-RageDB utilizes the high-performance Seastar framework and C++23. It runs natively on Linux (Ubuntu 24.04 recommended) and compiles using Clang 23.
+RageDB utilizes the high-performance Seastar framework and C++23. It compiles using Clang 23 and Conan 2.0+.
+
+To make building RageDB as simple as possible, we provide a unified `build.sh` script that automates system packages installation, compiler setup, Seastar setup, dependency patching, and the compilation of RageDB itself.
+
+### Build via Script (Recommended)
+
+1. Clone RageDB recursively:
+   ```bash
+   git clone --recursive https://github.com/ragedb/ragedb.git
+   cd ragedb
+   ```
+2. Build the project using the script:
+   * **Full setup and compile (first-time build on a fresh Ubuntu 24.04 server)**:
+     ```bash
+     ./build.sh --all
+     ```
+   * **Build RageDB only (if system dependencies and Seastar are already installed)**:
+     ```bash
+     ./build.sh
+     ```
+   * **Custom build options**:
+     * `./build.sh --install-deps` - Install system packages, LLVM Clang 23, and Conan 2.
+     * `./build.sh --seastar` - Build and install the Seastar framework.
+     * `./build.sh --ragedb` - Configure and compile RageDB.
+
+The compiled binary will be located at `build/bin/ragedb`.
 
 ### EC2 Setup (Optional)
 
 If setting up on AWS EC2, choose an **Ubuntu Server 24.04 LTS (HVM)** instance (e.g. `r5.2xlarge`) configured with 100 GiB of storage. For optimal performance, specify CPU options with **Threads per core = 1** (disabling Hyper-Threading).
 
-### Build Instructions
-
-Once connected to your server, follow these steps to install the toolchain, dependencies, Seastar, and compile RageDB:
-
-#### 1. Install System Dependencies
-
-```bash
-sudo apt-get update && sudo apt-get dist-upgrade -y
-sudo apt-get install -y build-essential git sudo pkg-config ccache python3-pip \
-    valgrind libfmt-dev ninja-build ragel libhwloc-dev libnuma-dev libpciaccess-dev libcrypto++-dev libboost-all-dev \
-    libxml2-dev xfslibs-dev libgnutls28-dev liblz4-dev libsctp-dev gcc make libprotobuf-dev protobuf-compiler python3 systemtap-sdt-dev \
-    libtool cmake libyaml-cpp-dev libc-ares-dev stow openssl liburing-dev doxygen wget lsb-release gnupg software-properties-common meson
-```
-
-#### 2. Install LLVM Clang 23 Compiler
-
-```bash
-wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 23
-sudo ln -sf /usr/bin/clang-23 /usr/bin/clang && sudo ln -sf /usr/bin/clang++-23 /usr/bin/clang++
-```
-
-#### 3. Install and Configure Conan 2
-
-```bash
-pip install --break-system-packages --user conan -v "conan>=2.0"
-sudo ln -sf ~/.local/bin/conan /usr/bin/conan
-```
-
-#### 4. Compile and Install Seastar
-
-```bash
-git clone https://github.com/scylladb/seastar.git /tmp/seastar
-cd /tmp/seastar
-git checkout seastar-25.05.0
-./configure.py --mode=release --prefix=/usr/local --without-tests --without-apps --without-demos
-ninja -C build/release install
-rm -rf /tmp/seastar
-cd ~
-```
-
-#### 5. Clone and Build RageDB
-
-```bash
-git clone --recursive https://github.com/ragedb/ragedb.git
-cd ragedb
-
-# Detect Conan profile with Clang 23
-CC=clang-23 CXX=clang++-23 conan profile detect --force
-sed -i 's/"18", "19", "20", "21", "22"/"18", "19", "20", "21", "22", "23"/' ~/.conan2/settings.yml
-printf "\n[replace_requires]\nfmt/*: fmt/11.0.2\n" >> ~/.conan2/profiles/default
-
-# Install package dependencies via Conan
-CC=clang-23 CXX=clang++-23 CXXFLAGS="-Wno-error=c2y-extensions" conan install . --output-folder=build --build=missing -s compiler.cppstd=23 -s build_type=Release
-
-# Patch conan dependencies for modern compiler compatibility
-python3 -c "from pathlib import Path; import glob; f = glob.glob(str(Path.home() / '.conan2/p/**/optional_implementation.hpp'), recursive=True)[0]; c = open(f).read(); pos = c.find('T& emplace(Args&&... args) noexcept'); target = 'this->construct(std::forward<Args>(args)...);'; idx = c.find(target, pos); c = c[:idx] + '::new (static_cast<void*>(this)) optional(std::forward<Args>(args)...);\n\t\t\treturn *m_value;' + c[idx + len(target):]; open(f, 'w').write(c)"
-
-# Configure with CMake (disabling LTO/IPO for dependencies compiling under Clang 23)
-cd build
-CC=clang-23 CXX=clang++-23 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DWARNINGS_AS_ERRORS=OFF -DUSE_IPO=OFF -DUseIPO=OFF
-
-# Apply OpenFST and IResearch compilation patches
-sed -i 's/isymbols_ = impl.isymbols_ ? impl.isymbols_->Copy() : nullptr;/isymbols_.reset(impl.isymbols_ ? impl.isymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
-sed -i 's/osymbols_ = impl.osymbols_ ? impl.osymbols_->Copy() : nullptr;/osymbols_.reset(impl.osymbols_ ? impl.osymbols_->Copy() : nullptr);/g' _deps/iresearch-src/external/openfst/fst/fst.h
-sed -i 's/maker_t::template make(std::forward<Args>(args)...);/maker_t::template make<Args...>(std::forward<Args>(args)...);/g' _deps/iresearch-src/core/utils/memory.hpp
-sed -i 's/selector_(table.s_)/selector_(table.selector_)/g' _deps/iresearch-src/external/openfst/fst/bi-table.h
-
-# Build RageDB
-cmake --build . --target ragedb
-```
-
-#### 6. Start the Server
-
-```bash
-cd bin
-./ragedb
-```
 
 ### Troubleshooting
 
