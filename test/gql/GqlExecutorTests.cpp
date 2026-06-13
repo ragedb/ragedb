@@ -135,6 +135,179 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
         REQUIRE(results_json.find("Alice") == std::string::npos);
     }
 
+    SECTION("Match with IS NULL and IS NOT NULL") {
+        uint64_t id3 = graph.shard.local().NodeAddPeered("Person", "charlie", "{\"name\": \"Charlie\"}").get();
+        REQUIRE(id3 > 0);
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.age IS NULL RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Charlie") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.age IS NOT NULL RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Charlie") == std::string::npos);
+        }
+    }
+
+    SECTION("Match with string comparison operators") {
+        uint64_t id3 = graph.shard.local().NodeAddPeered("Person", "charlie", "{\"name\": \"Charlie\"}").get();
+        REQUIRE(id3 > 0);
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name STARTS WITH 'Al' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") == std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name ENDS WITH 'ie' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Charlie") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name CONTAINS 'o' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+    }
+
+    SECTION("Match with string concatenation operator") {
+        std::string query_str = "MATCH (p:Person) WHERE p.name = 'Al' || 'ice' RETURN p.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results_json.find("Alice") != std::string::npos);
+        REQUIRE(results_json.find("Bob") == std::string::npos);
+    }
+
+    SECTION("Match with string concatenation operator - Complex") {
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name = 'A' || 'li' || 'ce' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name = 'Bob' || 'by' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+            REQUIRE(results_json.find("Bob") == std::string::npos);
+        }
+    }
+
+    SECTION("Match with IS NULL and IS NOT NULL - Edge Cases") {
+        {
+            std::string query_str = "MATCH (p:Person) WHERE NULL IS NULL RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE 1 IS NOT NULL RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name IS NOT NULL AND p.age IS NULL RETURN p.name";
+            uint64_t id3 = graph.shard.local().NodeAddPeered("Person", "charlie", "{\"name\": \"Charlie\"}").get();
+            REQUIRE(id3 > 0);
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Charlie") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+    }
+
+    SECTION("Match with IS NULL and IS NOT NULL on Relationships") {
+        graph.shard.local().RelationshipTypeInsertPeered("KNOWS").get();
+        graph.shard.local().RelationshipPropertyTypeAddPeered("KNOWS", "since", "integer").get();
+        
+        uint64_t r1 = graph.shard.local().RelationshipAddPeered("KNOWS", id1, id2, "{\"since\": 2020}").get();
+        uint64_t r2 = graph.shard.local().RelationshipAddPeered("KNOWS", id2, id1, "{}").get();
+        REQUIRE(r1 > 0);
+        REQUIRE(r2 > 0);
+        
+        {
+            std::string query_str = "MATCH (a)-[r:KNOWS]->(b) WHERE r.since IS NULL RETURN a.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+        {
+            std::string query_str = "MATCH (a)-[r:KNOWS]->(b) WHERE r.since IS NOT NULL RETURN a.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") == std::string::npos);
+        }
+    }
+
+    SECTION("Match with string comparison operators - Edge Cases") {
+        uint64_t id3 = graph.shard.local().NodeAddPeered("Person", "charlie", "{\"name\": \"Charlie\"}").get();
+        REQUIRE(id3 > 0);
+        {
+            // Case sensitivity check for STARTS WITH
+            std::string query_str = "MATCH (p:Person) WHERE p.name STARTS WITH 'al' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") == std::string::npos);
+        }
+        {
+            // Empty string check for STARTS WITH (should match all strings)
+            std::string query_str = "MATCH (p:Person) WHERE p.name STARTS WITH '' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Charlie") != std::string::npos);
+        }
+        {
+            // Case sensitivity check for ENDS WITH
+            std::string query_str = "MATCH (p:Person) WHERE p.name ENDS WITH 'IE' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Charlie") == std::string::npos);
+        }
+        {
+            // Case sensitivity check for CONTAINS
+            std::string query_str = "MATCH (p:Person) WHERE p.name CONTAINS 'O' RETURN p.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+            REQUIRE(results_json.find("Bob") == std::string::npos);
+        }
+    }
+
     guard.stop();
 }
 

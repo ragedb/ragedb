@@ -49,6 +49,11 @@ void collect_accessed_properties(const Expression* expr,
             collect_accessed_properties(agg->expr.get(), accessed_props, whole_objects);
             break;
         }
+        case ExpressionKind::IS_NULL_CHECK: {
+            auto* is_null = static_cast<const IsNullExpr*>(expr);
+            collect_accessed_properties(is_null->expr.get(), accessed_props, whole_objects);
+            break;
+        }
         case ExpressionKind::LITERAL:
         default:
             break;

@@ -326,6 +326,11 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
             }
             break;
         }
+        case ExpressionKind::IS_NULL_CHECK: {
+            const auto& is_null = static_cast<const IsNullExpr&>(expr);
+            check_expression(*is_null.expr);
+            return GqlType::BOOLEAN;
+        }
         case ExpressionKind::BINARY_OP: {
             const auto& bin = static_cast<const BinaryOpExpr&>(expr);
             GqlType t1 = check_expression(*bin.left);
@@ -348,6 +353,14 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
                 return GqlType::INTEGER;
             }
 
+            if (bin.op == BinaryOpKind::CONCAT) {
+                if ((t1 != GqlType::STRING && t1 != GqlType::ANY && t1 != GqlType::VOID) ||
+                    (t2 != GqlType::STRING && t2 != GqlType::ANY && t2 != GqlType::VOID)) {
+                    throw std::runtime_error("Concatenation operands must be STRING, got " + to_string(t1) + " and " + to_string(t2));
+                }
+                return GqlType::STRING;
+            }
+
             // Comparison operators (=, !=, <, <=, >, >=)
             if (bin.op == BinaryOpKind::EQ || bin.op == BinaryOpKind::NE ||
                 bin.op == BinaryOpKind::LT || bin.op == BinaryOpKind::LE ||
@@ -366,6 +379,14 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
                 }
                 if (t1 != t2) {
                     throw std::runtime_error("Incompatible types for comparison: " + to_string(t1) + " and " + to_string(t2));
+                }
+                return GqlType::BOOLEAN;
+            }
+
+            if (bin.op == BinaryOpKind::STARTS_WITH || bin.op == BinaryOpKind::ENDS_WITH || bin.op == BinaryOpKind::CONTAINS) {
+                if ((t1 != GqlType::STRING && t1 != GqlType::ANY && t1 != GqlType::VOID) ||
+                    (t2 != GqlType::STRING && t2 != GqlType::ANY && t2 != GqlType::VOID)) {
+                    throw std::runtime_error("String comparison operands must be STRING, got " + to_string(t1) + " and " + to_string(t2));
                 }
                 return GqlType::BOOLEAN;
             }

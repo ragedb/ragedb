@@ -145,7 +145,16 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
         if (c == '/') { tokens.push_back({TokenType::SLASH, "/"}); advance(); continue; }
         if (c == '+') { tokens.push_back({TokenType::PLUS, "+"}); advance(); continue; }
         if (c == '-') { tokens.push_back({TokenType::MINUS, "-"}); advance(); continue; }
-        if (c == '|') { tokens.push_back({TokenType::PIPE, "|"}); advance(); continue; }
+        if (c == '|') {
+            if (peek(1) == '|') {
+                tokens.push_back({TokenType::PIPE_PIPE, "||"});
+                advance(2);
+            } else {
+                tokens.push_back({TokenType::PIPE, "|"});
+                advance();
+            }
+            continue;
+        }
         if (c == '&') { tokens.push_back({TokenType::AMP, "&"}); advance(); continue; }
 
         // Inequality and logical operators
@@ -324,6 +333,29 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "OPTIONS") type = TokenType::OPTIONS;
             else if (upper_name == "YIELD") type = TokenType::YIELD;
             else if (upper_name == "IN") type = TokenType::IN_KW;
+            else if (upper_name == "CONTAINS") type = TokenType::CONTAINS;
+            else if (upper_name == "STARTS") {
+                size_t temp_pos = pos;
+                while (temp_pos < length && std::isspace(input[temp_pos])) {
+                    temp_pos++;
+                }
+                if (temp_pos + 4 <= length && to_upper(input.substr(temp_pos, 4)) == "WITH") {
+                    pos = temp_pos + 4;
+                    type = TokenType::STARTS_WITH;
+                    name = "STARTS WITH";
+                }
+            }
+            else if (upper_name == "ENDS") {
+                size_t temp_pos = pos;
+                while (temp_pos < length && std::isspace(input[temp_pos])) {
+                    temp_pos++;
+                }
+                if (temp_pos + 4 <= length && to_upper(input.substr(temp_pos, 4)) == "WITH") {
+                    pos = temp_pos + 4;
+                    type = TokenType::ENDS_WITH;
+                    name = "ENDS WITH";
+                }
+            }
             // Compound keyword check: ORDER BY
             else if (upper_name == "ORDER") {
                 size_t temp_pos = pos;

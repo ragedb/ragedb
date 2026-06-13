@@ -139,6 +139,16 @@ TEST_CASE("GQL Lexer tokenizes all operators and compound keywords", "[gql_lexer
         REQUIRE(tokens.size() >= 3);
         REQUIRE(tokens[2].type == TokenType::ORDER_BY);
     }
+
+    SECTION("String operators and concat symbols") {
+        std::string query = "STARTS WITH ENDS WITH CONTAINS ||";
+        auto tokens = GqlLexer::tokenize(query);
+        REQUIRE(tokens.size() == 5);
+        REQUIRE(tokens[0].type == TokenType::STARTS_WITH);
+        REQUIRE(tokens[1].type == TokenType::ENDS_WITH);
+        REQUIRE(tokens[2].type == TokenType::CONTAINS);
+        REQUIRE(tokens[3].type == TokenType::PIPE_PIPE);
+    }
 }
 
 TEST_CASE("GQL Lexer throws exceptions on invalid input", "[gql_lexer]") {

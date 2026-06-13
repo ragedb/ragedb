@@ -53,7 +53,8 @@ enum class ExpressionKind {
     UNARY_OP,         ///< Unary operations (e.g. NOT, -x)
     BINARY_OP,        ///< Binary operations (e.g. AND, OR, +, =, <)
     AGGREGATION,      ///< GQL Aggregate function (e.g. COUNT, SUM, AVG, MIN, MAX)
-    EXISTS            ///< Exists subquery expression (e.g. EXISTS { MATCH ... })
+    EXISTS,           ///< Exists subquery expression (e.g. EXISTS { MATCH ... })
+    IS_NULL_CHECK     ///< Null check expression (e.g. x IS NULL)
 };
 
 /**
@@ -81,7 +82,10 @@ enum class UnaryOpKind {
 enum class BinaryOpKind {
     AND, OR,                 ///< Logical conjunction/disjunction
     ADD, SUB, MUL, DIV,      ///< Arithmetic operators (+, -, *, /)
+    CONCAT,                  ///< String concatenation (||)
     EQ, NE, LT, LE, GT, GE,  ///< Comparison operators (=, !=, <, <=, >, >=)
+    STARTS_WITH, ENDS_WITH,  ///< String comparisons
+    CONTAINS,
     IS, AS                   ///< Keywords used in label specification and projections
 };
 
@@ -169,6 +173,22 @@ struct BinaryOpExpr : public Expression {
     }
     std::unique_ptr<Expression> clone() const override {
         return std::make_unique<BinaryOpExpr>(op, left ? left->clone() : nullptr, right ? right->clone() : nullptr);
+    }
+};
+
+/**
+ * @brief Represents a null check expression (e.g. value IS NULL, value IS NOT NULL).
+ */
+struct IsNullExpr : public Expression {
+    std::unique_ptr<Expression> expr;
+    bool is_not; // true for IS NOT NULL, false for IS NULL
+    IsNullExpr(std::unique_ptr<Expression> e, bool not_val) {
+        kind = ExpressionKind::IS_NULL_CHECK;
+        expr = std::move(e);
+        is_not = not_val;
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<IsNullExpr>(expr ? expr->clone() : nullptr, is_not);
     }
 };
 

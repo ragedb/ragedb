@@ -167,6 +167,38 @@ TEST_CASE("GQL Static Typechecker Tests", "[gql_typechecker]") {
         std::string query_str2 = "ALTER RELATIONSHIP TYPE FRIEND_OF ADD key STRING";
         auto query2 = GqlParser::parse(query_str2);
         REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query2), Catch::Contains("Cannot define a property named 'key' on schema types as it is an internal property"));
+     }
+
+    SECTION("Typecheck IS NULL and IS NOT NULL") {
+        std::string query_str = "MATCH (p:Person) WHERE p.age IS NULL OR p.name IS NOT NULL RETURN p";
+        auto query = GqlParser::parse(query_str);
+        REQUIRE_NOTHROW(GqlTypechecker::typecheck(graph, query));
+    }
+
+    SECTION("Typecheck string concatenation success and failure") {
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name = 'Al' || 'ice' RETURN p";
+            auto query = GqlParser::parse(query_str);
+            REQUIRE_NOTHROW(GqlTypechecker::typecheck(graph, query));
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name = p.age || 'ice' RETURN p";
+            auto query = GqlParser::parse(query_str);
+            REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("Concatenation operands must be STRING, got"));
+        }
+    }
+
+    SECTION("Typecheck string comparison operators success and failure") {
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name STARTS WITH 'Al' AND p.name ENDS WITH 'ice' OR p.name CONTAINS 'o' RETURN p";
+            auto query = GqlParser::parse(query_str);
+            REQUIRE_NOTHROW(GqlTypechecker::typecheck(graph, query));
+        }
+        {
+            std::string query_str = "MATCH (p:Person) WHERE p.name STARTS WITH 123 RETURN p";
+            auto query = GqlParser::parse(query_str);
+            REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("String comparison operands must be STRING, got"));
+        }
     }
 
     graph.Stop().get();

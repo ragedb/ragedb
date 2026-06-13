@@ -448,5 +448,60 @@ TEST_CASE("GQL Parser parses index statements (DDL)", "[gql_parser]") {
     }
 }
 
+TEST_CASE("GQL Parser parses null checks, string operators and concatenation", "[gql_parser]") {
+    SECTION("IS NULL and IS NOT NULL") {
+        std::string query = "MATCH (p) WHERE p.age IS NULL AND p.name IS NOT NULL RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.where_expr != nullptr);
+        REQUIRE(q.where_expr->kind == ExpressionKind::BINARY_OP);
+        auto* and_expr = static_cast<const BinaryOpExpr*>(q.where_expr.get());
+        REQUIRE(and_expr->op == BinaryOpKind::AND);
+        
+        REQUIRE(and_expr->left->kind == ExpressionKind::IS_NULL_CHECK);
+        auto* is_null = static_cast<const IsNullExpr*>(and_expr->left.get());
+        REQUIRE(is_null->is_not == false);
+        
+        REQUIRE(and_expr->right->kind == ExpressionKind::IS_NULL_CHECK);
+        auto* is_not_null = static_cast<const IsNullExpr*>(and_expr->right.get());
+        REQUIRE(is_not_null->is_not == true);
+    }
+
+    SECTION("STARTS WITH, ENDS WITH, CONTAINS") {
+        std::string query = "MATCH (p) WHERE p.name STARTS WITH 'Al' AND p.name ENDS WITH 'ce' OR p.name CONTAINS 'o' RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.where_expr != nullptr);
+        REQUIRE(q.where_expr->kind == ExpressionKind::BINARY_OP);
+        auto* or_expr = static_cast<const BinaryOpExpr*>(q.where_expr.get());
+        REQUIRE(or_expr->op == BinaryOpKind::OR);
+
+        // left of OR is AND
+        auto* and_expr = static_cast<const BinaryOpExpr*>(or_expr->left.get());
+        REQUIRE(and_expr->op == BinaryOpKind::AND);
+
+        auto* starts_expr = static_cast<const BinaryOpExpr*>(and_expr->left.get());
+        REQUIRE(starts_expr->op == BinaryOpKind::STARTS_WITH);
+
+        auto* ends_expr = static_cast<const BinaryOpExpr*>(and_expr->right.get());
+        REQUIRE(ends_expr->op == BinaryOpKind::ENDS_WITH);
+
+        auto* contains_expr = static_cast<const BinaryOpExpr*>(or_expr->right.get());
+        REQUIRE(contains_expr->op == BinaryOpKind::CONTAINS);
+    }
+
+    SECTION("String concatenation operator ||") {
+        std::string query = "MATCH (p) RETURN 'A' || 'B' || 'C'";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.returns.size() == 1);
+        auto* expr = q.returns[0].expr.get();
+        REQUIRE(expr->kind == ExpressionKind::BINARY_OP);
+        auto* concat2 = static_cast<const BinaryOpExpr*>(expr);
+        REQUIRE(concat2->op == BinaryOpKind::CONCAT);
+        REQUIRE(concat2->left->kind == ExpressionKind::BINARY_OP);
+        auto* concat1 = static_cast<const BinaryOpExpr*>(concat2->left.get());
+        REQUIRE(concat1->op == BinaryOpKind::CONCAT);
+    }
+}
+
+
 
 

@@ -61,6 +61,9 @@ enum class TokenType {
     EXISTS,
     EXPLAIN,
     PROFILE,
+    STARTS_WITH,
+    ENDS_WITH,
+    CONTAINS,
 
     // DDL Keywords
     CREATE,
@@ -118,6 +121,7 @@ enum class TokenType {
     LE,          // <=
     GE,          // >=
     PIPE,        // |
+    PIPE_PIPE,   // ||
     AMP,         // &
 
     // Edges

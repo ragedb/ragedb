@@ -208,6 +208,17 @@ GqlValue evaluate_expression(const GqlRow& row, const Expression* expr) {
     if (!expr) return GqlValue();
 
     switch (expr->kind) {
+        case ExpressionKind::IS_NULL_CHECK: {
+            auto* is_null_expr = static_cast<const IsNullExpr*>(expr);
+            auto val = evaluate_expression(row, is_null_expr->expr.get());
+            bool is_nil = (val.type == GqlValue::NIL);
+            if (val.type == GqlValue::PROPERTY) {
+                if (std::holds_alternative<std::monostate>(val.property)) {
+                    is_nil = true;
+                }
+            }
+            return GqlValue(is_null_expr->is_not ? !is_nil : is_nil);
+        }
         case ExpressionKind::AGGREGATION: {
             return GqlValue(); // Aggregations are not evaluated on single rows
         }
@@ -327,8 +338,25 @@ GqlValue evaluate_expression(const GqlRow& row, const Expression* expr) {
                     if (bin->op == BinaryOpKind::DIV) return r != 0.0 ? GqlValue(l / r) : GqlValue();
                 }
                 if (std::holds_alternative<std::string>(lhs.property) && std::holds_alternative<std::string>(rhs.property)) {
-                    if (bin->op == BinaryOpKind::ADD) {
+                    if (bin->op == BinaryOpKind::ADD || bin->op == BinaryOpKind::CONCAT) {
                         return GqlValue(std::get<std::string>(lhs.property) + std::get<std::string>(rhs.property));
+                    }
+                }
+                // String comparison operators
+                if (std::holds_alternative<std::string>(lhs.property) && std::holds_alternative<std::string>(rhs.property)) {
+                    const auto& l = std::get<std::string>(lhs.property);
+                    const auto& r = std::get<std::string>(rhs.property);
+                    if (bin->op == BinaryOpKind::STARTS_WITH) {
+                        return GqlValue(l.rfind(r, 0) == 0);
+                    }
+                    if (bin->op == BinaryOpKind::ENDS_WITH) {
+                        if (l.length() >= r.length()) {
+                            return GqlValue(l.compare(l.length() - r.length(), r.length(), r) == 0);
+                        }
+                        return GqlValue(false);
+                    }
+                    if (bin->op == BinaryOpKind::CONTAINS) {
+                        return GqlValue(l.find(r) != std::string::npos);
                     }
                 }
             }

@@ -803,37 +803,60 @@ std::unique_ptr<Expression> GqlParser::parse_and() {
  */
 std::unique_ptr<Expression> GqlParser::parse_comparison() {
     auto expr = parse_add_sub();
-    while (check(TokenType::EQ) || check(TokenType::NE) ||
-           check(TokenType::LT) || check(TokenType::LE) ||
-           check(TokenType::GT) || check(TokenType::GE)) {
-        TokenType op_type = peek().type;
-        advance();
+    while (true) {
+        if (match(TokenType::IS)) {
+            bool is_not = false;
+            if (match(TokenType::NOT)) {
+                is_not = true;
+            }
+            consume(TokenType::NULL_KW, "Expected 'NULL' after 'IS [NOT]'");
+            expr = std::make_unique<IsNullExpr>(std::move(expr), is_not);
+            continue;
+        }
 
-        BinaryOpKind op;
-        if (op_type == TokenType::EQ) op = BinaryOpKind::EQ;
-        else if (op_type == TokenType::NE) op = BinaryOpKind::NE;
-        else if (op_type == TokenType::LT) op = BinaryOpKind::LT;
-        else if (op_type == TokenType::LE) op = BinaryOpKind::LE;
-        else if (op_type == TokenType::GT) op = BinaryOpKind::GT;
-        else op = BinaryOpKind::GE;
+        if (check(TokenType::EQ) || check(TokenType::NE) ||
+            check(TokenType::LT) || check(TokenType::LE) ||
+            check(TokenType::GT) || check(TokenType::GE) ||
+            check(TokenType::STARTS_WITH) || check(TokenType::ENDS_WITH) ||
+            check(TokenType::CONTAINS)) {
+            TokenType op_type = peek().type;
+            advance();
 
-        auto right = parse_add_sub();
-        expr = std::make_unique<BinaryOpExpr>(op, std::move(expr), std::move(right));
+            BinaryOpKind op;
+            if (op_type == TokenType::EQ) op = BinaryOpKind::EQ;
+            else if (op_type == TokenType::NE) op = BinaryOpKind::NE;
+            else if (op_type == TokenType::LT) op = BinaryOpKind::LT;
+            else if (op_type == TokenType::LE) op = BinaryOpKind::LE;
+            else if (op_type == TokenType::GT) op = BinaryOpKind::GT;
+            else if (op_type == TokenType::GE) op = BinaryOpKind::GE;
+            else if (op_type == TokenType::STARTS_WITH) op = BinaryOpKind::STARTS_WITH;
+            else if (op_type == TokenType::ENDS_WITH) op = BinaryOpKind::ENDS_WITH;
+            else op = BinaryOpKind::CONTAINS;
+
+            auto right = parse_add_sub();
+            expr = std::make_unique<BinaryOpExpr>(op, std::move(expr), std::move(right));
+            continue;
+        }
+
+        break;
     }
     return expr;
 }
 
 /**
- * @brief Parses additive arithmetic expressions: + and -
+ * @brief Parses additive arithmetic expressions: +, -, and ||
  * 
  * @return std::unique_ptr<Expression> Parsed expression node.
  */
 std::unique_ptr<Expression> GqlParser::parse_add_sub() {
     auto expr = parse_mul_div();
-    while (check(TokenType::PLUS) || check(TokenType::MINUS)) {
+    while (check(TokenType::PLUS) || check(TokenType::MINUS) || check(TokenType::PIPE_PIPE)) {
         TokenType op_type = peek().type;
         advance();
-        BinaryOpKind op = (op_type == TokenType::PLUS) ? BinaryOpKind::ADD : BinaryOpKind::SUB;
+        BinaryOpKind op;
+        if (op_type == TokenType::PLUS) op = BinaryOpKind::ADD;
+        else if (op_type == TokenType::MINUS) op = BinaryOpKind::SUB;
+        else op = BinaryOpKind::CONCAT;
         auto right = parse_mul_div();
         expr = std::make_unique<BinaryOpExpr>(op, std::move(expr), std::move(right));
     }
