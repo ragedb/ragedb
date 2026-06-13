@@ -31,60 +31,128 @@ namespace ragedb {
             co_return std::nullopt;
         }
 
-        std::unordered_map<uint64_t, Link> parent;
-        std::vector<uint64_t> current_level = { id };
-        parent.emplace(id, Link(0, 0));
+        std::unordered_map<uint64_t, Link> parent_forward;
+        std::unordered_map<uint64_t, Link> parent_backward;
+
+        std::vector<uint64_t> current_level_forward = { id };
+        std::vector<uint64_t> current_level_backward = { id2 };
+
+        parent_forward.emplace(id, Link(0, 0));
+        parent_backward.emplace(id2, Link(0, 0));
 
         bool found = false;
-        uint64_t hops = 0;
+        uint64_t meeting_node = 0;
+        uint64_t hops_forward = 0;
+        uint64_t hops_backward = 0;
 
-        while (!current_level.empty() && !found && hops < max_hops) {
-            hops++;
-            std::vector<seastar::future<std::vector<Link>>> futures;
-            for (uint64_t node_id : current_level) {
-                if (rel_types.empty()) {
-                    futures.push_back(NodeGetLinksPeered(node_id, direction));
-                } else {
-                    futures.push_back(NodeGetLinksPeered(node_id, direction, rel_types));
-                }
+        auto reverse_direction = [](Direction dir) {
+            if (dir == Direction::OUT) return Direction::IN;
+            if (dir == Direction::IN) return Direction::OUT;
+            return Direction::BOTH;
+        };
+
+        while (!current_level_forward.empty() && !current_level_backward.empty() && !found) {
+            if (hops_forward + hops_backward >= max_hops) {
+                break;
             }
-            
-            std::vector<std::vector<Link>> links_results = co_await seastar::when_all_succeed(futures.begin(), futures.end());
-            
-            std::vector<uint64_t> next_level;
-            for (size_t i = 0; i < current_level.size(); ++i) {
-                uint64_t parent_id = current_level[i];
-                for (const Link& link : links_results[i]) {
-                    uint64_t neighbor_id = link.node_id;
-                    if (parent.find(neighbor_id) == parent.end()) {
-                        parent.emplace(neighbor_id, Link(parent_id, link.rel_id));
-                        next_level.push_back(neighbor_id);
-                        if (neighbor_id == id2) {
-                            found = true;
-                            break;
-                        }
+
+            if (current_level_forward.size() <= current_level_backward.size()) {
+                hops_forward++;
+                std::vector<seastar::future<std::vector<Link>>> futures;
+                for (uint64_t node_id : current_level_forward) {
+                    if (rel_types.empty()) {
+                        futures.push_back(NodeGetLinksPeered(node_id, direction));
+                    } else {
+                        futures.push_back(NodeGetLinksPeered(node_id, direction, rel_types));
                     }
                 }
-                if (found) break;
+                
+                std::vector<std::vector<Link>> links_results = co_await seastar::when_all_succeed(futures.begin(), futures.end());
+                
+                std::vector<uint64_t> next_level;
+                for (size_t i = 0; i < current_level_forward.size(); ++i) {
+                    uint64_t parent_id = current_level_forward[i];
+                    for (const Link& link : links_results[i]) {
+                        uint64_t neighbor_id = link.node_id;
+                        if (parent_forward.find(neighbor_id) == parent_forward.end()) {
+                            parent_forward.emplace(neighbor_id, Link(parent_id, link.rel_id));
+                            next_level.push_back(neighbor_id);
+                            if (parent_backward.find(neighbor_id) != parent_backward.end()) {
+                                found = true;
+                                meeting_node = neighbor_id;
+                                break;
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+                current_level_forward = std::move(next_level);
+            } else {
+                hops_backward++;
+                Direction rev_dir = reverse_direction(direction);
+                std::vector<seastar::future<std::vector<Link>>> futures;
+                for (uint64_t node_id : current_level_backward) {
+                    if (rel_types.empty()) {
+                        futures.push_back(NodeGetLinksPeered(node_id, rev_dir));
+                    } else {
+                        futures.push_back(NodeGetLinksPeered(node_id, rev_dir, rel_types));
+                    }
+                }
+                
+                std::vector<std::vector<Link>> links_results = co_await seastar::when_all_succeed(futures.begin(), futures.end());
+                
+                std::vector<uint64_t> next_level;
+                for (size_t i = 0; i < current_level_backward.size(); ++i) {
+                    uint64_t parent_id = current_level_backward[i];
+                    for (const Link& link : links_results[i]) {
+                        uint64_t neighbor_id = link.node_id;
+                        if (parent_backward.find(neighbor_id) == parent_backward.end()) {
+                            parent_backward.emplace(neighbor_id, Link(parent_id, link.rel_id));
+                            next_level.push_back(neighbor_id);
+                            if (parent_forward.find(neighbor_id) != parent_forward.end()) {
+                                found = true;
+                                meeting_node = neighbor_id;
+                                break;
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+                current_level_backward = std::move(next_level);
             }
-            current_level = std::move(next_level);
             co_await seastar::coroutine::maybe_yield();
         }
 
         if (found) {
-            std::vector<uint64_t> node_ids;
-            std::vector<uint64_t> rel_ids;
-            uint64_t curr = id2;
+            std::vector<uint64_t> node_ids_forward;
+            std::vector<uint64_t> rel_ids_forward;
+            uint64_t curr = meeting_node;
             while (curr != id) {
-                node_ids.push_back(curr);
-                Link edge = parent.at(curr);
-                rel_ids.push_back(edge.rel_id);
+                node_ids_forward.push_back(curr);
+                Link edge = parent_forward.at(curr);
+                rel_ids_forward.push_back(edge.rel_id);
                 curr = edge.node_id;
             }
-            node_ids.push_back(id);
-            std::reverse(node_ids.begin(), node_ids.end());
-            std::reverse(rel_ids.begin(), rel_ids.end());
-            
+            node_ids_forward.push_back(id);
+            std::reverse(node_ids_forward.begin(), node_ids_forward.end());
+            std::reverse(rel_ids_forward.begin(), rel_ids_forward.end());
+
+            std::vector<uint64_t> node_ids_backward;
+            std::vector<uint64_t> rel_ids_backward;
+            curr = meeting_node;
+            while (curr != id2) {
+                Link edge = parent_backward.at(curr);
+                curr = edge.node_id;
+                node_ids_backward.push_back(curr);
+                rel_ids_backward.push_back(edge.rel_id);
+            }
+
+            std::vector<uint64_t> node_ids = std::move(node_ids_forward);
+            node_ids.insert(node_ids.end(), node_ids_backward.begin(), node_ids_backward.end());
+
+            std::vector<uint64_t> rel_ids = std::move(rel_ids_forward);
+            rel_ids.insert(rel_ids.end(), rel_ids_backward.begin(), rel_ids_backward.end());
+
             auto nodes = co_await NodesGetPeered(node_ids);
             auto relationships = co_await RelationshipsGetPeered(rel_ids);
 

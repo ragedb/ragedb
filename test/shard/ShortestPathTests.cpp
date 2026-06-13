@@ -56,27 +56,32 @@ SCENARIO( "Shard can compute Shortest Path", "[shortest_path]" ) {
         uint64_t idC = graph.shard.local().NodeAddPeered("Person", "C", R"({"name": "C"})").get();
         uint64_t idD = graph.shard.local().NodeAddPeered("Person", "D", R"({"name": "D"})").get();
         uint64_t idE = graph.shard.local().NodeAddPeered("Person", "E", R"({"name": "E"})").get();
+        uint64_t idF = graph.shard.local().NodeAddPeered("Person", "F", R"({"name": "F"})").get();
 
         // Create relationships
         // A -[KNOWS {weight: 5.0}]-> B
         // A -[KNOWS {weight: 1.0}]-> C
         // C -[KNOWS {weight: 1.5}]-> B
         // B -[LOVES {weight: 2.0}]-> D
+        // D -[KNOWS {weight: 1.0}]-> F
         // E is isolated
         uint64_t relAB = graph.shard.local().RelationshipAddPeered("KNOWS", idA, idB, R"({"weight": 5.0})").get();
         uint64_t relAC = graph.shard.local().RelationshipAddPeered("KNOWS", idA, idC, R"({"weight": 1.0})").get();
         uint64_t relCB = graph.shard.local().RelationshipAddPeered("KNOWS", idC, idB, R"({"weight": 1.5})").get();
         uint64_t relBD = graph.shard.local().RelationshipAddPeered("LOVES", idB, idD, R"({"weight": 2.0})").get();
+        uint64_t relDF = graph.shard.local().RelationshipAddPeered("KNOWS", idD, idF, R"({"weight": 1.0})").get();
 
         REQUIRE(idA > 0);
         REQUIRE(idB > 0);
         REQUIRE(idC > 0);
         REQUIRE(idD > 0);
         REQUIRE(idE > 0);
+        REQUIRE(idF > 0);
         REQUIRE(relAB > 0);
         REQUIRE(relAC > 0);
         REQUIRE(relCB > 0);
         REQUIRE(relBD > 0);
+        REQUIRE(relDF > 0);
 
         WHEN("We query ShortestPathPeered (unweighted BFS)") {
             THEN("Path to self has length 0 and contains start node") {
@@ -149,6 +154,23 @@ SCENARIO( "Shard can compute Shortest Path", "[shortest_path]" ) {
                 auto path_opt = graph.shard.local().ShortestPathPeered(idA, idD, Direction::OUT, {}, 2).get();
                 REQUIRE(path_opt.has_value());
                 REQUIRE(path_opt->length() == 2);
+            }
+
+            THEN("Longer path from A to F is found (3 hops: A -> B -> D -> F)") {
+                auto path_opt = graph.shard.local().ShortestPathPeered(idA, idF, Direction::OUT, {}).get();
+                REQUIRE(path_opt.has_value());
+                REQUIRE(path_opt->length() == 3);
+                auto nodes = path_opt->GetNodes();
+                REQUIRE(nodes.size() == 4);
+                REQUIRE(nodes[0].getId() == idA);
+                REQUIRE(nodes[1].getId() == idB);
+                REQUIRE(nodes[2].getId() == idD);
+                REQUIRE(nodes[3].getId() == idF);
+                auto rels = path_opt->GetRelationships();
+                REQUIRE(rels.size() == 3);
+                REQUIRE(rels[0].getId() == relAB);
+                REQUIRE(rels[1].getId() == relBD);
+                REQUIRE(rels[2].getId() == relDF);
             }
         }
 
