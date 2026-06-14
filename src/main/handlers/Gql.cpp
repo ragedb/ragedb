@@ -50,24 +50,27 @@ seastar::future<std::unique_ptr<seastar::http::reply>> Gql::PostGqlHandler::hand
     try {
         std::string query_str = req->content;
         return ragedb::gql::GqlExecutor::execute(parent.graph, query_str)
-        .then([rep = std::move(rep)](std::string result_json) mutable {
-            rep->write_body("json", seastar::sstring(result_json));
-            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
-        })
-        .handle_exception([rep = std::move(rep)](std::exception_ptr eptr) mutable {
+        .then_wrapped([rep = std::move(rep)](seastar::future<std::string> fut) mutable {
             try {
-                std::rethrow_exception(eptr);
+                std::string result_json = fut.get();
+                rep->write_body("json", seastar::sstring(result_json));
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
             } catch (const std::exception& e) {
                 std::cerr << "GQL execution error: " << e.what() << std::endl;
+                rep->write_body("json", seastar::json::stream_object("GQL query execution error: " + std::string(e.what())));
+                rep->set_status(seastar::http::reply::status_type::bad_request);
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+            } catch (...) {
+                std::cerr << "Unknown GQL execution error" << std::endl;
+                rep->write_body("json", seastar::json::stream_object("Unknown GQL execution error"));
+                rep->set_status(seastar::http::reply::status_type::internal_server_error);
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
             }
-            rep->write_body("json", seastar::json::stream_object("Internal GQL execution error"));
-            rep->set_status(seastar::http::reply::status_type::internal_server_error);
-            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
         });
 
     } catch (const std::exception& e) {
         std::cerr << "GQL compile error: " << e.what() << std::endl;
-        rep->write_body("json", seastar::json::stream_object("GQL query compile or syntax error"));
+        rep->write_body("json", seastar::json::stream_object("GQL query compile or syntax error: " + std::string(e.what())));
         rep->set_status(seastar::http::reply::status_type::bad_request);
     } catch (...) {
         std::cerr << "Unknown GQL compile error" << std::endl;
