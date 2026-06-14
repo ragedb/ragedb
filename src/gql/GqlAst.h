@@ -233,6 +233,7 @@ struct PatternNode {
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
     std::vector<PropertyFilter> property_filters;     ///< Pushed down property filters.
     std::vector<DegreePopulateInfo> degree_opt_info;  ///< Instructions to populate degree properties for optimization.
+    std::shared_ptr<Expression> where_expr;           ///< Inline WHERE filter expression.
 };
 
 /**
@@ -256,6 +257,7 @@ struct PatternEdge {
     bool is_variable_length = false;                  ///< True if variable-length hops repetition is used.
     uint64_t min_hops = 1;                            ///< Minimum number of repetitions.
     uint64_t max_hops = 1;                            ///< Maximum number of repetitions.
+    std::shared_ptr<Expression> where_expr;           ///< Inline WHERE filter expression.
 };
 
 /**
@@ -273,11 +275,13 @@ struct PathPattern {
 struct MatchStatement {
     int id = -1;
     bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
+    int optional_group_id = -1; ///< Groups patterns belonging to the same OPTIONAL MATCH statement.
     PathPattern pattern;      ///< Path pattern to match.
 
     std::string path_variable;                              ///< Optional variable name to bind the entire matched path.
     ShortestPathKind shortest_path_kind = ShortestPathKind::NONE; ///< The shortest path selection mode (e.g. ALL, ANY, K).
     uint64_t shortest_path_k = 0;                           ///< The parameter 'k' specifying the path count for K / K_GROUP.
+    std::shared_ptr<Expression> cost_expr;                  ///< Optional cost/weight expression for CHEAPEST path.
 
     bool is_khop = false;
     bool khop_count_only = false;

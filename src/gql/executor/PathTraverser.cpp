@@ -236,6 +236,15 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
             if (!matches_properties(rel.getProperties(), edge.properties) || !matches_filters(rel.getProperties(), edge.property_filters)) {
                 continue;
             }
+            if (edge.where_expr) {
+                GqlRow temp_row;
+                if (!edge.variable.empty()) {
+                    temp_row.bindings[edge.variable] = GqlValue(rel);
+                }
+                if (!evaluate_expression(temp_row, edge.where_expr.get()).is_truthy()) {
+                    continue;
+                }
+            }
 
             uint64_t target_id = (rel.getStartingNodeId() == current_node_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
 
@@ -301,10 +310,23 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
         .then([row, edge, next_node, node_idx](std::vector<PathHop> hops) {
             std::vector<GqlRow> out;
             for (const auto& hop : hops) {
+                Node final_node;
                 if (hop.nodes.empty()) {
-                    continue;
+                    if (edge.min_hops == 0) {
+                        // 0-hop transition: final node is the start node itself
+                        auto start_it = row.bindings.find("_n_" + std::to_string(node_idx));
+                        if (start_it != row.bindings.end() && start_it->second.type == GqlValue::NODE) {
+                            final_node = *start_it->second.node;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                } else {
+                    final_node = hop.nodes.back();
                 }
-                const Node& final_node = hop.nodes.back();
+
                 if (next_node.label_expr && !matches_label_expr(final_node.getType(), next_node.label_expr)) {
                     continue;
                 }
@@ -368,6 +390,12 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
                     new_row.bindings["_e_" + std::to_string(node_idx)] = GqlValue(rel);
                     new_row.bindings[next_node.variable] = GqlValue(target_node);
                     new_row.bindings["_n_" + std::to_string(node_idx + 1)] = GqlValue(target_node);
+                    if (edge.where_expr && !evaluate_expression(new_row, edge.where_expr.get()).is_truthy()) {
+                        return std::nullopt;
+                    }
+                    if (next_node.where_expr && !evaluate_expression(new_row, next_node.where_expr.get()).is_truthy()) {
+                        return std::nullopt;
+                    }
                     return new_row;
                 })
             );
@@ -552,6 +580,16 @@ static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(
                 
                 new_row.bindings[p_node_1.variable] = GqlValue(pruned_node_1);
                 new_row.bindings["_n_1"] = GqlValue(pruned_node_1);
+
+                if (p_node_0.where_expr && !evaluate_expression(new_row, p_node_0.where_expr.get()).is_truthy()) {
+                    return {};
+                }
+                if (inner_pattern_edge.where_expr && !evaluate_expression(new_row, inner_pattern_edge.where_expr.get()).is_truthy()) {
+                    return {};
+                }
+                if (p_node_1.where_expr && !evaluate_expression(new_row, p_node_1.where_expr.get()).is_truthy()) {
+                    return {};
+                }
                 
                 return {new_row};
             });
@@ -659,6 +697,9 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
             GqlRow new_row = base_row;
             new_row.bindings[prep_pattern.nodes[0].variable] = GqlValue(node);
             new_row.bindings["_n_0"] = GqlValue(node);
+            if (prep_pattern.nodes[0].where_expr && !evaluate_expression(new_row, prep_pattern.nodes[0].where_expr.get()).is_truthy()) {
+                continue;
+            }
             initial_rows.push_back(new_row);
             if (limit > 0 && prep_pattern.edges.empty() && initial_rows.size() >= limit) {
                 break;
@@ -842,6 +883,14 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
                                     if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
                                         continue;
                                     }
+                                    GqlRow temp_row = row;
+                                    if (!start_node_var.empty()) {
+                                        temp_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                                    }
+                                    temp_row.bindings[end_node_var] = GqlValue(node);
+                                    if (stmt.pattern.nodes[1].where_expr && !evaluate_expression(temp_row, stmt.pattern.nodes[1].where_expr.get()).is_truthy()) {
+                                        continue;
+                                    }
                                     filtered_count++;
                                 }
                                 GqlRow new_row = row;
@@ -903,6 +952,14 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
                                     continue;
                                 }
                                 if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                                    continue;
+                                }
+                                GqlRow temp_row = row;
+                                if (!start_node_var.empty()) {
+                                    temp_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                                }
+                                temp_row.bindings[end_node_var] = GqlValue(node);
+                                if (stmt.pattern.nodes[1].where_expr && !evaluate_expression(temp_row, stmt.pattern.nodes[1].where_expr.get()).is_truthy()) {
                                     continue;
                                 }
                                 has_any_match = true;
@@ -967,6 +1024,13 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
                 if (!matches_properties(node.getProperties(), stmt.pattern.nodes[0].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[0].property_filters)) {
                     continue;
                 }
+                GqlRow temp_row = row;
+                if (!start_node_var.empty()) {
+                    temp_row.bindings[start_node_var] = GqlValue(node);
+                }
+                if (stmt.pattern.nodes[0].where_expr && !evaluate_expression(temp_row, stmt.pattern.nodes[0].where_expr.get()).is_truthy()) {
+                    continue;
+                }
                 valid_starts.push_back(node);
             }
 
@@ -977,6 +1041,13 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
                     continue;
                 }
                 if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                    continue;
+                }
+                GqlRow temp_row = row;
+                if (!end_node_var.empty()) {
+                    temp_row.bindings[end_node_var] = GqlValue(node);
+                }
+                if (stmt.pattern.nodes[1].where_expr && !evaluate_expression(temp_row, stmt.pattern.nodes[1].where_expr.get()).is_truthy()) {
                     continue;
                 }
                 valid_ends.push_back(node);
@@ -1005,21 +1076,50 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
             };
             auto partitions = std::make_shared<std::vector<PartitionInfo>>();
 
-            for (const auto& s : valid_starts) {
-                for (const auto& e : valid_ends) {
-                    partitions->push_back({s, e});
-                    traversal_futs.push_back(
-                        graph.shard.local().ShortestPathsPeered(
+            if (stmt.shortest_path_kind == ShortestPathKind::CHEAPEST) {
+                std::string weight_property = "weight";
+                if (stmt.cost_expr && stmt.cost_expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                    auto prop_expr = std::dynamic_pointer_cast<PropertyLookupExpr>(stmt.cost_expr);
+                    if (prop_expr) {
+                        weight_property = prop_expr->property;
+                    }
+                }
+                for (const auto& s : valid_starts) {
+                    for (const auto& e : valid_ends) {
+                        partitions->push_back({s, e});
+                        seastar::future<std::vector<Path>> fut = graph.shard.local().ShortestWeightedPathPeered(
                             s.getId(),
                             e.getId(),
                             dir,
                             rel_types,
-                            min_hops,
-                            max_hops,
-                            stmt.shortest_path_kind,
-                            stmt.shortest_path_k
-                        )
-                    );
+                            weight_property
+                        ).then([](std::optional<WeightedPath> opt_wpath) {
+                            std::vector<Path> paths;
+                            if (opt_wpath) {
+                                paths.push_back(Path(opt_wpath->GetNodes(), opt_wpath->GetRelationships()));
+                            }
+                            return paths;
+                        });
+                        traversal_futs.push_back(std::move(fut));
+                    }
+                }
+            } else {
+                for (const auto& s : valid_starts) {
+                    for (const auto& e : valid_ends) {
+                        partitions->push_back({s, e});
+                        traversal_futs.push_back(
+                            graph.shard.local().ShortestPathsPeered(
+                                s.getId(),
+                                e.getId(),
+                                dir,
+                                rel_types,
+                                min_hops,
+                                max_hops,
+                                stmt.shortest_path_kind,
+                                stmt.shortest_path_k
+                            )
+                        );
+                    }
                 }
             }
 

@@ -58,6 +58,8 @@ enum class TokenType {
     SHORTEST_KW,
     ANY_KW,
     GROUP_KW,
+    CHEAPEST_KW,
+    COST_KW,
     EXISTS,
     EXPLAIN,
     PROFILE,
@@ -124,6 +126,7 @@ enum class TokenType {
     PIPE,        // |
     PIPE_PIPE,   // ||
     AMP,         // &
+    QUESTION,    // ?
 
     // Edges
     RIGHT_ARROW, // ->

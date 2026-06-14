@@ -111,6 +111,7 @@ GqlQuery GqlParser::parse_single_query() {
     GqlQuery query;
 
     int match_id_counter = 0;
+    int optional_group_counter = 0;
     // Parse MATCH/OPTIONAL MATCH clauses
     while (check(TokenType::MATCH) || (check(TokenType::OPTIONAL) && peek(1).type == TokenType::MATCH)) {
         MatchStatement stmt;
@@ -151,6 +152,12 @@ GqlQuery GqlParser::parse_single_query() {
                     stmt.shortest_path_kind = ShortestPathKind::K_GROUP;
                 } else {
                     stmt.shortest_path_kind = ShortestPathKind::K;
+                }
+            // 4. CHEAPEST [PATH]
+            } else if (match(TokenType::CHEAPEST_KW)) {
+                stmt.shortest_path_kind = ShortestPathKind::CHEAPEST;
+                if (check(TokenType::NAME) && (peek().text == "PATH" || peek().text == "path")) {
+                    advance();
                 }
             }
         }
@@ -224,11 +231,22 @@ GqlQuery GqlParser::parse_single_query() {
             consume(TokenType::COMMA, "Expected ','");
             stmt.yield_score_var = peek().text;
             consume(TokenType::NAME, "Expected score variable name");
+            stmt.id = match_id_counter++;
+            query.matches.push_back(std::move(stmt));
         } else {
-            stmt.pattern = parse_path_pattern();
+            int group_id = stmt.is_optional ? optional_group_counter++ : -1;
+            do {
+                MatchStatement current_stmt = stmt;
+                current_stmt.optional_group_id = group_id;
+                current_stmt.pattern = parse_path_pattern();
+                if (current_stmt.shortest_path_kind == ShortestPathKind::CHEAPEST) {
+                    consume(TokenType::COST_KW, "Expected COST clause for CHEAPEST path");
+                    current_stmt.cost_expr = parse_expression();
+                }
+                current_stmt.id = match_id_counter++;
+                query.matches.push_back(std::move(current_stmt));
+            } while (match(TokenType::COMMA));
         }
-        stmt.id = match_id_counter++;
-        query.matches.push_back(std::move(stmt));
     }
 
     // Parse optional global WHERE clause
@@ -616,6 +634,9 @@ void GqlParser::parse_edge_details(PatternEdge& edge) {
     if (check(TokenType::LBRACE)) {
         edge.properties = parse_properties();
     }
+    if (match(TokenType::WHERE)) {
+        edge.where_expr = parse_expression();
+    }
 }
 
 /**
@@ -626,6 +647,12 @@ void GqlParser::parse_edge_details(PatternEdge& edge) {
  * @return PathPattern The parsed path pattern AST structure.
  */
 PathPattern GqlParser::parse_path_pattern() {
+    bool is_parenthesized = false;
+    if (check(TokenType::LPAREN) && peek(1).type == TokenType::LPAREN) {
+        consume(TokenType::LPAREN, "Expected '('");
+        is_parenthesized = true;
+    }
+
     PathPattern pattern;
     pattern.nodes.push_back(parse_node_pattern());
 
@@ -649,20 +676,41 @@ PathPattern GqlParser::parse_path_pattern() {
                 consume(TokenType::RB_DASH, "Expected ']-' or ']->' to end relationship description");
                 edge.direction = EdgeDirection::ANY;
             }
-            // Parse repetition suffix if present (e.g. -[e]->+ or -[e]->{1, 5})
+            // Parse repetition suffix if present (e.g. -[e]->+ or -[e]->* or -[e]->{1, 5})
             if (match(TokenType::PLUS)) {
                 // '+' denotes 1 or more hops
                 edge.is_variable_length = true;
                 edge.min_hops = 1;
                 edge.max_hops = std::numeric_limits<uint64_t>::max();
-            } else if (match(TokenType::LBRACE)) {
-                // '{min, max}' denotes specific repetitions range
+            } else if (match(TokenType::STAR)) {
+                // '*' denotes 0 or more hops
                 edge.is_variable_length = true;
-                edge.min_hops = peek().int_value;
-                consume(TokenType::NUMBER, "Expected minimum hops");
-                consume(TokenType::COMMA, "Expected ','");
-                edge.max_hops = peek().int_value;
-                consume(TokenType::NUMBER, "Expected maximum hops");
+                edge.min_hops = 0;
+                edge.max_hops = std::numeric_limits<uint64_t>::max();
+            } else if (match(TokenType::LBRACE)) {
+                edge.is_variable_length = true;
+                if (check(TokenType::NUMBER)) {
+                    uint64_t val = peek().int_value;
+                    consume(TokenType::NUMBER, "Expected number");
+                    if (match(TokenType::COMMA)) {
+                        edge.min_hops = val;
+                        if (check(TokenType::NUMBER)) {
+                            edge.max_hops = peek().int_value;
+                            consume(TokenType::NUMBER, "Expected number");
+                        } else {
+                            edge.max_hops = std::numeric_limits<uint64_t>::max();
+                        }
+                    } else {
+                        edge.min_hops = val;
+                        edge.max_hops = val;
+                    }
+                } else if (match(TokenType::COMMA)) {
+                    edge.min_hops = 0;
+                    edge.max_hops = peek().int_value;
+                    consume(TokenType::NUMBER, "Expected maximum hops");
+                } else {
+                    throw std::runtime_error("Invalid quantifier format inside '{}'");
+                }
                 consume(TokenType::RBRACE, "Expected '}'");
             }
         } else if (match(TokenType::LT_DASH_LB)) {
@@ -670,26 +718,58 @@ PathPattern GqlParser::parse_path_pattern() {
             parse_edge_details(edge);
             consume(TokenType::RB_DASH, "Expected ']-' to end incoming relationship description");
             edge.direction = EdgeDirection::LEFT;
-            // Parse repetition suffix if present (e.g. <-[e]-+ or <-[e]-{1, 5})
+            // Parse repetition suffix if present (e.g. <-[e]-+ or <-[e]-* or <-[e]-{1, 5})
             if (match(TokenType::PLUS)) {
                 // '+' denotes 1 or more hops
                 edge.is_variable_length = true;
                 edge.min_hops = 1;
                 edge.max_hops = std::numeric_limits<uint64_t>::max();
-            } else if (match(TokenType::LBRACE)) {
-                // '{min, max}' denotes specific repetitions range
+            } else if (match(TokenType::STAR)) {
+                // '*' denotes 0 or more hops
                 edge.is_variable_length = true;
-                edge.min_hops = peek().int_value;
-                consume(TokenType::NUMBER, "Expected minimum hops");
-                consume(TokenType::COMMA, "Expected ','");
-                edge.max_hops = peek().int_value;
-                consume(TokenType::NUMBER, "Expected maximum hops");
+                edge.min_hops = 0;
+                edge.max_hops = std::numeric_limits<uint64_t>::max();
+            } else if (match(TokenType::LBRACE)) {
+                edge.is_variable_length = true;
+                if (check(TokenType::NUMBER)) {
+                    uint64_t val = peek().int_value;
+                    consume(TokenType::NUMBER, "Expected number");
+                    if (match(TokenType::COMMA)) {
+                        edge.min_hops = val;
+                        if (check(TokenType::NUMBER)) {
+                            edge.max_hops = peek().int_value;
+                            consume(TokenType::NUMBER, "Expected number");
+                        } else {
+                            edge.max_hops = std::numeric_limits<uint64_t>::max();
+                        }
+                    } else {
+                        edge.min_hops = val;
+                        edge.max_hops = val;
+                    }
+                } else if (match(TokenType::COMMA)) {
+                    edge.min_hops = 0;
+                    edge.max_hops = peek().int_value;
+                    consume(TokenType::NUMBER, "Expected maximum hops");
+                } else {
+                    throw std::runtime_error("Invalid quantifier format inside '{}'");
+                }
                 consume(TokenType::RBRACE, "Expected '}'");
             }
         }
 
         pattern.edges.push_back(edge);
         pattern.nodes.push_back(parse_node_pattern());
+    }
+
+    if (is_parenthesized) {
+        consume(TokenType::RPAREN, "Expected ')'");
+        if (match(TokenType::QUESTION)) {
+            for (auto& edge : pattern.edges) {
+                edge.is_variable_length = true;
+                edge.min_hops = 0;
+                edge.max_hops = 1;
+            }
+        }
     }
 
     return pattern;
@@ -713,6 +793,9 @@ PatternNode GqlParser::parse_node_pattern() {
     }
     if (check(TokenType::LBRACE)) {
         node.properties = parse_properties();
+    }
+    if (match(TokenType::WHERE)) {
+        node.where_expr = parse_expression();
     }
 
     consume(TokenType::RPAREN, "Expected ')' to end node pattern");

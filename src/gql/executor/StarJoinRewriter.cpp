@@ -124,6 +124,70 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
     }
 
     const auto& stmt = matches[match_idx];
+    if (stmt.is_optional && stmt.optional_group_id >= 0) {
+        size_t group_end_idx = match_idx;
+        while (group_end_idx + 1 < matches.size() &&
+               matches[group_end_idx + 1].optional_group_id == stmt.optional_group_id) {
+            group_end_idx++;
+        }
+
+        std::vector<MatchStatement> group_matches;
+        for (size_t idx = match_idx; idx <= group_end_idx; ++idx) {
+            MatchStatement copy = matches[idx];
+            copy.is_optional = false; // Run group matches as non-optional
+            group_matches.push_back(std::move(copy));
+        }
+
+        // Collect all variables introduced in this optional group
+        std::set<std::string> group_vars;
+        for (const auto& group_stmt : group_matches) {
+            for (const auto& node : group_stmt.pattern.nodes) {
+                if (!node.variable.empty()) group_vars.insert(node.variable);
+            }
+            for (const auto& edge : group_stmt.pattern.edges) {
+                if (!edge.variable.empty()) group_vars.insert(edge.variable);
+            }
+            if (!group_stmt.path_variable.empty()) {
+                group_vars.insert(group_stmt.path_variable);
+            }
+        }
+
+        incoming.ensure_flat();
+        std::vector<seastar::future<std::vector<GqlRow>>> futs;
+        for (const auto& row : incoming.rows) {
+            // Run the non-optional group matches for this single row
+            futs.push_back(
+                execute_match_chain_factorized(graph, group_matches, 0, IntermediateResult(std::vector<GqlRow>{row}), limit, pruner, "", true, false, query_ptr)
+                .then([row, group_vars](IntermediateResult res) {
+                    if (res.rows.empty()) {
+                        // Group failed to match: return the original row with all group vars bound to NULL
+                        GqlRow opt_row = row;
+                        for (const auto& var : group_vars) {
+                            if (opt_row.bindings.find(var) == opt_row.bindings.end()) {
+                                opt_row.bindings[var] = GqlValue();
+                            }
+                        }
+                        return std::vector<GqlRow>{opt_row};
+                    }
+                    res.ensure_flat();
+                    return res.rows;
+                })
+            );
+        }
+
+        return seastar::when_all_succeed(futs.begin(), futs.end())
+        .then([&graph, matches = std::move(matches), group_end_idx, limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr](std::vector<std::vector<GqlRow>> nested) mutable {
+            std::vector<GqlRow> next_rows;
+            for (const auto& vec : nested) {
+                next_rows.insert(next_rows.end(), vec.begin(), vec.end());
+                if (limit > 0 && next_rows.size() >= limit) {
+                    next_rows.resize(limit);
+                    break;
+                }
+            }
+            return execute_match_chain_factorized(graph, std::move(matches), group_end_idx + 1, IntermediateResult(std::move(next_rows)), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr);
+        });
+    }
     if (stmt.is_search) {
         bool is_node = graph.shard.local().NodeTypesGet().count(stmt.search_type) > 0;
         seastar::future<std::vector<std::pair<uint64_t, double>>> search_fut = is_node ?

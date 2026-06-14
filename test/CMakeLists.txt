@@ -22,6 +22,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlExecutorFtsTests.cpp
         gql/GqlExecutorShortestPathTests.cpp
         gql/GqlExecutorKHopTests.cpp
+        gql/GqlExecutorPatternTests.cpp
         gql/GqlExecutorWriteTests.cpp
         gql/GqlExecutorAggregationTests.cpp
         gql/GqlExecutorSchemaTests.cpp

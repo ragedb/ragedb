@@ -247,6 +247,12 @@ void GqlTypechecker::check_path_pattern(const PathPattern& path_pattern) {
                 }
             }
         }
+        if (node.where_expr) {
+            GqlType t = check_expression(*node.where_expr);
+            if (t != GqlType::BOOLEAN && t != GqlType::ANY) {
+                throw std::runtime_error("Inline node pattern WHERE expression must evaluate to BOOLEAN, got " + to_string(t));
+            }
+        }
     }
 
     for (const auto& edge : path_pattern.edges) {
@@ -287,6 +293,12 @@ void GqlTypechecker::check_path_pattern(const PathPattern& path_pattern) {
                 if (!compatible) {
                     throw std::runtime_error("Type mismatch for property '" + prop.first + "'");
                 }
+            }
+        }
+        if (edge.where_expr) {
+            GqlType t = check_expression(*edge.where_expr);
+            if (t != GqlType::BOOLEAN && t != GqlType::ANY) {
+                throw std::runtime_error("Inline relationship pattern WHERE expression must evaluate to BOOLEAN, got " + to_string(t));
             }
         }
     }
@@ -559,6 +571,12 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
             // Register path variable (e.g. p) as GqlType::PATH in typechecker environment
             if (!match.path_variable.empty()) {
                 meet_variable(match.path_variable, GqlType::PATH, {});
+            }
+            if (match.cost_expr) {
+                GqlType cost_t = check_expression(*match.cost_expr);
+                if (cost_t != GqlType::INTEGER && cost_t != GqlType::DOUBLE && cost_t != GqlType::ANY) {
+                    throw std::runtime_error("COST expression must evaluate to a numeric type, got " + to_string(cost_t));
+                }
             }
         }
     }

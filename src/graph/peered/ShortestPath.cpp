@@ -16,10 +16,11 @@
 
 #include "../Shard.h"
 #include <queue>
+#include <iostream>
 
 namespace ragedb {
 
-    seastar::future<std::optional<Path>> Shard::ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types, uint64_t max_hops) {
+    seastar::future<std::optional<Path>> Shard::ShortestPathPeered(uint64_t id, uint64_t id2, Direction direction, std::vector<std::string> rel_types, uint64_t max_hops) {
         if (id == id2) {
             auto nodes = co_await NodesGetPeered({id});
             co_return Path(nodes);
@@ -188,7 +189,7 @@ namespace ragedb {
         }
     }
 
-    seastar::future<std::optional<WeightedPath>> Shard::ShortestWeightedPathPeered(uint64_t id, uint64_t id2, Direction direction, const std::vector<std::string> &rel_types) {
+    seastar::future<std::optional<WeightedPath>> Shard::ShortestWeightedPathPeered(uint64_t id, uint64_t id2, Direction direction, std::vector<std::string> rel_types, std::string weight_property) {
         if (id == id2) {
             auto nodes = co_await NodesGetPeered({id});
             co_return WeightedPath(nodes, {}, 0.0);
@@ -205,7 +206,7 @@ namespace ragedb {
         
         // Priority queue of (distance, node_id)
         std::priority_queue<std::pair<double, uint64_t>, std::vector<std::pair<double, uint64_t>>, std::greater<std::pair<double, uint64_t>>> pq;
-        
+
         distances[id] = 0.0;
         pq.push({0.0, id});
         
@@ -238,7 +239,7 @@ namespace ragedb {
                 rel_ids.push_back(link.rel_id);
             }
             
-            std::map<uint64_t, property_type_t> weights_map = co_await RelationshipsGetPropertyPeered(rel_ids, "weight");
+            std::map<uint64_t, property_type_t> weights_map = co_await RelationshipsGetPropertyPeered(rel_ids, weight_property);
             
             auto get_weight = [](const property_type_t& val) -> double {
                 if (std::holds_alternative<double>(val)) {
@@ -272,7 +273,13 @@ namespace ragedb {
             std::vector<uint64_t> node_ids;
             std::vector<uint64_t> rel_ids;
             uint64_t curr = id2;
+            int trace_count = 0;
             while (curr != id) {
+                trace_count++;
+                if (trace_count > 1000) {
+                    std::cerr << "ERROR: Infinite loop in path reconstruction! curr=" << curr << " id=" << id << std::endl;
+                    break;
+                }
                 node_ids.push_back(curr);
                 Link edge = parent.at(curr);
                 rel_ids.push_back(edge.rel_id);

@@ -662,6 +662,41 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         }
     }
 
+    // Optimize inline WHERE expressions of nodes and edges
+    for (auto& match : query.matches) {
+        if (match.is_search) continue;
+        for (auto& node : match.pattern.nodes) {
+            if (node.where_expr) {
+                std::map<std::string, std::vector<PropertyFilter>> node_pushdowns;
+                extract_filters(node.where_expr.get(), node_pushdowns);
+                if (!node_pushdowns.empty() && !node.variable.empty()) {
+                    auto it = node_pushdowns.find(node.variable);
+                    if (it != node_pushdowns.end()) {
+                        for (const auto& filter : it->second) {
+                            node.property_filters.push_back(filter);
+                        }
+                        node.where_expr = rebuild_expression_without_pushed_predicates(node.where_expr->clone(), node_pushdowns);
+                    }
+                }
+            }
+        }
+        for (auto& edge : match.pattern.edges) {
+            if (edge.where_expr) {
+                std::map<std::string, std::vector<PropertyFilter>> edge_pushdowns;
+                extract_filters(edge.where_expr.get(), edge_pushdowns);
+                if (!edge_pushdowns.empty() && !edge.variable.empty()) {
+                    auto it = edge_pushdowns.find(edge.variable);
+                    if (it != edge_pushdowns.end()) {
+                        for (const auto& filter : it->second) {
+                            edge.property_filters.push_back(filter);
+                        }
+                        edge.where_expr = rebuild_expression_without_pushed_predicates(edge.where_expr->clone(), edge_pushdowns);
+                    }
+                }
+            }
+        }
+    }
+
     if (!query.where_expr) return;
 
     std::map<std::string, std::vector<PropertyFilter>> pushdowns;

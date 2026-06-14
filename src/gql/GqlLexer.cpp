@@ -156,6 +156,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             continue;
         }
         if (c == '&') { tokens.push_back({TokenType::AMP, "&"}); advance(); continue; }
+        if (c == '?') { tokens.push_back({TokenType::QUESTION, "?"}); advance(); continue; }
 
         // Inequality and logical operators
         if (c == '!') {
@@ -303,6 +304,8 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "SHORTEST") type = TokenType::SHORTEST_KW;
             else if (upper_name == "ANY") type = TokenType::ANY_KW;
             else if (upper_name == "GROUP") type = TokenType::GROUP_KW;
+            else if (upper_name == "CHEAPEST") type = TokenType::CHEAPEST_KW;
+            else if (upper_name == "COST") type = TokenType::COST_KW;
             else if (upper_name == "EXISTS") type = TokenType::EXISTS;
             else if (upper_name == "EXPLAIN") type = TokenType::EXPLAIN;
             else if (upper_name == "PROFILE") type = TokenType::PROFILE;
