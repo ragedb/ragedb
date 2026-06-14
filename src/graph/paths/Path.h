@@ -29,7 +29,9 @@ namespace ragedb {
         ANY,     ///< Returns any single shortest path of minimal length.
         K,       ///< Returns up to k overall shortest paths.
         K_GROUP, ///< Returns all shortest paths within up to k depth groups/lengths.
-        CHEAPEST ///< Returns the cheapest path by cost.
+        CHEAPEST, ///< Returns the cheapest path by cost (standard/ANY CHEAPEST).
+        ALL_CHEAPEST, ///< Returns all cheapest paths by cost of minimal cost.
+        CHEAPEST_K ///< Returns up to k overall cheapest paths.
     };
 
     /**

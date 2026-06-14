@@ -9,10 +9,19 @@ RageDB features a native C++ Graph Query Language (GQL) execution engine built o
 ### MATCH & Projections
 - **MATCH / OPTIONAL MATCH**: Thread-safe peered shard traversal read logic.
 - **Path Variables**: Binding whole traversed paths to path variables (e.g. `p = (a)-[e]->(b)`).
-- **Shortest Paths**: Standard shortest path selectors including `ALL SHORTEST`, `ANY SHORTEST`, `SHORTEST k`, and `SHORTEST k GROUP` (executed in trail mode with sharded bidirectional BFS).
+- **Shortest Paths & Cheapest Paths**:
+  - Standard shortest path selectors including `ALL SHORTEST`, `ANY SHORTEST`, `SHORTEST k`, and `SHORTEST k GROUP` (executed in trail mode with sharded bidirectional BFS).
+  - Cheapest path selectors including `ALL CHEAPEST`, `ANY CHEAPEST`, and `CHEAPEST k` Dijkstra/Yen-based weighted path selections.
+  - Arbitrary edge cost/weight expressions evaluated dynamically (e.g. `-[e:Road COST e.distance + e.toll]->`).
+- **Advanced Graph Pattern Matching**:
+  - **Match Modes**: Support for `DIFFERENT EDGES` (default; cross-pattern relationship uniqueness) and `REPEATABLE ELEMENTS`.
+  - **Path Modes**: Support for `TRAIL`, `ACYCLIC`, `SIMPLE`, and `WALK` path traversal constraints.
+  - **Group Repetitions**: Repetition quantifiers (`{m}`, `{m,}`, `{,n}`, `*`, `+`) on parenthesized path groups (e.g. `((a)-[e]->(b)){2,3}`).
+  - **Wildcard & Negated Label Expressions**: Pattern match filters supporting `%` (matches any label) and `!%` (matches entities with no label) expressions.
+  - **Questioned Optional Paths**: Support for questioned pattern segments `((a)-[e]->(b))?` bound to singleton conditional variables returning `NULL` when the segment is absent.
 - **K-Hop Traversal**: Native `MATCH KHOP (start)-[edge]->{min, max}(end)` sharded traversal, including automated count-only sharding optimizations (e.g. `RETURN count(end)`) that bypass full node retrieval in favor of metadata counts or ID bitmaps.
 - **SEARCH (Full-Text Search)**: Querying string properties using the `SEARCH` operator within the `MATCH` pattern (e.g. `MATCH p IN SEARCH Product.description FOR 'databases' YIELD p, score`). Supports options like `{ fuzzy: 'true' }` for Levenshtein-based matching.
-- **WHERE Filtering**: Supports logical conjunctive precedence (`NOT` > `AND` > `OR`) and standard comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`).
+- **WHERE Filtering**: Supports logical conjunctive precedence (`NOT` > `AND` > `OR`) and standard comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`), including inline node/edge pattern `WHERE` clauses (e.g. `(a:City WHERE a.population > 1000)`).
 - **RETURN**: Projection return list with optional aliasing (`AS alias`).
 - **ORDER BY & LIMIT**: Sorting and pagination at the query and set operation levels.
 
@@ -120,6 +129,5 @@ While RageDB supports the core operational subsets of GQL required for graph tra
 - **Session Configuration**: Session-level commands like `SESSION SET SCHEMA`, `SESSION RESET`, and `SESSION CLOSE`.
 - **Transaction Commands**: Transaction boundary markers like `START TRANSACTION`, `COMMIT`, and `ROLLBACK` (RageDB transactions are handled natively at the HTTP request or Seastar sharding level).
 
-### Advanced Pattern Matching
-- **Match Modes & Keep Clauses**: Special path matching modes (e.g. repeatable path elements and path filtration clauses).
-- **SQL-like SELECT Syntax**: The grammar defines a SQL-styled `SELECT * FROM ...` query format. RageDB focuses strictly on the standard GQL `MATCH ... RETURN` query structure.
+### SQL-like SELECT Syntax
+- The grammar defines a SQL-styled `SELECT * FROM ...` query format. RageDB focuses strictly on the standard GQL `MATCH ... RETURN` query structure.

@@ -32,13 +32,13 @@ namespace ragedb {
             WeightedPath(std::vector<Node> nodes);
             WeightedPath(std::vector<Node> nodes, std::vector<Relationship> relationships, double weight);
 
-            Node GetEndNode();
-            Node GetStartNode();
-            std::vector<Node> GetNodes();
-            Relationship GetLastRelationship();
-            std::vector<Relationship> GetRelationships();
-            int length();
-            double weight();
+            Node GetEndNode() const;
+            Node GetStartNode() const;
+            std::vector<Node> GetNodes() const;
+            Relationship GetLastRelationship() const;
+            std::vector<Relationship> GetRelationships() const;
+            int length() const;
+            double weight() const;
     };
 }
 

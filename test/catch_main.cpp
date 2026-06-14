@@ -8,8 +8,8 @@ int main(int argc, char** argv) {
     seastar::app_template app;
     int result = 0;
     try {
-        char* dummy_argv[] = { argv[0], nullptr };
-        app.run(1, dummy_argv, [&result, argc, argv] {
+        char* dummy_argv[] = { argv[0], const_cast<char*>("-c"), const_cast<char*>("1"), const_cast<char*>("-m"), const_cast<char*>("256M"), nullptr };
+        app.run(5, dummy_argv, [&result, argc, argv] {
             return seastar::async([&result, argc, argv] {
                 Catch::Session session;
                 result = session.run(argc, argv);

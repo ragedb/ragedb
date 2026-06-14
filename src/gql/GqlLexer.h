@@ -60,6 +60,12 @@ enum class TokenType {
     GROUP_KW,
     CHEAPEST_KW,
     COST_KW,
+    DIFFERENT_KW,
+    REPEATABLE_KW,
+    TRAIL_KW,
+    ACYCLIC_KW,
+    SIMPLE_KW,
+    WALK_KW,
     EXISTS,
     EXPLAIN,
     PROFILE,
@@ -127,6 +133,7 @@ enum class TokenType {
     PIPE_PIPE,   // ||
     AMP,         // &
     QUESTION,    // ?
+    PERCENT,     // %
 
     // Edges
     RIGHT_ARROW, // ->

@@ -376,6 +376,47 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         matched_res.ensure_flat();
         std::vector<GqlRow> matched_rows = std::move(matched_res.rows);
         const auto& query = *query_ptr;
+
+        // Enforce GQL DIFFERENT EDGES match mode globally across joined rows
+        std::set<std::string> diff_edge_vars;
+        for (const auto& stmt : query.matches) {
+            if (stmt.match_mode == MatchMode::DIFFERENT_EDGES) {
+                for (const auto& edge : stmt.pattern.edges) {
+                    if (!edge.variable.empty() && edge.variable[0] != '_') {
+                        diff_edge_vars.insert(edge.variable);
+                    }
+                }
+            }
+        }
+
+        if (!diff_edge_vars.empty()) {
+            std::vector<GqlRow> edge_filtered_rows;
+            for (auto& row : matched_rows) {
+                std::vector<uint64_t> rel_ids;
+                for (const auto& var : diff_edge_vars) {
+                    auto it = row.bindings.find(var);
+                    if (it != row.bindings.end()) {
+                        const auto& val = it->second;
+                        if (val.type == GqlValue::RELATIONSHIP) {
+                            rel_ids.push_back(val.relationship->getId());
+                        } else if (val.type == GqlValue::RELATIONSHIP_LIST) {
+                            for (const auto& r : *val.relationship_list) {
+                                rel_ids.push_back(r.getId());
+                            }
+                        } else if (val.type == GqlValue::PATH) {
+                            for (const auto& r : val.path->GetRelationships()) {
+                                rel_ids.push_back(r.getId());
+                            }
+                        }
+                    }
+                }
+                std::set<uint64_t> unique_rels(rel_ids.begin(), rel_ids.end());
+                if (unique_rels.size() == rel_ids.size()) {
+                    edge_filtered_rows.push_back(std::move(row));
+                }
+            }
+            matched_rows = std::move(edge_filtered_rows);
+        }
         std::vector<GqlRow> filtered_rows;
         
         auto filter_start = std::chrono::steady_clock::now();

@@ -85,6 +85,9 @@ std::set<std::string> GqlTypechecker::evaluate_label_expr(const std::shared_ptr<
                            std::inserter(result, result.begin()));
             return result;
         }
+        case LabelExprKind::WILDCARD: {
+            return universe;
+        }
     }
     return {};
 }
@@ -103,14 +106,15 @@ void GqlTypechecker::meet_variable(const std::string& name, GqlType type, const 
             std::set_intersection(it->second.labels.begin(), it->second.labels.end(), labels.begin(), labels.end(),
                                   std::inserter(intersection, intersection.begin()));
             if (intersection.empty()) {
-                throw std::runtime_error("Variable '" + name + "' has no possible matching types due to disjoint label constraints");
+                if (it->second.labels.empty() && labels.empty()) {
+                    // Compatible empty sets (e.g. from negated wildcard !%)
+                } else {
+                    throw std::runtime_error("Variable '" + name + "' has no possible matching types due to disjoint label constraints");
+                }
             }
             it->second.labels = std::move(intersection);
         }
     } else {
-        if ((type == GqlType::NODE || type == GqlType::RELATIONSHIP) && labels.empty()) {
-            throw std::runtime_error("Variable '" + name + "' matches no valid types in the database schema");
-        }
         env[name] = {type, labels};
     }
 }
@@ -169,6 +173,9 @@ GqlType GqlTypechecker::get_property_type(const std::string& var_name, const std
     }
 
     bool is_node = (it->second.type == GqlType::NODE);
+    if (it->second.labels.empty()) {
+        return GqlType::ANY;
+    }
     std::set<GqlType> types;
     for (const auto& label : it->second.labels) {
         std::string type_str = is_node ? 
@@ -299,6 +306,12 @@ void GqlTypechecker::check_path_pattern(const PathPattern& path_pattern) {
             GqlType t = check_expression(*edge.where_expr);
             if (t != GqlType::BOOLEAN && t != GqlType::ANY) {
                 throw std::runtime_error("Inline relationship pattern WHERE expression must evaluate to BOOLEAN, got " + to_string(t));
+            }
+        }
+        if (edge.cost_expr) {
+            GqlType t = check_expression(*edge.cost_expr);
+            if (t != GqlType::INTEGER && t != GqlType::DOUBLE && t != GqlType::ANY) {
+                throw std::runtime_error("COST expression must evaluate to a numeric type, got " + to_string(t));
             }
         }
     }
@@ -572,12 +585,7 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
             if (!match.path_variable.empty()) {
                 meet_variable(match.path_variable, GqlType::PATH, {});
             }
-            if (match.cost_expr) {
-                GqlType cost_t = check_expression(*match.cost_expr);
-                if (cost_t != GqlType::INTEGER && cost_t != GqlType::DOUBLE && cost_t != GqlType::ANY) {
-                    throw std::runtime_error("COST expression must evaluate to a numeric type, got " + to_string(cost_t));
-                }
-            }
+            // cost_expr typechecking is now performed inside check_path_pattern per edge.
         }
     }
 

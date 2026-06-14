@@ -213,7 +213,8 @@ enum class LabelExprKind {
     LITERAL,
     NOT,
     AND,
-    OR
+    OR,
+    WILDCARD
 };
 
 struct LabelExpression {
@@ -258,6 +259,7 @@ struct PatternEdge {
     uint64_t min_hops = 1;                            ///< Minimum number of repetitions.
     uint64_t max_hops = 1;                            ///< Maximum number of repetitions.
     std::shared_ptr<Expression> where_expr;           ///< Inline WHERE filter expression.
+    std::shared_ptr<Expression> cost_expr;            ///< COST expression for Cheapest path.
 };
 
 /**
@@ -266,8 +268,21 @@ struct PatternEdge {
 struct PathPattern {
     std::vector<PatternNode> nodes; ///< Nodes along the path.
     std::vector<PatternEdge> edges; ///< Connecting edges.
+    bool is_questioned = false;     ///< True if the path pattern is followed by ?
 };
 
+
+enum class MatchMode {
+    DIFFERENT_EDGES,
+    REPEATABLE_ELEMENTS
+};
+
+enum class PathMode {
+    TRAIL,
+    ACYCLIC,
+    SIMPLE,
+    WALK
+};
 
 /**
  * @brief Represents a single MATCH or OPTIONAL MATCH statement.
@@ -276,12 +291,13 @@ struct MatchStatement {
     int id = -1;
     bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
     int optional_group_id = -1; ///< Groups patterns belonging to the same OPTIONAL MATCH statement.
+    MatchMode match_mode = MatchMode::DIFFERENT_EDGES; ///< GQL Match Mode (default is DIFFERENT EDGES).
+    PathMode path_mode = PathMode::TRAIL;            ///< GQL Path Mode (default is TRAIL).
     PathPattern pattern;      ///< Path pattern to match.
 
     std::string path_variable;                              ///< Optional variable name to bind the entire matched path.
     ShortestPathKind shortest_path_kind = ShortestPathKind::NONE; ///< The shortest path selection mode (e.g. ALL, ANY, K).
     uint64_t shortest_path_k = 0;                           ///< The parameter 'k' specifying the path count for K / K_GROUP.
-    std::shared_ptr<Expression> cost_expr;                  ///< Optional cost/weight expression for CHEAPEST path.
 
     bool is_khop = false;
     bool khop_count_only = false;

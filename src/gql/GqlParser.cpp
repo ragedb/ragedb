@@ -119,6 +119,35 @@ GqlQuery GqlParser::parse_single_query() {
             stmt.is_optional = true;
         }
         consume(TokenType::MATCH, "Expected MATCH");
+
+        // Parse GQL Match Mode
+        if (match(TokenType::DIFFERENT_KW)) {
+            if (check(TokenType::NAME) && (peek().text == "EDGES" || peek().text == "edges")) {
+                advance();
+            } else {
+                throw std::runtime_error("Expected 'EDGES' after 'DIFFERENT'");
+            }
+            stmt.match_mode = MatchMode::DIFFERENT_EDGES;
+        } else if (match(TokenType::REPEATABLE_KW)) {
+            if (check(TokenType::NAME) && (peek().text == "ELEMENTS" || peek().text == "elements")) {
+                advance();
+            } else {
+                throw std::runtime_error("Expected 'ELEMENTS' after 'REPEATABLE'");
+            }
+            stmt.match_mode = MatchMode::REPEATABLE_ELEMENTS;
+        }
+
+        // Parse GQL Path Mode
+        if (match(TokenType::TRAIL_KW)) {
+            stmt.path_mode = PathMode::TRAIL;
+        } else if (match(TokenType::ACYCLIC_KW)) {
+            stmt.path_mode = PathMode::ACYCLIC;
+        } else if (match(TokenType::SIMPLE_KW)) {
+            stmt.path_mode = PathMode::SIMPLE;
+        } else if (match(TokenType::WALK_KW)) {
+            stmt.path_mode = PathMode::WALK;
+        }
+
         if (match(TokenType::KHOP)) {
             stmt.is_khop = true;
         }
@@ -129,16 +158,30 @@ GqlQuery GqlParser::parse_single_query() {
             advance(); // Consume '='
 
             // Parse shortest path selectors:
-            // 1. ALL SHORTEST paths
+            // 1. ALL SHORTEST paths or ALL CHEAPEST paths
             if (check(TokenType::ALL_KW) && peek(1).type == TokenType::SHORTEST_KW) {
                 stmt.shortest_path_kind = ShortestPathKind::ALL;
                 advance();
                 advance();
-            // 2. ANY SHORTEST paths
+            } else if (check(TokenType::ALL_KW) && peek(1).type == TokenType::CHEAPEST_KW) {
+                stmt.shortest_path_kind = ShortestPathKind::ALL_CHEAPEST;
+                advance();
+                advance();
+                if (check(TokenType::NAME) && (peek().text == "PATH" || peek().text == "path" || peek().text == "PATHS" || peek().text == "paths")) {
+                    advance();
+                }
+            // 2. ANY SHORTEST paths or ANY CHEAPEST paths
             } else if (check(TokenType::ANY_KW) && peek(1).type == TokenType::SHORTEST_KW) {
                 stmt.shortest_path_kind = ShortestPathKind::ANY;
                 advance();
                 advance();
+            } else if (check(TokenType::ANY_KW) && peek(1).type == TokenType::CHEAPEST_KW) {
+                stmt.shortest_path_kind = ShortestPathKind::CHEAPEST;
+                advance();
+                advance();
+                if (check(TokenType::NAME) && (peek().text == "PATH" || peek().text == "path")) {
+                    advance();
+                }
             // 3. SHORTEST k or SHORTEST k GROUP
             } else if (check(TokenType::SHORTEST_KW)) {
                 advance(); // consume SHORTEST
@@ -153,11 +196,22 @@ GqlQuery GqlParser::parse_single_query() {
                 } else {
                     stmt.shortest_path_kind = ShortestPathKind::K;
                 }
-            // 4. CHEAPEST [PATH]
+            // 4. CHEAPEST [PATH] or CHEAPEST k [PATH[S]]
             } else if (match(TokenType::CHEAPEST_KW)) {
-                stmt.shortest_path_kind = ShortestPathKind::CHEAPEST;
-                if (check(TokenType::NAME) && (peek().text == "PATH" || peek().text == "path")) {
+                uint64_t k = 1;
+                if (check(TokenType::NUMBER)) {
+                    k = peek().int_value;
                     advance();
+                    stmt.shortest_path_kind = ShortestPathKind::CHEAPEST_K;
+                    stmt.shortest_path_k = k;
+                    if (check(TokenType::NAME) && (peek().text == "PATH" || peek().text == "path" || peek().text == "PATHS" || peek().text == "paths")) {
+                        advance();
+                    }
+                } else {
+                    stmt.shortest_path_kind = ShortestPathKind::CHEAPEST;
+                    if (check(TokenType::NAME) && (peek().text == "PATH" || peek().text == "path")) {
+                        advance();
+                    }
                 }
             }
         }
@@ -237,11 +291,23 @@ GqlQuery GqlParser::parse_single_query() {
             int group_id = stmt.is_optional ? optional_group_counter++ : -1;
             do {
                 MatchStatement current_stmt = stmt;
-                current_stmt.optional_group_id = group_id;
                 current_stmt.pattern = parse_path_pattern();
-                if (current_stmt.shortest_path_kind == ShortestPathKind::CHEAPEST) {
-                    consume(TokenType::COST_KW, "Expected COST clause for CHEAPEST path");
-                    current_stmt.cost_expr = parse_expression();
+                if (current_stmt.pattern.is_questioned) {
+                    current_stmt.is_optional = true;
+                    current_stmt.optional_group_id = (group_id >= 0) ? group_id : optional_group_counter++;
+                } else {
+                    current_stmt.optional_group_id = group_id;
+                }
+                if (current_stmt.shortest_path_kind == ShortestPathKind::CHEAPEST ||
+                    current_stmt.shortest_path_kind == ShortestPathKind::ALL_CHEAPEST ||
+                    current_stmt.shortest_path_kind == ShortestPathKind::CHEAPEST_K) {
+                    // Backwards compatibility for old-style COST clause placed outside the path pattern
+                    if (match(TokenType::COST_KW)) {
+                        auto expr = parse_expression();
+                        if (!current_stmt.pattern.edges.empty()) {
+                            current_stmt.pattern.edges[0].cost_expr = std::move(expr);
+                        }
+                    }
                 }
                 current_stmt.id = match_id_counter++;
                 query.matches.push_back(std::move(current_stmt));
@@ -637,6 +703,12 @@ void GqlParser::parse_edge_details(PatternEdge& edge) {
     if (match(TokenType::WHERE)) {
         edge.where_expr = parse_expression();
     }
+    if (match(TokenType::COST_KW)) {
+        edge.cost_expr = parse_expression();
+    }
+    if (edge.cost_expr && (!edge.properties.empty() || edge.where_expr)) {
+        throw std::runtime_error("COST cannot be used with property specification or inline WHERE within the same edge pattern");
+    }
 }
 
 /**
@@ -764,10 +836,71 @@ PathPattern GqlParser::parse_path_pattern() {
     if (is_parenthesized) {
         consume(TokenType::RPAREN, "Expected ')'");
         if (match(TokenType::QUESTION)) {
-            for (auto& edge : pattern.edges) {
-                edge.is_variable_length = true;
-                edge.min_hops = 0;
-                edge.max_hops = 1;
+            pattern.is_questioned = true;
+        } else if (match(TokenType::LBRACE)) {
+            uint64_t min_hops = 1;
+            uint64_t max_hops = 1;
+            bool is_range = false;
+
+            if (check(TokenType::NUMBER)) {
+                uint64_t val = peek().int_value;
+                consume(TokenType::NUMBER, "Expected number");
+                if (match(TokenType::COMMA)) {
+                    min_hops = val;
+                    is_range = true;
+                    if (check(TokenType::NUMBER)) {
+                        max_hops = peek().int_value;
+                        consume(TokenType::NUMBER, "Expected number");
+                    } else {
+                        max_hops = std::numeric_limits<uint64_t>::max();
+                    }
+                } else {
+                    min_hops = val;
+                    max_hops = val;
+                }
+            } else if (match(TokenType::COMMA)) {
+                min_hops = 0;
+                max_hops = peek().int_value;
+                consume(TokenType::NUMBER, "Expected maximum hops");
+                is_range = true;
+            } else {
+                throw std::runtime_error("Invalid quantifier format inside '{}' after parenthesized path group");
+            }
+            consume(TokenType::RBRACE, "Expected '}'");
+
+            if (pattern.edges.size() == 1) {
+                pattern.edges[0].is_variable_length = true;
+                pattern.edges[0].min_hops = min_hops;
+                pattern.edges[0].max_hops = max_hops;
+            } else if (pattern.edges.size() > 1) {
+                if (is_range) {
+                    throw std::runtime_error("Range repetitions on multi-edge parenthesized path groups are not supported");
+                }
+                uint64_t k = min_hops;
+                if (k == 0) {
+                    pattern.edges.clear();
+                    pattern.nodes.resize(1);
+                } else if (k > 1) {
+                    std::vector<PatternNode> base_nodes = pattern.nodes;
+                    std::vector<PatternEdge> base_edges = pattern.edges;
+                    size_t L = base_edges.size();
+
+                    for (uint64_t iteration = 1; iteration < k; ++iteration) {
+                        for (size_t j = 0; j < L; ++j) {
+                            PatternEdge new_edge = base_edges[j];
+                            if (!new_edge.variable.empty()) {
+                                new_edge.variable += "_" + std::to_string(iteration);
+                            }
+                            pattern.edges.push_back(std::move(new_edge));
+
+                            PatternNode new_node = base_nodes[j + 1];
+                            if (!new_node.variable.empty()) {
+                                new_node.variable += "_" + std::to_string(iteration);
+                            }
+                            pattern.nodes.push_back(std::move(new_node));
+                        }
+                    }
+                }
             }
         }
     }
@@ -1147,7 +1280,12 @@ std::unique_ptr<Expression> GqlParser::parse_primary() {
         advance();
         if (match(TokenType::DOT)) {
             std::string prop = peek().text;
-            consume(TokenType::NAME, "Expected property name after '.'");
+            TokenType type = peek().type;
+            if (type == TokenType::NAME || (type >= TokenType::TRUE_KW && type < TokenType::LPAREN)) {
+                advance();
+            } else {
+                throw std::runtime_error("Expected property name after '.' (found: " + prop + ")");
+            }
             return std::make_unique<PropertyLookupExpr>(var, prop);
         }
         return std::make_unique<VariableExpr>(var);
@@ -1212,6 +1350,11 @@ std::shared_ptr<LabelExpression> GqlParser::parse_label_factor() {
         auto expr = parse_label_expression();
         consume(TokenType::RPAREN, "Expected ')' to close label expression");
         return expr;
+    }
+    if (match(TokenType::PERCENT)) {
+        auto node = std::make_shared<LabelExpression>();
+        node->kind = LabelExprKind::WILDCARD;
+        return node;
     }
     if (check(TokenType::NAME)) {
         auto text = peek().text;

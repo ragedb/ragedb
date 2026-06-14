@@ -39,6 +39,8 @@ bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<La
             return matches_label_expr(actual_type, expr->left) && matches_label_expr(actual_type, expr->right);
         case LabelExprKind::OR:
             return matches_label_expr(actual_type, expr->left) || matches_label_expr(actual_type, expr->right);
+        case LabelExprKind::WILDCARD:
+            return !actual_type.empty() && actual_type != "_default" && actual_type != "_";
     }
     return false;
 }
@@ -174,6 +176,94 @@ struct PathHop {
     std::vector<Node> nodes;
 };
 
+static bool satisfies_match_path_modes(const GqlRow& row, MatchMode match_mode, PathMode path_mode, const PathPattern& pattern) {
+    // 1. Path Mode constraints
+    std::vector<uint64_t> node_ids;
+    std::vector<uint64_t> rel_ids;
+
+    // Gather node IDs from the path pattern bindings
+    for (size_t i = 0; i < pattern.nodes.size(); ++i) {
+        auto it = row.bindings.find("_n_" + std::to_string(i));
+        if (it != row.bindings.end() && it->second.type == GqlValue::NODE) {
+            node_ids.push_back(it->second.node->getId());
+        }
+    }
+
+    // Gather relationship IDs from the path pattern bindings
+    for (size_t i = 0; i < pattern.edges.size(); ++i) {
+        auto it = row.bindings.find("_e_" + std::to_string(i));
+        if (it != row.bindings.end()) {
+            if (it->second.type == GqlValue::RELATIONSHIP) {
+                rel_ids.push_back(it->second.relationship->getId());
+            } else if (it->second.type == GqlValue::RELATIONSHIP_LIST) {
+                for (const auto& rel : *it->second.relationship_list) {
+                    rel_ids.push_back(rel.getId());
+                }
+            }
+        }
+    }
+
+    if (rel_ids.empty()) {
+        return true;
+    }
+
+    // Check Path Mode
+    if (path_mode == PathMode::TRAIL) {
+        // No repeated relationships
+        std::set<uint64_t> unique_rels(rel_ids.begin(), rel_ids.end());
+        if (unique_rels.size() != rel_ids.size()) {
+            return false;
+        }
+    } else if (path_mode == PathMode::ACYCLIC) {
+        // No repeated nodes
+        std::set<uint64_t> unique_nodes(node_ids.begin(), node_ids.end());
+        if (unique_nodes.size() != node_ids.size()) {
+            return false;
+        }
+    } else if (path_mode == PathMode::SIMPLE) {
+        // No repeated nodes, except first and last can be same
+        if (node_ids.size() > 1) {
+            bool first_last_same = (node_ids.front() == node_ids.back());
+            std::set<uint64_t> unique_nodes;
+            if (first_last_same) {
+                unique_nodes.insert(node_ids.begin(), node_ids.end() - 1);
+                if (unique_nodes.size() != node_ids.size() - 1) {
+                    return false;
+                }
+            } else {
+                unique_nodes.insert(node_ids.begin(), node_ids.end());
+                if (unique_nodes.size() != node_ids.size()) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    // 2. Match Mode constraints
+    if (match_mode == MatchMode::DIFFERENT_EDGES) {
+        // No relationship ID is bound to more than one variable
+        std::vector<uint64_t> bound_rel_ids;
+        for (const auto& [var, val] : row.bindings) {
+            if (!var.empty() && var[0] == '_') {
+                continue;
+            }
+            if (val.type == GqlValue::RELATIONSHIP) {
+                bound_rel_ids.push_back(val.relationship->getId());
+            } else if (val.type == GqlValue::RELATIONSHIP_LIST) {
+                for (const auto& r : *val.relationship_list) {
+                    bound_rel_ids.push_back(r.getId());
+                }
+            }
+        }
+        std::set<uint64_t> unique_bound_rels(bound_rel_ids.begin(), bound_rel_ids.end());
+        if (unique_bound_rels.size() != bound_rel_ids.size()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     ragedb::Graph& graph,
     uint64_t current_node_id,
@@ -184,7 +274,8 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     std::vector<Relationship> current_path_rels,
     std::vector<Node> current_path_nodes,
     size_t limit,
-    const ProjectionPruner& pruner
+    const ProjectionPruner& pruner,
+    PathMode path_mode
 ) {
     // Base Case 1: Exceeded maximum hops allowed
     if (current_depth > edge.max_hops) {
@@ -215,7 +306,7 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     // Callback to process retrieved relationships on the current node
     auto handle_rels = [&graph, edge, next_node, current_node_id, current_depth, visited_rel_ids = std::move(visited_rel_ids),
            current_path_rels = std::move(current_path_rels), current_path_nodes = std::move(current_path_nodes),
-           local_results = std::move(local_results), limit, pruner](std::vector<Relationship> rels) mutable {
+           local_results = std::move(local_results), limit, pruner, path_mode](std::vector<Relationship> rels) mutable {
 
         if (pruner.should_prune(edge.variable)) {
             auto keys = pruner.get_keys(edge.variable);
@@ -226,8 +317,30 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
 
         std::vector<seastar::future<std::vector<PathHop>>> branch_futs;
         for (const auto& rel : rels) {
-            if (std::find(visited_rel_ids.begin(), visited_rel_ids.end(), rel.getId()) != visited_rel_ids.end()) {
-                continue;
+            uint64_t target_id = (rel.getStartingNodeId() == current_node_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
+
+            if (path_mode == PathMode::TRAIL) {
+                if (std::find(visited_rel_ids.begin(), visited_rel_ids.end(), rel.getId()) != visited_rel_ids.end()) {
+                    continue;
+                }
+            } else if (path_mode == PathMode::ACYCLIC) {
+                if (std::find_if(current_path_nodes.begin(), current_path_nodes.end(), [target_id](const Node& n) { return n.getId() == target_id; }) != current_path_nodes.end()) {
+                    continue;
+                }
+            } else if (path_mode == PathMode::SIMPLE) {
+                bool already_visited = false;
+                for (size_t idx = 0; idx < current_path_nodes.size(); ++idx) {
+                    if (current_path_nodes[idx].getId() == target_id) {
+                        if (idx == 0 && current_depth + 1 >= edge.min_hops) {
+                            // allowed as final node, but cannot traverse further
+                        } else {
+                            already_visited = true;
+                        }
+                    }
+                }
+                if (already_visited) {
+                    continue;
+                }
             }
 
             if (edge.label_expr && !matches_label_expr(rel.getType(), edge.label_expr)) {
@@ -246,11 +359,9 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
                 }
             }
 
-            uint64_t target_id = (rel.getStartingNodeId() == current_node_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
-
             branch_futs.push_back(
                 graph.shard.local().NodeGetPeered(target_id)
-                .then([&graph, rel, edge, next_node, current_depth, visited_rel_ids, current_path_rels, current_path_nodes, target_id, limit, pruner](Node target_node) mutable {
+                .then([&graph, rel, edge, next_node, current_depth, visited_rel_ids, current_path_rels, current_path_nodes, target_id, limit, pruner, path_mode](Node target_node) mutable {
                     if (pruner.should_prune(next_node.variable)) {
                         target_node.pruneProperties(pruner.get_keys(next_node.variable));
                     }
@@ -268,7 +379,8 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
                         std::move(current_path_rels),
                         std::move(current_path_nodes),
                         limit,
-                        pruner
+                        pruner,
+                        path_mode
                     );
                 })
             );
@@ -298,7 +410,7 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
     }
 }
 
-static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx, size_t limit, const ProjectionPruner& pruner) {
+static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, const GqlRow& row, const PatternEdge& edge, const PatternNode& next_node, size_t node_idx, size_t limit, const ProjectionPruner& pruner, PathMode path_mode) {
     auto it = row.bindings.find("_n_" + std::to_string(node_idx));
     if (it == row.bindings.end()) {
         return seastar::make_ready_future<std::vector<GqlRow>>();
@@ -306,7 +418,7 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
     uint64_t src_id = it->second.node->getId();
 
     if (edge.is_variable_length) {
-        return traverse_var_len_async(graph, src_id, edge, next_node, 0, {}, {}, {}, limit, pruner)
+        return traverse_var_len_async(graph, src_id, edge, next_node, 0, {}, {}, {}, limit, pruner, path_mode)
         .then([row, edge, next_node, node_idx](std::vector<PathHop> hops) {
             std::vector<GqlRow> out;
             for (const auto& hop : hops) {
@@ -422,7 +534,7 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
     }
 }
 
-static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Graph& graph, const PathPattern& prep_pattern, size_t step_idx, std::vector<GqlRow> current_step_rows, size_t limit, const ProjectionPruner& pruner) {
+static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(ragedb::Graph& graph, const PathPattern& prep_pattern, size_t step_idx, std::vector<GqlRow> current_step_rows, size_t limit, const ProjectionPruner& pruner, PathMode path_mode) {
     if (step_idx >= prep_pattern.edges.size()) {
         return seastar::make_ready_future<std::vector<GqlRow>>(std::move(current_step_rows));
     }
@@ -432,11 +544,11 @@ static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(rage
 
     std::vector<seastar::future<std::vector<GqlRow>>> futs;
     for (const auto& row : current_step_rows) {
-        futs.push_back(traverse_step(graph, row, edge, next_node, step_idx, limit, pruner));
+        futs.push_back(traverse_step(graph, row, edge, next_node, step_idx, limit, pruner, path_mode));
     }
 
     return seastar::when_all_succeed(futs.begin(), futs.end())
-    .then([&graph, prep_pattern, step_idx, limit, pruner](std::vector<std::vector<GqlRow>> nested) {
+    .then([&graph, prep_pattern, step_idx, limit, pruner, path_mode](std::vector<std::vector<GqlRow>> nested) {
         std::vector<GqlRow> next_rows;
         for (const auto& vec : nested) {
             next_rows.insert(next_rows.end(), vec.begin(), vec.end());
@@ -445,7 +557,7 @@ static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(rage
                 break;
             }
         }
-        return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows), limit, pruner);
+        return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows), limit, pruner, path_mode);
     });
 }
 
@@ -454,7 +566,8 @@ static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(
     const PathPattern& prep_pattern,
     const GqlRow& base_row,
     size_t limit,
-    const ProjectionPruner& pruner
+    const ProjectionPruner& pruner,
+    PathMode path_mode
 ) {
     size_t scan_limit = (limit > 0) ? limit : 100000;
     const auto& edge = prep_pattern.edges[0];
@@ -493,7 +606,7 @@ static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(
     }
 
     return graph.shard.local().FindRelationshipsPeered(single_label, indexed_prop, indexed_op, indexed_val, 0, scan_limit)
-    .then([&graph, prep_pattern, base_row, limit, pruner](std::vector<Relationship> rels) {
+    .then([&graph, prep_pattern, base_row, limit, pruner, path_mode](std::vector<Relationship> rels) {
         const auto& pattern_edge = prep_pattern.edges[0];
         
         std::vector<Relationship> matched_rels;
@@ -597,7 +710,7 @@ static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(
         }
         
         return seastar::when_all_succeed(row_futs.begin(), row_futs.end())
-        .then([&graph, prep_pattern, limit, pruner](std::vector<std::vector<GqlRow>> nested_rows) {
+        .then([&graph, prep_pattern, limit, pruner, path_mode](std::vector<std::vector<GqlRow>> nested_rows) {
             std::vector<GqlRow> initial_rows;
             for (const auto& vec : nested_rows) {
                 for (const auto& row : vec) {
@@ -611,12 +724,12 @@ static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(
                 }
             }
             
-            return traverse_path_pattern_iterative(graph, prep_pattern, 1, std::move(initial_rows), limit, pruner);
+            return traverse_path_pattern_iterative(graph, prep_pattern, 1, std::move(initial_rows), limit, pruner, path_mode);
         });
-    });
+     });
 }
 
-seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
+seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph, const PathPattern& pattern, const GqlRow& base_row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id, PathMode path_mode) {
     PathPattern prep_pattern = pattern;
     for (size_t j = 0; j < prep_pattern.nodes.size(); ++j) {
         if (prep_pattern.nodes[j].variable.empty()) {
@@ -674,7 +787,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     auto bound_it = base_row.bindings.find(start_node_var);
 
     if (bound_it == base_row.bindings.end() && !has_node_seek && has_edge_seek) {
-        return traverse_from_relationship_index(graph, prep_pattern, base_row, limit, pruner);
+        return traverse_from_relationship_index(graph, prep_pattern, base_row, limit, pruner, path_mode);
     }
 
     size_t start_node_limit = prep_pattern.edges.empty() ? limit : 0;
@@ -685,7 +798,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
         start_nodes_fut = get_start_nodes(graph, prep_pattern.nodes[0], start_node_limit, pruner, sort_property, sort_ascending, sort_by_id);
     }
 
-    return start_nodes_fut.then([base_row, prep_pattern, &graph, limit, pruner](std::vector<Node> start_nodes) {
+    return start_nodes_fut.then([base_row, prep_pattern, &graph, limit, pruner, path_mode](std::vector<Node> start_nodes) {
         std::vector<GqlRow> initial_rows;
         for (const auto& node : start_nodes) {
             if (prep_pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), prep_pattern.nodes[0].label_expr)) {
@@ -706,7 +819,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
             }
         }
 
-        return traverse_path_pattern_iterative(graph, prep_pattern, 0, std::move(initial_rows), limit, pruner);
+        return traverse_path_pattern_iterative(graph, prep_pattern, 0, std::move(initial_rows), limit, pruner, path_mode);
     });
 }
 
@@ -744,7 +857,7 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
             auto end_node_var = stmt.pattern.nodes[1].variable;
 
             if (valid_starts.empty()) {
-                if (stmt.is_optional) {
+                if (stmt.is_optional || stmt.optional_group_id >= 0) {
                     GqlRow opt_row = row;
                     if (!start_node_var.empty() && opt_row.bindings.find(start_node_var) == opt_row.bindings.end()) {
                         opt_row.bindings[start_node_var] = GqlValue();
@@ -970,7 +1083,7 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
                                 new_row.bindings[end_node_var] = GqlValue(node);
                                 out_rows.push_back(std::move(new_row));
                             }
-                            if (!has_any_match && stmt.is_optional) {
+                            if (!has_any_match && (stmt.is_optional || stmt.optional_group_id >= 0)) {
                                 GqlRow opt_row = row;
                                 if (!start_node_var.empty()) {
                                     opt_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
@@ -1076,30 +1189,92 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
             };
             auto partitions = std::make_shared<std::vector<PartitionInfo>>();
 
-            if (stmt.shortest_path_kind == ShortestPathKind::CHEAPEST) {
-                std::string weight_property = "weight";
-                if (stmt.cost_expr && stmt.cost_expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
-                    auto prop_expr = std::dynamic_pointer_cast<PropertyLookupExpr>(stmt.cost_expr);
-                    if (prop_expr) {
-                        weight_property = prop_expr->property;
-                    }
+            if (stmt.shortest_path_kind == ShortestPathKind::CHEAPEST ||
+                stmt.shortest_path_kind == ShortestPathKind::ALL_CHEAPEST ||
+                stmt.shortest_path_kind == ShortestPathKind::CHEAPEST_K) {
+                std::shared_ptr<Expression> cost_expr = nullptr;
+                std::string edge_var = "";
+                if (!stmt.pattern.edges.empty()) {
+                    cost_expr = stmt.pattern.edges[0].cost_expr;
+                    edge_var = stmt.pattern.edges[0].variable;
                 }
+                
+                std::function<double(const Relationship&)> cost_fn;
+                if (cost_expr) {
+                    cost_fn = [cost_expr, edge_var](const Relationship& rel) -> double {
+                        GqlRow temp_row;
+                        if (!edge_var.empty()) {
+                            temp_row.bindings[edge_var] = GqlValue(rel);
+                        }
+                        GqlValue val = evaluate_expression(temp_row, cost_expr.get());
+                        if (std::holds_alternative<double>(val.property)) {
+                            return std::get<double>(val.property);
+                        } else if (std::holds_alternative<int64_t>(val.property)) {
+                            return static_cast<double>(std::get<int64_t>(val.property));
+                        }
+                        return 1.0;
+                    };
+                } else {
+                    cost_fn = [](const Relationship& rel) -> double {
+                        auto val = rel.getProperty("weight");
+                        if (std::holds_alternative<double>(val)) {
+                            return std::get<double>(val);
+                        } else if (std::holds_alternative<int64_t>(val)) {
+                            return static_cast<double>(std::get<int64_t>(val));
+                        }
+                        return 1.0;
+                    };
+                }
+
                 for (const auto& s : valid_starts) {
                     for (const auto& e : valid_ends) {
                         partitions->push_back({s, e});
-                        seastar::future<std::vector<Path>> fut = graph.shard.local().ShortestWeightedPathPeered(
-                            s.getId(),
-                            e.getId(),
-                            dir,
-                            rel_types,
-                            weight_property
-                        ).then([](std::optional<WeightedPath> opt_wpath) {
-                            std::vector<Path> paths;
-                            if (opt_wpath) {
-                                paths.push_back(Path(opt_wpath->GetNodes(), opt_wpath->GetRelationships()));
+                        seastar::future<std::vector<Path>> fut = [&graph, s, e, dir, &rel_types, &cost_fn, &stmt]() {
+                            if (stmt.shortest_path_kind == ShortestPathKind::CHEAPEST) {
+                                return graph.shard.local().ShortestWeightedPathPeered(
+                                    s.getId(),
+                                    e.getId(),
+                                    dir,
+                                    rel_types,
+                                    cost_fn
+                                ).then([](std::optional<WeightedPath> opt_wpath) {
+                                    std::vector<Path> paths;
+                                    if (opt_wpath) {
+                                        paths.push_back(Path(opt_wpath->GetNodes(), opt_wpath->GetRelationships()));
+                                    }
+                                    return paths;
+                                });
+                            } else if (stmt.shortest_path_kind == ShortestPathKind::ALL_CHEAPEST) {
+                                return graph.shard.local().AllCheapestWeightedPathsPeered(
+                                    s.getId(),
+                                    e.getId(),
+                                    dir,
+                                    rel_types,
+                                    cost_fn
+                                ).then([](std::vector<WeightedPath> wpaths) {
+                                    std::vector<Path> paths;
+                                    for (const auto& wp : wpaths) {
+                                        paths.push_back(Path(wp.GetNodes(), wp.GetRelationships()));
+                                    }
+                                    return paths;
+                                });
+                            } else { // CHEAPEST_K
+                                return graph.shard.local().KCheapestWeightedPathsPeered(
+                                    s.getId(),
+                                    e.getId(),
+                                    dir,
+                                    rel_types,
+                                    cost_fn,
+                                    stmt.shortest_path_k
+                                ).then([](std::vector<WeightedPath> wpaths) {
+                                    std::vector<Path> paths;
+                                    for (const auto& wp : wpaths) {
+                                        paths.push_back(Path(wp.GetNodes(), wp.GetRelationships()));
+                                    }
+                                    return paths;
+                                });
                             }
-                            return paths;
-                        });
+                        }();
                         traversal_futs.push_back(std::move(fut));
                     }
                 }
@@ -1158,8 +1333,17 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
     }
 
     // Case 2: Standard MATCH Traversal.
-    return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner, sort_property, sort_ascending, sort_by_id)
+    return traverse_path_pattern(graph, stmt.pattern, row, limit, pruner, sort_property, sort_ascending, sort_by_id, stmt.path_mode)
     .then([row, stmt](std::vector<GqlRow> traversed_rows) {
+        // Enforce Match Mode and Path Mode filtering
+        std::vector<GqlRow> filtered_rows;
+        for (auto&& traversed_row : traversed_rows) {
+            if (satisfies_match_path_modes(traversed_row, stmt.match_mode, stmt.path_mode, stmt.pattern)) {
+                filtered_rows.push_back(std::move(traversed_row));
+            }
+        }
+        traversed_rows = std::move(filtered_rows);
+
         // Handle OPTIONAL MATCH returning null bindings if no matches found.
         if (traversed_rows.empty() && stmt.is_optional) {
             GqlRow opt_row = row;

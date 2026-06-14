@@ -59,7 +59,8 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(
     const ProjectionPruner& pruner = {},
     std::string sort_property = "",
     bool sort_ascending = true,
-    bool sort_by_id = false
+    bool sort_by_id = false,
+    PathMode path_mode = PathMode::TRAIL
 );
 
 seastar::future<std::vector<GqlRow>> traverse_match_statement(

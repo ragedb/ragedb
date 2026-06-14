@@ -24,25 +24,25 @@ namespace ragedb {
     WeightedPath::WeightedPath(std::vector<Node> nodes): nodes(nodes), path_weight(0.0) {}
     WeightedPath::WeightedPath(std::vector<Node> nodes, std::vector<Relationship> relationships, double weight) : nodes(nodes), relationships(relationships), path_weight(weight) {}
 
-    Node WeightedPath::GetEndNode() {
+    Node WeightedPath::GetEndNode() const {
         return nodes.back();
-    }
-    Node WeightedPath::GetStartNode() {
+     }
+    Node WeightedPath::GetStartNode() const {
         return nodes.front();
-    }
-    std::vector<Node> WeightedPath::GetNodes() {
+     }
+    std::vector<Node> WeightedPath::GetNodes() const {
         return nodes;
-    }
-    Relationship WeightedPath::GetLastRelationship() {
+     }
+    Relationship WeightedPath::GetLastRelationship() const {
         return relationships.back();
-    }
-    std::vector<Relationship> WeightedPath::GetRelationships() {
+     }
+    std::vector<Relationship> WeightedPath::GetRelationships() const {
         return relationships;
-    }
-    int WeightedPath::length() {
+     }
+    int WeightedPath::length() const {
         return relationships.size();
-    }
-    double WeightedPath::weight() {
+     }
+    double WeightedPath::weight() const {
         return path_weight;
-    }
+     }
 }

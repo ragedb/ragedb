@@ -17,6 +17,8 @@
 #include "../Shard.h"
 #include <queue>
 #include <iostream>
+#include <algorithm>
+#include <cmath>
 
 namespace ragedb {
 
@@ -325,6 +327,137 @@ namespace ragedb {
         }
     }
 
+    seastar::future<std::optional<WeightedPath>> Shard::ShortestWeightedPathPeered(uint64_t id, uint64_t id2, Direction direction, std::vector<std::string> rel_types, std::function<double(const Relationship&)> cost_fn) {
+        if (id == id2) {
+            auto nodes = co_await NodesGetPeered({id});
+            co_return WeightedPath(nodes, {}, 0.0);
+        }
+
+        bool valid_start = co_await container().invoke_on(CalculateShardId(id), [id](Shard &local_shard) { return local_shard.ValidNodeId(id); });
+        bool valid_end = co_await container().invoke_on(CalculateShardId(id2), [id2](Shard &local_shard) { return local_shard.ValidNodeId(id2); });
+        if (!valid_start || !valid_end) {
+            co_return std::nullopt;
+        }
+
+        std::unordered_map<uint64_t, double> distances;
+        std::unordered_map<uint64_t, Link> parent;
+        
+        // Priority queue of (distance, node_id)
+        std::priority_queue<std::pair<double, uint64_t>, std::vector<std::pair<double, uint64_t>>, std::greater<std::pair<double, uint64_t>>> pq;
+
+        distances[id] = 0.0;
+        pq.push({0.0, id});
+        
+        bool found = false;
+        
+        while (!pq.empty()) {
+            auto [d, u] = pq.top();
+            pq.pop();
+            
+            if (u == id2) {
+                found = true;
+                break;
+            }
+            
+            if (d > distances[u]) {
+                continue;
+            }
+            
+            std::vector<Link> links;
+            if (rel_types.empty()) {
+                links = co_await NodeGetLinksPeered(u, direction);
+            } else {
+                links = co_await NodeGetLinksPeered(u, direction, rel_types);
+            }
+            
+            // Fetch relationships in bulk and compute costs
+            std::vector<uint64_t> rel_ids;
+            rel_ids.reserve(links.size());
+            for (const auto& link : links) {
+                rel_ids.push_back(link.rel_id);
+            }
+            
+            std::vector<Relationship> rels = co_await RelationshipsGetPeered(rel_ids);
+            std::unordered_map<uint64_t, double> weights_map;
+            for (const auto& rel : rels) {
+                weights_map[rel.getId()] = cost_fn(rel);
+            }
+            
+            for (const auto& link : links) {
+                double weight = 1.0;
+                auto it = weights_map.find(link.rel_id);
+                if (it != weights_map.end()) {
+                    weight = it->second;
+                }
+                
+                double next_dist = d + weight;
+                uint64_t v = link.node_id;
+                
+                if (distances.find(v) == distances.end() || next_dist < distances[v]) {
+                    distances[v] = next_dist;
+                    parent.insert_or_assign(v, Link(u, link.rel_id));
+                    pq.push({next_dist, v});
+                }
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+
+        if (found) {
+            std::vector<uint64_t> node_ids;
+            std::vector<uint64_t> rel_ids;
+            uint64_t curr = id2;
+            int trace_count = 0;
+            while (curr != id) {
+                trace_count++;
+                if (trace_count > 1000) {
+                    std::cerr << "ERROR: Infinite loop in path reconstruction! curr=" << curr << " id=" << id << std::endl;
+                    break;
+                }
+                node_ids.push_back(curr);
+                Link edge = parent.at(curr);
+                rel_ids.push_back(edge.rel_id);
+                curr = edge.node_id;
+            }
+            node_ids.push_back(id);
+            std::reverse(node_ids.begin(), node_ids.end());
+            std::reverse(rel_ids.begin(), rel_ids.end());
+            
+            auto nodes = co_await NodesGetPeered(node_ids);
+            auto relationships = co_await RelationshipsGetPeered(rel_ids);
+
+            std::unordered_map<uint64_t, Node> node_map;
+            for (auto&& node : nodes) {
+                node_map.emplace(node.getId(), std::move(node));
+            }
+            std::vector<Node> ordered_nodes;
+            ordered_nodes.reserve(node_ids.size());
+            for (uint64_t nid : node_ids) {
+                auto it = node_map.find(nid);
+                if (it != node_map.end()) {
+                    ordered_nodes.push_back(std::move(it->second));
+                }
+            }
+
+            std::unordered_map<uint64_t, Relationship> rel_map;
+            for (auto&& rel : relationships) {
+                rel_map.emplace(rel.getId(), std::move(rel));
+            }
+            std::vector<Relationship> ordered_rels;
+            ordered_rels.reserve(rel_ids.size());
+            for (uint64_t rid : rel_ids) {
+                auto it = rel_map.find(rid);
+                if (it != rel_map.end()) {
+                    ordered_rels.push_back(std::move(it->second));
+                }
+            }
+
+            double path_weight = distances[id2];
+            co_return WeightedPath(ordered_nodes, ordered_rels, path_weight);
+        } else {
+            co_return std::nullopt;
+        }
+    }
+
     seastar::future<std::vector<Path>> Shard::ShortestPathsPeered(uint64_t id, uint64_t id2, Direction direction, std::vector<std::string> rel_types, uint64_t min_hops, uint64_t max_hops, ShortestPathKind kind, uint64_t k) {
         // If the start and end nodes are identical, and 0 hops is allowed by min_hops,
         // return a single-node path of length 0.
@@ -461,6 +594,473 @@ namespace ragedb {
         }
 
         co_return results;
+    }
+
+    seastar::future<std::optional<WeightedPath>> Shard::ShortestWeightedPathPeered(
+        uint64_t id,
+        uint64_t id2,
+        Direction direction,
+        std::vector<std::string> rel_types,
+        std::function<double(const Relationship&)> cost_fn,
+        const std::unordered_set<uint64_t>& excluded_nodes,
+        const std::unordered_set<uint64_t>& excluded_rels
+    ) {
+        if (id == id2) {
+            auto nodes = co_await NodesGetPeered({id});
+            co_return WeightedPath(nodes, {}, 0.0);
+        }
+
+        bool valid_start = co_await container().invoke_on(CalculateShardId(id), [id](Shard &local_shard) { return local_shard.ValidNodeId(id); });
+        bool valid_end = co_await container().invoke_on(CalculateShardId(id2), [id2](Shard &local_shard) { return local_shard.ValidNodeId(id2); });
+        if (!valid_start || !valid_end) {
+            co_return std::nullopt;
+        }
+
+        std::unordered_map<uint64_t, double> distances;
+        std::unordered_map<uint64_t, Link> parent;
+        
+        std::priority_queue<std::pair<double, uint64_t>, std::vector<std::pair<double, uint64_t>>, std::greater<std::pair<double, uint64_t>>> pq;
+
+        distances[id] = 0.0;
+        pq.push({0.0, id});
+        
+        bool found = false;
+        
+        while (!pq.empty()) {
+            auto [d, u] = pq.top();
+            pq.pop();
+            
+            if (u == id2) {
+                found = true;
+                break;
+            }
+            
+            if (d > distances[u]) {
+                continue;
+            }
+            
+            std::vector<Link> links;
+            if (rel_types.empty()) {
+                links = co_await NodeGetLinksPeered(u, direction);
+            } else {
+                links = co_await NodeGetLinksPeered(u, direction, rel_types);
+            }
+            
+            std::vector<Link> filtered_links;
+            filtered_links.reserve(links.size());
+            for (const auto& link : links) {
+                if (excluded_nodes.find(link.node_id) != excluded_nodes.end()) {
+                    continue;
+                }
+                if (excluded_rels.find(link.rel_id) != excluded_rels.end()) {
+                    continue;
+                }
+                filtered_links.push_back(link);
+            }
+            
+            std::vector<uint64_t> rel_ids;
+            rel_ids.reserve(filtered_links.size());
+            for (const auto& link : filtered_links) {
+                rel_ids.push_back(link.rel_id);
+            }
+            
+            std::vector<Relationship> rels = co_await RelationshipsGetPeered(rel_ids);
+            std::unordered_map<uint64_t, double> weights_map;
+            for (const auto& rel : rels) {
+                weights_map[rel.getId()] = cost_fn(rel);
+            }
+            
+            for (const auto& link : filtered_links) {
+                double weight = 1.0;
+                auto it = weights_map.find(link.rel_id);
+                if (it != weights_map.end()) {
+                    weight = it->second;
+                }
+                
+                double next_dist = d + weight;
+                uint64_t v = link.node_id;
+                
+                if (distances.find(v) == distances.end() || next_dist < distances[v]) {
+                    distances[v] = next_dist;
+                    parent.insert_or_assign(v, Link(u, link.rel_id));
+                    pq.push({next_dist, v});
+                }
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+
+        if (found) {
+            std::vector<uint64_t> node_ids;
+            std::vector<uint64_t> rel_ids;
+            uint64_t curr = id2;
+            int trace_count = 0;
+            while (curr != id) {
+                trace_count++;
+                if (trace_count > 1000) {
+                    std::cerr << "ERROR: Infinite loop in path reconstruction! curr=" << curr << " id=" << id << std::endl;
+                    break;
+                }
+                node_ids.push_back(curr);
+                Link edge = parent.at(curr);
+                rel_ids.push_back(edge.rel_id);
+                curr = edge.node_id;
+            }
+            node_ids.push_back(id);
+            std::reverse(node_ids.begin(), node_ids.end());
+            std::reverse(rel_ids.begin(), rel_ids.end());
+            
+            auto nodes = co_await NodesGetPeered(node_ids);
+            auto relationships = co_await RelationshipsGetPeered(rel_ids);
+
+            std::unordered_map<uint64_t, Node> node_map;
+            for (auto&& node : nodes) {
+                node_map.emplace(node.getId(), std::move(node));
+            }
+            std::vector<Node> ordered_nodes;
+            ordered_nodes.reserve(node_ids.size());
+            for (uint64_t nid : node_ids) {
+                auto it = node_map.find(nid);
+                if (it != node_map.end()) {
+                    ordered_nodes.push_back(std::move(it->second));
+                }
+            }
+
+            std::unordered_map<uint64_t, Relationship> rel_map;
+            for (auto&& rel : relationships) {
+                rel_map.emplace(rel.getId(), std::move(rel));
+            }
+            std::vector<Relationship> ordered_rels;
+            ordered_rels.reserve(rel_ids.size());
+            for (uint64_t rid : rel_ids) {
+                auto it = rel_map.find(rid);
+                if (it != rel_map.end()) {
+                    ordered_rels.push_back(std::move(it->second));
+                }
+            }
+
+            double path_weight = distances[id2];
+            co_return WeightedPath(ordered_nodes, ordered_rels, path_weight);
+        } else {
+            co_return std::nullopt;
+        }
+    }
+
+    seastar::future<std::vector<WeightedPath>> Shard::AllCheapestWeightedPathsPeered(
+        uint64_t id,
+        uint64_t id2,
+        Direction direction,
+        std::vector<std::string> rel_types,
+        std::function<double(const Relationship&)> cost_fn
+    ) {
+        if (id == id2) {
+            auto nodes = co_await NodesGetPeered({id});
+            co_return std::vector<WeightedPath>{WeightedPath(nodes, {}, 0.0)};
+        }
+
+        bool valid_start = co_await container().invoke_on(CalculateShardId(id), [id](Shard &local_shard) { return local_shard.ValidNodeId(id); });
+        bool valid_end = co_await container().invoke_on(CalculateShardId(id2), [id2](Shard &local_shard) { return local_shard.ValidNodeId(id2); });
+        if (!valid_start || !valid_end) {
+            co_return std::vector<WeightedPath>{};
+        }
+
+        std::unordered_map<uint64_t, double> distances;
+        std::unordered_map<uint64_t, std::vector<Link>> parent;
+        
+        std::priority_queue<std::pair<double, uint64_t>, std::vector<std::pair<double, uint64_t>>, std::greater<std::pair<double, uint64_t>>> pq;
+
+        distances[id] = 0.0;
+        pq.push({0.0, id});
+        
+        bool found = false;
+        double min_cost_found = std::numeric_limits<double>::max();
+        
+        while (!pq.empty()) {
+            auto [d, u] = pq.top();
+            pq.pop();
+            
+            if (u == id2) {
+                found = true;
+                min_cost_found = d;
+            }
+            
+            if (d > min_cost_found) {
+                break;
+            }
+            
+            if (d > distances[u]) {
+                continue;
+            }
+            
+            std::vector<Link> links;
+            if (rel_types.empty()) {
+                links = co_await NodeGetLinksPeered(u, direction);
+            } else {
+                links = co_await NodeGetLinksPeered(u, direction, rel_types);
+            }
+            
+            std::vector<uint64_t> rel_ids;
+            rel_ids.reserve(links.size());
+            for (const auto& link : links) {
+                rel_ids.push_back(link.rel_id);
+            }
+            
+            std::vector<Relationship> rels = co_await RelationshipsGetPeered(rel_ids);
+            std::unordered_map<uint64_t, double> weights_map;
+            for (const auto& rel : rels) {
+                weights_map[rel.getId()] = cost_fn(rel);
+            }
+            
+            for (const auto& link : links) {
+                double weight = 1.0;
+                auto it = weights_map.find(link.rel_id);
+                if (it != weights_map.end()) {
+                    weight = it->second;
+                }
+                
+                double next_dist = d + weight;
+                uint64_t v = link.node_id;
+                
+                if (distances.find(v) == distances.end() || next_dist < distances[v]) {
+                    distances[v] = next_dist;
+                    parent[v] = {Link(u, link.rel_id)};
+                    pq.push({next_dist, v});
+                } else if (std::abs(next_dist - distances[v]) < 1e-9) {
+                    bool exists = false;
+                    for (const auto& existing : parent[v]) {
+                        if (existing.node_id == u && existing.rel_id == link.rel_id) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        parent[v].push_back(Link(u, link.rel_id));
+                    }
+                }
+            }
+            co_await seastar::coroutine::maybe_yield();
+        }
+
+        if (!found) {
+            co_return std::vector<WeightedPath>{};
+        }
+
+        std::vector<std::vector<uint64_t>> all_node_ids_paths;
+        std::vector<std::vector<uint64_t>> all_rel_ids_paths;
+        
+        std::function<void(uint64_t, std::vector<uint64_t>, std::vector<uint64_t>)> backtrack;
+        backtrack = [&](uint64_t curr, std::vector<uint64_t> current_nodes, std::vector<uint64_t> current_rels) {
+            current_nodes.push_back(curr);
+            if (curr == id) {
+                std::reverse(current_nodes.begin(), current_nodes.end());
+                std::reverse(current_rels.begin(), current_rels.end());
+                all_node_ids_paths.push_back(current_nodes);
+                all_rel_ids_paths.push_back(current_rels);
+                return;
+            }
+            if (parent.find(curr) != parent.end()) {
+                for (const auto& edge : parent[curr]) {
+                    if (std::find(current_nodes.begin(), current_nodes.end(), edge.node_id) != current_nodes.end()) {
+                        continue;
+                    }
+                    std::vector<uint64_t> next_nodes = current_nodes;
+                    std::vector<uint64_t> next_rels = current_rels;
+                    next_rels.push_back(edge.rel_id);
+                    backtrack(edge.node_id, next_nodes, next_rels);
+                }
+            }
+        };
+        
+        backtrack(id2, {}, {});
+
+        std::vector<WeightedPath> result_paths;
+        for (size_t i = 0; i < all_node_ids_paths.size(); ++i) {
+            const auto& node_ids = all_node_ids_paths[i];
+            const auto& rel_ids = all_rel_ids_paths[i];
+            
+            auto nodes = co_await NodesGetPeered(node_ids);
+            auto relationships = co_await RelationshipsGetPeered(rel_ids);
+
+            std::unordered_map<uint64_t, Node> node_map;
+            for (auto&& node : nodes) {
+                node_map.emplace(node.getId(), std::move(node));
+            }
+            std::vector<Node> ordered_nodes;
+            ordered_nodes.reserve(node_ids.size());
+            for (uint64_t nid : node_ids) {
+                auto it = node_map.find(nid);
+                if (it != node_map.end()) {
+                    ordered_nodes.push_back(std::move(it->second));
+                }
+            }
+
+            std::unordered_map<uint64_t, Relationship> rel_map;
+            for (auto&& rel : relationships) {
+                rel_map.emplace(rel.getId(), std::move(rel));
+            }
+            std::vector<Relationship> ordered_rels;
+            ordered_rels.reserve(rel_ids.size());
+            for (uint64_t rid : rel_ids) {
+                auto it = rel_map.find(rid);
+                if (it != rel_map.end()) {
+                    ordered_rels.push_back(std::move(it->second));
+                }
+            }
+            
+            result_paths.push_back(WeightedPath(ordered_nodes, ordered_rels, min_cost_found));
+        }
+
+        co_return result_paths;
+    }
+
+    seastar::future<std::vector<WeightedPath>> Shard::KCheapestWeightedPathsPeered(
+        uint64_t id,
+        uint64_t id2,
+        Direction direction,
+        std::vector<std::string> rel_types,
+        std::function<double(const Relationship&)> cost_fn,
+        uint64_t k
+    ) {
+        if (k == 0) {
+            co_return std::vector<WeightedPath>{};
+        }
+
+        std::vector<WeightedPath> A;
+        
+        auto first_path_opt = co_await ShortestWeightedPathPeered(id, id2, direction, rel_types, cost_fn);
+        if (!first_path_opt) {
+            co_return A;
+        }
+        A.push_back(*first_path_opt);
+
+        std::vector<WeightedPath> B;
+
+        for (uint64_t k_idx = 1; k_idx < k; ++k_idx) {
+            const auto& last_path = A.back();
+            const auto& last_path_nodes = last_path.GetNodes();
+            const auto& last_path_rels = last_path.GetRelationships();
+
+            if (last_path_nodes.size() < 2) {
+                break;
+            }
+
+            for (size_t i = 0; i < last_path_nodes.size() - 1; ++i) {
+                uint64_t spur_node = last_path_nodes[i].getId();
+                
+                std::vector<Node> root_nodes(last_path_nodes.begin(), last_path_nodes.begin() + i + 1);
+                std::vector<Relationship> root_rels(last_path_rels.begin(), last_path_rels.begin() + i);
+                double root_weight = 0.0;
+                for (size_t r_idx = 0; r_idx < i; ++r_idx) {
+                    root_weight += cost_fn(last_path_rels[r_idx]);
+                }
+                WeightedPath root_path(root_nodes, root_rels, root_weight);
+
+                std::unordered_set<uint64_t> excluded_nodes;
+                std::unordered_set<uint64_t> excluded_rels;
+
+                for (size_t n_idx = 0; n_idx < i; ++n_idx) {
+                    excluded_nodes.insert(last_path_nodes[n_idx].getId());
+                }
+
+                for (const auto& p : A) {
+                    const auto& p_nodes = p.GetNodes();
+                    const auto& p_rels = p.GetRelationships();
+                    if (p_nodes.size() > i && p_rels.size() > i) {
+                        bool match = true;
+                        for (size_t idx = 0; idx <= i; ++idx) {
+                            if (p_nodes[idx].getId() != last_path_nodes[idx].getId()) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) {
+                            excluded_rels.insert(p_rels[i].getId());
+                        }
+                    }
+                }
+
+                auto spur_path_opt = co_await ShortestWeightedPathPeered(
+                    spur_node,
+                    id2,
+                    direction,
+                    rel_types,
+                    cost_fn,
+                    excluded_nodes,
+                    excluded_rels
+                );
+
+                if (spur_path_opt) {
+                    std::vector<Node> combined_nodes = root_path.GetNodes();
+                    std::vector<Relationship> combined_rels = root_path.GetRelationships();
+                    
+                    const auto& spur_nodes = spur_path_opt->GetNodes();
+                    for (size_t sn_idx = 1; sn_idx < spur_nodes.size(); ++sn_idx) {
+                        combined_nodes.push_back(spur_nodes[sn_idx]);
+                    }
+                    
+                    const auto& spur_rels = spur_path_opt->GetRelationships();
+                    for (const auto& r : spur_rels) {
+                        combined_rels.push_back(r);
+                    }
+                    
+                    WeightedPath combined_path(combined_nodes, combined_rels, root_path.weight() + spur_path_opt->weight());
+                    
+                    bool is_duplicate = false;
+                    for (const auto& existing : A) {
+                        if (existing.length() == combined_path.length()) {
+                            const auto& existing_rels = existing.GetRelationships();
+                            const auto& combined_rels_check = combined_path.GetRelationships();
+                            bool rels_match = true;
+                            for (size_t r_check = 0; r_check < existing_rels.size(); ++r_check) {
+                                if (existing_rels[r_check].getId() != combined_rels_check[r_check].getId()) {
+                                    rels_match = false;
+                                    break;
+                                }
+                            }
+                            if (rels_match) {
+                                is_duplicate = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!is_duplicate) {
+                        for (const auto& existing : B) {
+                            if (existing.length() == combined_path.length()) {
+                                const auto& existing_rels = existing.GetRelationships();
+                                const auto& combined_rels_check = combined_path.GetRelationships();
+                                bool rels_match = true;
+                                for (size_t r_check = 0; r_check < existing_rels.size(); ++r_check) {
+                                    if (existing_rels[r_check].getId() != combined_rels_check[r_check].getId()) {
+                                        rels_match = false;
+                                        break;
+                                    }
+                                }
+                                if (rels_match) {
+                                    is_duplicate = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!is_duplicate) {
+                        B.push_back(combined_path);
+                    }
+                }
+            }
+
+            if (B.empty()) {
+                break;
+            }
+
+            auto min_it = std::min_element(B.begin(), B.end(), [](const WeightedPath& lhs, const WeightedPath& rhs) {
+                return lhs.weight() < rhs.weight();
+            });
+
+            A.push_back(*min_it);
+            B.erase(min_it);
+        }
+
+        co_return A;
     }
 
 }
