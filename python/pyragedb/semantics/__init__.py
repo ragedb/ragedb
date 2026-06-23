@@ -3,6 +3,7 @@ from .types import (
     String, Integer, Float, Boolean, DateTime,
     Any, AnyEntity, Number, Int, Int64, Int128, Decimal, Bool, Date, Error, Hash
 )
+from .reasoners.graph import Graph
 from .fragment import CombinedFragment, NotCondition, Alias, Data
 from . import std
 

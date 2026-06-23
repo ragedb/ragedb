@@ -19,6 +19,7 @@ class Model:
         self._concept_index = {}  # Internal mapping of concept name string -> Concept object
         self.rules = {}
         self.requirements = []
+        self._pending_graph_algorithms = []
         global _active_model
         _active_model = self
 
@@ -174,7 +175,14 @@ class Model:
             
         for rel in relationships:
             rel_type = rel._attribute_ref._name.upper()
-            insert_parts.append(f"({rel._source._var_name})-[:{rel_type}]->({rel._target._var_name})")
+            props_str = ""
+            if getattr(rel, "_properties", None):
+                props = []
+                for k, v in rel._properties.items():
+                    val_str = f"'{v}'" if isinstance(v, str) else str(v)
+                    props.append(f"{k}: {val_str}")
+                props_str = " {" + ", ".join(props) + "}"
+            insert_parts.append(f"({rel._source._var_name})-[:{rel_type}{props_str}]->({rel._target._var_name})")
             
         if not insert_parts:
             return
@@ -539,7 +547,64 @@ class Model:
     def select(self, *projections):
         return Fragment(self, projections=list(projections))
 
+    def _register_pending_graph_algorithm(self, concept, property_name, expr):
+        if not hasattr(self, "_pending_graph_algorithms"):
+            self._pending_graph_algorithms = []
+        self._pending_graph_algorithms.append({
+            "concept": concept,
+            "property_name": property_name,
+            "expr": expr
+        })
+
+    def _evaluate_pending_graph_algorithms(self):
+        if not hasattr(self, "_pending_graph_algorithms") or not self._pending_graph_algorithms:
+            return
+        
+        # Copy and clear the pending list to prevent recursive loops
+        pending = list(self._pending_graph_algorithms)
+        self._pending_graph_algorithms = []
+
+        from .reasoners.graph import generate_lua_script
+        for item in pending:
+            concept = item["concept"]
+            prop_name = item["property_name"]
+            expr = item["expr"]
+            graph = expr.graph
+            
+            # 1. Create property schema on nodes/relationships if not exists
+            is_rel = expr.name in ("jaccard_similarity", "cosine_similarity", "adamic_adar", "preferential_attachment", "reachable", "distance", "triangle", "unique_triangle")
+            if is_rel:
+                try:
+                    requests.post(f"{self.host}/db/{self.graph}/schema/relationships/{prop_name.upper()}")
+                except Exception:
+                    pass
+            else:
+                target_type = expr.target_type.lower()
+                db_type = "double" if target_type == "float" else ("integer" if target_type == "integer" else ("boolean" if target_type == "boolean" else "string"))
+                
+                node_types = []
+                if graph.node_concept:
+                    node_types.append(graph.node_concept._name)
+                else:
+                    for c in graph.node_concepts:
+                        node_types.append(c._name)
+                
+                for t_name in node_types:
+                    try:
+                        requests.post(f"{self.host}/db/{self.graph}/schema/nodes/{t_name}/properties/{prop_name}/{db_type}")
+                    except Exception:
+                        pass
+
+            # 2. Generate Lua script
+            lua_script = generate_lua_script(graph, prop_name, expr)
+
+            # 3. Post Lua script to RageDB server
+            r = requests.post(f"{self.host}/db/{self.graph}/lua", data=lua_script)
+            if r.status_code != 200:
+                raise RuntimeError(f"Failed to execute graph algorithm Lua script on server: {r.text}")
+
     def exec_gql(self, query):
+        self._evaluate_pending_graph_algorithms()
         r = requests.post(f"{self.host}/db/{self.graph}/gql", data=query)
         if r.status_code != 200:
             raise RuntimeError(f"GQL Error: {r.text}")

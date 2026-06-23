@@ -232,6 +232,29 @@ class Concept:
         for prop in resolved_props:
             self._identify_by[prop._name] = prop._target
 
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+            return
+        
+        # Check if the value is a GraphAlgorithmExpr
+        try:
+            from .reasoners.graph import GraphAlgorithmExpr
+            is_expr = isinstance(value, GraphAlgorithmExpr)
+        except ImportError:
+            is_expr = False
+
+        if is_expr:
+            from .model import _active_model
+            _active_model._register_pending_graph_algorithm(self, name, value)
+            
+            is_rel = value.name in ("jaccard_similarity", "cosine_similarity", "adamic_adar", "preferential_attachment", "reachable", "distance")
+            from .concept import AttributeRef
+            ref = AttributeRef(self, name, is_relationship=is_rel, target=self if is_rel else value.target_type)
+            self._attributes[name] = ref
+        else:
+            super().__setattr__(name, value)
+
     def __getattr__(self, attr_name):
         # Look up locally defined attributes first
         if attr_name in self._attributes:
@@ -286,6 +309,12 @@ class ConceptRef:
         self._concept = concept
         self._ref_name = name or f"{concept._name.lower()}_{id(self)}"
 
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+            return
+        self._concept.__setattr__(name, value)
+
     def __repr__(self):
         return f"ConceptRef({self._concept._name}, name={self._ref_name})"
 
@@ -339,10 +368,11 @@ class BoundRelationship:
 
 
 class RelationshipFact:
-    def __init__(self, source, attribute_ref, target):
+    def __init__(self, source, attribute_ref, target, properties=None):
         self._source = source
         self._attribute_ref = attribute_ref
         self._target = target
+        self._properties = properties or {}
 
     def __repr__(self):
         return f"RelationshipFact({self._source} -> {self._attribute_ref._name} -> {self._target})"
