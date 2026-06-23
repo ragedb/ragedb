@@ -16,6 +16,8 @@
 
 #include "GqlOptimizer.h"
 #include "GqlValue.h"
+#include "GqlVirtualCatalog.h"
+#include "GqlParser.h"
 #include "../graph/Graph.h"
 
 namespace ragedb::gql {
@@ -70,6 +72,196 @@ bool is_equivalent_pattern(const PathPattern& p1, const PathPattern& p2) {
         if (!is_equivalent_properties(e1.properties, e2.properties)) return false;
     }
     return true;
+}
+
+template <typename SmartPtr>
+void rewrite_expr_vars(SmartPtr& expr, const std::map<std::string, std::string>& var_map) {
+    if (!expr) return;
+    if (expr->kind == ExpressionKind::VARIABLE) {
+        auto* ve = static_cast<VariableExpr*>(expr.get());
+        auto it = var_map.find(ve->name);
+        if (it != var_map.end()) {
+            ve->name = it->second;
+        }
+    } else if (expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+        auto* pl = static_cast<PropertyLookupExpr*>(expr.get());
+        auto it = var_map.find(pl->variable);
+        if (it != var_map.end()) {
+            pl->variable = it->second;
+        }
+    } else if (expr->kind == ExpressionKind::UNARY_OP) {
+        auto* un = static_cast<UnaryOpExpr*>(expr.get());
+        rewrite_expr_vars(un->expr, var_map);
+    } else if (expr->kind == ExpressionKind::BINARY_OP) {
+        auto* bin = static_cast<BinaryOpExpr*>(expr.get());
+        rewrite_expr_vars(bin->left, var_map);
+        rewrite_expr_vars(bin->right, var_map);
+    } else if (expr->kind == ExpressionKind::AGGREGATION) {
+        auto* agg = static_cast<AggregateExpr*>(expr.get());
+        rewrite_expr_vars(agg->expr, var_map);
+    } else if (expr->kind == ExpressionKind::EXISTS) {
+        auto* exists = static_cast<ExistsExpr*>(expr.get());
+        rewrite_expr_vars(exists->where_expr, var_map);
+        for (auto& match : exists->matches) {
+            for (auto& node : match.pattern.nodes) {
+                auto it = var_map.find(node.variable);
+                if (it != var_map.end()) node.variable = it->second;
+                rewrite_expr_vars(node.where_expr, var_map);
+            }
+            for (auto& edge : match.pattern.edges) {
+                auto it = var_map.find(edge.variable);
+                if (it != var_map.end()) edge.variable = it->second;
+                rewrite_expr_vars(edge.where_expr, var_map);
+                rewrite_expr_vars(edge.cost_expr, var_map);
+            }
+        }
+    }
+}
+
+bool expand_virtual_views(GqlQuery& query) {
+    bool expanded_any = false;
+    // Iterate over all match clauses in the GQL query
+    for (auto& match : query.matches) {
+        if (match.is_search) continue; // Skip full-text search matches
+        
+        std::vector<PatternNode> new_nodes;
+        std::vector<PatternEdge> new_edges;
+        
+        // Inspect each node pattern to check if its label matches a registered virtual view name
+        for (size_t i = 0; i < match.pattern.nodes.size(); ++i) {
+            auto& node = match.pattern.nodes[i];
+            std::string view_name;
+            if (node.label_expr && node.label_expr->kind == LabelExprKind::LITERAL) {
+                view_name = node.label_expr->name;
+            }
+            
+            // Look up the view in the thread-local virtual catalog
+            auto view_opt = GqlVirtualCatalog::local().get_view(view_name);
+            if (view_opt.has_value()) {
+                expanded_any = true;
+                // Parse the view's query string into a GqlQuery AST structure
+                auto view_q = GqlParser::parse(view_opt.value());
+                
+                // Determine the variable name that the view query returns
+                std::string view_ret_var;
+                if (!view_q.returns.empty() && view_q.returns[0].expr && view_q.returns[0].expr->kind == ExpressionKind::VARIABLE) {
+                    view_ret_var = static_cast<VariableExpr*>(view_q.returns[0].expr.get())->name;
+                }
+                
+                // Determine the target variable in the outer query
+                std::string target_var = node.variable;
+                if (target_var.empty()) {
+                    target_var = "_v_node_" + view_name;
+                }
+                
+                // Create a variable renaming map to avoid variable name collisions between the outer query and the view
+                std::map<std::string, std::string> var_map;
+                if (!view_ret_var.empty()) {
+                    var_map[view_ret_var] = target_var;
+                }
+                
+                // Collect all variables defined within the view query
+                std::set<std::string> view_vars;
+                for (const auto& vm : view_q.matches) {
+                    if (vm.is_search) {
+                        if (!vm.yield_var.empty()) view_vars.insert(vm.yield_var);
+                        if (!vm.yield_score_var.empty()) view_vars.insert(vm.yield_score_var);
+                    } else {
+                        for (const auto& n : vm.pattern.nodes) {
+                            if (!n.variable.empty()) view_vars.insert(n.variable);
+                        }
+                        for (const auto& e : vm.pattern.edges) {
+                            if (!e.variable.empty()) view_vars.insert(e.variable);
+                        }
+                    }
+                }
+                
+                // Map local view variables to globally unique names in the outer query
+                int name_id = 0;
+                for (const auto& var : view_vars) {
+                    if (var != view_ret_var) {
+                        var_map[var] = "_v_" + view_name + "_" + var + "_" + std::to_string(name_id++);
+                    }
+                }
+                
+                // Merge view pattern nodes and edges into the query match path, applying variable renaming
+                if (!view_q.matches.empty()) {
+                    const auto& first_view_match = view_q.matches[0];
+                    const auto& path = first_view_match.pattern;
+                    
+                    for (size_t n_idx = 0; n_idx < path.nodes.size(); ++n_idx) {
+                        PatternNode v_node = path.nodes[n_idx];
+                        if (!v_node.variable.empty()) {
+                            v_node.variable = var_map[v_node.variable];
+                        }
+                        rewrite_expr_vars(v_node.where_expr, var_map);
+                        
+                        // For the head node of the view, merge any outer property filters and where expressions
+                        if (n_idx == 0) {
+                            for (const auto& [pk, pv] : node.properties) {
+                                v_node.properties[pk] = pv;
+                            }
+                            for (const auto& filter : node.property_filters) {
+                                v_node.property_filters.push_back(filter);
+                            }
+                            if (node.where_expr) {
+                                if (v_node.where_expr) {
+                                    v_node.where_expr = std::make_shared<BinaryOpExpr>(BinaryOpKind::AND, v_node.where_expr->clone(), node.where_expr->clone());
+                                } else {
+                                    v_node.where_expr = node.where_expr->clone();
+                                }
+                            }
+                        }
+                        new_nodes.push_back(std::move(v_node));
+                    }
+                    
+                    for (size_t e_idx = 0; e_idx < path.edges.size(); ++e_idx) {
+                        PatternEdge v_edge = path.edges[e_idx];
+                        if (!v_edge.variable.empty()) {
+                            v_edge.variable = var_map[v_edge.variable];
+                        }
+                        rewrite_expr_vars(v_edge.where_expr, var_map);
+                        rewrite_expr_vars(v_edge.cost_expr, var_map);
+                        new_edges.push_back(std::move(v_edge));
+                    }
+                }
+                
+                // Rewrite and combine view level where expressions with the outer query
+                if (view_q.where_expr) {
+                    auto mapped_where = view_q.where_expr->clone();
+                    rewrite_expr_vars(mapped_where, var_map);
+                    if (query.where_expr) {
+                        query.where_expr = std::make_unique<BinaryOpExpr>(BinaryOpKind::AND, std::move(query.where_expr), std::move(mapped_where));
+                    } else {
+                        query.where_expr = std::move(mapped_where);
+                    }
+                }
+            } else {
+                // If it is not a virtual view, keep the pattern node as is
+                new_nodes.push_back(node);
+            }
+            
+            if (i < match.pattern.edges.size()) {
+                new_edges.push_back(match.pattern.edges[i]);
+            }
+        }
+        
+        match.pattern.nodes = std::move(new_nodes);
+        match.pattern.edges = std::move(new_edges);
+    }
+    return expanded_any;
+}
+
+/**
+ * Recursively expands virtual views inside the GQL query.
+ * Maximum recursion depth is limited to 5 to prevent infinite recursion on self-referential views.
+ */
+void expand_views_recursive(GqlQuery& query, int depth = 0) {
+    if (depth > 5) return;
+    bool expanded = expand_virtual_views(query);
+    if (expanded) {
+        expand_views_recursive(query, depth + 1);
+    }
 }
 
 } // namespace
@@ -509,6 +701,9 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         if (query.right) optimize(*query.right);
         return;
     }
+
+    // Expand virtual views recursively before applying other optimization passes
+    expand_views_recursive(query);
 
     // --- Phase 10: Correlated Subquery Unnesting ---
     // Extract EXISTS subqueries, rewrite them, and append them as OPTIONAL MATCHes.

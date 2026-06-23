@@ -190,3 +190,28 @@ TEST_CASE("GQL Optimizer correlated subquery unnesting test", "[gql_optimizer]")
     REQUIRE(query.outer_vars.size() == 1);
     REQUIRE(query.outer_vars.count("a"));
 }
+
+#include "../../src/gql/GqlVirtualCatalog.h"
+
+TEST_CASE("GQL Optimizer virtual view expansion", "[gql_optimizer]") {
+    GqlVirtualCatalog::local().clear();
+    GqlVirtualCatalog::local().add_view("Adult", "MATCH (p:Person) WHERE p.age >= 18 RETURN p");
+
+    std::string query_str = "MATCH (a:Adult) RETURN a.name";
+    auto query = GqlParser::parse(query_str);
+
+    GqlOptimizer::optimize(query);
+
+    // Node 'a' should now be Person and have the pushed down age filter
+    REQUIRE(query.matches[0].pattern.nodes[0].variable == "a");
+    REQUIRE(query.matches[0].pattern.nodes[0].label_expr->name == "Person");
+    
+    auto& filters = query.matches[0].pattern.nodes[0].property_filters;
+    REQUIRE(filters.size() == 1);
+    REQUIRE(filters[0].property == "age");
+    REQUIRE(filters[0].op == Operation::GTE);
+    REQUIRE(std::get<int64_t>(filters[0].value) == 18);
+    
+    GqlVirtualCatalog::local().clear();
+}
+

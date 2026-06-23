@@ -15,21 +15,25 @@
  */
 
 #include "GqlCatalog.h"
+#include "GqlVirtualCatalog.h"
 #include <stdexcept>
 
 namespace ragedb::gql {
 
 seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph, const SchemaOperation& schema_op) {
     switch (schema_op.op) {
+        // 1. CREATE NODE TYPE
         case SchemaOperation::Op::CREATE_NODE_TYPE: {
             std::string name = schema_op.name;
             auto node_types = graph.shard.local().NodeTypesGetPeered();
+            // Validate that the NodeType does not already exist
             if (node_types.find(name) != node_types.end()) {
                 return seastar::make_exception_future<std::string>(
                     std::runtime_error("NodeType '" + name + "' already exists")
                 );
             }
             
+            // Insert NodeType across all sharded peers
             return graph.shard.local().NodeTypeInsertPeered(name)
             .then([&graph, name, properties = schema_op.properties]([[maybe_unused]] uint16_t type_id) {
                 if (properties.empty()) {
@@ -38,6 +42,7 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                     );
                 }
                 
+                // Chain futures to dynamically add all declared properties to the new NodeType
                 seastar::future<uint8_t> f = seastar::make_ready_future<uint8_t>(0);
                 for (const auto& prop : properties) {
                     std::string prop_name = prop.first;
@@ -54,14 +59,17 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 });
             });
         }
+        // 2. DROP NODE TYPE
         case SchemaOperation::Op::DROP_NODE_TYPE: {
             std::string name = schema_op.name;
             auto node_types = graph.shard.local().NodeTypesGetPeered();
+            // Ensure NodeType exists before dropping
             if (node_types.find(name) == node_types.end()) {
                 return seastar::make_exception_future<std::string>(
                     std::runtime_error("NodeType '" + name + "' does not exist")
                 );
             }
+            // Peered deletion of NodeType and all its instances/properties
             return graph.shard.local().DeleteNodeTypePeered(name)
             .then([name](bool success) {
                 if (!success) {
@@ -74,15 +82,18 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 );
             });
         }
+        // 3. CREATE RELATIONSHIP TYPE
         case SchemaOperation::Op::CREATE_REL_TYPE: {
             std::string name = schema_op.name;
             auto rel_types = graph.shard.local().RelationshipTypesGetPeered();
+            // Validate that the RelationshipType does not already exist
             if (rel_types.find(name) != rel_types.end()) {
                 return seastar::make_exception_future<std::string>(
                     std::runtime_error("RelationshipType '" + name + "' already exists")
                 );
             }
             
+            // Insert RelationshipType across all peers
             return graph.shard.local().RelationshipTypeInsertPeered(name)
             .then([&graph, name, properties = schema_op.properties]([[maybe_unused]] uint16_t type_id) {
                 if (properties.empty()) {
@@ -91,6 +102,7 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                     );
                 }
                 
+                // Chain futures to dynamically add all declared properties
                 seastar::future<uint8_t> f = seastar::make_ready_future<uint8_t>(0);
                 for (const auto& prop : properties) {
                     std::string prop_name = prop.first;
@@ -107,14 +119,17 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 });
             });
         }
+        // 4. DROP RELATIONSHIP TYPE
         case SchemaOperation::Op::DROP_REL_TYPE: {
             std::string name = schema_op.name;
             auto rel_types = graph.shard.local().RelationshipTypesGetPeered();
+            // Ensure RelationshipType exists before dropping
             if (rel_types.find(name) == rel_types.end()) {
                 return seastar::make_exception_future<std::string>(
                     std::runtime_error("RelationshipType '" + name + "' does not exist")
                 );
             }
+            // Drop RelationshipType across all sharded peers
             return graph.shard.local().DeleteRelationshipTypePeered(name)
             .then([name](bool success) {
                 if (!success) {
@@ -127,6 +142,7 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 );
             });
         }
+        // 5. ALTER NODE TYPE (ADD or DROP properties)
         case SchemaOperation::Op::ALTER_NODE_TYPE: {
             std::string name = schema_op.name;
             auto node_types = graph.shard.local().NodeTypesGetPeered();
@@ -147,6 +163,7 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
                 }
                 return graph.shard.local().NodePropertyTypeAddPeered(name, prop_name, prop_type)
                 .then([name, prop_name](uint8_t) {
+
                     return seastar::make_ready_future<std::string>(
                         "{\"status\": \"altered\", \"node_type\": \"" + name + "\", \"added\": \"" + prop_name + "\"}"
                     );
@@ -405,6 +422,48 @@ seastar::future<std::string> GqlCatalog::execute_schema_op(ragedb::Graph& graph,
             }
             json += "]";
             return seastar::make_ready_future<std::string>(json);
+        }
+        case SchemaOperation::Op::CREATE_VIEW: {
+            std::string name = schema_op.name;
+            std::string query = schema_op.query_string;
+            return graph.shard.invoke_on_all([name, query](Shard&) {
+                GqlVirtualCatalog::local().add_view(name, query);
+            }).then([name] {
+                return seastar::make_ready_future<std::string>(
+                    "{\"status\": \"created\", \"view\": \"" + name + "\"}"
+                );
+            });
+        }
+        case SchemaOperation::Op::DROP_VIEW: {
+            std::string name = schema_op.name;
+            return graph.shard.invoke_on_all([name](Shard&) {
+                GqlVirtualCatalog::local().remove_view(name);
+            }).then([name] {
+                return seastar::make_ready_future<std::string>(
+                    "{\"status\": \"deleted\", \"view\": \"" + name + "\"}"
+                );
+            });
+        }
+        case SchemaOperation::Op::CREATE_CONSTRAINT: {
+            std::string name = schema_op.name;
+            std::string query = schema_op.query_string;
+            return graph.shard.invoke_on_all([name, query](Shard&) {
+                GqlVirtualCatalog::local().add_constraint(name, query);
+            }).then([name] {
+                return seastar::make_ready_future<std::string>(
+                    "{\"status\": \"created\", \"constraint\": \"" + name + "\"}"
+                );
+            });
+        }
+        case SchemaOperation::Op::DROP_CONSTRAINT: {
+            std::string name = schema_op.name;
+            return graph.shard.invoke_on_all([name](Shard&) {
+                GqlVirtualCatalog::local().remove_constraint(name);
+            }).then([name] {
+                return seastar::make_ready_future<std::string>(
+                    "{\"status\": \"deleted\", \"constraint\": \"" + name + "\"}"
+                );
+            });
         }
     }
     return seastar::make_ready_future<std::string>("{}");

@@ -408,7 +408,11 @@ struct SchemaOperation {
         CREATE_INDEX,
         CREATE_FULLTEXT_INDEX,
         DROP_INDEX,
-        SHOW_INDEXES
+        SHOW_INDEXES,
+        CREATE_VIEW,
+        DROP_VIEW,
+        CREATE_CONSTRAINT,
+        DROP_CONSTRAINT
     } op;
 
     std::string name;
@@ -423,6 +427,9 @@ struct SchemaOperation {
     } alter_op;
     std::string alter_property_name;
     std::string alter_property_type; // For ALTER ADD
+
+    // For virtual views and constraints
+    std::string query_string;
 };
 
 struct PlanNode {

@@ -19,6 +19,7 @@
 #include "../../src/gql/GqlParser.h"
 #include "../../src/gql/GqlOptimizer.h"
 #include "../../src/gql/GqlExecutor.h"
+#include "../../src/gql/GqlVirtualCatalog.h"
 
 using namespace ragedb;
 using namespace ragedb::gql;
@@ -328,6 +329,54 @@ TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
             std::string res = GqlExecutor::execute(graph, query).get();
             REQUIRE(res.find("\"p1.name\": \"Alice\"") != std::string::npos);
         }
+    }
+
+    SECTION("Virtual View and Constraint execution and validation") {
+        // 1. CREATE VIEW and check catalog
+        std::string q_view = "CREATE VIEW Adult AS MATCH (p:Person) WHERE p.age >= 18 RETURN p";
+        std::string res_view = GqlExecutor::execute(graph, q_view).get();
+        REQUIRE(res_view == "{\"status\": \"created\", \"view\": \"Adult\"}");
+        
+        auto opt_view = GqlVirtualCatalog::local().get_view("Adult");
+        REQUIRE(opt_view.has_value());
+        REQUIRE(*opt_view == "MATCH ( p : Person ) WHERE p . age >= 18 RETURN p");
+
+        // 2. CREATE CONSTRAINT and check catalog
+        std::string q_constraint = "CREATE CONSTRAINT PositiveAge AS MATCH (p:Person) WHERE p.age < 0 RETURN p";
+        std::string res_constraint = GqlExecutor::execute(graph, q_constraint).get();
+        REQUIRE(res_constraint == "{\"status\": \"created\", \"constraint\": \"PositiveAge\"}");
+
+        auto opt_constraint = GqlVirtualCatalog::local().get_constraint("PositiveAge");
+        REQUIRE(opt_constraint.has_value());
+        REQUIRE(*opt_constraint == "MATCH ( p : Person ) WHERE p . age < 0 RETURN p");
+
+        // Setup base schema
+        graph.shard.local().NodeTypeInsertPeered("Person").get();
+        graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+        graph.shard.local().NodePropertyTypeAddPeered("Person", "age", "integer").get();
+
+        // 3. Test insert violating constraint should throw exception
+        std::string insert_invalid = "INSERT (p:Person {name: 'Negative', age: -5, key: 'negative'})";
+        REQUIRE_THROWS_AS(GqlExecutor::execute(graph, insert_invalid).get(), std::runtime_error);
+
+        // 4. Test insert valid node works
+        std::string insert_valid = "INSERT (p:Person {name: 'Positive', age: 25, key: 'positive'})";
+        std::string res_insert = GqlExecutor::execute(graph, insert_valid).get();
+        REQUIRE(res_insert == "[{}]");
+
+        // 5. Test querying view works end-to-end
+        std::string query_view = "MATCH (a:Adult) RETURN a.name";
+        std::string res_query = GqlExecutor::execute(graph, query_view).get();
+        REQUIRE(res_query.find("Positive") != std::string::npos);
+
+        // 6. DROP VIEW and DROP CONSTRAINT
+        std::string drop_view = "DROP VIEW Adult";
+        GqlExecutor::execute(graph, drop_view).get();
+        REQUIRE_FALSE(GqlVirtualCatalog::local().get_view("Adult").has_value());
+
+        std::string drop_constraint = "DROP CONSTRAINT PositiveAge";
+        GqlExecutor::execute(graph, drop_constraint).get();
+        REQUIRE_FALSE(GqlVirtualCatalog::local().get_constraint("PositiveAge").has_value());
     }
 
     guard.stop();

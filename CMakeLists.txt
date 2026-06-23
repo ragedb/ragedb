@@ -28,11 +28,16 @@ else()
 endif()
 
 # Add
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+option(PORTABLE "Build portable binary without -march=native" OFF)
+if(NOT PORTABLE)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+  if(COMPILER_SUPPORTS_MARCH_NATIVE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  endif()
 endif()
+
+option(BUILD_BENCHMARKS "Build benchmarks" ON)
 
 # Link this 'library' to use the warnings specified in CompilerWarnings.cmake
 add_library(project_warnings INTERFACE)
@@ -90,7 +95,9 @@ find_package(cppcodec REQUIRED)
 find_package(cpr REQUIRED)
 find_package(Boost REQUIRED)
 find_package(unordered_dense REQUIRED)
-find_package(benchmark REQUIRED)
+if(BUILD_BENCHMARKS)
+  find_package(benchmark REQUIRED)
+endif()
 find_package(Threads REQUIRED)
 
 if(NOT TARGET LinuxMembarrier::membarrier)
@@ -179,8 +186,10 @@ file(COPY public DESTINATION bin)
 add_subdirectory(src/graph)
 include_directories(src/graph)
 
-add_subdirectory(src/benchmark)
-include_directories(src/benchmark)
+if(BUILD_BENCHMARKS)
+  add_subdirectory(src/benchmark)
+  include_directories(src/benchmark)
+endif()
 
 include_directories(src/gql)
 
@@ -211,6 +220,7 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/executor/PathTraverser.cpp src/gql/executor/PathTraverser.h
         src/gql/executor/ProjectionPruner.cpp src/gql/executor/ProjectionPruner.h
         src/gql/executor/StarJoinRewriter.cpp src/gql/executor/StarJoinRewriter.h
+        src/gql/executor/PlanBuilder.cpp src/gql/executor/PlanBuilder.h
         src/gql/GqlCatalog.cpp src/gql/GqlCatalog.h
         src/gql/GqlTypechecker.cpp src/gql/GqlTypechecker.h
         src/gql/GqlValue.cpp src/gql/GqlValue.h

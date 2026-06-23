@@ -18,6 +18,7 @@
 #include "GqlValue.h"
 #include "GqlWriter.h"
 #include "GqlCatalog.h"
+#include "GqlVirtualCatalog.h"
 #include "GqlTypechecker.h"
 #include "Join.h"
 #include "GqlParser.h"
@@ -29,6 +30,7 @@
 #include "executor/PathTraverser.h"
 #include "executor/ProjectionPruner.h"
 #include "executor/StarJoinRewriter.h"
+#include "executor/PlanBuilder.h"
 #include <sstream>
 #include <unordered_set>
 #include <unordered_map>
@@ -40,18 +42,6 @@
 #include <seastar/core/when_all.hh>
 
 namespace ragedb::gql {
-
-static std::shared_ptr<PlanNode> build_query_plan(ragedb::Graph& graph, const GqlQuery& query);
-static void index_plan_nodes(
-    const std::shared_ptr<PlanNode>& node,
-    std::map<std::string, std::shared_ptr<PlanNode>>& plan_nodes
-);
-static void flatten_plan_tree(
-    const std::shared_ptr<PlanNode>& node,
-    std::vector<std::vector<GqlValue>>& rows,
-    std::string indent,
-    bool is_last
-);
 
 /**
  * @brief Represents a grouped set of rows.
@@ -155,10 +145,13 @@ struct GqlRowOuterVarsLess {
 };
 
 static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr) {
+    // 1. Handle Set Operations (UNION, UNION ALL, INTERSECT, INTERSECT ALL)
     if (query_ptr->kind != QueryKind::SINGLE) {
+        // Release ownership of subqueries to execute them separately
         auto left_ptr = std::shared_ptr<GqlQuery>(query_ptr->left.release());
         auto right_ptr = std::shared_ptr<GqlQuery>(query_ptr->right.release());
 
+        // Extract left and right plan nodes if profiling is enabled
         std::shared_ptr<PlanNode> left_node = nullptr;
         std::shared_ptr<PlanNode> right_node = nullptr;
         if (query_ptr->profile && query_ptr->plan_root) {
@@ -170,6 +163,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             }
         }
 
+        // Set up profiling contexts for subqueries
         if (query_ptr->profile) {
             left_ptr->profile = true;
             left_ptr->plan_root = left_node;
@@ -180,11 +174,16 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             index_plan_nodes(right_node, right_ptr->plan_nodes);
         }
 
+        // Start timing the set operation
         auto start = std::chrono::steady_clock::now();
+        
+        // Execute the left subquery first
         return execute_query_internal(graph, left_ptr)
         .then([&graph, right_ptr, query_ptr, start](QueryResult left_res) {
+            // Then execute the right subquery
             return execute_query_internal(graph, right_ptr)
             .then([left_res = std::move(left_res), query_ptr, start](QueryResult right_res) {
+                // Ensure column structures match
                 if (left_res.column_names.size() != right_res.column_names.size()) {
                     throw std::runtime_error("All subqueries in a GQL Set operation must return the same number of columns");
                 }
@@ -192,12 +191,15 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                 QueryResult combined_res;
                 combined_res.column_names = left_res.column_names;
 
+                // Merge results based on the set operation type
                 if (query_ptr->kind == QueryKind::UNION_ALL) {
+                    // UNION ALL: Concatenate all rows
                     combined_res.rows = std::move(left_res.rows);
                     for (auto& r : right_res.rows) {
                         combined_res.rows.push_back(std::move(r));
                     }
                 } else if (query_ptr->kind == QueryKind::UNION) {
+                    // UNION: Concatenate and dedup rows using a set
                     std::set<std::vector<GqlValue>, GqlValueVectorLess> seen;
                     for (auto& r : left_res.rows) {
                         if (seen.insert(r).second) {
@@ -210,6 +212,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                         }
                     }
                 } else if (query_ptr->kind == QueryKind::INTERSECT) {
+                    // INTERSECT: Retain unique rows present in both left and right results
                     std::set<std::vector<GqlValue>, GqlValueVectorLess> left_set;
                     for (const auto& r : left_res.rows) {
                         left_set.insert(r);
@@ -223,6 +226,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                         }
                     }
                 } else if (query_ptr->kind == QueryKind::INTERSECT_ALL) {
+                    // INTERSECT ALL: Retain rows present in both, respecting multi-set count limits
                     std::map<std::vector<GqlValue>, int64_t, GqlValueVectorLess> left_counts;
                     for (const auto& r : left_res.rows) {
                         left_counts[r]++;
@@ -236,6 +240,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                     }
                 }
 
+                // Record actual row count and duration for set operation plan node
                 if (query_ptr->profile && query_ptr->plan_root) {
                     auto end = std::chrono::steady_clock::now();
                     query_ptr->plan_root->actual_rows = combined_res.rows.size();
@@ -247,6 +252,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         });
     }
 
+    // 2. Detect if the query contains aggregate functions (COUNT, SUM, AVG, MIN, MAX)
     bool query_contains_aggregates = false;
     for (const auto& item : query_ptr->returns) {
         if (has_aggregates(item.expr.get())) {
@@ -263,25 +269,31 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
     }
 
+    // Determine if we can push limit evaluation directly into the traversal
     size_t limit_val = 0;
     if (query_ptr->limit.has_value() && query_ptr->order_by.empty() && !query_contains_aggregates) {
         limit_val = *query_ptr->limit;
     }
 
+    // 3. Build ProjectionPruner to avoid reading properties that are never accessed
     ProjectionPruner pruner;
 
+    // Collect properties accessed in RETURN expressions
     for (const auto& item : query_ptr->returns) {
         collect_accessed_properties(item.expr.get(), pruner.accessed_props, pruner.whole_objects);
     }
 
+    // Collect properties accessed in ORDER BY specs
     for (const auto& spec : query_ptr->order_by) {
         collect_accessed_properties(spec.expr.get(), pruner.accessed_props, pruner.whole_objects);
     }
 
+    // Collect properties accessed in WHERE filter
     if (query_ptr->where_expr) {
         collect_accessed_properties(query_ptr->where_expr.get(), pruner.accessed_props, pruner.whole_objects);
     }
 
+    // Collect properties accessed/modified in WRITE operations
     for (const auto& w : query_ptr->writes) {
         if (w.type == WriteOp::Type::INSERT) {
             for (const auto& n : w.insert_pattern.nodes) {
@@ -310,6 +322,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
     }
 
+    // Collect properties referenced in matching patterns (filters/indexed properties)
     for (const auto& match : query_ptr->matches) {
         for (const auto& n : match.pattern.nodes) {
             if (!n.variable.empty()) {
@@ -333,6 +346,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
     }
 
+    // 4. Optimize sorting if the order matches the start node traversal index order
     std::string sort_property = "";
     bool sort_ascending = true;
     bool sort_by_id = false;
@@ -367,6 +381,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         }
     }
 
+    // 5. Execute matching patterns recursively using sharded traversal
     IntermediateResult initial_res(std::vector<GqlRow>{ GqlRow{} });
     auto is_sorted_shared = std::make_shared<bool>(false);
 
@@ -377,7 +392,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         std::vector<GqlRow> matched_rows = std::move(matched_res.rows);
         const auto& query = *query_ptr;
 
-        // Enforce GQL DIFFERENT EDGES match mode globally across joined rows
+        // 6. Enforce DIFFERENT EDGES match mode globally across joined rows (GQL semantics)
         std::set<std::string> diff_edge_vars;
         for (const auto& stmt : query.matches) {
             if (stmt.match_mode == MatchMode::DIFFERENT_EDGES) {
@@ -402,7 +417,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                         } else if (val.type == GqlValue::RELATIONSHIP_LIST) {
                             for (const auto& r : *val.relationship_list) {
                                 rel_ids.push_back(r.getId());
-                            }
+                                }
                         } else if (val.type == GqlValue::PATH) {
                             for (const auto& r : val.path->GetRelationships()) {
                                 rel_ids.push_back(r.getId());
@@ -417,8 +432,9 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             }
             matched_rows = std::move(edge_filtered_rows);
         }
+
+        // 7. Evaluate GQL WHERE clause filter expression on match results
         std::vector<GqlRow> filtered_rows;
-        
         auto filter_start = std::chrono::steady_clock::now();
         for (auto& row : matched_rows) {
             if (!query.where_expr || evaluate_expression(row, query.where_expr.get()).is_truthy()) {
@@ -426,6 +442,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             }
         }
 
+        // Record profile timing for filter operator
         if (query_ptr->profile && query.where_expr) {
             auto filter_end = std::chrono::steady_clock::now();
             auto node = query_ptr->plan_nodes["filter"];
@@ -435,6 +452,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             }
         }
 
+        // Deduplicate rows if querying with unnested subqueries
         if (query.has_unnested_subquery && !query.outer_vars.empty()) {
             std::vector<GqlRow> deduped_rows;
             std::set<GqlRow, GqlRowOuterVarsLess> seen((GqlRowOuterVarsLess{query.outer_vars}));
@@ -445,6 +463,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
             }
             filtered_rows = std::move(deduped_rows);
         }
+
 
         if (query.writes.empty()) {
             return seastar::make_ready_future<std::vector<GqlRow>>(std::move(filtered_rows));
@@ -828,459 +847,33 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
     });
 }
 
-static std::string describe_label_expr(const std::shared_ptr<LabelExpression>& expr) {
-    if (!expr) return "";
-    switch (expr->kind) {
-        case LabelExprKind::LITERAL:
-            return expr->name;
-        case LabelExprKind::NOT:
-            return "!" + describe_label_expr(expr->expr);
-        case LabelExprKind::AND:
-            return "(" + describe_label_expr(expr->left) + " & " + describe_label_expr(expr->right) + ")";
-        case LabelExprKind::OR:
-            return "(" + describe_label_expr(expr->left) + " | " + describe_label_expr(expr->right) + ")";
+static seastar::future<> validate_constraints(ragedb::Graph& graph) {
+    const auto& constraints = GqlVirtualCatalog::local().get_constraints();
+    if (constraints.empty()) {
+        return seastar::make_ready_future<>();
     }
-    return "";
-}
-
-static std::string describe_pattern(const PathPattern& pattern) {
-    std::string res;
-    for (size_t i = 0; i < pattern.nodes.size(); ++i) {
-        if (i > 0) {
-            const auto& edge = pattern.edges[i - 1];
-            std::string edge_str = "-";
-            if (edge.direction == EdgeDirection::LEFT) edge_str = "<-";
-            
-            edge_str += "[";
-            if (!edge.variable.empty()) edge_str += edge.variable;
-            if (edge.label_expr) {
-                edge_str += ":" + describe_label_expr(edge.label_expr);
-            }
-            if (edge.is_variable_length) {
-                edge_str += "*";
-                if (edge.min_hops != 1 || edge.max_hops != std::numeric_limits<uint64_t>::max()) {
-                    edge_str += std::to_string(edge.min_hops) + ".." + (edge.max_hops == std::numeric_limits<uint64_t>::max() ? "" : std::to_string(edge.max_hops));
-                }
-            }
-            edge_str += "]";
-            
-            if (edge.direction == EdgeDirection::RIGHT) edge_str += "->";
-            else edge_str += "-";
-            
-            res += edge_str;
-        }
-        
-        const auto& node = pattern.nodes[i];
-        std::string node_str = "(";
-        if (!node.variable.empty()) node_str += node.variable;
-        if (node.label_expr) {
-            node_str += ":" + describe_label_expr(node.label_expr);
-        }
-        node_str += ")";
-        res += node_str;
-    }
-    return res;
-}
-
-static std::string join_strings(const std::set<std::string>& strings, const std::string& delimiter) {
-    std::string res;
-    for (const auto& s : strings) {
-        if (!res.empty()) res += delimiter;
-        res += s;
-    }
-    return res;
-}
-
-static std::shared_ptr<PlanNode> build_match_plan(
-    ragedb::Graph& graph,
-    const std::vector<MatchStatement>& matches,
-    size_t match_idx,
-    std::set<std::string>& incoming_vars,
-    std::shared_ptr<PlanNode> input_plan
-) {
-    if (match_idx >= matches.size()) {
-        return input_plan;
-    }
-
-    if (auto candidate = find_star_join_candidate(matches, match_idx, incoming_vars)) {
-        std::string central_var = candidate->central_var;
-        const auto& indices = candidate->match_indices;
-
-        if (incoming_vars.count(central_var)) {
-            std::vector<MatchStatement> branch_matches;
-            std::vector<MatchStatement> remaining_matches;
-            std::set<size_t> S_set(indices.begin(), indices.end());
-
-            for (size_t i = match_idx; i < matches.size(); ++i) {
-                if (S_set.count(i)) {
-                    branch_matches.push_back(matches[i]);
-                } else {
-                    remaining_matches.push_back(matches[i]);
-                }
-            }
-
-            auto join_node = std::make_shared<PlanNode>();
-            join_node->operator_name = "NaturalJoin";
-            join_node->detail = "Star join on central variable: " + central_var;
-            join_node->key = "star_join_" + central_var;
-            
-            std::set<std::string> current_vars = incoming_vars;
-            for (const auto& branch_stmt : branch_matches) {
-                std::vector<MatchStatement> single_stmt_vec = { branch_stmt };
-                auto branch_plan = build_match_plan(graph, single_stmt_vec, 0, current_vars, input_plan);
-                if (branch_plan) {
-                    join_node->children.push_back(branch_plan);
-                }
-                for (const auto& node : branch_stmt.pattern.nodes) {
-                    if (!node.variable.empty()) current_vars.insert(node.variable);
-                }
-                for (const auto& edge : branch_stmt.pattern.edges) {
-                    if (!edge.variable.empty()) current_vars.insert(edge.variable);
-                }
-            }
-            join_node->variables = join_strings(current_vars, ", ");
-
-            if (remaining_matches.empty()) {
-                return join_node;
-            } else {
-                return build_match_plan(graph, remaining_matches, 0, current_vars, join_node);
-            }
-        } else {
-            size_t first_idx = indices[0];
-            std::vector<MatchStatement> first_stmt_vec = { matches[first_idx] };
-            
-            std::vector<MatchStatement> remaining_matches;
-            for (size_t i = match_idx; i < matches.size(); ++i) {
-                if (i != first_idx) {
-                    remaining_matches.push_back(matches[i]);
-                }
-            }
-
-            auto first_plan = build_match_plan(graph, first_stmt_vec, 0, incoming_vars, input_plan);
-            return build_match_plan(graph, remaining_matches, 0, incoming_vars, first_plan);
-        }
-    }
-
-    const auto& stmt = matches[match_idx];
-
-    bool has_shared = false;
-    for (const auto& node : stmt.pattern.nodes) {
-        if (!node.variable.empty() && incoming_vars.count(node.variable)) {
-            has_shared = true;
-            break;
-        }
-    }
-    for (const auto& edge : stmt.pattern.edges) {
-        if (!edge.variable.empty() && incoming_vars.count(edge.variable)) {
-            has_shared = true;
-            break;
-        }
-    }
-
-    if (!has_shared && !incoming_vars.empty()) {
-        std::set<std::string> pattern_vars;
-        std::vector<MatchStatement> single_stmt_vec = { stmt };
-        auto pattern_plan = build_match_plan(graph, single_stmt_vec, 0, pattern_vars, nullptr);
-
-        auto join_node = std::make_shared<PlanNode>();
-        join_node->operator_name = stmt.is_optional ? "LeftOuterJoin" : "NaturalJoin";
-        join_node->detail = stmt.is_optional ? "Optional match join" : "Disconnected match join";
-        join_node->key = (stmt.is_optional ? "left_outer_join_" : "natural_join_") + std::to_string(stmt.id);
-        if (input_plan) {
-            join_node->children.push_back(input_plan);
-        }
-        if (pattern_plan) {
-            join_node->children.push_back(pattern_plan);
-        }
-        
-        for (const auto& var : pattern_vars) {
-            incoming_vars.insert(var);
-        }
-        join_node->variables = join_strings(incoming_vars, ", ");
-
-        std::vector<MatchStatement> remaining_matches(matches.begin() + match_idx + 1, matches.end());
-        return build_match_plan(graph, remaining_matches, 0, incoming_vars, join_node);
-    } else {
-        auto node = std::make_shared<PlanNode>();
-        if (incoming_vars.empty()) {
-            bool has_node_seek = false;
-            std::string node_indexed_prop = "";
-            const auto& start_node = stmt.pattern.nodes[0];
-            if (start_node.label_expr && start_node.label_expr->kind == LabelExprKind::LITERAL) {
-                std::string label = start_node.label_expr->name;
-                for (const auto& [prop, val] : start_node.properties) {
-                    if (graph.shard.local().NodeIndexExists(label, prop)) {
-                        has_node_seek = true;
-                        node_indexed_prop = prop;
-                        break;
+    
+    seastar::future<> f = seastar::make_ready_future<>();
+    for (const auto& [name, query_str] : constraints) {
+        f = f.then([&graph, name = name, query_str = query_str] {
+            try {
+                auto constraint_query = GqlParser::parse(query_str);
+                constraint_query.limit = 1;
+                auto query_ptr = std::make_shared<GqlQuery>(std::move(constraint_query));
+                return execute_query_internal(graph, query_ptr)
+                .then([name](QueryResult res) {
+                    if (!res.rows.empty()) {
+                        throw std::runtime_error("Constraint violation: '" + name + "' failed");
                     }
-                }
-                if (!has_node_seek) {
-                    for (const auto& filter : start_node.property_filters) {
-                        if (filter.op == Operation::EQ && graph.shard.local().NodeIndexExists(label, filter.property)) {
-                            has_node_seek = true;
-                            node_indexed_prop = filter.property;
-                            break;
-                        }
-                    }
-                }
+                });
+            } catch (...) {
+                return seastar::make_exception_future<>(std::current_exception());
             }
-
-            bool has_edge_seek = false;
-            std::string edge_indexed_prop = "";
-            if (!has_node_seek && !stmt.pattern.edges.empty()) {
-                const auto& edge = stmt.pattern.edges[0];
-                if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
-                    std::string label = edge.label_expr->name;
-                    for (const auto& [prop, val] : edge.properties) {
-                        if (graph.shard.local().RelationshipIndexExists(label, prop)) {
-                            has_edge_seek = true;
-                            edge_indexed_prop = prop;
-                            break;
-                        }
-                    }
-                    if (!has_edge_seek) {
-                        for (const auto& filter : edge.property_filters) {
-                            if (filter.op == Operation::EQ && graph.shard.local().RelationshipIndexExists(label, filter.property)) {
-                                has_edge_seek = true;
-                                edge_indexed_prop = filter.property;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (has_node_seek) {
-                node->operator_name = "NodeIndexSeek";
-                node->detail = "Seek (" + start_node.variable + ":" + start_node.label_expr->name + "(" + node_indexed_prop + ")) via index";
-            } else if (has_edge_seek) {
-                node->operator_name = "RelationshipIndexSeek";
-                const auto& edge = stmt.pattern.edges[0];
-                node->detail = "Seek [" + edge.variable + ":" + edge.label_expr->name + "(" + edge_indexed_prop + ")] via index";
-            } else {
-                node->operator_name = "Scan / Traverse";
-                node->detail = describe_pattern(stmt.pattern);
-            }
-        } else {
-            node->operator_name = stmt.is_optional ? "OptionalExpand" : "Expand / Traverse";
-            node->detail = describe_pattern(stmt.pattern);
-        }
-        node->key = "match_" + std::to_string(stmt.id);
-        if (input_plan) {
-            node->children.push_back(input_plan);
-        }
-        
-        for (const auto& n : stmt.pattern.nodes) {
-            if (!n.variable.empty()) incoming_vars.insert(n.variable);
-        }
-        for (const auto& e : stmt.pattern.edges) {
-            if (!e.variable.empty()) incoming_vars.insert(e.variable);
-        }
-        node->variables = join_strings(incoming_vars, ", ");
-
-        std::vector<MatchStatement> remaining_matches(matches.begin() + match_idx + 1, matches.end());
-        return build_match_plan(graph, remaining_matches, 0, incoming_vars, node);
+        });
     }
+    return f;
 }
 
-static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, const GqlQuery& query) {
-    std::set<std::string> incoming_vars;
-    std::shared_ptr<PlanNode> current = build_match_plan(graph, query.matches, 0, incoming_vars, nullptr);
-
-    if (!query.writes.empty()) {
-        auto write_node = std::make_shared<PlanNode>();
-        write_node->operator_name = "Write";
-        write_node->key = "write";
-        std::string details;
-        for (const auto& w : query.writes) {
-            if (!details.empty()) details += ", ";
-            if (w.type == WriteOp::Type::INSERT) {
-                details += "INSERT " + describe_pattern(w.insert_pattern);
-            } else if (w.type == WriteOp::Type::SET) {
-                details += "SET " + w.set_var + "." + w.set_prop;
-            } else if (w.type == WriteOp::Type::REMOVE) {
-                details += "REMOVE " + w.remove_var + "." + w.remove_prop;
-            } else if (w.type == WriteOp::Type::DELETE_OP) {
-                details += (w.detach ? "DETACH DELETE " : "DELETE ") + w.delete_var;
-            }
-        }
-        write_node->detail = details;
-        write_node->variables = join_strings(incoming_vars, ", ");
-        if (current) write_node->children.push_back(current);
-        current = write_node;
-    }
-
-    if (query.where_expr) {
-        auto filter_node = std::make_shared<PlanNode>();
-        filter_node->operator_name = "Filter";
-        filter_node->key = "filter";
-        filter_node->detail = "WHERE expression";
-        filter_node->variables = join_strings(incoming_vars, ", ");
-        if (current) filter_node->children.push_back(current);
-        current = filter_node;
-    }
-
-    bool query_contains_aggregates = false;
-    for (const auto& item : query.returns) {
-        if (has_aggregates(item.expr.get())) {
-            query_contains_aggregates = true;
-            break;
-        }
-    }
-    if (!query_contains_aggregates) {
-        for (const auto& spec : query.order_by) {
-            if (has_aggregates(spec.expr.get())) {
-                query_contains_aggregates = true;
-                break;
-            }
-        }
-    }
-
-    if (query_contains_aggregates) {
-        auto agg_node = std::make_shared<PlanNode>();
-        agg_node->operator_name = "Aggregate";
-        agg_node->key = "aggregate";
-        agg_node->variables = join_strings(incoming_vars, ", ");
-        if (current) agg_node->children.push_back(current);
-        current = agg_node;
-    }
-
-    if (query.distinct) {
-        auto distinct_node = std::make_shared<PlanNode>();
-        distinct_node->operator_name = "Distinct";
-        distinct_node->key = "distinct";
-        distinct_node->variables = join_strings(incoming_vars, ", ");
-        if (current) distinct_node->children.push_back(current);
-        current = distinct_node;
-    }
-
-    if (!query.order_by.empty()) {
-        auto sort_node = std::make_shared<PlanNode>();
-        sort_node->operator_name = "Sort";
-        sort_node->key = "sort";
-        std::string details;
-        for (const auto& spec : query.order_by) {
-            if (!details.empty()) details += ", ";
-            details += spec.ascending ? "ASC" : "DESC";
-        }
-        sort_node->detail = details;
-        sort_node->variables = join_strings(incoming_vars, ", ");
-        if (current) sort_node->children.push_back(current);
-        current = sort_node;
-    }
-
-    if (query.limit) {
-        auto limit_node = std::make_shared<PlanNode>();
-        limit_node->operator_name = "Limit";
-        limit_node->key = "limit";
-        limit_node->detail = std::to_string(*query.limit);
-        limit_node->variables = join_strings(incoming_vars, ", ");
-        if (current) limit_node->children.push_back(current);
-        current = limit_node;
-    }
-
-    auto produce_node = std::make_shared<PlanNode>();
-    produce_node->operator_name = "ProduceResults";
-    produce_node->key = "produce_results";
-    std::string returns_str;
-    for (const auto& item : query.returns) {
-        if (!returns_str.empty()) returns_str += ", ";
-        if (item.alias) {
-            returns_str += *item.alias;
-        } else {
-            returns_str += "expr";
-        }
-    }
-    produce_node->detail = returns_str;
-    produce_node->variables = returns_str;
-    if (current) produce_node->children.push_back(current);
-    current = produce_node;
-
-    return current;
-}
-
-static std::shared_ptr<PlanNode> build_query_plan(ragedb::Graph& graph, const GqlQuery& query) {
-    if (query.clear_cache) {
-        auto node = std::make_shared<PlanNode>();
-        node->operator_name = "ClearCache";
-        node->detail = "CALL CLEAR CACHE";
-        node->key = "clear_cache";
-        return node;
-    }
-    if (query.schema_op) {
-        auto node = std::make_shared<PlanNode>();
-        node->operator_name = "SchemaOperation";
-        node->detail = query.schema_op->name;
-        node->key = "schema_op";
-        return node;
-    }
-    if (query.kind != QueryKind::SINGLE) {
-        auto node = std::make_shared<PlanNode>();
-        if (query.kind == QueryKind::UNION) node->operator_name = "Union";
-        else if (query.kind == QueryKind::UNION_ALL) node->operator_name = "UnionAll";
-        else if (query.kind == QueryKind::INTERSECT) node->operator_name = "Intersect";
-        else if (query.kind == QueryKind::INTERSECT_ALL) node->operator_name = "IntersectAll";
-        
-        node->key = "set_operation";
-        if (query.left) {
-            node->children.push_back(build_query_plan(graph, *query.left));
-        }
-        if (query.right) {
-            node->children.push_back(build_query_plan(graph, *query.right));
-        }
-        return node;
-    }
-    return build_single_query_plan(graph, query);
-}
-
-static void index_plan_nodes(
-    const std::shared_ptr<PlanNode>& node,
-    std::map<std::string, std::shared_ptr<PlanNode>>& plan_nodes
-) {
-    if (!node) return;
-    if (!node->key.empty()) {
-        plan_nodes[node->key] = node;
-    }
-    for (const auto& child : node->children) {
-        index_plan_nodes(child, plan_nodes);
-    }
-}
-
-static void flatten_plan_tree(
-    const std::shared_ptr<PlanNode>& node,
-    std::vector<std::vector<GqlValue>>& rows,
-    std::string indent,
-    bool is_last
-) {
-    if (!node) return;
-
-    std::vector<GqlValue> row;
-    std::string prefix = "";
-    if (!indent.empty()) {
-        prefix = indent + (is_last ? "└─ " : "├─ ");
-    }
-    row.push_back(GqlValue(prefix + node->operator_name));
-    row.push_back(GqlValue(node->detail));
-    row.push_back(GqlValue(node->variables));
-    row.push_back(node->actual_rows ? GqlValue(*node->actual_rows) : GqlValue());
-    row.push_back(node->time_ms ? GqlValue(*node->time_ms) : GqlValue());
-    row.push_back(node->estimated_rows ? GqlValue(*node->estimated_rows) : GqlValue());
-
-    rows.push_back(row);
-
-    std::string next_indent = indent;
-    if (!indent.empty()) {
-        next_indent += is_last ? "   " : "│  ";
-    } else {
-        next_indent = "";
-    }
-
-    for (size_t i = 0; i < node->children.size(); ++i) {
-        bool last_child = (i == node->children.size() - 1);
-        flatten_plan_tree(node->children[i], rows, next_indent, last_child);
-    }
-}
 
 seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery query_val) {
     GqlTypechecker::typecheck(graph, query_val);
@@ -1333,6 +926,15 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
     }
 
     return execute_query_internal(graph, query_ptr)
+    .then([&graph, query_ptr](QueryResult result) {
+        if (!query_ptr->writes.empty()) {
+            return validate_constraints(graph)
+            .then([result = std::move(result)]() mutable {
+                return result;
+            });
+        }
+        return seastar::make_ready_future<QueryResult>(std::move(result));
+    })
     .then([query_ptr](QueryResult result) {
         if (query_ptr->profile) {
             std::vector<std::vector<GqlValue>> plan_rows;

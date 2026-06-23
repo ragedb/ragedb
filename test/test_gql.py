@@ -21,7 +21,7 @@ def run_tests():
     # 1. Start ragedb server
     print("Starting ragedb server...")
     server_process = subprocess.Popen(
-        ["./build/ragedb"],
+        ["./build/bin/ragedb"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )

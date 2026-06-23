@@ -502,6 +502,43 @@ TEST_CASE("GQL Parser parses null checks, string operators and concatenation", "
     }
 }
 
+TEST_CASE("GQL Parser parses VIEW and CONSTRAINT DDL", "[gql_parser]") {
+    SECTION("CREATE VIEW") {
+        std::string query = "CREATE VIEW Adult AS MATCH (p:Person) WHERE p.age >= 18 RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_VIEW);
+        REQUIRE(q.schema_op->name == "Adult");
+        REQUIRE(q.schema_op->query_string == "MATCH ( p : Person ) WHERE p . age >= 18 RETURN p");
+    }
+
+    SECTION("DROP VIEW") {
+        std::string query = "DROP VIEW Adult";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_VIEW);
+        REQUIRE(q.schema_op->name == "Adult");
+    }
+
+    SECTION("CREATE CONSTRAINT") {
+        std::string query = "CREATE CONSTRAINT PositiveAge AS MATCH (p:Person) WHERE p.age < 0 RETURN p";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_CONSTRAINT);
+        REQUIRE(q.schema_op->name == "PositiveAge");
+        REQUIRE(q.schema_op->query_string == "MATCH ( p : Person ) WHERE p . age < 0 RETURN p");
+    }
+
+    SECTION("DROP CONSTRAINT") {
+        std::string query = "DROP CONSTRAINT PositiveAge";
+        auto q = GqlParser::parse(query);
+        REQUIRE(q.schema_op.has_value());
+        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_CONSTRAINT);
+        REQUIRE(q.schema_op->name == "PositiveAge");
+    }
+}
+
+
 
 
 

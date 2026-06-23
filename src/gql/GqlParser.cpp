@@ -416,6 +416,7 @@ GqlQuery GqlParser::parse_single_query() {
 }
 
 GqlQuery GqlParser::parse_query() {
+    // 1. Detect optional EXPLAIN / PROFILE prefix at query start
     bool explain = false;
     bool profile = false;
     if (match(TokenType::EXPLAIN)) {
@@ -424,6 +425,7 @@ GqlQuery GqlParser::parse_query() {
         profile = true;
     }
 
+    // 2. Parse special CALL CLEAR CACHE utility command
     if (match(TokenType::CALL)) {
         consume(TokenType::CLEAR, "Expected 'CLEAR' after 'CALL'");
         consume(TokenType::CACHE, "Expected 'CACHE' after 'CLEAR'");
@@ -434,12 +436,66 @@ GqlQuery GqlParser::parse_query() {
         return query;
     }
 
+    // 3. Parse Schema Operations (CREATE/DROP/ALTER/SHOW)
     if (check(TokenType::CREATE) || check(TokenType::DROP) || check(TokenType::ALTER) || check(TokenType::SHOW)) {
         GqlQuery query;
         SchemaOperation schema;
         
         if (match(TokenType::CREATE)) {
-            if (match(TokenType::FULLTEXT)) {
+            // CREATE VIEW
+            if (check(TokenType::NAME) && (peek().text == "view" || peek().text == "VIEW")) {
+                advance(); // consume "VIEW"
+                std::string view_name = peek().text;
+                consume(TokenType::NAME, "Expected view name identifier");
+                
+                // Consume optional or keyword 'AS'
+                if (check(TokenType::NAME) && (peek().text == "AS" || peek().text == "as")) {
+                    advance();
+                } else {
+                    consume(TokenType::AS, "Expected 'AS' keyword");
+                }
+                
+                // Parse the view definition query and reconstruct its string representation from tokens
+                std::string view_query_str;
+                size_t start_pos = pos;
+                GqlQuery view_query = parse_union();
+                
+                for (size_t i = start_pos; i < pos; ++i) {
+                    if (!view_query_str.empty()) view_query_str += " ";
+                    view_query_str += tokens[i].text;
+                }
+                
+                schema.op = SchemaOperation::Op::CREATE_VIEW;
+                schema.name = view_name;
+                schema.query_string = view_query_str;
+            // CREATE CONSTRAINT
+            } else if (check(TokenType::NAME) && (peek().text == "CONSTRAINT" || peek().text == "constraint")) {
+                advance(); // consume "CONSTRAINT"
+                std::string constraint_name = peek().text;
+                consume(TokenType::NAME, "Expected constraint name identifier");
+                
+                // Consume optional or keyword 'AS'
+                if (check(TokenType::NAME) && (peek().text == "AS" || peek().text == "as")) {
+                    advance();
+                } else {
+                    consume(TokenType::AS, "Expected 'AS' keyword");
+                }
+                
+                // Parse the constraint query and reconstruct its string representation
+                std::string constraint_query_str;
+                size_t start_pos = pos;
+                GqlQuery constraint_query = parse_union();
+                
+                for (size_t i = start_pos; i < pos; ++i) {
+                    if (!constraint_query_str.empty()) constraint_query_str += " ";
+                    constraint_query_str += tokens[i].text;
+                }
+                
+                schema.op = SchemaOperation::Op::CREATE_CONSTRAINT;
+                schema.name = constraint_name;
+                schema.query_string = constraint_query_str;
+            // CREATE FULLTEXT INDEX
+            } else if (match(TokenType::FULLTEXT)) {
                 consume(TokenType::INDEX, "Expected 'INDEX' after 'FULLTEXT'");
                 std::string type_name = peek().text;
                 consume(TokenType::NAME, "Expected type name identifier");
@@ -449,6 +505,7 @@ GqlQuery GqlParser::parse_query() {
                 schema.op = SchemaOperation::Op::CREATE_FULLTEXT_INDEX;
                 schema.name = type_name;
                 schema.alter_property_name = property_name;
+            // CREATE INDEX (Standard property index)
             } else if (match(TokenType::INDEX)) {
                 std::string type_name = peek().text;
                 consume(TokenType::NAME, "Expected type name identifier");
@@ -465,7 +522,7 @@ GqlQuery GqlParser::parse_query() {
                 } else if (match(TokenType::RELATIONSHIP)) {
                     is_node = false;
                 } else {
-                    throw std::runtime_error("Expected 'NODE', 'RELATIONSHIP', 'REL', or 'INDEX' after 'CREATE'");
+                    throw std::runtime_error("Expected 'NODE', 'RELATIONSHIP', 'REL', 'VIEW', 'CONSTRAINT', or 'INDEX' after 'CREATE'");
                 }
                 consume(TokenType::TYPE, "Expected 'TYPE' keyword");
                 
@@ -501,7 +558,19 @@ GqlQuery GqlParser::parse_query() {
             }
         }
         else if (match(TokenType::DROP)) {
-            if (match(TokenType::INDEX)) {
+            if (check(TokenType::NAME) && (peek().text == "VIEW" || peek().text == "view")) {
+                advance(); // consume "VIEW"
+                std::string view_name = peek().text;
+                consume(TokenType::NAME, "Expected view name identifier");
+                schema.op = SchemaOperation::Op::DROP_VIEW;
+                schema.name = view_name;
+            } else if (check(TokenType::NAME) && (peek().text == "CONSTRAINT" || peek().text == "constraint")) {
+                advance(); // consume "CONSTRAINT"
+                std::string constraint_name = peek().text;
+                consume(TokenType::NAME, "Expected constraint name identifier");
+                schema.op = SchemaOperation::Op::DROP_CONSTRAINT;
+                schema.name = constraint_name;
+            } else if (match(TokenType::INDEX)) {
                 std::string type_name = peek().text;
                 consume(TokenType::NAME, "Expected type name identifier");
                 consume(TokenType::DOT, "Expected '.'");
@@ -517,7 +586,7 @@ GqlQuery GqlParser::parse_query() {
                 } else if (match(TokenType::RELATIONSHIP)) {
                     is_node = false;
                 } else {
-                    throw std::runtime_error("Expected 'NODE', 'RELATIONSHIP', 'REL', or 'INDEX' after 'DROP'");
+                    throw std::runtime_error("Expected 'NODE', 'RELATIONSHIP', 'REL', 'VIEW', 'CONSTRAINT', or 'INDEX' after 'DROP'");
                 }
                 consume(TokenType::TYPE, "Expected 'TYPE' keyword");
                 
