@@ -1288,6 +1288,36 @@ namespace ragedb {
         size_t IntersectIdsCount(const std::vector<uint64_t> &sorted_ids, const std::vector<uint64_t> &sorted_ids2) const;
         size_t IntersectIdsCount(const uint64_t *A, const size_t lenA, const uint64_t *B, const size_t lenB) const;
 
+        struct Edge {
+            uint64_t src;
+            uint64_t dst;
+            double weight;
+        };
+
+        std::vector<Edge> GetGraphEdges(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+
+        std::map<uint64_t, double> PageRankPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted, double damping, uint64_t iterations, double tolerance);
+        std::map<uint64_t, double> EigenvectorCentralityPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted, uint64_t iterations, double tolerance);
+        std::map<uint64_t, double> BetweennessCentralityPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, double> DegreeCentralityPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted, Direction direction);
+        std::vector<std::tuple<uint64_t, uint64_t, double>> JaccardSimilarityPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::tuple<uint64_t, uint64_t, double>> CosineSimilarityPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::tuple<uint64_t, uint64_t, double>> AdamicAdarPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::tuple<uint64_t, uint64_t, double>> PreferentialAttachmentPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, uint64_t> InfomapPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, uint64_t> LouvainPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, uint64_t> LeidenPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, uint64_t> LabelPropagationPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::tuple<uint64_t, uint64_t, uint64_t>> TrianglesPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::tuple<uint64_t, uint64_t, uint64_t>> UniqueTrianglesPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, double> LocalClusteringCoefficientPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        double AverageClusteringCoefficientPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::pair<uint64_t, uint64_t>> ReachablePeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::map<uint64_t, uint64_t> WeaklyConnectedComponentsPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        bool IsConnectedPeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::vector<std::tuple<uint64_t, uint64_t, uint64_t>> DistancePeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+        std::pair<uint64_t, uint64_t> DiameterRangePeered(const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted);
+
         InnerType disambiguate(sol::object arg);
 
         sol::object NodeOverload(sol::this_state ts, sol::variadic_args args);

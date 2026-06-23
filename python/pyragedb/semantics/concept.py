@@ -248,7 +248,7 @@ class Concept:
             from .model import _active_model
             _active_model._register_pending_graph_algorithm(self, name, value)
             
-            is_rel = value.name in ("jaccard_similarity", "cosine_similarity", "adamic_adar", "preferential_attachment", "reachable", "distance")
+            is_rel = value.name in ("jaccard_similarity", "cosine_similarity", "adamic_adar", "preferential_attachment", "reachable", "distance", "triangle", "unique_triangle")
             from .concept import AttributeRef
             ref = AttributeRef(self, name, is_relationship=is_rel, target=self if is_rel else value.target_type)
             self._attributes[name] = ref

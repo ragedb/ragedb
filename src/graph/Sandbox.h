@@ -188,8 +188,29 @@ namespace ragedb {
 
       "ShortestPath",
       "ShortestWeightedPath",
+      "TriangleCount",
 
-      "TriangleCount"
+      "PageRank",
+      "EigenvectorCentrality",
+      "BetweennessCentrality",
+      "DegreeCentrality",
+      "JaccardSimilarity",
+      "CosineSimilarity",
+      "AdamicAdar",
+      "PreferentialAttachment",
+      "Infomap",
+      "Louvain",
+      "Leiden",
+      "LabelPropagation",
+      "Triangles",
+      "UniqueTriangles",
+      "LocalClusteringCoefficient",
+      "AverageClusteringCoefficient",
+      "Reachable",
+      "WeaklyConnectedComponents",
+      "IsConnected",
+      "Distance",
+      "DiameterRange"
     };
 
     inline static const std::vector<std::string> ALLOWED_LUA_FUNCTIONS = {

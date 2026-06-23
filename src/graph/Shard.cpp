@@ -480,6 +480,29 @@ namespace ragedb {
             [this](const std::vector<std::string> rel_types) { return this->TriangleCount(rel_types); }
         ));
 
+        // New sharded graph reasoning C++ algorithm bindings
+        lua.set_function("PageRank", &Shard::PageRankPeered, this);
+        lua.set_function("EigenvectorCentrality", &Shard::EigenvectorCentralityPeered, this);
+        lua.set_function("BetweennessCentrality", &Shard::BetweennessCentralityPeered, this);
+        lua.set_function("DegreeCentrality", &Shard::DegreeCentralityPeered, this);
+        lua.set_function("JaccardSimilarity", &Shard::JaccardSimilarityPeered, this);
+        lua.set_function("CosineSimilarity", &Shard::CosineSimilarityPeered, this);
+        lua.set_function("AdamicAdar", &Shard::AdamicAdarPeered, this);
+        lua.set_function("PreferentialAttachment", &Shard::PreferentialAttachmentPeered, this);
+        lua.set_function("Infomap", &Shard::InfomapPeered, this);
+        lua.set_function("Louvain", &Shard::LouvainPeered, this);
+        lua.set_function("Leiden", &Shard::LeidenPeered, this);
+        lua.set_function("LabelPropagation", &Shard::LabelPropagationPeered, this);
+        lua.set_function("Triangles", &Shard::TrianglesPeered, this);
+        lua.set_function("UniqueTriangles", &Shard::UniqueTrianglesPeered, this);
+        lua.set_function("LocalClusteringCoefficient", &Shard::LocalClusteringCoefficientPeered, this);
+        lua.set_function("AverageClusteringCoefficient", &Shard::AverageClusteringCoefficientPeered, this);
+        lua.set_function("Reachable", &Shard::ReachablePeered, this);
+        lua.set_function("WeaklyConnectedComponents", &Shard::WeaklyConnectedComponentsPeered, this);
+        lua.set_function("IsConnected", &Shard::IsConnectedPeered, this);
+        lua.set_function("Distance", &Shard::DistancePeered, this);
+        lua.set_function("DiameterRange", &Shard::DiameterRangePeered, this);
+
         lua.set_function("ShortestPath", sol::overload(
             [this](Node node, Node node2) { return this->ShortestPathViaLua(node.getId(), node2.getId()); },
             [this](Node node, Node node2, uint64_t max_hops) { return this->ShortestPathViaLua(node.getId(), node2.getId(), max_hops); },

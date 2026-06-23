@@ -62,11 +62,10 @@ class TestGraphAlgorithms(unittest.TestCase):
         self.assertIn("db/graph_pr_model/lua", lua_url)
 
         # Verify script contains key elements of PageRank implementation
-        self.assertIn("damping = 0.82", lua_script)
-        self.assertIn("iterations = 15", lua_script)
-        self.assertIn("next_pr", lua_script)
-        self.assertIn("get_neighbors", lua_script)
-        self.assertIn('NodeSetProperty(node_id, "rank", val)', lua_script)
+        self.assertIn("PageRank", lua_script)
+        self.assertIn("0.82", lua_script)
+        self.assertIn("15", lua_script)
+        self.assertIn('NodeSetProperty(tonumber(node_id), "rank"', lua_script)
 
     @patch("requests.post")
     def test_jaccard_similarity_and_wcc_lua_generation(self, mock_post):
@@ -99,12 +98,10 @@ class TestGraphAlgorithms(unittest.TestCase):
         wcc_script = lua_posts[1][1]
 
         self.assertIn("RelationshipAdd", sim_script)
-        self.assertIn("intersect_count", sim_script)
-        self.assertIn("union_count", sim_script)
+        self.assertIn("JaccardSimilarity", sim_script)
 
-        self.assertIn("union", wcc_script)
-        self.assertIn("find", wcc_script)
-        self.assertIn('NodeSetProperty(node_id, "comp"', wcc_script)
+        self.assertIn("WeaklyConnectedComponents", wcc_script)
+        self.assertIn('NodeSetProperty(tonumber(node_id), "comp"', wcc_script)
 
     @patch("requests.post")
     def test_triangles_lua_generation(self, mock_post):
@@ -137,10 +134,39 @@ class TestGraphAlgorithms(unittest.TestCase):
         uniq_tri_script = lua_posts[1][1]
 
         self.assertIn("RelationshipAdd", tri_script)
-        self.assertIn("unique = false", tri_script)
+        self.assertIn("Triangles", tri_script)
         self.assertIn("RelationshipAdd", uniq_tri_script)
-        self.assertIn("unique = true", uniq_tri_script)
-        self.assertIn("u_id < v_id and v_id < w_id", uniq_tri_script)
+        self.assertIn("UniqueTriangles", uniq_tri_script)
+
+    @patch("requests.post")
+    def test_leiden_lua_generation(self, mock_post):
+        mock_post.return_value = MagicMock(status_code=200, text="[]")
+
+        m = Model("graph_lei_model", graph="graph_lei_model")
+        User = m.Concept("User", identify_by={"id": Integer})
+        graph = Graph(m, directed=False, weighted=False, node_concept=User)
+
+        # Assign leiden
+        graph.Node.comm = graph.leiden()
+
+        self.assertEqual(len(m._pending_graph_algorithms), 1)
+
+        captured_posts = []
+        def mock_post_impl(url, data=None, **kwargs):
+            captured_posts.append((url, data))
+            return MagicMock(status_code=200, text="[]")
+        mock_post.side_effect = mock_post_impl
+
+        # Run select query
+        m.select(User.id, User.comm).to_dict()
+
+        # Check Lua posts
+        lua_posts = [p for p in captured_posts if p[0].endswith("/lua")]
+        self.assertEqual(len(lua_posts), 1)
+        
+        lei_script = lua_posts[0][1]
+        self.assertIn("Leiden", lei_script)
+        self.assertIn('NodeSetProperty(tonumber(node_id), "comm"', lei_script)
 
 if __name__ == "__main__":
     unittest.main()
