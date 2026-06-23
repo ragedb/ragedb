@@ -17,6 +17,7 @@
 #include "PlanBuilder.h"
 #include "StarJoinRewriter.h"
 #include "ExpressionEvaluator.h"
+#include "../GqlExecutor.h"
 #include <sstream>
 #include <unordered_set>
 #include <unordered_map>
@@ -304,12 +305,146 @@ static std::shared_ptr<PlanNode> build_match_plan(
     }
 }
 
+static bool is_query_cyclic(const std::vector<MatchStatement>& matches) {
+    std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> adj_list;
+    std::set<std::string> node_vars;
+    
+    for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
+        const auto& match = matches[m_idx];
+        if (match.is_search) continue;
+        const auto& pattern = match.pattern;
+        for (size_t i = 0; i < pattern.edges.size(); ++i) {
+            std::string u = pattern.nodes[i].variable;
+            std::string v = pattern.nodes[i+1].variable;
+            std::string e = pattern.edges[i].variable;
+            if (u.empty()) u = "_n_anon_" + std::to_string(m_idx) + "_" + std::to_string(i);
+            if (v.empty()) v = "_n_anon_" + std::to_string(m_idx) + "_" + std::to_string(i+1);
+            if (e.empty()) e = "_e_anon_" + std::to_string(m_idx) + "_" + std::to_string(i);
+            
+            node_vars.insert(u);
+            node_vars.insert(v);
+            adj_list[u].push_back({v, e});
+            adj_list[v].push_back({u, e});
+        }
+    }
+    
+    std::unordered_set<std::string> visited;
+    std::function<bool(const std::string&, const std::string&)> dfs = [&](const std::string& curr, const std::string& parent_edge) -> bool {
+        visited.insert(curr);
+        for (const auto& neighbor_info : adj_list[curr]) {
+            std::string neighbor = neighbor_info.first;
+            std::string edge_var = neighbor_info.second;
+            if (edge_var == parent_edge) continue;
+            if (visited.count(neighbor)) {
+                return true;
+            }
+            if (dfs(neighbor, edge_var)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    
+    for (const auto& node : node_vars) {
+        if (!visited.count(node)) {
+            if (dfs(node, "")) return true;
+        }
+    }
+    return false;
+}
+
 /**
  * @brief Helper function to build a plan for a single (non-union/set) GQL query.
  */
 static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, const GqlQuery& query) {
     std::set<std::string> incoming_vars;
-    std::shared_ptr<PlanNode> current = build_match_plan(graph, query.matches, 0, incoming_vars, nullptr);
+    std::shared_ptr<PlanNode> current;
+
+    bool use_honeycomb = false;
+    bool use_lftj = false;
+    if (is_query_cyclic(query.matches)) {
+        uint64_t total_rels = 0;
+        for (const auto& match : query.matches) {
+            if (match.is_search) continue;
+            for (const auto& edge : match.pattern.edges) {
+                std::string rel_type = "";
+                if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+                    rel_type = edge.label_expr->name;
+                }
+                if (!rel_type.empty()) {
+                    total_rels += graph.shard.local().RelationshipCount(rel_type);
+                } else {
+                    total_rels += graph.shard.local().AllRelationshipsCount();
+                }
+            }
+        }
+        if (GqlExecutor::force_enable_honeycomb) {
+            use_honeycomb = true;
+        } else if (GqlExecutor::force_enable_lftj) {
+            use_lftj = true;
+        } else {
+            if (total_rels > 10000) {
+                if (!GqlExecutor::force_disable_honeycomb) {
+                    use_honeycomb = true;
+                } else if (!GqlExecutor::force_disable_lftj) {
+                    use_lftj = true;
+                }
+            } else {
+                if (!GqlExecutor::force_disable_lftj) {
+                    use_lftj = true;
+                } else if (!GqlExecutor::force_disable_honeycomb) {
+                    use_honeycomb = true;
+                }
+            }
+        }
+    }
+
+    if (use_honeycomb) {
+        auto hc_node = std::make_shared<PlanNode>();
+        hc_node->operator_name = "HoneycombJoin";
+        hc_node->detail = "Offloaded parallel WCOJ grid-partitioned join";
+        hc_node->key = "honeycomb_join";
+        
+        std::set<std::string> vars;
+        for (const auto& match : query.matches) {
+            if (match.is_search) continue;
+            for (const auto& node : match.pattern.nodes) {
+                if (!node.variable.empty()) vars.insert(node.variable);
+            }
+            for (const auto& edge : match.pattern.edges) {
+                if (!edge.variable.empty()) vars.insert(edge.variable);
+            }
+        }
+        hc_node->variables = join_strings(vars, ", ");
+        for (const auto& v : vars) {
+            incoming_vars.insert(v);
+        }
+        current = hc_node;
+    } else if (use_lftj) {
+        auto lftj_node = std::make_shared<PlanNode>();
+        lftj_node->operator_name = "LftjJoin";
+        lftj_node->detail = "Reactor-local synchronous WCOJ join";
+        lftj_node->key = "lftj_join";
+        
+        std::set<std::string> vars;
+        for (const auto& match : query.matches) {
+            if (match.is_search) continue;
+            for (const auto& node : match.pattern.nodes) {
+                if (!node.variable.empty()) vars.insert(node.variable);
+            }
+            for (const auto& edge : match.pattern.edges) {
+                if (!edge.variable.empty()) vars.insert(edge.variable);
+            }
+        }
+        lftj_node->variables = join_strings(vars, ", ");
+        for (const auto& v : vars) {
+            incoming_vars.insert(v);
+        }
+        current = lftj_node;
+    } else {
+        current = build_match_plan(graph, query.matches, 0, incoming_vars, nullptr);
+    }
+
 
     if (!query.writes.empty()) {
         auto write_node = std::make_shared<PlanNode>();

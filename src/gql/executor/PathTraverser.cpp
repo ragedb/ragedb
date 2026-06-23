@@ -439,11 +439,18 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
                     final_node = hop.nodes.back();
                 }
 
-                if (next_node.label_expr && !matches_label_expr(final_node.getType(), next_node.label_expr)) {
+                    if (next_node.label_expr && !matches_label_expr(final_node.getType(), next_node.label_expr)) {
                     continue;
                 }
                 if (!matches_properties(final_node.getProperties(), next_node.properties) || !matches_filters(final_node.getProperties(), next_node.property_filters)) {
                     continue;
+                }
+
+                auto bound_it = row.bindings.find(next_node.variable);
+                if (bound_it != row.bindings.end() && bound_it->second.type == GqlValue::NODE) {
+                    if (bound_it->second.node->getId() != final_node.getId()) {
+                        continue;
+                    }
                 }
 
                 GqlRow new_row = row;
@@ -495,6 +502,13 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
                     }
                     if (!matches_properties(target_node.getProperties(), next_node.properties) || !matches_filters(target_node.getProperties(), next_node.property_filters)) {
                         return std::nullopt;
+                    }
+
+                    auto bound_it = row.bindings.find(next_node.variable);
+                    if (bound_it != row.bindings.end() && bound_it->second.type == GqlValue::NODE) {
+                        if (bound_it->second.node->getId() != target_node.getId()) {
+                            return std::nullopt;
+                        }
                     }
 
                     GqlRow new_row = row;

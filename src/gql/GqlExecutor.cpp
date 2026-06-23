@@ -31,6 +31,9 @@
 #include "executor/ProjectionPruner.h"
 #include "executor/StarJoinRewriter.h"
 #include "executor/PlanBuilder.h"
+#include "executor/HoneycombExecutor.h"
+#include "executor/LftjExecutor.h"
+
 #include <sstream>
 #include <unordered_set>
 #include <unordered_map>
@@ -385,7 +388,128 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
     IntermediateResult initial_res(std::vector<GqlRow>{ GqlRow{} });
     auto is_sorted_shared = std::make_shared<bool>(false);
 
-    return execute_match_chain_factorized(graph, query_ptr->matches, 0, std::move(initial_res), limit_val, pruner, sort_property, sort_ascending, sort_by_id, query_ptr)
+    auto is_query_cyclic = [](const std::vector<MatchStatement>& matches) -> bool {
+        std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> adj_list;
+        std::set<std::string> node_vars;
+        
+        for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
+            const auto& match = matches[m_idx];
+            if (match.is_search) continue;
+            const auto& pattern = match.pattern;
+            for (size_t i = 0; i < pattern.edges.size(); ++i) {
+                std::string u = pattern.nodes[i].variable;
+                std::string v = pattern.nodes[i+1].variable;
+                std::string e = pattern.edges[i].variable;
+                if (u.empty()) u = "_n_anon_" + std::to_string(m_idx) + "_" + std::to_string(i);
+                if (v.empty()) v = "_n_anon_" + std::to_string(m_idx) + "_" + std::to_string(i+1);
+                if (e.empty()) e = "_e_anon_" + std::to_string(m_idx) + "_" + std::to_string(i);
+                
+                node_vars.insert(u);
+                node_vars.insert(v);
+                adj_list[u].push_back({v, e});
+                adj_list[v].push_back({u, e});
+            }
+        }
+        
+        std::unordered_set<std::string> visited;
+        std::function<bool(const std::string&, const std::string&)> dfs = [&](const std::string& curr, const std::string& parent_edge) -> bool {
+            visited.insert(curr);
+            for (const auto& neighbor_info : adj_list[curr]) {
+                std::string neighbor = neighbor_info.first;
+                std::string edge_var = neighbor_info.second;
+                if (edge_var == parent_edge) continue;
+                if (visited.count(neighbor)) {
+                    return true;
+                }
+                if (dfs(neighbor, edge_var)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        
+        for (const auto& node : node_vars) {
+            if (!visited.count(node)) {
+                if (dfs(node, "")) return true;
+            }
+        }
+        return false;
+    };
+
+    bool use_honeycomb = false;
+    bool use_lftj = false;
+    if (is_query_cyclic(query_ptr->matches)) {
+        uint64_t total_rels = 0;
+        for (const auto& match : query_ptr->matches) {
+            if (match.is_search) continue;
+            for (const auto& edge : match.pattern.edges) {
+                std::string rel_type = "";
+                if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+                    rel_type = edge.label_expr->name;
+                }
+                if (!rel_type.empty()) {
+                    total_rels += graph.shard.local().RelationshipCount(rel_type);
+                } else {
+                    total_rels += graph.shard.local().AllRelationshipsCount();
+                }
+            }
+        }
+        if (GqlExecutor::force_enable_honeycomb) {
+            use_honeycomb = true;
+        } else if (GqlExecutor::force_enable_lftj) {
+            use_lftj = true;
+        } else {
+            if (total_rels > 10000) {
+                if (!GqlExecutor::force_disable_honeycomb) {
+                    use_honeycomb = true;
+                } else if (!GqlExecutor::force_disable_lftj) {
+                    use_lftj = true;
+                }
+            } else {
+                if (!GqlExecutor::force_disable_lftj) {
+                    use_lftj = true;
+                } else if (!GqlExecutor::force_disable_honeycomb) {
+                    use_honeycomb = true;
+                }
+            }
+        }
+    }
+
+    auto hc_start = std::chrono::steady_clock::now();
+    auto matched_fut = [&]() {
+        if (use_honeycomb) {
+            return HoneycombExecutor::execute(graph, query_ptr->matches, limit_val)
+            .then([query_ptr, hc_start](IntermediateResult res) {
+                if (query_ptr && query_ptr->profile) {
+                    auto end = std::chrono::steady_clock::now();
+                    auto node = query_ptr->plan_nodes["honeycomb_join"];
+                    if (node) {
+                        node->actual_rows = res.rows.size();
+                        node->time_ms = std::chrono::duration<double, std::milli>(end - hc_start).count();
+                    }
+                }
+                return res;
+            });
+        } else if (use_lftj) {
+            return LftjExecutor::execute(graph, query_ptr->matches, limit_val)
+            .then([query_ptr, hc_start](IntermediateResult res) {
+                if (query_ptr && query_ptr->profile) {
+                    auto end = std::chrono::steady_clock::now();
+                    auto node = query_ptr->plan_nodes["lftj_join"];
+                    if (node) {
+                        node->actual_rows = res.rows.size();
+                        node->time_ms = std::chrono::duration<double, std::milli>(end - hc_start).count();
+                    }
+                }
+                return res;
+            });
+        } else {
+            return execute_match_chain_factorized(graph, query_ptr->matches, 0, std::move(initial_res), limit_val, pruner, sort_property, sort_ascending, sort_by_id, query_ptr);
+        }
+    }();
+
+    return matched_fut
+
     .then([&graph, query_ptr, is_sorted_shared](IntermediateResult matched_res) {
         *is_sorted_shared = matched_res.is_sorted;
         matched_res.ensure_flat();

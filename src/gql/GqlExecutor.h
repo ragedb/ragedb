@@ -25,6 +25,10 @@ namespace ragedb::gql {
 
 class GqlExecutor {
 public:
+    inline static bool force_disable_honeycomb = false;
+    inline static bool force_enable_honeycomb = false;
+    inline static bool force_enable_lftj = false;
+    inline static bool force_disable_lftj = false;
     static seastar::future<std::string> execute(ragedb::Graph& graph, GqlQuery query);
     static seastar::future<std::string> execute(ragedb::Graph& graph, const std::string& query_str);
 };

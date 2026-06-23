@@ -25,6 +25,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlExecutorComplexTests.cpp
         gql/GqlExecutorSubqueryTests.cpp
         gql/GqlExecutorExplainProfileTests.cpp
+        gql/GqlExecutorHoneycombTests.cpp
         gql/GqlExecutorFtsTests.cpp
         gql/GqlExecutorShortestPathTests.cpp
         gql/GqlExecutorKHopTests.cpp
@@ -65,6 +66,8 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/executor/ProjectionPruner.cpp ../src/gql/executor/ProjectionPruner.h
         ../src/gql/executor/StarJoinRewriter.cpp ../src/gql/executor/StarJoinRewriter.h
         ../src/gql/executor/PlanBuilder.cpp ../src/gql/executor/PlanBuilder.h
+        ../src/gql/executor/HoneycombExecutor.cpp ../src/gql/executor/HoneycombExecutor.h
+        ../src/gql/executor/LftjExecutor.cpp ../src/gql/executor/LftjExecutor.h
         ../src/gql/GqlCatalog.cpp ../src/gql/GqlCatalog.h
         ../src/gql/GqlTypechecker.cpp ../src/gql/GqlTypechecker.h
         ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
@@ -131,6 +134,8 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/executor/ProjectionPruner.cpp ../src/gql/executor/ProjectionPruner.h
         ../src/gql/executor/StarJoinRewriter.cpp ../src/gql/executor/StarJoinRewriter.h
         ../src/gql/executor/PlanBuilder.cpp ../src/gql/executor/PlanBuilder.h
+        ../src/gql/executor/HoneycombExecutor.cpp ../src/gql/executor/HoneycombExecutor.h
+        ../src/gql/executor/LftjExecutor.cpp ../src/gql/executor/LftjExecutor.h
         ../src/gql/GqlCatalog.cpp ../src/gql/GqlCatalog.h
         ../src/gql/GqlTypechecker.cpp ../src/gql/GqlTypechecker.h
         ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
