@@ -71,7 +71,9 @@ namespace ragedb {
         }
 
         bool improvement = true;
-        while (improvement) {
+        int passes = 0;
+        while (improvement && passes < 15) {
+            passes++;
             improvement = false;
             for (uint64_t u : nodes) {
                 uint64_t best_comm = comm[u];

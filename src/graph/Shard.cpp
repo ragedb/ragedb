@@ -481,27 +481,108 @@ namespace ragedb {
         ));
 
         // New sharded graph reasoning C++ algorithm bindings
-        lua.set_function("PageRank", &Shard::PageRankPeered, this);
-        lua.set_function("EigenvectorCentrality", &Shard::EigenvectorCentralityPeered, this);
-        lua.set_function("BetweennessCentrality", &Shard::BetweennessCentralityPeered, this);
-        lua.set_function("DegreeCentrality", &Shard::DegreeCentralityPeered, this);
-        lua.set_function("JaccardSimilarity", &Shard::JaccardSimilarityPeered, this);
-        lua.set_function("CosineSimilarity", &Shard::CosineSimilarityPeered, this);
-        lua.set_function("AdamicAdar", &Shard::AdamicAdarPeered, this);
-        lua.set_function("PreferentialAttachment", &Shard::PreferentialAttachmentPeered, this);
-        lua.set_function("Infomap", &Shard::InfomapPeered, this);
-        lua.set_function("Louvain", &Shard::LouvainPeered, this);
-        lua.set_function("Leiden", &Shard::LeidenPeered, this);
-        lua.set_function("LabelPropagation", &Shard::LabelPropagationPeered, this);
-        lua.set_function("Triangles", &Shard::TrianglesPeered, this);
-        lua.set_function("UniqueTriangles", &Shard::UniqueTrianglesPeered, this);
-        lua.set_function("LocalClusteringCoefficient", &Shard::LocalClusteringCoefficientPeered, this);
+        // New sharded graph reasoning C++ algorithm bindings
+        lua.set_function("PageRank", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted, double damping, uint64_t iterations, double tolerance) {
+            return sol::as_table(this->PageRankPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted, damping, iterations, tolerance));
+        });
+        lua.set_function("EigenvectorCentrality", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted, uint64_t iterations, double tolerance) {
+            return sol::as_table(this->EigenvectorCentralityPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted, iterations, tolerance));
+        });
+        lua.set_function("BetweennessCentrality", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->BetweennessCentralityPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
+        lua.set_function("DegreeCentrality", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted, Direction direction) {
+            return sol::as_table(this->DegreeCentralityPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted, direction));
+        });
+        lua.set_function("JaccardSimilarity", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->JaccardSimilarityPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<double>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({static_cast<double>(std::get<0>(tup)), static_cast<double>(std::get<1>(tup)), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<double>>>(nested);
+        });
+        lua.set_function("CosineSimilarity", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->CosineSimilarityPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<double>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({static_cast<double>(std::get<0>(tup)), static_cast<double>(std::get<1>(tup)), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<double>>>(nested);
+        });
+        lua.set_function("AdamicAdar", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->AdamicAdarPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<double>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({static_cast<double>(std::get<0>(tup)), static_cast<double>(std::get<1>(tup)), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<double>>>(nested);
+        });
+        lua.set_function("PreferentialAttachment", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->PreferentialAttachmentPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<double>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({static_cast<double>(std::get<0>(tup)), static_cast<double>(std::get<1>(tup)), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<double>>>(nested);
+        });
+        lua.set_function("Infomap", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->InfomapPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
+        lua.set_function("Louvain", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->LouvainPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
+        lua.set_function("Leiden", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->LeidenPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
+        lua.set_function("LabelPropagation", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->LabelPropagationPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
+        lua.set_function("Triangles", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->TrianglesPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<uint64_t>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({std::get<0>(tup), std::get<1>(tup), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<uint64_t>>>(nested);
+        });
+        lua.set_function("UniqueTriangles", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->UniqueTrianglesPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<uint64_t>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({std::get<0>(tup), std::get<1>(tup), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<uint64_t>>>(nested);
+        });
+        lua.set_function("LocalClusteringCoefficient", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->LocalClusteringCoefficientPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
         lua.set_function("AverageClusteringCoefficient", &Shard::AverageClusteringCoefficientPeered, this);
-        lua.set_function("Reachable", &Shard::ReachablePeered, this);
-        lua.set_function("WeaklyConnectedComponents", &Shard::WeaklyConnectedComponentsPeered, this);
+        lua.set_function("Reachable", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::nested<std::vector<std::pair<uint64_t, uint64_t>>>(this->ReachablePeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
+        lua.set_function("WeaklyConnectedComponents", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::as_table(this->WeaklyConnectedComponentsPeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
         lua.set_function("IsConnected", &Shard::IsConnectedPeered, this);
-        lua.set_function("Distance", &Shard::DistancePeered, this);
-        lua.set_function("DiameterRange", &Shard::DiameterRangePeered, this);
+        lua.set_function("Distance", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            auto original = this->DistancePeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
+            std::vector<std::vector<uint64_t>> nested;
+            nested.reserve(original.size());
+            for (const auto& tup : original) {
+                nested.push_back({std::get<0>(tup), std::get<1>(tup), std::get<2>(tup)});
+            }
+            return sol::nested<std::vector<std::vector<uint64_t>>>(nested);
+        });
+        lua.set_function("DiameterRange", [this](const std::string& rel_type, const std::string& edge_concept, const std::string& src_rel, const std::string& dst_rel, const std::string& weight_prop, bool directed, bool weighted) {
+            return sol::nested<std::pair<uint64_t, uint64_t>>(this->DiameterRangePeered(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted));
+        });
 
         lua.set_function("ShortestPath", sol::overload(
             [this](Node node, Node node2) { return this->ShortestPathViaLua(node.getId(), node2.getId()); },
