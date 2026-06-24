@@ -490,7 +490,7 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
 
     bool use_honeycomb = false;
     bool use_lftj = false;
-    if (is_query_cyclic(query_ptr->matches)) {
+    if (is_query_cyclic(query_ptr->matches) && query_ptr->count_multiplication_factor <= 1) {
         uint64_t total_rels = 0;
         for (const auto& match : query_ptr->matches) {
             if (match.is_search) continue;

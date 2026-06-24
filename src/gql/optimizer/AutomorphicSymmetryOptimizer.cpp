@@ -122,23 +122,55 @@ void AutomorphicSymmetryOptimizer::automorphic_symmetry_pass(GqlQuery& query) {
     }
     
     if (has_12 && has_23 && has_31) {
-        // Enforce v1 < v2 AND v2 < v3 canonical ordering
-        auto lt_12 = std::make_unique<BinaryOpExpr>(
-            BinaryOpKind::LT,
-            std::make_unique<VariableExpr>(v1),
-            std::make_unique<VariableExpr>(v2)
-        );
-        auto lt_23 = std::make_unique<BinaryOpExpr>(
-            BinaryOpKind::LT,
-            std::make_unique<VariableExpr>(v2),
-            std::make_unique<VariableExpr>(v3)
-        );
-        query.where_expr = std::make_unique<BinaryOpExpr>(
-            BinaryOpKind::AND,
-            std::move(lt_12),
-            std::move(lt_23)
-        );
-        query.count_multiplication_factor = 6;
+        bool injected_12 = false;
+        bool injected_13 = false;
+        std::set<std::string> seen_vars;
+        
+        for (auto& match : query.matches) {
+            for (auto& node : match.pattern.nodes) {
+                seen_vars.insert(node.variable);
+                
+                if (!injected_12 && seen_vars.count(v1) && seen_vars.count(v2)) {
+                    auto lt_12 = std::make_unique<BinaryOpExpr>(
+                        BinaryOpKind::LT,
+                        std::make_unique<VariableExpr>(v1),
+                        std::make_unique<VariableExpr>(v2)
+                    );
+                    if (node.where_expr) {
+                        node.where_expr = std::make_shared<BinaryOpExpr>(
+                            BinaryOpKind::AND,
+                            node.where_expr->clone(),
+                            std::move(lt_12)
+                        );
+                    } else {
+                        node.where_expr = std::move(lt_12);
+                    }
+                    injected_12 = true;
+                }
+                
+                if (!injected_13 && seen_vars.count(v1) && seen_vars.count(v3)) {
+                    auto lt_13 = std::make_unique<BinaryOpExpr>(
+                        BinaryOpKind::LT,
+                        std::make_unique<VariableExpr>(v1),
+                        std::make_unique<VariableExpr>(v3)
+                    );
+                    if (node.where_expr) {
+                        node.where_expr = std::make_shared<BinaryOpExpr>(
+                            BinaryOpKind::AND,
+                            node.where_expr->clone(),
+                            std::move(lt_13)
+                        );
+                    } else {
+                        node.where_expr = std::move(lt_13);
+                    }
+                    injected_13 = true;
+                }
+            }
+        }
+        
+        if (injected_12 && injected_13) {
+            query.count_multiplication_factor = 3;
+        }
     }
 }
 

@@ -45,8 +45,7 @@ struct PerformanceGraphStopGuard {
     }
 };
 
-inline void run_bench(Graph& graph, const std::string& name, const std::string& query, const std::string& unopt_query) {
-    const int iterations = 50;
+inline void run_bench(Graph& graph, const std::string& name, const std::string& query, const std::string& unopt_query, int iterations = 50) {
 
     // 1. Cold Semantic (Cache Miss)
     auto start_cold = std::chrono::steady_clock::now();

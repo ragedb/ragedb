@@ -31,18 +31,20 @@ TEST_CASE("GQL Optimizer Phase 10: Automorphic Graph Symmetry Deduplication", "[
 
         GqlOptimizer::optimize(query);
 
-        REQUIRE(query.count_multiplication_factor == 6);
-        REQUIRE(query.where_expr != nullptr);
-        REQUIRE(query.where_expr->kind == ExpressionKind::BINARY_OP);
+        REQUIRE(query.count_multiplication_factor == 3);
+        REQUIRE(query.where_expr == nullptr);
         
-        auto* bin = static_cast<BinaryOpExpr*>(query.where_expr.get());
-        REQUIRE(bin->op == BinaryOpKind::AND);
+        const auto& node_b = query.matches[0].pattern.nodes[1];
+        REQUIRE(node_b.where_expr != nullptr);
+        REQUIRE(node_b.where_expr->kind == ExpressionKind::BINARY_OP);
+        auto* lt_b = static_cast<BinaryOpExpr*>(node_b.where_expr.get());
+        REQUIRE(lt_b->op == BinaryOpKind::LT);
         
-        auto* left = static_cast<BinaryOpExpr*>(bin->left.get());
-        auto* right = static_cast<BinaryOpExpr*>(bin->right.get());
-        
-        REQUIRE(left->op == BinaryOpKind::LT);
-        REQUIRE(right->op == BinaryOpKind::LT);
+        const auto& node_c = query.matches[0].pattern.nodes[2];
+        REQUIRE(node_c.where_expr != nullptr);
+        REQUIRE(node_c.where_expr->kind == ExpressionKind::BINARY_OP);
+        auto* lt_c = static_cast<BinaryOpExpr*>(node_c.where_expr.get());
+        REQUIRE(lt_c->op == BinaryOpKind::LT);
     }
 
     SECTION("Case 2: Comma-separated homogeneous directed triangle cycle count query") {
@@ -54,8 +56,10 @@ TEST_CASE("GQL Optimizer Phase 10: Automorphic Graph Symmetry Deduplication", "[
 
         GqlOptimizer::optimize(query);
 
-        REQUIRE(query.count_multiplication_factor == 6);
-        REQUIRE(query.where_expr != nullptr);
+        REQUIRE(query.count_multiplication_factor == 3);
+        REQUIRE(query.where_expr == nullptr);
+        REQUIRE(query.matches[0].pattern.nodes[1].where_expr != nullptr);
+        REQUIRE(query.matches[1].pattern.nodes[1].where_expr != nullptr);
     }
 
     SECTION("Case 3: Bypass if it is not a count query") {

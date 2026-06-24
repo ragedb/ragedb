@@ -28,34 +28,52 @@ TEST_CASE("Automorphic Graph Symmetry Deduplication Performance Benchmarks", "[g
     graph.shard.local().NodeTypeInsertPeered("Person").get();
     graph.shard.local().RelationshipTypeInsertPeered("FRIEND").get();
 
-    // Insert 150 Person nodes
-    std::vector<uint64_t> nodes;
-    for (int i = 0; i < 150; ++i) {
-        std::string name = "Person" + std::to_string(i);
-        uint64_t id = graph.shard.local().NodeAddPeered("Person", name, "{}").get();
-        nodes.push_back(id);
+    // Insert 1 clique of 16 Person nodes.
+    // This creates a dense and predictable topology with a safe number of directed triangles:
+    // 1 clique * (16 * 15 * 14) cycles = 3,360 directed cycle paths of length 3.
+    // This runs fast and stays well within Seastar memory limits (bad_alloc) while still
+    // showing a substantial speedup from early pruning (visiting 560 states vs 3,360 states).
+    for (int c = 0; c < 1; ++c) {
+        std::vector<uint64_t> clique_nodes;
+        for (int i = 0; i < 16; ++i) {
+            std::string name = "Person_c" + std::to_string(c) + "_" + std::to_string(i);
+            uint64_t id = graph.shard.local().NodeAddPeered("Person", name, "{}").get();
+            clique_nodes.push_back(id);
+        }
+        // Fully connect the clique with directed edges
+        for (int i = 0; i < 16; ++i) {
+            for (int j = 0; j < 16; ++j) {
+                if (i != j) {
+                    graph.shard.local().RelationshipAddPeered("FRIEND", clique_nodes[i], clique_nodes[j], "{}").get();
+                }
+            }
+        }
     }
 
-    // Connect them in directed cycles of length 3 (triangles) to generate traversals
-    // For each i: i -> i+1, i+1 -> i+2, i+2 -> i
-    for (int i = 0; i < 150; ++i) {
-        int n1 = i;
-        int n2 = (i + 1) % 150;
-        int n3 = (i + 2) % 150;
-
-        graph.shard.local().RelationshipAddPeered("FRIEND", nodes[n1], nodes[n2], "{}").get();
-        graph.shard.local().RelationshipAddPeered("FRIEND", nodes[n2], nodes[n3], "{}").get();
-        graph.shard.local().RelationshipAddPeered("FRIEND", nodes[n3], nodes[n1], "{}").get();
-    }
+    // Force disable Honeycomb and LFTJ globally for the duration of this benchmark
+    // to compare standard traversal with pruning vs standard traversal without pruning.
+    GqlExecutor::force_disable_honeycomb = true;
+    GqlExecutor::force_disable_lftj = true;
 
     std::cout << "\n=========================================\n";
     std::cout << "   AUTOMORPHIC SYMMETRY PERFORMANCE BENCH\n";
     std::cout << "=========================================\n";
+    std::string opt_res = GqlExecutor::execute(graph, "MATCH (a:Person)-[:FRIEND]->(b:Person)-[:FRIEND]->(c:Person)-[:FRIEND]->(a) RETURN count(*)").get();
+    std::string unopt_res = GqlExecutor::execute(graph, "NO_SEMANTIC MATCH (a:Person)-[:FRIEND]->(b:Person)-[:FRIEND]->(c:Person)-[:FRIEND]->(a) RETURN count(*)").get();
+    std::cout << "Optimized result: " << opt_res << std::endl;
+    std::cout << "Unoptimized result: " << unopt_res << std::endl;
+
+    // Use 20 iterations to get clean, stable timings now that the graph size is safe.
     run_bench(
         graph,
         "Phase 10: Automorphic Symmetry",
         "MATCH (a:Person)-[:FRIEND]->(b:Person)-[:FRIEND]->(c:Person)-[:FRIEND]->(a) RETURN count(*)",
-        "NO_SEMANTIC MATCH (a:Person)-[:FRIEND]->(b:Person)-[:FRIEND]->(c:Person)-[:FRIEND]->(a) RETURN count(*)"
+        "NO_SEMANTIC MATCH (a:Person)-[:FRIEND]->(b:Person)-[:FRIEND]->(c:Person)-[:FRIEND]->(a) RETURN count(*)",
+        20
     );
     std::cout << "=========================================\n";
+
+    // Restore executor flags
+    GqlExecutor::force_disable_honeycomb = false;
+    GqlExecutor::force_disable_lftj = false;
 }

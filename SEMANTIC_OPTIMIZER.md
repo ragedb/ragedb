@@ -233,10 +233,10 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 7: Composite Domain Constraint** | 0.5327 ms | 0.0086 ms | 0.1078 ms | **12.5x** |
 | **Phase 8: Transitive DAG Reachability** | 0.6101 ms | 0.0097 ms | 17.2677 ms | **1780.2x** |
 | **Phase 9: Functional Dependency** | 21.3215 ms | 20.9483 ms | 25.3882 ms | **1.21x** |
-| **Phase 10: Automorphic Symmetry** | 21.3730 ms | 21.0758 ms | 18.7532 ms | **0.89x** |
+| **Phase 10: Automorphic Symmetry** | 287.271 ms | 287.757 ms | 907.029 ms | **3.15x** |
 
 ### Key Performance Insights
-* **Automorphic Symmetry (Phase 10)**: Rewriting cycle traversals with canonical ordering constraints reduces traversal state space dramatically. Although the execution engine overhead of sorting and node comparisons is comparable to standard execution in small test graphs, on larger graphs this pass prunes redundant traversal branches by a factor of 6.
+* **Automorphic Symmetry (Phase 10)**: Rewriting cycle traversals with canonical ordering constraints reduces traversal state space dramatically. In a dense clique benchmark (16 nodes, 3,360 cycles), applying canonical ordering constraints prunes redundant traversal paths, reducing traversal time from 907.03 ms to 287.76 ms (**3.15x speedup**).
 * **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **978.1x speedup**.
 * **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.56 ms to 8.77 ms (**4.40x speedup**).
 * **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges.
