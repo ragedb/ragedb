@@ -21,7 +21,7 @@ graph TD
     subgraph RageDB C++ Server Side
         G --> H[Parse GQL Query AST]
         H --> I[Semantic Query Optimizer SQO]
-        I -->|Phase 1-15 Rewrites & Pruning| J[Optimized Query Plan]
+        I -->|Phase 1-21 Rewrites & Pruning| J[Optimized Query Plan]
         J -->|Cache Plan| K[GqlQueryCache]
         J --> L[Sharded Traversal & Join Execution]
         L --> M[Assemble Row Result JSON]
@@ -103,7 +103,7 @@ If a query relies on graph metrics (e.g., `pagerank`, `weakly_connected_componen
 
 ## 5. Server-side Parsing & Semantic Query Optimization (C++)
 
-Once the compiled GQL query string is received by the C++ server via `/db/{graph}/gql`, it is parsed into an AST. If the query does not contain bypass hints (`NO_SEMANTIC` or `/* no_semantic */`), it is passed through the **Semantic Query Optimizer (SQO)**, consisting of 15 specialized C++ passes (configured in [src/gql/optimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer)):
+Once the compiled GQL query string is received by the C++ server via `/db/{graph}/gql`, it is parsed into an AST. If the query does not contain bypass hints (`NO_SEMANTIC` or `/* no_semantic */`), it is passed through the **Semantic Query Optimizer (SQO)**, consisting of 21 specialized C++ passes (configured in [src/gql/optimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer)):
 
 1.  **Phase 1: Range Contradiction Pruning** ([ContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/ContradictionPruner.cpp)): Identifies whether a variable's bounds (e.g., `age = -5`) conflict with impossible regions defined in check constraints, setting `no_op = true` if unsatisfiable.
 2.  **Phase 2: Join Elimination** ([JoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/JoinEliminator.cpp)): Uses mandatory schema constraints to prune redundant edge traversal hops where target nodes are not projected or filtered.
@@ -121,6 +121,12 @@ Once the compiled GQL query string is received by the C++ server via `/db/{graph
 14. **Phase 13: Degree-Constraint Pruning** ([DegreeConstraintPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DegreeConstraintPruner.cpp)): Rewrites pattern size expressions like `size((a)-[:FRIEND]->())` into virtual degree property lookups (`a._deg_a_FRIEND_OUT`) fetched directly from node metadata.
 15. **Phase 14: Unique Constraint Join Elimination** ([UniqueJoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/UniqueJoinEliminator.cpp)): Prunes optional matches along relationships constrained to be unique when the target node is unreferenced elsewhere in the query.
 16. **Phase 15: Limit & Top-K Pushdown** ([LimitPushdownOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.cpp)): Propagates global `LIMIT` boundaries into individual match and traversal steps to allow early traversal termination.
+17. **Phase 16: Transitive Filter Propagation** ([TransitiveFilterPropagator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveFilterPropagator.cpp)): Walks the query filter AST to locate node variable equalities, building equivalence partitions and copying/propagating filters across all variables in the same partition.
+18. **Phase 17: Relationship Contradiction Pruning** ([EdgeContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EdgeContradictionPruner.cpp)): Scans relationship pattern property filters and checks them against database check constraints to short-circuit unsatisfiable paths.
+19. **Phase 18: Anti-Semi-Join Promotion** ([AntiSemiJoinPromoter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AntiSemiJoinPromoter.cpp)): Identifies `OPTIONAL MATCH` blocks filtered with `IS NULL` on the target variable and converts them to anti-semi-joins (`WHERE NOT EXISTS { MATCH ... }`).
+20. **Phase 19: Equality Join Elimination** ([EqualityJoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EqualityJoinEliminator.cpp)): Merges duplicate variables in match pattern paths that traverse identical relationship types and are constrained by targets equality.
+21. **Phase 20: Disjoint Concept Path Pruning** ([DisjointConceptPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DisjointConceptPruner.cpp)): Identifies variable-length path taxonomy queries between disjoint concepts and short-circuits them early.
+22. **Phase 21: Direction Swap Optimization** ([DirectionSwapOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DirectionSwapOptimizer.cpp)): Rewrites pattern traversal directions to start at the variable with the lowest size/selectivity estimate based on unique and property index filters.
 
 ### Query Cache Integration
 To prevent compilation and optimization passes from running on every request, the pre-optimized AST is cached in the thread-local `GqlQueryCache`. Hot queries skip parsing and optimization entirely, going straight to execution. The cache is automatically flushed on reactor threads when catalog schema changes occur (e.g., `CREATE CONSTRAINT` or `DROP CONSTRAINT`).
