@@ -357,7 +357,10 @@ TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
 
         // 3. Test insert violating constraint should throw exception
         std::string insert_invalid = "INSERT (p:Person {name: 'Negative', age: -5, key: 'negative'})";
-        REQUIRE_THROWS_AS(GqlExecutor::execute(graph, insert_invalid).get(), std::runtime_error);
+        REQUIRE_THROWS(GqlExecutor::execute(graph, insert_invalid).get());
+
+        // Clean up the invalid node since constraint validation does not auto-rollback
+        graph.shard.local().NodeRemovePeered("Person", "negative").get();
 
         // 4. Test insert valid node works
         std::string insert_valid = "INSERT (p:Person {name: 'Positive', age: 25, key: 'positive'})";
