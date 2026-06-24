@@ -93,11 +93,11 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - If a relationship type is constrained to be at most 1-to-1 or $N$-to-1 (e.g. max-cardinality of outgoing edges of type $R$ is $C$), then the size of the image set is bounded: $|R(u)| \le C$.
 * **GQL Query**:
   ```gql
-  MATCH (p:Person)-[:MARRIED_TO]->(spouse:Person) RETURN p.name, spouse.name
+  MATCH (s:Shipment)-[:SHIPPED_FROM]->(w:Warehouse) RETURN s.name, w.name
   ```
 * **Optimizer Mapping**:
-  - The optimizer detects cardinality constraints registered in the virtual catalog (e.g. `CREATE CONSTRAINT PersonSpouseMaxCard AS MATCH (p:Person)-[:MARRIED_TO]->(s1) MATCH (p)-[:MARRIED_TO]->(s2) WHERE s1 != s2 RETURN p` which implies MARRIED_TO outdegree $\le 1$).
-  - It sets `max_cardinality_limit = 1` on the MARRIED_TO pattern edge.
+  - The optimizer detects cardinality constraints registered in the virtual catalog (e.g. `CREATE CONSTRAINT ShipmentOriginMaxCard AS MATCH (s:Shipment)-[:SHIPPED_FROM]->(w1) MATCH (s)-[:SHIPPED_FROM]->(w2) WHERE w1 != w2 RETURN s` which implies `SHIPPED_FROM` outdegree $\le 1$).
+  - It sets `max_cardinality_limit = 1` on the `SHIPPED_FROM` pattern edge.
   - The traverser truncates neighbor lists to 1 when scanning edges, short-circuiting traversal and avoiding redundant shard communications.
 * **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_cardinality_limit_pass`) and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`traverse_step` and `traverse_var_len_async`).
 
@@ -158,4 +158,4 @@ The following benchmark table compares the execution latency of GQL queries opti
 * **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.65 ms to 8.84 ms (**4.4x speedup**).
 * **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges. This avoids performing **9,995 property lookups** and **9,995 multiplication operations**, saving **9.14 ms** of CPU execution time per query (**2.16x speedup**).
 * **Algebraic Path Count Rewrite (Phase 4.5)**: Rewriting a 3-hop path count query into iterative degree propagation bypasses path/walk expansion completely. For 10,000 paths across 3 hops, this reduces intermediate rows from **10,000** to **5** (one per starting person), avoiding join allocation, traversal state management, and projection overhead. This results in a massive **14.3x speedup**, slashing execution latency from 164.74 ms to 11.47 ms (**saving 153.26 ms**).
-* **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., at most 1 spouse or 1 shipping location) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 relationships in the test graph, this cuts the active traversal branch size to 1, leading to a **69.67x speedup**, slashing latency from 355.43 ms to 5.10 ms.
+* **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., a shipment having at most 1 origin warehouse) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 relationships in the test graph, this cuts the active traversal branch size to 1, leading to a **69.67x speedup**, slashing latency from 355.43 ms to 5.10 ms.
