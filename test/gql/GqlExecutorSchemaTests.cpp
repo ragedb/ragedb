@@ -360,7 +360,8 @@ TEST_CASE("GQL Execution Schema DDL Tests", "[gql_executor_schema]") {
         REQUIRE_THROWS(GqlExecutor::execute(graph, insert_invalid).get());
 
         // Clean up the invalid node since constraint validation does not auto-rollback
-        graph.shard.local().NodeRemovePeered("Person", "negative").get();
+        bool removed = graph.shard.local().NodeRemovePeered("Person", "negative").get();
+        std::cout << "DEBUG: Node removed: " << std::boolalpha << removed << std::endl;
 
         // 4. Test insert valid node works
         std::string insert_valid = "INSERT (p:Person {name: 'Positive', age: 25, key: 'positive'})";

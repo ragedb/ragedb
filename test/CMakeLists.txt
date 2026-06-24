@@ -40,7 +40,18 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/optimizer_performance/TransitiveReachabilityPerformanceTests.cpp
         gql/optimizer_performance/FunctionalDependencyPerformanceTests.cpp
         gql/optimizer_performance/AutomorphicSymmetryPerformanceTests.cpp
-        gql/optimizer_performance/Phase11_15PerformanceTests.cpp
+        gql/optimizer_performance/SchemaReachabilityPerformanceTests.cpp
+        gql/optimizer_performance/OptionalMatchPerformanceTests.cpp
+        gql/optimizer_performance/DegreeConstraintPerformanceTests.cpp
+        gql/optimizer_performance/UniqueJoinPerformanceTests.cpp
+        gql/optimizer_performance/LimitPushdownPerformanceTests.cpp
+        gql/optimizer/Phase16_21OptimizerTests.cpp
+        gql/optimizer_performance/TransitiveFilterPerformanceTests.cpp
+        gql/optimizer_performance/EdgeContradictionPerformanceTests.cpp
+        gql/optimizer_performance/AntiSemiJoinPerformanceTests.cpp
+        gql/optimizer_performance/EqualityJoinPerformanceTests.cpp
+        gql/optimizer_performance/DisjointConceptPerformanceTests.cpp
+        gql/optimizer_performance/DirectionSwapPerformanceTests.cpp
         gql/GqlExecutorReadTests.cpp
         gql/GqlExecutorComplexTests.cpp
         gql/GqlExecutorSubqueryTests.cpp
@@ -92,6 +103,12 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/optimizer/SubsumptionPruner.cpp ../src/gql/optimizer/SubsumptionPruner.h
         ../src/gql/optimizer/CardinalityShortCircuiter.cpp ../src/gql/optimizer/CardinalityShortCircuiter.h
         ../src/gql/optimizer/AlgebraicRewriter.cpp ../src/gql/optimizer/AlgebraicRewriter.h
+        ../src/gql/optimizer/TransitiveFilterPropagator.cpp ../src/gql/optimizer/TransitiveFilterPropagator.h
+        ../src/gql/optimizer/EdgeContradictionPruner.cpp ../src/gql/optimizer/EdgeContradictionPruner.h
+        ../src/gql/optimizer/AntiSemiJoinPromoter.cpp ../src/gql/optimizer/AntiSemiJoinPromoter.h
+        ../src/gql/optimizer/EqualityJoinEliminator.cpp ../src/gql/optimizer/EqualityJoinEliminator.h
+        ../src/gql/optimizer/DisjointConceptPruner.cpp ../src/gql/optimizer/DisjointConceptPruner.h
+        ../src/gql/optimizer/DirectionSwapOptimizer.cpp ../src/gql/optimizer/DirectionSwapOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
         ../src/gql/GqlQueryCache.cpp ../src/gql/GqlQueryCache.h
         ../src/gql/executor/FactorNode.cpp ../src/gql/executor/FactorNode.h
@@ -175,6 +192,12 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/optimizer/SubsumptionPruner.cpp ../src/gql/optimizer/SubsumptionPruner.h
         ../src/gql/optimizer/CardinalityShortCircuiter.cpp ../src/gql/optimizer/CardinalityShortCircuiter.h
         ../src/gql/optimizer/AlgebraicRewriter.cpp ../src/gql/optimizer/AlgebraicRewriter.h
+        ../src/gql/optimizer/TransitiveFilterPropagator.cpp ../src/gql/optimizer/TransitiveFilterPropagator.h
+        ../src/gql/optimizer/EdgeContradictionPruner.cpp ../src/gql/optimizer/EdgeContradictionPruner.h
+        ../src/gql/optimizer/AntiSemiJoinPromoter.cpp ../src/gql/optimizer/AntiSemiJoinPromoter.h
+        ../src/gql/optimizer/EqualityJoinEliminator.cpp ../src/gql/optimizer/EqualityJoinEliminator.h
+        ../src/gql/optimizer/DisjointConceptPruner.cpp ../src/gql/optimizer/DisjointConceptPruner.h
+        ../src/gql/optimizer/DirectionSwapOptimizer.cpp ../src/gql/optimizer/DirectionSwapOptimizer.h
         ../src/gql/GqlExecutor.cpp ../src/gql/GqlExecutor.h
         ../src/gql/GqlQueryCache.cpp ../src/gql/GqlQueryCache.h
         ../src/gql/executor/FactorNode.cpp ../src/gql/executor/FactorNode.h

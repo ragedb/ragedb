@@ -20,8 +20,8 @@
 using namespace ragedb;
 using namespace ragedb::gql;
 
-TEST_CASE("Phases 11 to 15 Performance Benchmarks", "[gql_optimizer_perf]") {
-    auto graph = Graph("gql_test_phases_11_15_perf");
+TEST_CASE("Degree Constraint Performance Benchmarks", "[gql_optimizer_perf]") {
+    auto graph = Graph("gql_test_degree_constraint_perf");
     graph.Start().get();
     graph.Clear();
     PerformanceGraphStopGuard guard(graph);
@@ -56,30 +56,9 @@ TEST_CASE("Phases 11 to 15 Performance Benchmarks", "[gql_optimizer_perf]") {
     }
 
     std::cout << "\n=========================================\n";
-    std::cout << "   PHASES 11 TO 15 PERFORMANCE BENCH\n";
+    std::cout << "   DEGREE CONSTRAINT PERFORMANCE BENCH\n";
     std::cout << "=========================================\n";
 
-    // 1. Phase 11: Schema Path Unsatisfiability Pruning
-    GqlVirtualCatalog::local().clear();
-    GqlVirtualCatalog::local().add_allowed_relationship("Person", "FRIEND", "Person");
-    run_bench(
-        graph,
-        "Phase 11: Schema Unsatisfiability",
-        "MATCH (p:Person)-[:FRIEND]->(c:Category) RETURN p.name",
-        "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(c:Category) RETURN p.name",
-        20
-    );
-
-    // 2. Phase 12: Optional Match Promotion
-    run_bench(
-        graph,
-        "Phase 12: Optional Match Promotion",
-        "OPTIONAL MATCH (p:Person)-[:FRIEND]->(f:FriendNode) WHERE f.age > 45 RETURN p.name, f.age",
-        "NO_SEMANTIC OPTIONAL MATCH (p:Person)-[:FRIEND]->(f:FriendNode) WHERE f.age > 45 RETURN p.name, f.age",
-        20
-    );
-
-    // 3. Phase 13: Degree-Constraint Pruning
     run_bench(
         graph,
         "Phase 13: Degree-Constraint Pruning",
@@ -88,27 +67,5 @@ TEST_CASE("Phases 11 to 15 Performance Benchmarks", "[gql_optimizer_perf]") {
         20
     );
 
-    // 4. Phase 14: Unique Join Elimination
-    GqlVirtualCatalog::local().clear();
-    GqlVirtualCatalog::local().add_constraint("UniqueConstraint", 
-        "MATCH (s:Person)-[r:UNIQUE_REL]->(t1:TargetNode) MATCH (s)-[:UNIQUE_REL]->(t2:TargetNode) WHERE t1 != t2 RETURN s");
-    run_bench(
-        graph,
-        "Phase 14: Unique Join Elimination",
-        "OPTIONAL MATCH (p:Person)-[:UNIQUE_REL]->(t:TargetNode) RETURN p.name",
-        "NO_SEMANTIC OPTIONAL MATCH (p:Person)-[:UNIQUE_REL]->(t:TargetNode) RETURN p.name",
-        20
-    );
-
-    // 5. Phase 15: Limit Pushdown
-    run_bench(
-        graph,
-        "Phase 15: Limit Pushdown",
-        "MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age LIMIT 5",
-        "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age LIMIT 5",
-        20
-    );
-
     std::cout << "=========================================\n";
-    GqlVirtualCatalog::local().clear();
 }

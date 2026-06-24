@@ -214,6 +214,7 @@ TEST_CASE("GQL Execution Advanced Pattern Matching Tests", "[gql_executor_patter
             GqlTypechecker::typecheck(graph, query);
             GqlOptimizer::optimize(query);
             std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+            std::cout << "DEBUG QUESTIONED PATH: results=" << results << std::endl;
             // Nebula has no outgoing links, so b should bind to null
             REQUIRE(results.find("null") != std::string::npos);
         }

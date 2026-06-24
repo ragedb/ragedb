@@ -35,13 +35,14 @@ TEST_CASE("GQL Optimizer Phase 6: Subsumption & Query Containment Pruning", "[gq
         
         // Second match should be pruned, leaving only 1 match (the stronger one, b)
         REQUIRE(query.matches.size() == 1);
-        REQUIRE(query.matches[0].pattern.nodes[1].variable == "b");
+        REQUIRE(query.matches[0].pattern.nodes[0].variable == "b");
+        REQUIRE(query.matches[0].pattern.nodes[1].variable == "a");
         
         // b's filter was pushed down, so where_expr is now nullptr
         REQUIRE(query.where_expr == nullptr);
         
         // Verify filter was pushed down to b
-        const auto& filters = query.matches[0].pattern.nodes[1].property_filters;
+        const auto& filters = query.matches[0].pattern.nodes[0].property_filters;
         REQUIRE(filters.size() == 1);
         REQUIRE(filters[0].property == "age");
         REQUIRE(filters[0].op == Operation::GT);
@@ -70,11 +71,12 @@ TEST_CASE("GQL Optimizer Phase 6: Subsumption & Query Containment Pruning", "[gq
         
         // The weaker pattern b should be pruned, leaving only the stronger pattern c
         REQUIRE(query.matches.size() == 1);
-        REQUIRE(query.matches[0].pattern.nodes[1].variable == "c");
+        REQUIRE(query.matches[0].pattern.nodes[0].variable == "c");
+        REQUIRE(query.matches[0].pattern.nodes[1].variable == "a");
         
         // c's filter was pushed down
         REQUIRE(query.where_expr == nullptr);
-        const auto& filters = query.matches[0].pattern.nodes[1].property_filters;
+        const auto& filters = query.matches[0].pattern.nodes[0].property_filters;
         REQUIRE(filters.size() == 1);
         REQUIRE(filters[0].property == "age");
         REQUIRE(filters[0].op == Operation::GT);

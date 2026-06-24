@@ -1236,4 +1236,9 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, const st
     }
 }
 
+void clear_registries() {
+    GqlQueryCache::local().clear();
+    GqlVirtualCatalog::local().clear();
+}
+
 } // namespace ragedb::gql

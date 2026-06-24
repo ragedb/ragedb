@@ -130,6 +130,7 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
         auto query = GqlParser::parse(query_str);
         GqlOptimizer::optimize(query);
         std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+        std::cout << "DEBUG: results_json: " << results_json << std::endl;
         REQUIRE(results_json.find("Bob") != std::string::npos);
         REQUIRE(results_json.find("35") != std::string::npos);
         REQUIRE(results_json.find("Alice") == std::string::npos);

@@ -33,6 +33,12 @@
 #include "optimizer/DegreeConstraintPruner.h"
 #include "optimizer/UniqueJoinEliminator.h"
 #include "optimizer/LimitPushdownOptimizer.h"
+#include "optimizer/TransitiveFilterPropagator.h"
+#include "optimizer/EdgeContradictionPruner.h"
+#include "optimizer/AntiSemiJoinPromoter.h"
+#include "optimizer/EqualityJoinEliminator.h"
+#include "optimizer/DisjointConceptPruner.h"
+#include "optimizer/DirectionSwapOptimizer.h"
 #include "../graph/Graph.h"
 #include <limits>
 #include <algorithm>
@@ -180,116 +186,7 @@ void expand_views_recursive(GqlQuery& query, int depth = 0) {
     }
 }
 
-/**
- * @brief Extracts property filters from a WHERE clause expression.
- * @param expr The expression to analyze.
- * @param pushdowns A map containing the extracted property filters grouped by variable name.
- */
-void extract_filters(Expression* expr, std::map<std::string, std::vector<PropertyFilter>>& pushdowns) {
-    if (!expr) return;
 
-    if (expr->kind == ExpressionKind::BINARY_OP) {
-        auto* bin = static_cast<BinaryOpExpr*>(expr);
-        if (bin->op == BinaryOpKind::AND) {
-            extract_filters(bin->left.get(), pushdowns);
-            extract_filters(bin->right.get(), pushdowns);
-        } else {
-            Operation op = Operation::UNKNOWN;
-            switch (bin->op) {
-                case BinaryOpKind::EQ: op = Operation::EQ; break;
-                case BinaryOpKind::NE: op = Operation::NEQ; break;
-                case BinaryOpKind::LT: op = Operation::LT; break;
-                case BinaryOpKind::LE: op = Operation::LTE; break;
-                case BinaryOpKind::GT: op = Operation::GT; break;
-                case BinaryOpKind::GE: op = Operation::GTE; break;
-                default: break;
-            }
-
-            if (op != Operation::UNKNOWN) {
-                if (bin->left->kind == ExpressionKind::PROPERTY_LOOKUP && bin->right->kind == ExpressionKind::LITERAL) {
-                    auto* prop_lookup = static_cast<PropertyLookupExpr*>(bin->left.get());
-                    auto* lit = static_cast<LiteralExpr*>(bin->right.get());
-                    pushdowns[prop_lookup->variable].push_back({prop_lookup->property, op, lit->value});
-                } else if (bin->right->kind == ExpressionKind::PROPERTY_LOOKUP && bin->left->kind == ExpressionKind::LITERAL) {
-                    auto* prop_lookup = static_cast<PropertyLookupExpr*>(bin->right.get());
-                    auto* lit = static_cast<LiteralExpr*>(bin->left.get());
-                    Operation inverted_op = op;
-                    if (op == Operation::LT) inverted_op = Operation::GT;
-                    else if (op == Operation::LTE) inverted_op = Operation::GTE;
-                    else if (op == Operation::GT) inverted_op = Operation::LT;
-                    else if (op == Operation::GTE) inverted_op = Operation::LTE;
-                    pushdowns[prop_lookup->variable].push_back({prop_lookup->property, inverted_op, lit->value});
-                }
-            }
-        }
-    }
-}
-
-/**
- * @brief Rebuilds an expression tree by removing the predicates that have been successfully pushed down.
- * @param expr The expression to rebuild.
- * @param pushdowns The map of pushdown predicates to exclude.
- * @return The rebuilt expression, or nullptr if the entire expression was pushed down.
- */
-std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::unique_ptr<Expression> expr, const std::map<std::string, std::vector<PropertyFilter>>& pushdowns) {
-    if (!expr) return nullptr;
-
-    if (expr->kind == ExpressionKind::BINARY_OP) {
-        auto* bin = static_cast<BinaryOpExpr*>(expr.get());
-        if (bin->op == BinaryOpKind::AND) {
-            auto new_left = rebuild_expression_without_pushed_predicates(std::move(bin->left), pushdowns);
-            auto new_right = rebuild_expression_without_pushed_predicates(std::move(bin->right), pushdowns);
-            if (new_left && new_right) {
-                return std::make_unique<BinaryOpExpr>(BinaryOpKind::AND, std::move(new_left), std::move(new_right));
-            } else if (new_left) {
-                return new_left;
-            } else {
-                return new_right;
-            }
-        } else {
-            Operation op = Operation::UNKNOWN;
-            switch (bin->op) {
-                case BinaryOpKind::EQ: op = Operation::EQ; break;
-                case BinaryOpKind::NE: op = Operation::NEQ; break;
-                case BinaryOpKind::LT: op = Operation::LT; break;
-                case BinaryOpKind::LE: op = Operation::LTE; break;
-                case BinaryOpKind::GT: op = Operation::GT; break;
-                case BinaryOpKind::GE: op = Operation::GTE; break;
-                default: break;
-            }
-            if (op != Operation::UNKNOWN) {
-                if (bin->left->kind == ExpressionKind::PROPERTY_LOOKUP && bin->right->kind == ExpressionKind::LITERAL) {
-                    auto* prop_lookup = static_cast<PropertyLookupExpr*>(bin->left.get());
-                    auto it = pushdowns.find(prop_lookup->variable);
-                    if (it != pushdowns.end()) {
-                        for (const auto& filter : it->second) {
-                            if (filter.property == prop_lookup->property && filter.op == op) {
-                                return nullptr;
-                            }
-                        }
-                    }
-                } else if (bin->right->kind == ExpressionKind::PROPERTY_LOOKUP && bin->left->kind == ExpressionKind::LITERAL) {
-                    auto* prop_lookup = static_cast<PropertyLookupExpr*>(bin->right.get());
-                    auto it = pushdowns.find(prop_lookup->variable);
-                    if (it != pushdowns.end()) {
-                        Operation inverted_op = op;
-                        if (op == Operation::LT) inverted_op = Operation::GT;
-                        else if (op == Operation::LTE) inverted_op = Operation::GTE;
-                        else if (op == Operation::GT) inverted_op = Operation::LT;
-                        else if (op == Operation::GTE) inverted_op = Operation::LTE;
-                        for (const auto& filter : it->second) {
-                            if (filter.property == prop_lookup->property && filter.op == inverted_op) {
-                                return nullptr;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return expr;
-}
 
 /**
  * @brief Unnests EXISTS subqueries in an expression and moves them to optional match patterns.
@@ -557,6 +454,26 @@ void GqlOptimizer::optimize(GqlQuery& query) {
 
     // Phase 15: Push global query limits down to early traversal steps when safe.
     LimitPushdownOptimizer::limit_pushdown_pass(query);
+
+    // Phase 16: Propagate constant filters transitively across equated variables.
+    TransitiveFilterPropagator::transitive_filter_propagation_pass(query);
+
+    // Phase 17: Prune query matching steps that violate relationship property constraints.
+    EdgeContradictionPruner::edge_contradiction_pruning_pass(query);
+    if (query.no_op) return;
+
+    // Phase 18: Promote optional matches to anti-semi-joins if targets are null-checked.
+    AntiSemiJoinPromoter::optional_match_to_antisemijoin_pass(query);
+
+    // Phase 19: Merge redundant self-joins equated in query filters.
+    EqualityJoinEliminator::equality_join_elimination_pass(query);
+
+    // Phase 20: Short-circuit query if variable-length path category values are disjoint.
+    DisjointConceptPruner::disjoint_concept_pruning_pass(query);
+    if (query.no_op) return;
+
+    // Phase 21: Reverse inner match traversal directions to start at selective index lookups.
+    DirectionSwapOptimizer::direction_swap_pass(query);
 
     std::set<std::string> outer_vars;
     collect_variables_from_matches(query.matches, outer_vars);

@@ -19,6 +19,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <optional>
 
 namespace ragedb::gql {
@@ -104,11 +105,41 @@ public:
         return allowed_relationships;
     }
 
-    // Clears all views, constraints, and allowed relationships
+private:
+    // Disjointness registries
+    std::unordered_map<std::string, std::unordered_set<std::string>> disjoint_labels;
+    std::unordered_map<std::string, std::unordered_set<std::string>> disjoint_values;
+
+public:
+    // Adds/registers a pair of disjoint node labels
+    void add_disjoint_labels(const std::string& l1, const std::string& l2) {
+        disjoint_labels[l1].insert(l2);
+        disjoint_labels[l2].insert(l1);
+    }
+
+    // Returns all registered disjoint labels
+    const std::unordered_map<std::string, std::unordered_set<std::string>>& get_disjoint_labels() const {
+        return disjoint_labels;
+    }
+
+    // Adds/registers a pair of disjoint concept property values
+    void add_disjoint_values(const std::string& v1, const std::string& v2) {
+        disjoint_values[v1].insert(v2);
+        disjoint_values[v2].insert(v1);
+    }
+
+    // Returns all registered disjoint values
+    const std::unordered_map<std::string, std::unordered_set<std::string>>& get_disjoint_values() const {
+        return disjoint_values;
+    }
+
+    // Clears all views, constraints, allowed relationships, and disjoint registries
     void clear() {
         views.clear();
         constraints.clear();
         allowed_relationships.clear();
+        disjoint_labels.clear();
+        disjoint_values.clear();
     }
 };
 

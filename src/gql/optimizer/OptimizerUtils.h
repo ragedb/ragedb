@@ -118,6 +118,8 @@ void rewrite_count_to_sum_degree(std::unique_ptr<Expression>& expr, const std::s
 void extract_rel_types(const LabelExpression* expr, std::vector<std::string>& rel_types);
 void rewrite_khop_count_to_var(std::unique_ptr<Expression>& expr, const std::string& var_name);
 void collect_variables_from_matches(const std::vector<MatchStatement>& matches, std::set<std::string>& vars);
+void extract_filters(Expression* expr, std::map<std::string, std::vector<PropertyFilter>>& pushdowns);
+std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::unique_ptr<Expression> expr, const std::map<std::string, std::vector<PropertyFilter>>& pushdowns);
 
 } // namespace ragedb::gql
 

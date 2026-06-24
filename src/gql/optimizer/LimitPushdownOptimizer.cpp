@@ -77,7 +77,7 @@ std::vector<MandatoryRelation> find_mandatory_relations() {
 } // namespace
 
 void LimitPushdownOptimizer::limit_pushdown_pass(GqlQuery& query) {
-    if (query.kind != QueryKind::SINGLE || !query.limit.has_value()) return;
+    if (query.kind != QueryKind::SINGLE || !query.limit.has_value() || !query.order_by.empty()) return;
 
     if (query.matches.empty()) return;
 

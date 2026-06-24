@@ -303,6 +303,12 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 13: Degree-Constraint Pruning** | 0.1087 ms | 0.0293 ms | 0.0837 ms | **2.86x** |
 | **Phase 14: Unique Join Elimination** | 0.6432 ms | 0.1100 ms | 0.1449 ms | **1.32x** |
 | **Phase 15: Limit Pushdown** | 1.2297 ms | 0.6823 ms | 78.4728 ms | **115.0x** |
+| **Phase 16: Transitive Filter Propagation** | 0.4885 ms | 0.1703 ms | 50.4617 ms | **296.3x** |
+| **Phase 17: Relationship Contradiction** | 0.3801 ms | 0.0100 ms | 45.1050 ms | **4513.4x** |
+| **Phase 18: Anti-Semi-Join Promotion** | 40.0936 ms | 39.9018 ms | 54.6502 ms | **1.37x** |
+| **Phase 19: Equality Join Elimination** | 45.7790 ms | 46.1153 ms | 147.0690 ms | **3.19x** |
+| **Phase 20: Disjoint Concept Path Pruning** | 0.4035 ms | 0.0097 ms | 0.0991 ms | **10.27x** |
+| **Phase 21: Traversal Direction Swap** | 0.4256 ms | 0.2323 ms | 45.6451 ms | **196.5x** |
 
 ### Key Performance Insights
 * **Schema Path Unsatisfiability (Phase 11)**: Short-circuiting execution when the query path is incompatible with the allowed schema relationships bypasses database scan and traversal entirely. This results in a **5117.8x speedup** (latency cut from 41.97 ms to 0.0082 ms).

@@ -15,6 +15,7 @@
  */
 
 #include "OptionalMatchPromoter.h"
+#include "OptimizerUtils.h"
 #include <vector>
 
 namespace ragedb::gql {
@@ -63,6 +64,7 @@ bool is_null_rejecting(const Expression* expr, const std::string& var) {
 
 void OptionalMatchPromoter::optional_match_promotion_pass(GqlQuery& query) {
     if (query.kind != QueryKind::SINGLE) return;
+    if (!query.where_expr) return;
 
     for (auto& match : query.matches) {
         if (match.is_optional) {
@@ -75,9 +77,11 @@ void OptionalMatchPromoter::optional_match_promotion_pass(GqlQuery& query) {
                 if (!edge.variable.empty()) match_vars.push_back(edge.variable);
             }
             
-            // Check if any of these variables are null-rejected in the WHERE clause
+            // Check if any variable (except the start/anchor node) is null-rejected in the WHERE clause
             bool promoted = false;
+            std::string start_var = match.pattern.nodes.empty() ? "" : match.pattern.nodes.front().variable;
             for (const auto& var : match_vars) {
+                if (var == start_var) continue; // Skip start/anchor node variable
                 if (is_null_rejecting(query.where_expr.get(), var)) {
                     promoted = true;
                     break;
