@@ -1359,6 +1359,23 @@ std::unique_ptr<Expression> GqlParser::parse_primary() {
                 else fn = AggregateKind::MAX;
                 
                 return std::make_unique<AggregateExpr>(fn, std::move(arg));
+            } else if (upper_name == "SIZE") {
+                advance(); // consume "size"
+                consume(TokenType::LPAREN, "Expected '(' after size");
+                
+                std::vector<MatchStatement> matches;
+                MatchStatement stmt;
+                stmt.pattern = parse_path_pattern();
+                stmt.id = 0;
+                matches.push_back(std::move(stmt));
+                
+                std::unique_ptr<Expression> sub_where = nullptr;
+                if (match(TokenType::WHERE)) {
+                    sub_where = parse_expression();
+                }
+                
+                consume(TokenType::RPAREN, "Expected ')' after size expression");
+                return std::make_unique<SizeExpr>(std::move(matches), std::move(sub_where));
             }
         }
 

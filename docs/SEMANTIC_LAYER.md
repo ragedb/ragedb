@@ -21,7 +21,7 @@ graph TD
     subgraph RageDB C++ Server Side
         G --> H[Parse GQL Query AST]
         H --> I[Semantic Query Optimizer SQO]
-        I -->|Phase 1-10 Rewrites & Pruning| J[Optimized Query Plan]
+        I -->|Phase 1-15 Rewrites & Pruning| J[Optimized Query Plan]
         J -->|Cache Plan| K[GqlQueryCache]
         J --> L[Sharded Traversal & Join Execution]
         L --> M[Assemble Row Result JSON]
@@ -48,7 +48,7 @@ The entry point of the semantic layer begins with instantiating a [Model](file:/
 3. **Relationships**: Declared via `m.Relationship("Source relates to Target:rel_name")`, defining edge schemas.
 
 ### Synchronous Schema Setup
-When concepts, properties, or relationships are instantiated, the [Model](file:///home/maxdemarzi/ragedb/python/pyragedb/semantics/model.py) class automatically issues HTTP POST requests to the RageDB server's `/schema/nodes` and `/schema/relationships` endpoints (see [API.md](file:///home/maxdemarzi/ragedb/API.md)). This guarantees that node labels, relationship types, and property type definitions (booleans, integers, doubles, strings) are registered in the virtual catalog before data insert or query begins.
+When concepts, properties, or relationships are instantiated, the [Model](file:///home/maxdemarzi/ragedb/python/pyragedb/semantics/model.py) class automatically issues HTTP POST requests to the RageDB server's `/schema/nodes` and `/schema/relationships` endpoints (see [API.md](file:///home/maxdemarzi/ragedb/docs/API.md)). This guarantees that node labels, relationship types, and property type definitions (booleans, integers, doubles, strings) are registered in the virtual catalog before data insert or query begins.
 
 ---
 
@@ -103,7 +103,7 @@ If a query relies on graph metrics (e.g., `pagerank`, `weakly_connected_componen
 
 ## 5. Server-side Parsing & Semantic Query Optimization (C++)
 
-Once the compiled GQL query string is received by the C++ server via `/db/{graph}/gql`, it is parsed into an AST. If the query does not contain bypass hints (`NO_SEMANTIC` or `/* no_semantic */`), it is passed through the **Semantic Query Optimizer (SQO)**, consisting of 10 specialized C++ passes (configured in [src/gql/optimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer)):
+Once the compiled GQL query string is received by the C++ server via `/db/{graph}/gql`, it is parsed into an AST. If the query does not contain bypass hints (`NO_SEMANTIC` or `/* no_semantic */`), it is passed through the **Semantic Query Optimizer (SQO)**, consisting of 15 specialized C++ passes (configured in [src/gql/optimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer)):
 
 1.  **Phase 1: Range Contradiction Pruning** ([ContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/ContradictionPruner.cpp)): Identifies whether a variable's bounds (e.g., `age = -5`) conflict with impossible regions defined in check constraints, setting `no_op = true` if unsatisfiable.
 2.  **Phase 2: Join Elimination** ([JoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/JoinEliminator.cpp)): Uses mandatory schema constraints to prune redundant edge traversal hops where target nodes are not projected or filtered.
@@ -116,11 +116,16 @@ Once the compiled GQL query string is received by the C++ server via `/db/{graph
 9.  **Phase 8: Transitive DAG Reachability** ([TransitiveReachabilityPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveReachabilityPruner.cpp)): Truncates variable-length taxonomy traversals early if start and end concepts are unreachable in the class hierarchy DAG.
 10. **Phase 9: Functional Dependency Rewriting** ([FunctionalDependencyPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/FunctionalDependencyPruner.cpp)): Rewrites property aggregations (e.g., `count(b.state)`) into faster property-free aggregations (`count(*)`) when the property is functionally determined by a grouping key.
 11. **Phase 10: Automorphic Symmetry Deduplication** ([AutomorphicSymmetryOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AutomorphicSymmetryOptimizer.cpp)): Breaks cyclic automorphism symmetries in counting queries (e.g., triangles) by injecting canonical ordering constraints (`v1 < v2 < v3`) and a multiplication factor of 6.
+12. **Phase 11: Schema Path Unsatisfiability Pruning** ([SchemaReachabilityPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SchemaReachabilityPruner.cpp)): Validates query path transitions against the allowed relationship types in the schema catalog, setting `no_op = true` if structurally impossible.
+13. **Phase 12: Optional Match Promotion** ([OptionalMatchPromoter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/OptionalMatchPromoter.cpp)): Promotes optional matches to inner matches if filters contain null-rejecting predicates on optionally matched variables.
+14. **Phase 13: Degree-Constraint Pruning** ([DegreeConstraintPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DegreeConstraintPruner.cpp)): Rewrites pattern size expressions like `size((a)-[:FRIEND]->())` into virtual degree property lookups (`a._deg_a_FRIEND_OUT`) fetched directly from node metadata.
+15. **Phase 14: Unique Constraint Join Elimination** ([UniqueJoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/UniqueJoinEliminator.cpp)): Prunes optional matches along relationships constrained to be unique when the target node is unreferenced elsewhere in the query.
+16. **Phase 15: Limit & Top-K Pushdown** ([LimitPushdownOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.cpp)): Propagates global `LIMIT` boundaries into individual match and traversal steps to allow early traversal termination.
 
 ### Query Cache Integration
 To prevent compilation and optimization passes from running on every request, the pre-optimized AST is cached in the thread-local `GqlQueryCache`. Hot queries skip parsing and optimization entirely, going straight to execution. The cache is automatically flushed on reactor threads when catalog schema changes occur (e.g., `CREATE CONSTRAINT` or `DROP CONSTRAINT`).
 
-For a detailed review of SQO mathematics and benchmarks, see [SEMANTIC_OPTIMIZER.md](file:///home/maxdemarzi/ragedb/SEMANTIC_OPTIMIZER.md).
+For a detailed review of SQO mathematics and benchmarks, see [SEMANTIC_OPTIMIZER.md](file:///home/maxdemarzi/ragedb/docs/SEMANTIC_OPTIMIZER.md).
 
 ---
 
@@ -525,6 +530,174 @@ If the user query had added a filter checking for impossible ranges, e.g.:
 q = q.where(UrgentSupplierAudit.order.order_date > UrgentSupplierAudit.order.promised_delivery_date)
 ```
 The **Phase 1: Range Contradiction Pruner** would compare the filter with constraint `ValidOrderDates` (`promised_delivery_date >= order_date`), identify that the intersection is empty, mark `no_op = true`, and skip execution completely.
+
+---
+
+### Walkthrough Example 6: Schema Path Unsatisfiability Pruning (Phase 11)
+
+This example illustrates how queries traversing path patterns incompatible with the allowed database schema are short-circuited.
+
+#### Python Query
+```python
+# A person node searching for friendship paths directly to category nodes (which is schema-incompatible)
+q = m.where(Person.friends(Category)).select(Person.id)
+```
+
+#### Step 1: Python AST Construction
+* A query fragment representing a join matching `Person -> friends -> Category`.
+
+#### Step 2: GQL Compilation (`to_gql()`)
+The compiled GQL query string is output:
+```gql
+MATCH (person:Person)-[:FRIEND]->(category:Category)
+RETURN person.id
+```
+
+#### Step 3: Server-side Semantic Query Optimization (C++)
+* **Optimization Pass**: [SchemaReachabilityPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SchemaReachabilityPruner.cpp) (`Phase 11: Schema Path Unsatisfiability Pruning`) checks the registered catalog allowed relationships.
+* **Analysis**: The schema states that the source concept for `FRIEND` relationships must be `Person` and the target must be `Person`. The target concept in the query transition is `Category`.
+* **Rewrite**: Since $(Person, FRIEND, Category) \notin E$, the transition is impossible. The optimizer marks `query.no_op = true` and short-circuits.
+* **Execution**: Bypasses sharded queries and returns `[]` immediately, saving index scans and network reactor calls.
+
+---
+
+### Walkthrough Example 7: Optional Match Promotion (Phase 12)
+
+This example demonstrates how an optional match traversal is promoted to an inner match when the query filters reject null results on target variables.
+
+#### Python Query
+```python
+# Match optional friends but filter for those older than 21 (which rejects nulls)
+q = m.where(Person.friends(Friend, optional=True))\
+     .where(Friend.age > 21)\
+     .select(Person.name, Friend.name)
+```
+
+#### Step 1: Python AST Construction
+* A query fragment containing an optional join traversal `Person -> FRIEND -> Friend` and a filter condition on `Friend.age`.
+
+#### Step 2: GQL Compilation (`to_gql()`)
+The GQL translation compiles the optional join into `OPTIONAL MATCH`:
+```gql
+MATCH (person:Person)
+OPTIONAL MATCH (person)-[:FRIEND]->(friend:Person)
+WHERE friend.age > 21
+RETURN person.name, friend.name
+```
+
+#### Step 3: Server-side Semantic Query Optimization (C++)
+* **Optimization Pass**: [OptionalMatchPromoter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/OptionalMatchPromoter.cpp) (`Phase 12: Optional Match Promotion`) scans the AST.
+* **Analysis**: The variable `friend` is bound by an `OPTIONAL MATCH`. The query contains a filter `friend.age > 21`. If the optional match fails to find a neighbor, `friend` is bound to `null`, causing `friend.age > 21` to evaluate to `null` / `unknown`. Cypher's `WHERE` filters discard rows where the condition is not `true`.
+* **Rewrite**: Because the filter rejects nulls, the `OPTIONAL MATCH` is promoted to a standard inner `MATCH`:
+```gql
+MATCH (person:Person)-[:FRIEND]->(friend:Person)
+WHERE friend.age > 21
+RETURN person.name, friend.name
+```
+* **Execution**: The query execution plan uses inner-join indexing instead of outer-join nested loops, accelerating execution to 0.01 ms.
+
+---
+
+### Walkthrough Example 8: Degree-Constraint Pruning (Phase 13)
+
+This walkthrough shows how degree checks on nodes are optimized to metadata reads rather than physical relationship traversals.
+
+#### Python Query
+```python
+# Select people who have more than 5 friends
+q = m.where(aggregates.count(Person.friends) > 5).select(Person.name)
+```
+
+#### Step 1: Python AST Construction
+* A query fragment filtering on the size of the relationship collection `Person -> friends`.
+
+#### Step 2: GQL Compilation (`to_gql()`)
+The GQL query compiles the relationship count into a `size()` expression:
+```gql
+MATCH (person:Person)
+WHERE size((person)-[:FRIEND]->()) > 5
+RETURN person.name
+```
+
+#### Step 3: Server-side Semantic Query Optimization (C++)
+* **Optimization Pass**: [DegreeConstraintPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DegreeConstraintPruner.cpp) (`Phase 13: Degree-Constraint Pruning`) inspects the filter expressions.
+* **Analysis**: The query checks `size((person)-[:FRIEND]->())`. This expression matches the out-degree of the `person` node for the `FRIEND` relationship type.
+* **Rewrite**: The optimizer rewrites the `size()` expression to a property-like fetch of a virtual degree property:
+```gql
+MATCH (person:Person)
+WHERE person._deg_person_FRIEND_OUT > 5
+RETURN person.name
+```
+* **Execution**: Instead of traversing outgoing edges and counting them for every matched node, the sharded executor reads the node's local relationship count from its shard index metadata.
+
+---
+
+### Walkthrough Example 9: Unique Constraint Join Elimination (Phase 14)
+
+This example illustrates how optional joins are pruned if the relationship is constrained to be unique and the target is not projected.
+
+#### Python Query
+```python
+# Optionally match a person's spouse (unique relationship) without projecting spouse properties
+q = m.where(Person.spouse(Spouse, optional=True))\
+     .select(Person.name)
+```
+
+#### Step 1: Python AST Construction
+* A query fragment with an optional join to `Spouse` where only the start node `Person.name` is selected.
+
+#### Step 2: GQL Compilation (`to_gql()`)
+The GQL translation compiles the optional join:
+```gql
+MATCH (person:Person)
+OPTIONAL MATCH (person)-[:SPOUSE]->(spouse:Person)
+RETURN person.name
+```
+
+#### Step 3: Server-side Semantic Query Optimization (C++)
+* **Optimization Pass**: [UniqueJoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/UniqueJoinEliminator.cpp) (`Phase 14: Unique Constraint Join Elimination`) scans constraints.
+* **Analysis**: The catalog contains a unique constraint on `SPOUSE` (guaranteeing at most one spouse per person). The variable `spouse` is not projected, filtered, or used in subsequent joins.
+* **Rewrite**: An optional match on a unique relationship that projects nothing from the target node preserves row cardinality and adds no fields. The optimizer prunes the join pattern:
+```gql
+MATCH (person:Person)
+RETURN person.name
+```
+* **Execution**: Eliminates the spouse lookup step, returning names of all people directly.
+
+---
+
+### Walkthrough Example 10: Limit & Top-K Pushdown (Phase 15)
+
+This example demonstrates how limits are pushed into individual traversal branches to stop scanning once the limit threshold is satisfied.
+
+#### Python Query
+```python
+# Find friends of friends, returning only the first 5 records
+q = m.where(Person.friends(Friend), Friend.friends(FOF))\
+     .select(Person.name, FOF.name)\
+     .limit(5)
+```
+
+#### Step 1: Python AST Construction
+* A query fragment representing a 2-hop traversal `Person -> Friend -> FOF` with a global limit of 5.
+
+#### Step 2: GQL Compilation (`to_gql()`)
+The compiled GQL query is output:
+```gql
+MATCH (person:Person)-[:FRIEND]->(friend:Person)-[:FRIEND]->(fof:Person)
+RETURN person.name, fof.name
+LIMIT 5
+```
+
+#### Step 3: Server-side Semantic Query Optimization (C++)
+* **Optimization Pass**: [LimitPushdownOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.cpp) (`Phase 15: Limit & Top-K Pushdown`) inspects the plan.
+* **Analysis**: The global `LIMIT 5` is detected at the root. The optimizer propagates `limit = 5` down into the GQL match branches and traversal operators.
+* **Rewrite & Execution**:
+  - The plan builder sets `limit = 5` on the traversal step.
+  - The [PathTraverser](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) traverses the first friend hop.
+  - Instead of parallel peering resolving all target friends, the traverser loops through the active paths sequentially.
+  - If the cumulative number of paths found so far matches or exceeds the limit, the loop is broken and further asynchronous peering fetches are aborted.
+* **Result**: Halts traversal early, resulting in a **115.0x speedup** on large neighborhoods.
 
 
 

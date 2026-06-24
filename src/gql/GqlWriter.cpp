@@ -57,7 +57,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             if (it->second.type == GqlValue::NODE) {
                 uint64_t id = it->second.node->getId();
                 return graph.shard.local().NodeSetPropertyPeered(id, op.set_prop, val.property)
-                .then([id, set_var = op.set_var, query_ptr, write_idx, row = std::move(row), &graph](bool success) mutable {
+                .then([id, set_var = op.set_var, row = std::move(row), &graph](bool success) mutable {
                     if (success) {
                         // Retrieve the updated node from the local/peered core to refresh internal properties
                         return graph.shard.local().NodeGetPeered(id)
@@ -76,7 +76,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             else if (it->second.type == GqlValue::RELATIONSHIP) {
                 uint64_t id = it->second.relationship->getId();
                 return graph.shard.local().RelationshipSetPropertyPeered(id, op.set_prop, val.property)
-                .then([id, set_var = op.set_var, query_ptr, write_idx, row = std::move(row), &graph](bool success) mutable {
+                .then([id, set_var = op.set_var, row = std::move(row), &graph](bool success) mutable {
                     if (success) {
                         // Retrieve the updated relationship from the core to refresh properties
                         return graph.shard.local().RelationshipGetPeered(id)
@@ -108,7 +108,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             if (it->second.type == GqlValue::NODE) {
                 uint64_t id = it->second.node->getId();
                 return graph.shard.local().NodeDeletePropertyPeered(id, op.remove_prop)
-                .then([id, remove_var = op.remove_var, query_ptr, write_idx, row = std::move(row), &graph](bool success) mutable {
+                .then([id, remove_var = op.remove_var, row = std::move(row), &graph](bool success) mutable {
                     if (success) {
                         // Retrieve the updated node to sync bindings with deleted properties
                         return graph.shard.local().NodeGetPeered(id)
@@ -127,7 +127,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             else if (it->second.type == GqlValue::RELATIONSHIP) {
                 uint64_t id = it->second.relationship->getId();
                 return graph.shard.local().RelationshipDeletePropertyPeered(id, op.remove_prop)
-                .then([id, remove_var = op.remove_var, query_ptr, write_idx, row = std::move(row), &graph](bool success) mutable {
+                .then([id, remove_var = op.remove_var, row = std::move(row), &graph](bool success) mutable {
                     if (success) {
                         // Retrieve the updated relationship to sync bindings
                         return graph.shard.local().RelationshipGetPeered(id)
@@ -160,7 +160,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
                 uint64_t id = it->second.node->getId();
                 // Detach delete is implicitly supported by RageDB's NodeRemovePeered
                 return graph.shard.local().NodeRemovePeered(id)
-                .then([delete_var = op.delete_var, query_ptr, write_idx, row = std::move(row)](bool success) mutable {
+                .then([delete_var = op.delete_var, row = std::move(row)](bool success) mutable {
                     if (success) {
                         row.bindings[delete_var] = GqlValue(); // Bound to NIL
                     }
@@ -174,7 +174,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             else if (it->second.type == GqlValue::RELATIONSHIP) {
                 uint64_t id = it->second.relationship->getId();
                 return graph.shard.local().RelationshipRemovePeered(id)
-                .then([delete_var = op.delete_var, query_ptr, write_idx, row = std::move(row)](bool success) mutable {
+                .then([delete_var = op.delete_var, row = std::move(row)](bool success) mutable {
                     if (success) {
                         row.bindings[delete_var] = GqlValue(); // Bound to NIL
                     }
@@ -270,7 +270,7 @@ seastar::future<GqlRow> execute_writes_for_row(ragedb::Graph& graph, std::shared
             // Execute RelationshipAddPeered asynchronously on the graph
             std::string edge_lbl = edge.label_expr ? edge.label_expr->name : "";
             return graph.shard.local().RelationshipAddPeered(edge_lbl, start, end, serialize_properties_to_json(edge.properties))
-            .then([state, &graph, i, edge_var = edge.variable](uint64_t new_rel_id) {
+            .then([state, &graph, edge_var = edge.variable](uint64_t new_rel_id) {
                 // Retrieve relationship properties and object to bind in GqlRow
                 return graph.shard.local().RelationshipGetPeered(new_rel_id)
                 .then([state, edge_var](Relationship new_rel) {

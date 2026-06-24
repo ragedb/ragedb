@@ -494,34 +494,46 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
                 rels.resize(max_limit);
             }
         }
-        std::vector<seastar::future<std::optional<GqlRow>>> futs;
-        for (const auto& rel : rels) {
-            if (edge.label_expr && !matches_label_expr(rel.getType(), edge.label_expr)) {
-                continue;
-            }
-            if (!matches_properties(rel.getProperties(), edge.properties) || !matches_filters(rel.getProperties(), edge.property_filters)) {
-                continue;
-            }
+        if (limit > 0) {
+            struct LoopState {
+                size_t rel_idx = 0;
+                std::vector<GqlRow> results;
+            };
+            auto state = std::make_shared<LoopState>();
+            auto run_loop = std::make_shared<std::function<seastar::future<std::vector<GqlRow>>()>>();
+            *run_loop = [state, rels = std::move(rels), src_id, &graph, limit, edge, next_node, node_idx, row, pruner, run_loop]() -> seastar::future<std::vector<GqlRow>> {
+                if (state->results.size() >= limit || state->rel_idx >= rels.size()) {
+                    if (state->results.size() > limit) {
+                        state->results.resize(limit);
+                    }
+                    return seastar::make_ready_future<std::vector<GqlRow>>(std::move(state->results));
+                }
 
-            uint64_t target_id = (rel.getStartingNodeId() == src_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
+                const auto& rel = rels[state->rel_idx++];
+                if (edge.label_expr && !matches_label_expr(rel.getType(), edge.label_expr)) {
+                    return (*run_loop)();
+                }
+                if (!matches_properties(rel.getProperties(), edge.properties) || !matches_filters(rel.getProperties(), edge.property_filters)) {
+                    return (*run_loop)();
+                }
 
-            futs.push_back(
-                graph.shard.local().NodeGetPeered(target_id)
-                .then([row, rel, edge, next_node, node_idx, pruner](Node target_node) -> std::optional<GqlRow> {
+                uint64_t target_id = (rel.getStartingNodeId() == src_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
+                return graph.shard.local().NodeGetPeered(target_id)
+                .then([row, rel, edge, next_node, node_idx, pruner, state, run_loop](Node target_node) mutable {
                     if (pruner.should_prune(next_node.variable)) {
                         target_node.pruneProperties(pruner.get_keys(next_node.variable));
                     }
                     if (next_node.label_expr && !matches_label_expr(target_node.getType(), next_node.label_expr)) {
-                        return std::nullopt;
+                        return (*run_loop)();
                     }
                     if (!matches_properties(target_node.getProperties(), next_node.properties) || !matches_filters(target_node.getProperties(), next_node.property_filters)) {
-                        return std::nullopt;
+                        return (*run_loop)();
                     }
 
                     auto bound_it = row.bindings.find(next_node.variable);
                     if (bound_it != row.bindings.end() && bound_it->second.type == GqlValue::NODE) {
                         if (bound_it->second.node->getId() != target_node.getId()) {
-                            return std::nullopt;
+                            return (*run_loop)();
                         }
                     }
 
@@ -531,28 +543,75 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
                     new_row.bindings[next_node.variable] = GqlValue(target_node);
                     new_row.bindings["_n_" + std::to_string(node_idx + 1)] = GqlValue(target_node);
                     if (edge.where_expr && !evaluate_expression(new_row, edge.where_expr.get()).is_truthy()) {
-                        return std::nullopt;
+                        return (*run_loop)();
                     }
                     if (next_node.where_expr && !evaluate_expression(new_row, next_node.where_expr.get()).is_truthy()) {
-                        return std::nullopt;
+                        return (*run_loop)();
                     }
-                    return new_row;
-                })
-            );
-        }
-        return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([limit](std::vector<std::optional<GqlRow>> opts) {
-            std::vector<GqlRow> out;
-            for (const auto& opt : opts) {
-                if (opt) {
-                    out.push_back(*opt);
-                    if (limit > 0 && out.size() >= limit) {
-                        break;
+
+                    state->results.push_back(std::move(new_row));
+                    return (*run_loop)();
+                });
+            };
+            return (*run_loop)();
+        } else {
+            std::vector<seastar::future<std::optional<GqlRow>>> futs;
+            for (const auto& rel : rels) {
+                if (edge.label_expr && !matches_label_expr(rel.getType(), edge.label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(rel.getProperties(), edge.properties) || !matches_filters(rel.getProperties(), edge.property_filters)) {
+                    continue;
+                }
+
+                uint64_t target_id = (rel.getStartingNodeId() == src_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
+
+                futs.push_back(
+                    graph.shard.local().NodeGetPeered(target_id)
+                    .then([row, rel, edge, next_node, node_idx, pruner](Node target_node) -> std::optional<GqlRow> {
+                        if (pruner.should_prune(next_node.variable)) {
+                            target_node.pruneProperties(pruner.get_keys(next_node.variable));
+                        }
+                        if (next_node.label_expr && !matches_label_expr(target_node.getType(), next_node.label_expr)) {
+                            return std::nullopt;
+                        }
+                        if (!matches_properties(target_node.getProperties(), next_node.properties) || !matches_filters(target_node.getProperties(), next_node.property_filters)) {
+                            return std::nullopt;
+                        }
+
+                        auto bound_it = row.bindings.find(next_node.variable);
+                        if (bound_it != row.bindings.end() && bound_it->second.type == GqlValue::NODE) {
+                            if (bound_it->second.node->getId() != target_node.getId()) {
+                                return std::nullopt;
+                            }
+                        }
+
+                        GqlRow new_row = row;
+                        new_row.bindings[edge.variable] = GqlValue(rel);
+                        new_row.bindings["_e_" + std::to_string(node_idx)] = GqlValue(rel);
+                        new_row.bindings[next_node.variable] = GqlValue(target_node);
+                        new_row.bindings["_n_" + std::to_string(node_idx + 1)] = GqlValue(target_node);
+                        if (edge.where_expr && !evaluate_expression(new_row, edge.where_expr.get()).is_truthy()) {
+                            return std::nullopt;
+                        }
+                        if (next_node.where_expr && !evaluate_expression(new_row, next_node.where_expr.get()).is_truthy()) {
+                            return std::nullopt;
+                        }
+                        return new_row;
+                    })
+                );
+            }
+            return seastar::when_all_succeed(futs.begin(), futs.end())
+            .then([](std::vector<std::optional<GqlRow>> opts) {
+                std::vector<GqlRow> out;
+                for (const auto& opt : opts) {
+                    if (opt) {
+                        out.push_back(*opt);
                     }
                 }
-            }
-            return out;
-        });
+                return out;
+            });
+        }
     };
 
     if (edge_type.empty()) {
@@ -570,23 +629,45 @@ static seastar::future<std::vector<GqlRow>> traverse_path_pattern_iterative(rage
     const auto& edge = prep_pattern.edges[step_idx];
     const auto& next_node = prep_pattern.nodes[step_idx + 1];
 
-    std::vector<seastar::future<std::vector<GqlRow>>> futs;
-    for (const auto& row : current_step_rows) {
-        futs.push_back(traverse_step(graph, row, edge, next_node, step_idx, limit, pruner, path_mode));
-    }
-
-    return seastar::when_all_succeed(futs.begin(), futs.end())
-    .then([&graph, prep_pattern, step_idx, limit, pruner, path_mode](std::vector<std::vector<GqlRow>> nested) {
-        std::vector<GqlRow> next_rows;
-        for (const auto& vec : nested) {
-            next_rows.insert(next_rows.end(), vec.begin(), vec.end());
-            if (limit > 0 && next_rows.size() >= limit) {
-                next_rows.resize(limit);
-                break;
+    if (limit > 0) {
+        struct LoopState {
+            size_t row_idx = 0;
+            std::vector<GqlRow> next_rows;
+        };
+        auto state = std::make_shared<LoopState>();
+        auto run_loop = std::make_shared<std::function<seastar::future<std::vector<GqlRow>>()>>();
+        *run_loop = [state, current_step_rows = std::move(current_step_rows), &graph, edge, next_node, step_idx, limit, pruner, path_mode, run_loop]() -> seastar::future<std::vector<GqlRow>> {
+            if (state->next_rows.size() >= limit || state->row_idx >= current_step_rows.size()) {
+                if (state->next_rows.size() > limit) {
+                    state->next_rows.resize(limit);
+                }
+                return seastar::make_ready_future<std::vector<GqlRow>>(std::move(state->next_rows));
             }
+            const auto& row = current_step_rows[state->row_idx++];
+            return traverse_step(graph, row, edge, next_node, step_idx, limit, pruner, path_mode)
+            .then([state, run_loop](std::vector<GqlRow> step_rows) {
+                state->next_rows.insert(state->next_rows.end(), step_rows.begin(), step_rows.end());
+                return (*run_loop)();
+            });
+        };
+        return (*run_loop)().then([&graph, prep_pattern, step_idx, limit, pruner, path_mode](std::vector<GqlRow> next_rows) {
+            return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows), limit, pruner, path_mode);
+        });
+    } else {
+        std::vector<seastar::future<std::vector<GqlRow>>> futs;
+        for (const auto& row : current_step_rows) {
+            futs.push_back(traverse_step(graph, row, edge, next_node, step_idx, limit, pruner, path_mode));
         }
-        return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows), limit, pruner, path_mode);
-    });
+
+        return seastar::when_all_succeed(futs.begin(), futs.end())
+        .then([&graph, prep_pattern, step_idx, limit, pruner, path_mode](std::vector<std::vector<GqlRow>> nested) {
+            std::vector<GqlRow> next_rows;
+            for (const auto& vec : nested) {
+                next_rows.insert(next_rows.end(), vec.begin(), vec.end());
+            }
+            return traverse_path_pattern_iterative(graph, prep_pattern, step_idx + 1, std::move(next_rows), limit, pruner, path_mode);
+        });
+    }
 }
 
 static seastar::future<std::vector<GqlRow>> traverse_from_relationship_index(

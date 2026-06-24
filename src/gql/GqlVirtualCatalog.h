@@ -35,6 +35,10 @@ private:
     // Maps constraint names to their validation check query strings
     std::unordered_map<std::string, std::string> constraints;
 
+    // Allowed relationship paths representing valid transitions: (SourceLabel, RelationshipType, TargetLabel)
+    std::vector<std::tuple<std::string, std::string, std::string>> allowed_relationships;
+
+
 public:
     // Returns the thread-local instance of the virtual catalog
     static GqlVirtualCatalog& local() {
@@ -90,10 +94,21 @@ public:
         return constraints;
     }
 
-    // Clears all views and constraints
+    // Adds/registers an allowed relationship path
+    void add_allowed_relationship(const std::string& src, const std::string& rel, const std::string& tgt) {
+        allowed_relationships.push_back({src, rel, tgt});
+    }
+
+    // Returns a reference to all allowed relationships
+    const std::vector<std::tuple<std::string, std::string, std::string>>& get_allowed_relationships() const {
+        return allowed_relationships;
+    }
+
+    // Clears all views, constraints, and allowed relationships
     void clear() {
         views.clear();
         constraints.clear();
+        allowed_relationships.clear();
     }
 };
 

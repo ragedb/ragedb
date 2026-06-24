@@ -346,7 +346,8 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
 
     if (!has_shared && !incoming_vars.empty()) {
         auto start = std::chrono::steady_clock::now();
-        return traverse_path_pattern(graph, stmt.pattern, GqlRow{}, limit, pruner)
+        size_t stmt_limit = stmt.limit ? *stmt.limit : limit;
+        return traverse_path_pattern(graph, stmt.pattern, GqlRow{}, stmt_limit, pruner)
         .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), stmt, limit, pruner, query_ptr, start](std::vector<GqlRow> pattern_rows) mutable {
             if (query_ptr && query_ptr->profile) {
                 auto end = std::chrono::steady_clock::now();
@@ -391,11 +392,12 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
             incoming.rows.resize(limit);
         }
         std::vector<seastar::future<std::vector<GqlRow>>> futs;
+        size_t stmt_limit = stmt.limit ? *stmt.limit : limit;
         for (const auto& row : incoming.rows) {
             if (match_idx == 0) {
-                futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner, sort_property, sort_ascending, sort_by_id));
+                futs.push_back(traverse_match_statement(graph, stmt, row, stmt_limit, pruner, sort_property, sort_ascending, sort_by_id));
             } else {
-                futs.push_back(traverse_match_statement(graph, stmt, row, limit, pruner));
+                futs.push_back(traverse_match_statement(graph, stmt, row, stmt_limit, pruner));
             }
         }
 

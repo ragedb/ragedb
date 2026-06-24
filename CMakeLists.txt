@@ -218,6 +218,11 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/optimizer/TransitiveReachabilityPruner.cpp src/gql/optimizer/TransitiveReachabilityPruner.h
         src/gql/optimizer/FunctionalDependencyPruner.cpp src/gql/optimizer/FunctionalDependencyPruner.h
         src/gql/optimizer/AutomorphicSymmetryOptimizer.cpp src/gql/optimizer/AutomorphicSymmetryOptimizer.h
+        src/gql/optimizer/SchemaReachabilityPruner.cpp src/gql/optimizer/SchemaReachabilityPruner.h
+        src/gql/optimizer/OptionalMatchPromoter.cpp src/gql/optimizer/OptionalMatchPromoter.h
+        src/gql/optimizer/DegreeConstraintPruner.cpp src/gql/optimizer/DegreeConstraintPruner.h
+        src/gql/optimizer/UniqueJoinEliminator.cpp src/gql/optimizer/UniqueJoinEliminator.h
+        src/gql/optimizer/LimitPushdownOptimizer.cpp src/gql/optimizer/LimitPushdownOptimizer.h
         src/gql/optimizer/JoinEliminator.cpp src/gql/optimizer/JoinEliminator.h
         src/gql/optimizer/SubsumptionPruner.cpp src/gql/optimizer/SubsumptionPruner.h
         src/gql/optimizer/CardinalityShortCircuiter.cpp src/gql/optimizer/CardinalityShortCircuiter.h

@@ -67,9 +67,18 @@ Run Docker on a Linux host for the best performance.
 This will bring up an [r5.2xlarge](https://aws.amazon.com/ec2/instance-types/r5/) with 4 cores set to 1 thread per core with 100 GB of space.
 
 
-## HTTP API
+## Documentation
 
-RageDB exposes a rich HTTP API for schema management, node and relationship CRUD operations, path traversing, degree and neighbor queries, and Lua scripting. For the complete HTTP API endpoint reference and usage examples, see [API.md](API.md).
+RageDB includes comprehensive technical documentation located in the [docs](docs/) directory:
+
+*   **[API.md](docs/API.md)**: Complete HTTP API endpoint reference for schema management, CRUD, traversals, and Lua script execution.
+*   **[GQL.md](docs/GQL.md)**: Reference for GQL (Graph Query Language) features, grammar compliance, and catalog schema controls.
+*   **[SEMANTIC_LAYER.md](docs/SEMANTIC_LAYER.md)**: Architectural overview of the Python-to-C++ query lifecycle, AST fragment translations, and validations.
+*   **[SEMANTIC_OPTIMIZER.md](docs/SEMANTIC_OPTIMIZER.md)**: Mathematical foundations, rewriting axioms, and benchmarks of the 15-phase server-side Semantic Query Optimizer (SQO).
+*   **[OPTIMIZER.md](docs/OPTIMIZER.md)**: Technical guide to general query optimization, plan caching, and AST rewrite passes.
+*   **[QUERY_PLANS.md](docs/QUERY_PLANS.md)** / **[QUERY_PLAN_OPERATORS.md](docs/QUERY_PLAN_OPERATORS.md)**: Details on graph query plans, execution operators, and parallel sharded traversals.
+*   **[WCOJ.md](docs/WCOJ.md)**: Reference for Worst-Case Optimal Join (WCOJ) traversal algorithm design.
+*   **[Dockerhub.md](docs/Dockerhub.md)**: Deployment and configuration guide for running RageDB containers via Docker Hub.
 
 
 ## Building

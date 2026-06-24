@@ -219,6 +219,9 @@ GqlValue evaluate_expression(const GqlRow& row, const Expression* expr) {
             }
             return GqlValue(is_null_expr->is_not ? !is_nil : is_nil);
         }
+        case ExpressionKind::SIZE_OP: {
+            return GqlValue(); // Evaluated via rewritten degree properties or subquery paths.
+        }
         case ExpressionKind::AGGREGATION: {
             return GqlValue(); // Aggregations are not evaluated on single rows
         }

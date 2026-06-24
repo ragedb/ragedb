@@ -30,6 +30,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/optimizer/TransitiveReachabilityPrunerTests.cpp
         gql/optimizer/FunctionalDependencyPrunerTests.cpp
         gql/optimizer/AutomorphicSymmetryOptimizerTests.cpp
+        gql/optimizer/Phase11_15OptimizerTests.cpp
         gql/optimizer_performance/ContradictionPerformanceTests.cpp
         gql/optimizer_performance/JoinEliminationPerformanceTests.cpp
         gql/optimizer_performance/AlgebraicPerformanceTests.cpp
@@ -39,6 +40,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/optimizer_performance/TransitiveReachabilityPerformanceTests.cpp
         gql/optimizer_performance/FunctionalDependencyPerformanceTests.cpp
         gql/optimizer_performance/AutomorphicSymmetryPerformanceTests.cpp
+        gql/optimizer_performance/Phase11_15PerformanceTests.cpp
         gql/GqlExecutorReadTests.cpp
         gql/GqlExecutorComplexTests.cpp
         gql/GqlExecutorSubqueryTests.cpp
@@ -81,6 +83,11 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/optimizer/TransitiveReachabilityPruner.cpp ../src/gql/optimizer/TransitiveReachabilityPruner.h
         ../src/gql/optimizer/FunctionalDependencyPruner.cpp ../src/gql/optimizer/FunctionalDependencyPruner.h
         ../src/gql/optimizer/AutomorphicSymmetryOptimizer.cpp ../src/gql/optimizer/AutomorphicSymmetryOptimizer.h
+        ../src/gql/optimizer/SchemaReachabilityPruner.cpp ../src/gql/optimizer/SchemaReachabilityPruner.h
+        ../src/gql/optimizer/OptionalMatchPromoter.cpp ../src/gql/optimizer/OptionalMatchPromoter.h
+        ../src/gql/optimizer/DegreeConstraintPruner.cpp ../src/gql/optimizer/DegreeConstraintPruner.h
+        ../src/gql/optimizer/UniqueJoinEliminator.cpp ../src/gql/optimizer/UniqueJoinEliminator.h
+        ../src/gql/optimizer/LimitPushdownOptimizer.cpp ../src/gql/optimizer/LimitPushdownOptimizer.h
         ../src/gql/optimizer/JoinEliminator.cpp ../src/gql/optimizer/JoinEliminator.h
         ../src/gql/optimizer/SubsumptionPruner.cpp ../src/gql/optimizer/SubsumptionPruner.h
         ../src/gql/optimizer/CardinalityShortCircuiter.cpp ../src/gql/optimizer/CardinalityShortCircuiter.h
@@ -159,6 +166,11 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/optimizer/TransitiveReachabilityPruner.cpp ../src/gql/optimizer/TransitiveReachabilityPruner.h
         ../src/gql/optimizer/FunctionalDependencyPruner.cpp ../src/gql/optimizer/FunctionalDependencyPruner.h
         ../src/gql/optimizer/AutomorphicSymmetryOptimizer.cpp ../src/gql/optimizer/AutomorphicSymmetryOptimizer.h
+        ../src/gql/optimizer/SchemaReachabilityPruner.cpp ../src/gql/optimizer/SchemaReachabilityPruner.h
+        ../src/gql/optimizer/OptionalMatchPromoter.cpp ../src/gql/optimizer/OptionalMatchPromoter.h
+        ../src/gql/optimizer/DegreeConstraintPruner.cpp ../src/gql/optimizer/DegreeConstraintPruner.h
+        ../src/gql/optimizer/UniqueJoinEliminator.cpp ../src/gql/optimizer/UniqueJoinEliminator.h
+        ../src/gql/optimizer/LimitPushdownOptimizer.cpp ../src/gql/optimizer/LimitPushdownOptimizer.h
         ../src/gql/optimizer/JoinEliminator.cpp ../src/gql/optimizer/JoinEliminator.h
         ../src/gql/optimizer/SubsumptionPruner.cpp ../src/gql/optimizer/SubsumptionPruner.h
         ../src/gql/optimizer/CardinalityShortCircuiter.cpp ../src/gql/optimizer/CardinalityShortCircuiter.h

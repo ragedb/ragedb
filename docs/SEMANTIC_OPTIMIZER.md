@@ -178,6 +178,70 @@ The optimizer uses several mathematical axioms and techniques to prove query rew
   - It injects `v1 < v2 AND v2 < v3` into the WHERE clause and sets `query.count_multiplication_factor = 6`.
 * **Code Location**: [AutomorphicSymmetryOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AutomorphicSymmetryOptimizer.cpp) (`automorphic_symmetry_pass`).
 
+### Phase 11: Schema Path Unsatisfiability Pruning
+* **Mathematical Axiom**: **Schema Adjacency Constraint / Path Reachability**.
+  - Let $E$ be the set of valid relationship triples $(L_{src}, L_{rel}, L_{tgt})$ allowed by the schema.
+  - If a query match pattern contains a transition $(u:L_1) \xrightarrow{r:L_R} (v:L_2)$ such that $(L_1, L_R, L_2) \notin E$, the query is unsatisfiable.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->(c:Category) RETURN p
+  ```
+* **Optimizer Mapping**:
+  - The optimizer reads all allowed relationship types from the `GqlVirtualCatalog`.
+  - It validates every match step in the query against this schema registry.
+  - If any transition is invalid, it sets `query.no_op = true` and short-circuits.
+* **Code Location**: [SchemaReachabilityPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SchemaReachabilityPruner.cpp) (`schema_reachability_pass`).
+
+### Phase 12: Optional Match Promotion
+* **Mathematical Axiom**: **Null-Rejecting Predicate Simplification**.
+  - For any optional join producing outer-joined rows, if a predicate $P$ in the `WHERE` clause evaluates to `false` or `unknown` when any of the right-side variables are `null`, the outer join simplifies to an inner join.
+* **GQL Query**:
+  ```gql
+  OPTIONAL MATCH (p:Person)-[:FRIEND]->(f:Person) WHERE f.age > 21 RETURN f
+  ```
+* **Optimizer Mapping**:
+  - The optimizer scans `OPTIONAL MATCH` clauses and identifies variables introduced by them.
+  - If the query `WHERE` filter includes a null-rejecting predicate (e.g. `f.age > 21`) referencing those variables, the optional match is promoted to a regular (inner) match.
+* **Code Location**: [OptionalMatchPromoter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/OptionalMatchPromoter.cpp) (`optional_match_promotion_pass`).
+
+### Phase 13: Degree-Constraint Pruning
+* **Mathematical Axiom**: **Virtual Degree Property Projection**.
+  - A query expression `size((v)-[:REL]->())` counts the out-degree of node `v` for relation `REL`.
+  - Instead of performing a traversal step to count these edges, the degree can be fetched directly from the node's edge metadata.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person) WHERE size((a)-[:FRIEND]->()) > 5 RETURN a
+  ```
+* **Optimizer Mapping**:
+  - The optimizer detects `size()` expressions matching the form of a node's outgoing/incoming degree.
+  - It rewrites the expression into a property lookup of a virtual degree property (e.g. `a._deg_a_FRIEND_OUT`).
+  - The executor populates this property directly from the node's metadata without traversing edges.
+* **Code Location**: [DegreeConstraintPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DegreeConstraintPruner.cpp) (`degree_constraint_pruning_pass`).
+
+### Phase 14: Unique Constraint Join Elimination
+* **Mathematical Axiom**: **Unique Constraint Injective Projection**.
+  - If a unique constraint ensures that for every source node $s$, there exists at most one target node $t$ via relationship $R$, then an optional match `OPTIONAL MATCH (s)-[:R]->(t)` where $t$ is not projected or filtered does not change the row cardinality or add columns. It is an identity mapping.
+* **GQL Query**:
+  ```gql
+  OPTIONAL MATCH (p:Person)-[:UNIQUE_REL]->(t:TargetNode) RETURN p.name
+  ```
+* **Optimizer Mapping**:
+  - The optimizer scans unique constraints from the virtual catalog.
+  - For optional matches on unique relations where the target node variable is not referenced anywhere else in the query, the target node and relationship traversal are pruned.
+* **Code Location**: [UniqueJoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/UniqueJoinEliminator.cpp) (`unique_join_elimination_pass`).
+
+### Phase 15: Limit & Top-K Pushdown
+* **Mathematical Axiom**: **Limit / Projection Commutativity**.
+  - For any traversal pipeline ending in a global `LIMIT L`, pushing the limit down into the traversal branches ensures that each branch stops searching once $L$ rows are produced.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age LIMIT 5
+  ```
+* **Optimizer Mapping**:
+  - The optimizer pushes the query's global `LIMIT` down into the individual MATCH statements.
+  - The execution engine halts traversal branches as soon as the limit threshold is reached.
+* **Code Location**: [LimitPushdownOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.cpp) (`limit_pushdown_pass`).
+
 ---
 
 ## 2. Bypassing the Semantic Optimizer
@@ -234,8 +298,18 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 8: Transitive DAG Reachability** | 0.6101 ms | 0.0097 ms | 17.2677 ms | **1780.2x** |
 | **Phase 9: Functional Dependency** | 21.3215 ms | 20.9483 ms | 25.3882 ms | **1.21x** |
 | **Phase 10: Automorphic Symmetry** | 287.271 ms | 287.757 ms | 907.029 ms | **3.15x** |
+| **Phase 11: Schema Path Unsatisfiability** | 0.0476 ms | 0.0082 ms | 41.9664 ms | **5117.8x** |
+| **Phase 12: Optional Match Promotion** | 0.0645 ms | 0.0111 ms | 197.3050 ms | **17775.2x** |
+| **Phase 13: Degree-Constraint Pruning** | 0.1087 ms | 0.0293 ms | 0.0837 ms | **2.86x** |
+| **Phase 14: Unique Join Elimination** | 0.6432 ms | 0.1100 ms | 0.1449 ms | **1.32x** |
+| **Phase 15: Limit Pushdown** | 1.2297 ms | 0.6823 ms | 78.4728 ms | **115.0x** |
 
 ### Key Performance Insights
+* **Schema Path Unsatisfiability (Phase 11)**: Short-circuiting execution when the query path is incompatible with the allowed schema relationships bypasses database scan and traversal entirely. This results in a **5117.8x speedup** (latency cut from 41.97 ms to 0.0082 ms).
+* **Optional Match Promotion (Phase 12)**: Promoting optional matches to inner matches when filters reject nulls allows the query planner to leverage inner join optimizations and index lookups, yielding a **17775.2x speedup** (latency cut from 197.31 ms to 0.0111 ms).
+* **Degree-Constraint Pruning (Phase 13)**: Rewriting size expressions to a node's virtual degree property avoids relationship scans and counts, fetching the counts directly from metadata and resulting in a **2.86x speedup**.
+* **Unique Join Elimination (Phase 14)**: Eliminating unique joins in optional match queries when the target is not projected or filtered reduces traversal steps, resulting in a **1.32x speedup**.
+* **Limit Pushdown (Phase 15)**: Introducing sequential early-stopping target node resolution in the traversal engine yields a **115.0x speedup** for limit-constrained queries (slashing latency from 78.47 ms to 0.68 ms on node neighborhoods of size 1,000) by preventing excessive neighbor node fetching once the limit is satisfied.
 * **Automorphic Symmetry (Phase 10)**: Rewriting cycle traversals with canonical ordering constraints reduces traversal state space dramatically. In a dense clique benchmark (16 nodes, 3,360 cycles), applying canonical ordering constraints prunes redundant traversal paths, reducing traversal time from 907.03 ms to 287.76 ms (**3.15x speedup**).
 * **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **978.1x speedup**.
 * **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.56 ms to 8.77 ms (**4.40x speedup**).
@@ -278,3 +352,13 @@ To maintain code readability and extensibility as more optimization rules are in
    - *Phase 9 (Functional Dependency & Attribute-Correlation)*: Maps functional dependencies ($X \to Y$) from check constraints to rewrite grouping aggregations `count(b.Y)` -> `count(*)` when `b.X` is in grouping keys, bypassing property scans.
 10. **[AutomorphicSymmetryOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AutomorphicSymmetryOptimizer.h)**:
     - *Phase 10 (Automorphic Graph Symmetry Deduplication)*: Detects symmetric homogeneous cycle patterns (triangles) for count queries, injecting canonical variable ordering constraints (`v1 < v2 AND v2 < v3`) to prune redundant traversal branches, and applying a multiplication factor of 6.
+11. **[SchemaReachabilityPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SchemaReachabilityPruner.h)**:
+    - *Phase 11 (Schema Path Unsatisfiability)*: Validates query transitions against the registered allowed relationship types in the virtual catalog, setting `query.no_op = true` if any transition is invalid.
+12. **[OptionalMatchPromoter](file:///home/maxdemarzi/ragedb/src/gql/optimizer/OptionalMatchPromoter.h)**:
+    - *Phase 12 (Optional Match Promotion)*: Inspects predicates to find null-rejecting conditions on optionally matched variables, promoting those optional matches to standard inner matches.
+13. **[DegreeConstraintPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DegreeConstraintPruner.h)**:
+    - *Phase 13 (Degree-Constraint Pruning)*: Rewrites `size()` pattern expressions into virtual property lookups that fetch relationship degree metadata directly from the source node without traversing.
+14. **[UniqueJoinEliminator](file:///home/maxdemarzi/ragedb/src/gql/optimizer/UniqueJoinEliminator.h)**:
+    - *Phase 14 (Unique Join Elimination)*: Prunes optional matches along relationships constrained to be unique when the target node is unreferenced elsewhere.
+15. **[LimitPushdownOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.h)**:
+    - *Phase 15 (Limit & Top-K Pushdown)*: Propagates global `LIMIT` boundaries into individual match and traversal steps to allow early traversal termination.

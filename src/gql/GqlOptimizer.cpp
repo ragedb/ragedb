@@ -28,6 +28,11 @@
 #include "optimizer/TransitiveReachabilityPruner.h"
 #include "optimizer/FunctionalDependencyPruner.h"
 #include "optimizer/AutomorphicSymmetryOptimizer.h"
+#include "optimizer/SchemaReachabilityPruner.h"
+#include "optimizer/OptionalMatchPromoter.h"
+#include "optimizer/DegreeConstraintPruner.h"
+#include "optimizer/UniqueJoinEliminator.h"
+#include "optimizer/LimitPushdownOptimizer.h"
 #include "../graph/Graph.h"
 #include <limits>
 #include <algorithm>
@@ -536,6 +541,22 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     FunctionalDependencyPruner::functional_dependency_pass(query);
     // Phase 10: Deduplicate automorphic graph symmetries for counting queries.
     AutomorphicSymmetryOptimizer::automorphic_symmetry_pass(query);
+
+    // Phase 11: Prune query matching steps that violate schema path reachability rules.
+    SchemaReachabilityPruner::schema_reachability_pass(query);
+    if (query.no_op) return;
+
+    // Phase 12: Promote optional matches to regular matches if variables are null-rejected.
+    OptionalMatchPromoter::optional_match_promotion_pass(query);
+
+    // Phase 13: Prune nodes based on degree constraints before traversing.
+    DegreeConstraintPruner::degree_constraint_pruning_pass(query);
+
+    // Phase 14: Eliminate joins to unique destination nodes if only their IDs/variables are needed.
+    UniqueJoinEliminator::unique_join_elimination_pass(query);
+
+    // Phase 15: Push global query limits down to early traversal steps when safe.
+    LimitPushdownOptimizer::limit_pushdown_pass(query);
 
     std::set<std::string> outer_vars;
     collect_variables_from_matches(query.matches, outer_vars);

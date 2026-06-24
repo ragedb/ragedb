@@ -54,7 +54,8 @@ enum class ExpressionKind {
     BINARY_OP,        ///< Binary operations (e.g. AND, OR, +, =, <)
     AGGREGATION,      ///< GQL Aggregate function (e.g. COUNT, SUM, AVG, MIN, MAX)
     EXISTS,           ///< Exists subquery expression (e.g. EXISTS { MATCH ... })
-    IS_NULL_CHECK     ///< Null check expression (e.g. x IS NULL)
+    IS_NULL_CHECK,    ///< Null check expression (e.g. x IS NULL)
+    SIZE_OP           ///< Size function expression (e.g. size((x)-[:REL]->()))
 };
 
 /**
@@ -295,6 +296,7 @@ struct MatchStatement {
     MatchMode match_mode = MatchMode::DIFFERENT_EDGES; ///< GQL Match Mode (default is DIFFERENT EDGES).
     PathMode path_mode = PathMode::TRAIL;            ///< GQL Path Mode (default is TRAIL).
     PathPattern pattern;      ///< Path pattern to match.
+    std::optional<uint64_t> limit; ///< Optional limit pushed down to this match statement.
 
     std::string path_variable;                              ///< Optional variable name to bind the entire matched path.
     ShortestPathKind shortest_path_kind = ShortestPathKind::NONE; ///< The shortest path selection mode (e.g. ALL, ANY, K).
@@ -336,6 +338,23 @@ struct ExistsExpr : public Expression {
         auto copy = std::make_unique<ExistsExpr>(matches, where_expr ? where_expr->clone() : nullptr);
         copy->target_variable = target_variable;
         return copy;
+    }
+};
+
+/**
+ * @brief Represents a size() function call on a path pattern (e.g., size((p)-[:FRIEND]->())).
+ */
+struct SizeExpr : public Expression {
+    std::vector<MatchStatement> matches;
+    std::unique_ptr<Expression> where_expr;
+    
+    SizeExpr(std::vector<MatchStatement> m, std::unique_ptr<Expression> w) {
+        kind = ExpressionKind::SIZE_OP;
+        matches = std::move(m);
+        where_expr = std::move(w);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<SizeExpr>(matches, where_expr ? where_expr->clone() : nullptr);
     }
 };
 
