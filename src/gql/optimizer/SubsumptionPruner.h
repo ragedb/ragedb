@@ -17,6 +17,30 @@
 #ifndef RAGEDB_SUBSUMPTIONPRUNER_H
 #define RAGEDB_SUBSUMPTIONPRUNER_H
 
+/**
+ * @file SubsumptionPruner.h
+ * @brief Performs Phase 6: Subsumption / Query Containment Pruning.
+ * 
+ * Identifies duplicate or redundant isomorphic query traversal paths originating from the same starting node
+ * variable, and prunes paths whose range constraints are completely subsumed by another path.
+ * 
+ * Subsumption requires:
+ *   - The patterns must be isomorphic (same node/edge structures).
+ *   - They must originate from the same starting variable.
+ *   - Subsequent node/edge labels and variables are subsumed (i.e., range filters in the pruned path are
+ *     equal to or less strict than the corresponding variables in the keeping path).
+ *   - Pruned variables must be dead-ends (neither projected, sorted, nor referenced in updates or other matches).
+ * 
+ * Example:
+ *   Query: 
+ *     MATCH (p:Person)-[:FRIEND]->(f1:Person) WHERE f1.age > 30
+ *     MATCH (p)-[:FRIEND]->(f2:Person) WHERE f2.age > 20
+ *     RETURN p.name
+ *   Result: Since f1.age > 30 is a subset of/stricter than f2.age > 20, any person 'p' that has a friend
+ *           older than 30 is guaranteed to have a friend older than 20. Because f2 is a dead-end variable,
+ *           the second MATCH is pruned entirely.
+ */
+
 #include "../GqlAst.h"
 
 namespace ragedb::gql {

@@ -17,6 +17,17 @@
 #ifndef RAGEDB_OPTIMIZERUTILS_H
 #define RAGEDB_OPTIMIZERUTILS_H
 
+/**
+ * @file OptimizerUtils.h
+ * @brief Common helper structures and functions for RageDB Semantic Query Optimizer passes.
+ * 
+ * Provides shared abstractions such as:
+ *  - Interval: A bounding interval representation used for variable constraint satisfiability checks.
+ *  - VarInfo: Information gathered per variable (its label, and intervals per property).
+ *  - AST Rewriters and Traversers: Functions to rewrite variable names, evaluate numeric literals,
+ *    and analyze GQL query patterns for equivalence or containment.
+ */
+
 #include "../GqlAst.h"
 #include <map>
 #include <vector>
