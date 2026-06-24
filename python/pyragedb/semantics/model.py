@@ -39,6 +39,16 @@ class Model:
         """
         return list(self._concept_index.values())
 
+    @property
+    def alglib(self):
+        """
+        Exposes algebraic relation properties helper module.
+        Matches RelationalAI Model.alglib library API.
+        """
+        from .std import alglib
+        return alglib
+
+
     def Concept(self, name, identify_by=None, extends=None, identity_includes_type=False):
         """
         Declares a new concept type. Automatically handles:

@@ -15,6 +15,8 @@
  */
 
 #include "../Shard.h"
+#include "../../gql/executor/WccCache.h"
+#include "../../gql/executor/TransitiveReachabilityCache.h"
 
 namespace ragedb {
 
@@ -112,6 +114,8 @@ namespace ragedb {
     }
 
     seastar::future<uint64_t> Shard::RelationshipAddEmptyPeered(const std::string &rel_type, const std::string &type1, const std::string &key1, const std::string &type2, const std::string &key2) {
+        auto fut = [this, rel_type, type1, key1, type2, key2] () mutable {
+
         uint16_t shard_id1 = CalculateShardId(type1, key1);
         uint16_t shard_id2 = CalculateShardId(type2, key2);
 
@@ -202,10 +206,23 @@ namespace ragedb {
                     });
                 });
         });
+    
+        };
+        return fut().then([this, rel_type](uint64_t rel_id) {
+            if (rel_id > 0) {
+                (void)container().invoke_on_all([rel_type](Shard&) {
+                    ragedb::gql::WccCache::local().invalidate(rel_type);
+                    ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                });
+            }
+            return rel_id;
+        });
     }
 
     seastar::future<uint64_t> Shard::RelationshipAddPeered(const std::string &rel_type, const std::string &type1, const std::string &key1,
                                                            const std::string &type2, const std::string &key2, const std::string& properties) {
+        auto fut = [this, rel_type, type1, key1, type2, key2, properties] () mutable {
+
         uint16_t shard_id1 = CalculateShardId(type1, key1);
         uint16_t shard_id2 = CalculateShardId(type2, key2);
 
@@ -299,9 +316,22 @@ namespace ragedb {
                           });
               });
         });
+    
+        };
+        return fut().then([this, rel_type](uint64_t rel_id) {
+            if (rel_id > 0) {
+                (void)container().invoke_on_all([rel_type](Shard&) {
+                    ragedb::gql::WccCache::local().invalidate(rel_type);
+                    ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                });
+            }
+            return rel_id;
+        });
     }
 
     seastar::future<uint64_t> Shard::RelationshipAddEmptyPeered(const std::string &rel_type, uint64_t id1, uint64_t id2) {
+        auto fut = [this, rel_type, id1, id2] () mutable {
+
         // Get the shard ids and check if the type exists
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
@@ -380,9 +410,22 @@ namespace ragedb {
                         });
                     });
         });
+    
+        };
+        return fut().then([this, rel_type](uint64_t rel_id) {
+            if (rel_id > 0) {
+                (void)container().invoke_on_all([rel_type](Shard&) {
+                    ragedb::gql::WccCache::local().invalidate(rel_type);
+                    ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                });
+            }
+            return rel_id;
+        });
     }
 
     seastar::future<uint64_t> Shard::RelationshipAddEmptyPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2) {
+        auto fut = [this, rel_type_id, id1, id2] () mutable {
+
         // Get the shard ids and check if the type exists
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
@@ -424,9 +467,23 @@ namespace ragedb {
         }
         // Invalid Relationship type id
         return seastar::make_ready_future<uint64_t>(uint64_t(0));
+    
+        };
+        return fut().then([this, rel_type_id](uint64_t rel_id) {
+            if (rel_id > 0) {
+                std::string rel_type = relationship_types.getType(rel_type_id);
+                (void)container().invoke_on_all([rel_type](Shard&) {
+                    ragedb::gql::WccCache::local().invalidate(rel_type);
+                    ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                });
+            }
+            return rel_id;
+        });
     }
 
     seastar::future<uint64_t> Shard::RelationshipAddPeered(const std::string &rel_type, uint64_t id1, uint64_t id2, const std::string& properties) {
+        auto fut = [this, rel_type, id1, id2, properties] () mutable {
+
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
 
@@ -505,10 +562,22 @@ namespace ragedb {
                         });
                     });
         });
+    
+        };
+        return fut().then([this, rel_type](uint64_t rel_id) {
+            if (rel_id > 0) {
+                (void)container().invoke_on_all([rel_type](Shard&) {
+                    ragedb::gql::WccCache::local().invalidate(rel_type);
+                    ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                });
+            }
+            return rel_id;
+        });
     }
 
-    seastar::future<uint64_t> Shard::RelationshipAddPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties)
-    {
+    seastar::future<uint64_t> Shard::RelationshipAddPeered(uint16_t rel_type_id, uint64_t id1, uint64_t id2, const std::string& properties) {
+        auto fut = [this, rel_type_id, id1, id2, properties] () mutable {
+
         uint16_t shard_id1 = CalculateShardId(id1);
         uint16_t shard_id2 = CalculateShardId(id2);
 
@@ -551,6 +620,18 @@ namespace ragedb {
         }
     // Invalid Relationship type id
     return seastar::make_ready_future<uint64_t>(uint64_t(0));
+    
+        };
+        return fut().then([this, rel_type_id](uint64_t rel_id) {
+            if (rel_id > 0) {
+                std::string rel_type = relationship_types.getType(rel_type_id);
+                (void)container().invoke_on_all([rel_type](Shard&) {
+                    ragedb::gql::WccCache::local().invalidate(rel_type);
+                    ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                });
+            }
+            return rel_id;
+        });
     }
 
     seastar::future<Relationship> Shard::RelationshipGetPeered(uint64_t id) {
@@ -574,8 +655,18 @@ namespace ragedb {
                 return local_shard.RelationshipRemoveGetIncoming(external_id);
             }).then([external_id, this] (std::pair <uint16_t, uint64_t> rel_type_incoming_node_id) {
                 uint16_t shard_id2 = CalculateShardId(rel_type_incoming_node_id.second);
+                uint16_t rel_type_id = rel_type_incoming_node_id.first;
                 return container().invoke_on(shard_id2, [rel_type_incoming_node_id, external_id] (Shard &local_shard) {
                     return local_shard.RelationshipRemoveIncoming(rel_type_incoming_node_id.first, external_id, rel_type_incoming_node_id.second);
+                }).then([this, rel_type_id](bool removed) {
+                    if (removed) {
+                        std::string rel_type = relationship_types.getType(rel_type_id);
+                        (void)container().invoke_on_all([rel_type](Shard&) {
+                            ragedb::gql::WccCache::local().invalidate(rel_type);
+                            ragedb::gql::TransitiveReachabilityCache::local().invalidate(rel_type);
+                        });
+                    }
+                    return removed;
                 });
             });
         });

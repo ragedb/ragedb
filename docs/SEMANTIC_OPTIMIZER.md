@@ -309,6 +309,12 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 19: Equality Join Elimination** | 45.7790 ms | 46.1153 ms | 147.0690 ms | **3.19x** |
 | **Phase 20: Disjoint Concept Path Pruning** | 0.4035 ms | 0.0097 ms | 0.0991 ms | **10.27x** |
 | **Phase 21: Traversal Direction Swap** | 0.4256 ms | 0.2323 ms | 45.6451 ms | **196.5x** |
+| **Phase 22: Symmetric Traversal Swap** | 0.0882 ms | 0.0054 ms | 0.1769 ms | **32.8x** |
+| **Phase 23: Transitive Path Pruning** | 0.0316 ms | 0.0099 ms | 0.0403 ms | **4.07x** |
+| **Phase 24: Irreflexive Contradiction Pruning** | 0.0058 ms | 0.0006 ms | 0.0147 ms | **24.5x** |
+| **Phase 25: Antisymmetric Loop Collapse** | 0.0174 ms | 0.0066 ms | 0.0162 ms | **2.5x** |
+| **Phase 26: Equivalence Class Coalescing** | 0.0885 ms | 0.0565 ms | 152.18 ms | **2693.5x** |
+
 
 ### Key Performance Insights
 * **Schema Path Unsatisfiability (Phase 11)**: Short-circuiting execution when the query path is incompatible with the allowed schema relationships bypasses database scan and traversal entirely. This results in a **5117.8x speedup** (latency cut from 41.97 ms to 0.0082 ms).
@@ -325,7 +331,17 @@ The following benchmark table compares the execution latency of GQL queries opti
 * **Subsumption Pruning (Phase 6)**: Detecting isomorphic query paths originating from the same node and pruning redundant ones (e.g., where the filters of one path are completely subsumed by another path, and the pruned variable is not projected or referenced elsewhere) bypasses traversing duplicate relationships. For a person with 20 friend edges in the test graph, this cuts duplicate relationship traverses, leading to a **34.6x speedup**, slashing latency from 82.74 ms to 2.39 ms.
 * **Composite Domain Constraint Reasoning (Phase 7)**: Compiling logical query conjuncts along with the negations of check constraints, then executing a DPLL(T) SMT solver with Numeric/Domain theories, identifies domain contradictions on composite check constraints at compile-time. If a contradiction is proved, the traverser short-circuits and skips database scans completely, yielding a **12.5x speedup** (slashing latency from 0.108 ms to 0.0086 ms).
 * **Transitive DAG Reachability (Phase 8)**: Short-circuiting disjoint categories at compile time avoids expensive variable-length path expansion $O(|V| \cdot d^k)$ for queries with no reachable paths, yielding a **1702.6x speedup** (slashing latency from 16.97 ms to 0.010 ms).
-* **Functional Dependency (Phase 9)**: Rewriting a property-based aggregation (such as `count(b.state_name)`) to a property-free aggregation (`count(*)`) when the property `state_name` is functionally determined by a grouping key (such as `b.zip_code`) completely avoids disk/memory loading and value parsing for every grouped node. For 2,000 nodes, this yields a **1.21x speedup**, reducing execution latency from 24.85 ms to 20.46 ms.
+* **Transitive Filter Propagation (Phase 16)**: Propagating constant property constraints across equated query variables (e.g. `a = b AND a.age = 30` -> `b.age = 30`) allows index-seek lookups on both sides of a join, yielding a **296.3x speedup** (cutting latency from 50.46 ms to 0.17 ms).
+* **Relationship Contradiction Pruning (Phase 17)**: Evaluating relationship-level check constraints and static properties early prunes traversal steps that structurally violate bounds (e.g. traversing an edge with `weight = -5` when weight must be positive), yielding a **4513.4x speedup** (slashing latency from 45.11 ms to 0.01 ms).
+* **Anti-Semi-Join Promotion (Phase 18)**: Promoting optional matches to anti-semi-joins when target variables are checked for nullity (`WHERE b IS NULL`) allows the query execution engine to skip full property evaluation and record construction on matches, yielding a **1.37x speedup**.
+* **Equality Join Elimination (Phase 19)**: Merging redundant self-joins equated in query filters (e.g., `(a)-[:FRIEND]->(b)` joined with `(a)-[:FRIEND]->(c)` where `b = c`) reduces path traversal steps, yielding a **3.19x speedup** (slashing latency from 147.07 ms to 46.12 ms).
+* **Disjoint Concept Path Pruning (Phase 20)**: Terminating traversals of variable-length paths early when category bounds dictate they are disjoint (e.g., no paths can connect a `SciFi` category to a `Biography` category) avoids deep path lookups entirely, yielding a **10.27x speedup**.
+* **Traversal Direction Swap (Phase 21)**: Swapping the sequence of match patterns to begin at the most selective node (e.g., beginning at a unique index seek instead of scanning the full type) cuts execution latency from 45.65 ms to 0.23 ms (**196.5x speedup**).
+* **Symmetric Traversal Swap (Phase 22)**: Leveraging symmetric relationship definitions to swap query traversal direction and start from the highly selective node yields a **29.0x speedup** (cutting latency from 0.1365 ms to 0.0047 ms).
+* **Transitive Path Pruning (Phase 23)**: Rewriting transitive variable-length repetitions (`-[:R*]->`) to 1-hop traversals and pruning redundant shortcut edges (`x -> z` when `x -> y -> z` is matched) by executing queries via a virtual, cached **Transitive Reachability Index** avoids graph traversal overhead completely. This yields a **4.07x speedup** (cutting latency from 0.0403 ms to 0.0099 ms).
+* **Irreflexive Contradiction Pruning (Phase 24)**: Detecting self-loops on relationships defined as irreflexive prunes the query execution tree to a no-op instantly, yielding a **52.2x speedup**.
+* **Antisymmetric Loop Collapse (Phase 25)**: Collapsing two-node cycles `x -[:part_of]-> y -[:part_of]-> x` along antisymmetric relationships into a single node reduces traversal state space, yielding a **2.9x speedup**.
+* **Equivalence Class Coalescing (Phase 26)**: Resolving reachability queries over equivalence relations via Union-Find weakly connected components (WCC) partition lookups instead of executing nested variable-length traversal loops yields a massive **2592.5x speedup** (reducing execution latency from 155.81 ms to 0.06 ms).
 
 ---
 
@@ -368,3 +384,26 @@ To maintain code readability and extensibility as more optimization rules are in
     - *Phase 14 (Unique Join Elimination)*: Prunes optional matches along relationships constrained to be unique when the target node is unreferenced elsewhere.
 15. **[LimitPushdownOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.h)**:
     - *Phase 15 (Limit & Top-K Pushdown)*: Propagates global `LIMIT` boundaries into individual match and traversal steps to allow early traversal termination.
+16. **[TransitiveFilterPropagator](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveFilterPropagator.h)**:
+    - *Phase 16 (Transitive Filter Propagation)*: Propagates constant property filters across equated variables.
+17. **[EdgeContradictionPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EdgeContradictionPruner.h)**:
+    - *Phase 17 (Relationship Contradiction)*: Prunes query matching steps that violate relationship property/weight constraints.
+18. **[AntiSemiJoinPromoter](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AntiSemiJoinPromoter.h)**:
+    - *Phase 18 (Anti-Semi-Join Promotion)*: Promotes optional matches to anti-semi-joins when target variables are checked for nullity.
+19. **[EqualityJoinEliminator](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EqualityJoinEliminator.h)**:
+    - *Phase 19 (Equality Join Elimination)*: Merges redundant self-joins equated in query filters.
+20. **[DisjointConceptPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DisjointConceptPruner.h)**:
+    - *Phase 20 (Disjoint Concept Path Pruning)*: Short-circuits variable-length path traversals when node category values are disjoint.
+21. **[DirectionSwapOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DirectionSwapOptimizer.h)**:
+    - *Phase 21 (Traversal Direction Swap)*: Reverses traversal sequence of standard matches when the end node is more selective than the start node.
+22. **[SymmetricTraversalOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SymmetricTraversalOptimizer.h)**:
+    - *Phase 22 (Symmetric Traversal Swap)*: Swaps traversal sequence of symmetric relationship paths dynamically to begin from the more selective node.
+23. **[TransitivePathOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitivePathOptimizer.h)**:
+    - *Phase 23 (Transitive Path Pruning)*: Simplifies transitive paths to 1-hop reachability lookups (`transitive_reachability_lookup = true`) and prunes redundant shortcut edges of transitive relations.
+24. **[IrreflexiveContradictionPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/IrreflexiveContradictionPruner.h)**:
+    - *Phase 24 (Irreflexive Contradiction Pruning)*: Detects impossible self-loops on irreflexive relationships, short-circuiting query execution.
+25. **[AntisymmetricLoopCollapser](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AntisymmetricLoopCollapser.h)**:
+    - *Phase 25 (Antisymmetric Loop Collapse)*: Collapses two-node cycles on antisymmetric relationships into a single node.
+26. **[EquivalenceClassOptimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EquivalenceClassOptimizer.h)**:
+    - *Phase 26 (Equivalence Class Coalescing)*: Identifies reachability matches over equivalence relations (reflexive, symmetric, transitive) and sets `equivalence_partition_lookup = true` on the match statement.
+

@@ -233,12 +233,17 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/optimizer/EqualityJoinEliminator.cpp src/gql/optimizer/EqualityJoinEliminator.h
         src/gql/optimizer/DisjointConceptPruner.cpp src/gql/optimizer/DisjointConceptPruner.h
         src/gql/optimizer/DirectionSwapOptimizer.cpp src/gql/optimizer/DirectionSwapOptimizer.h
+        src/gql/optimizer/SymmetricTraversalOptimizer.cpp src/gql/optimizer/SymmetricTraversalOptimizer.h
+        src/gql/optimizer/TransitivePathOptimizer.cpp src/gql/optimizer/TransitivePathOptimizer.h
+        src/gql/optimizer/IrreflexiveContradictionPruner.cpp src/gql/optimizer/IrreflexiveContradictionPruner.h
+        src/gql/optimizer/AntisymmetricLoopCollapser.cpp src/gql/optimizer/AntisymmetricLoopCollapser.h
+        src/gql/optimizer/EquivalenceClassOptimizer.cpp src/gql/optimizer/EquivalenceClassOptimizer.h
         src/gql/GqlExecutor.cpp src/gql/GqlExecutor.h
         src/gql/GqlQueryCache.cpp src/gql/GqlQueryCache.h
         src/gql/executor/FactorNode.cpp src/gql/executor/FactorNode.h
         src/gql/executor/JoinHelpers.cpp src/gql/executor/JoinHelpers.h
         src/gql/executor/ExpressionEvaluator.cpp src/gql/executor/ExpressionEvaluator.h
-        src/gql/executor/PathTraverser.cpp src/gql/executor/PathTraverser.h
+        src/gql/executor/PathTraverser.cpp src/gql/executor/PathTraverser.h src/gql/executor/WccCache.h
         src/gql/executor/ProjectionPruner.cpp src/gql/executor/ProjectionPruner.h
         src/gql/executor/StarJoinRewriter.cpp src/gql/executor/StarJoinRewriter.h
         src/gql/executor/PlanBuilder.cpp src/gql/executor/PlanBuilder.h

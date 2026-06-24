@@ -28,6 +28,7 @@
 #include "executor/JoinHelpers.h"
 #include "executor/ExpressionEvaluator.h"
 #include "executor/PathTraverser.h"
+#include "executor/WccCache.h"
 #include "executor/ProjectionPruner.h"
 #include "executor/StarJoinRewriter.h"
 #include "executor/PlanBuilder.h"
@@ -1097,6 +1098,7 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
     if (query_val.clear_cache) {
         return graph.shard.invoke_on_all([](Shard&) {
             GqlQueryCache::local().clear();
+            WccCache::local().clear();
         }).then([] {
             return seastar::make_ready_future<std::string>("{\"status\": \"cache cleared\"}");
         });
@@ -1116,8 +1118,11 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
     return execute_query_internal(graph, query_ptr)
     .then([&graph, query_ptr](QueryResult result) {
         if (!query_ptr->writes.empty()) {
-            return validate_constraints(graph)
-            .then([result = std::move(result)]() mutable {
+            return graph.shard.invoke_on_all([](Shard&) {
+                WccCache::local().clear();
+            }).then([&graph]() {
+                return validate_constraints(graph);
+            }).then([result = std::move(result)]() mutable {
                 return result;
             });
         }

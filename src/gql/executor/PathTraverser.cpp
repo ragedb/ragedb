@@ -17,7 +17,10 @@
 #include "PathTraverser.h"
 #include "JoinHelpers.h"
 #include "Join.h"
+#include "WccCache.h"
+#include "TransitiveReachabilityCache.h"
 #include <seastar/core/when_all.hh>
+#include <seastar/util/later.hh>
 #include <algorithm>
 #include <unordered_set>
 #include <iterator>
@@ -376,19 +379,42 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
                     current_path_rels.push_back(rel);
                     current_path_nodes.push_back(target_node);
 
-                    return traverse_var_len_async(
-                        graph,
-                        target_id,
-                        edge,
-                        next_node,
-                        current_depth + 1,
-                        std::move(visited_rel_ids),
-                        std::move(current_path_rels),
-                        std::move(current_path_nodes),
-                        limit,
-                        pruner,
-                        path_mode
-                    );
+                    uint64_t next_depth = current_depth + 1;
+                    if (next_depth % 5 == 0) {
+                        return seastar::yield().then([&graph, target_id, edge, next_node, next_depth,
+                                                      visited_rel_ids = std::move(visited_rel_ids),
+                                                      current_path_rels = std::move(current_path_rels),
+                                                      current_path_nodes = std::move(current_path_nodes),
+                                                      limit, pruner, path_mode]() mutable {
+                            return traverse_var_len_async(
+                                graph,
+                                target_id,
+                                edge,
+                                next_node,
+                                next_depth,
+                                std::move(visited_rel_ids),
+                                std::move(current_path_rels),
+                                std::move(current_path_nodes),
+                                limit,
+                                pruner,
+                                path_mode
+                            );
+                        });
+                    } else {
+                        return traverse_var_len_async(
+                            graph,
+                            target_id,
+                            edge,
+                            next_node,
+                            next_depth,
+                            std::move(visited_rel_ids),
+                            std::move(current_path_rels),
+                            std::move(current_path_nodes),
+                            limit,
+                            pruner,
+                            path_mode
+                        );
+                    }
                 })
             );
         }
@@ -1323,6 +1349,240 @@ seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& gra
                     });
                 });
             }
+        });
+    }
+
+    // Case 0.5: Equivalence Partition Lookup (Phase 26)
+    if (stmt.equivalence_partition_lookup) {
+        auto start_node_var = stmt.pattern.nodes[0].variable;
+        auto end_node_var = stmt.pattern.nodes[1].variable;
+        const auto& edge = stmt.pattern.edges[0];
+        std::string rel_type = "";
+        if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+            rel_type = edge.label_expr->name;
+        }
+
+        seastar::future<std::map<uint64_t, uint64_t>> partitions_fut = seastar::make_ready_future<std::map<uint64_t, uint64_t>>();
+        if (WccCache::local().has(rel_type)) {
+            partitions_fut = seastar::make_ready_future<std::map<uint64_t, uint64_t>>(WccCache::local().get(rel_type));
+        } else {
+            std::map<uint64_t, uint64_t> wcc = graph.shard.local().WeaklyConnectedComponentsPeered(rel_type, "", "", "", "", true, false);
+            WccCache::local().set(rel_type, std::move(wcc));
+            partitions_fut = seastar::make_ready_future<std::map<uint64_t, uint64_t>>(WccCache::local().get(rel_type));
+        }
+
+        seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        if (!start_node_var.empty()) {
+            auto bound_start_it = row.bindings.find(start_node_var);
+            if (bound_start_it != row.bindings.end() && bound_start_it->second.type == GqlValue::NODE) {
+                start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_start_it->second.node });
+            } else {
+                start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+            }
+        } else {
+            start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+        }
+
+        seastar::future<std::vector<Node>> end_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        if (!end_node_var.empty()) {
+            auto bound_end_it = row.bindings.find(end_node_var);
+            if (bound_end_it != row.bindings.end() && bound_end_it->second.type == GqlValue::NODE) {
+                end_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_end_it->second.node });
+            } else {
+                end_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[1], 0, pruner);
+            }
+        } else {
+            end_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[1], 0, pruner);
+        }
+
+        return seastar::when_all_succeed(std::move(partitions_fut), std::move(start_nodes_fut), std::move(end_nodes_fut))
+        .then([&graph, stmt, row, start_node_var, end_node_var, rel_type](std::tuple<std::map<uint64_t, uint64_t>, std::vector<Node>, std::vector<Node>> results) {
+            auto wcc = std::move(std::get<0>(results));
+            auto start_nodes = std::move(std::get<1>(results));
+            auto end_nodes = std::move(std::get<2>(results));
+
+            std::vector<Node> valid_starts;
+            for (const auto& node : start_nodes) {
+                if (stmt.pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[0].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[0].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[0].property_filters)) {
+                    continue;
+                }
+                valid_starts.push_back(node);
+            }
+
+            std::vector<Node> valid_ends;
+            for (const auto& node : end_nodes) {
+                if (stmt.pattern.nodes[1].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[1].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                    continue;
+                }
+                valid_ends.push_back(node);
+            }
+
+            std::vector<GqlRow> out_rows;
+            for (const auto& s : valid_starts) {
+                uint64_t s_id = s.getId();
+                auto s_it = wcc.find(s_id);
+                if (s_it == wcc.end()) continue;
+                uint64_t s_root = s_it->second;
+
+                for (const auto& e : valid_ends) {
+                    uint64_t e_id = e.getId();
+                    auto e_it = wcc.find(e_id);
+                    if (e_it == wcc.end()) continue;
+                    uint64_t e_root = e_it->second;
+
+                    if (s_root == e_root) {
+                        GqlRow new_row = row;
+                        if (!start_node_var.empty()) {
+                            new_row.bindings[start_node_var] = GqlValue(s);
+                        }
+                        new_row.bindings["_n_0"] = GqlValue(s);
+                        if (!end_node_var.empty()) {
+                            new_row.bindings[end_node_var] = GqlValue(e);
+                        }
+                        new_row.bindings["_n_1"] = GqlValue(e);
+
+                        if (!stmt.path_variable.empty()) {
+                            new_row.bindings[stmt.path_variable] = GqlValue(Path({s, e}, {}));
+                        }
+                        out_rows.push_back(std::move(new_row));
+                    }
+                }
+            }
+
+            if (out_rows.empty() && stmt.is_optional) {
+                GqlRow opt_row = row;
+                if (!start_node_var.empty() && opt_row.bindings.find(start_node_var) == opt_row.bindings.end()) {
+                    opt_row.bindings[start_node_var] = GqlValue();
+                }
+                if (!end_node_var.empty() && opt_row.bindings.find(end_node_var) == opt_row.bindings.end()) {
+                    opt_row.bindings[end_node_var] = GqlValue();
+                }
+                return std::vector<GqlRow>{opt_row};
+            }
+
+            return out_rows;
+        });
+    }
+
+    // Case 0.6: Transitive Reachability Index Lookup (Phase 23)
+    if (stmt.transitive_reachability_lookup) {
+        auto start_node_var = stmt.pattern.nodes[0].variable;
+        auto end_node_var = stmt.pattern.nodes[1].variable;
+        const auto& edge = stmt.pattern.edges[0];
+        std::string rel_type = "";
+        if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
+            rel_type = edge.label_expr->name;
+        }
+
+        std::map<uint64_t, std::unordered_set<uint64_t>> descendants;
+        if (TransitiveReachabilityCache::local().has(rel_type)) {
+            descendants = TransitiveReachabilityCache::local().get(rel_type);
+        } else {
+            std::vector<std::pair<uint64_t, uint64_t>> pairs = graph.shard.local().ReachablePeered(rel_type, "", "", "", "", true, false);
+            for (const auto& p : pairs) {
+                descendants[p.first].insert(p.second);
+            }
+            TransitiveReachabilityCache::local().set(rel_type, std::move(descendants));
+            descendants = TransitiveReachabilityCache::local().get(rel_type);
+        }
+
+        seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        if (!start_node_var.empty()) {
+            auto bound_start_it = row.bindings.find(start_node_var);
+            if (bound_start_it != row.bindings.end() && bound_start_it->second.type == GqlValue::NODE) {
+                start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_start_it->second.node });
+            } else {
+                start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+            }
+        } else {
+            start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+        }
+
+        seastar::future<std::vector<Node>> end_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        if (!end_node_var.empty()) {
+            auto bound_end_it = row.bindings.find(end_node_var);
+            if (bound_end_it != row.bindings.end() && bound_end_it->second.type == GqlValue::NODE) {
+                end_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_end_it->second.node });
+            } else {
+                end_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[1], 0, pruner);
+            }
+        } else {
+            end_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[1], 0, pruner);
+        }
+
+        return seastar::when_all_succeed(std::move(start_nodes_fut), std::move(end_nodes_fut))
+        .then([&graph, stmt, row, start_node_var, end_node_var, descendants = std::move(descendants)](std::tuple<std::vector<Node>, std::vector<Node>> results) {
+            auto start_nodes = std::move(std::get<0>(results));
+            auto end_nodes = std::move(std::get<1>(results));
+
+            std::vector<Node> valid_starts;
+            for (const auto& node : start_nodes) {
+                if (stmt.pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[0].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[0].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[0].property_filters)) {
+                    continue;
+                }
+                valid_starts.push_back(node);
+            }
+
+            std::vector<Node> valid_ends;
+            for (const auto& node : end_nodes) {
+                if (stmt.pattern.nodes[1].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[1].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[1].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[1].property_filters)) {
+                    continue;
+                }
+                valid_ends.push_back(node);
+            }
+
+            std::vector<GqlRow> out_rows;
+            for (const auto& s : valid_starts) {
+                uint64_t s_id = s.getId();
+                auto s_it = descendants.find(s_id);
+                if (s_it == descendants.end()) continue;
+                const auto& desc_set = s_it->second;
+
+                for (const auto& e : valid_ends) {
+                    uint64_t e_id = e.getId();
+                    if (desc_set.count(e_id) > 0) {
+                        GqlRow new_row = row;
+                        if (!start_node_var.empty()) {
+                            new_row.bindings[start_node_var] = GqlValue(s);
+                        }
+                        new_row.bindings["_n_0"] = GqlValue(s);
+                        if (!end_node_var.empty()) {
+                            new_row.bindings[end_node_var] = GqlValue(e);
+                        }
+                        new_row.bindings["_n_1"] = GqlValue(e);
+
+                        if (!stmt.path_variable.empty()) {
+                            new_row.bindings[stmt.path_variable] = GqlValue(Path({s, e}, {}));
+                        }
+                        out_rows.push_back(std::move(new_row));
+                    }
+                }
+            }
+
+            if (out_rows.empty() && stmt.is_optional) {
+                GqlRow opt_row = row;
+                if (!start_node_var.empty() && opt_row.bindings.find(start_node_var) == opt_row.bindings.end()) {
+                    opt_row.bindings[start_node_var] = GqlValue();
+                }
+                if (!end_node_var.empty() && opt_row.bindings.find(end_node_var) == opt_row.bindings.end()) {
+                    opt_row.bindings[end_node_var] = GqlValue();
+                }
+                return std::vector<GqlRow>{opt_row};
+            }
+
+            return out_rows;
         });
     }
 

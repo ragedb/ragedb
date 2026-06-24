@@ -18,6 +18,7 @@
 #include "Relationships.h"
 #include "Utilities.h"
 #include "../json/JSON.h"
+#include "../../gql/executor/WccCache.h"
 
 void Relationships::set_routes(seastar::httpd::routes &routes) {
 
@@ -153,6 +154,9 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipHan
             return parent.graph.shard.local().RelationshipAddEmptyPeered(req->get_path_param(Utilities::REL_TYPE), req->get_path_param(Utilities::TYPE),req->get_path_param(Utilities::KEY), req->get_path_param(Utilities::TYPE2), req->get_path_param(Utilities::KEY2))
                     .then([rep = std::move(rep), rel_type=req->get_path_param(Utilities::REL_TYPE), this] (uint64_t id) mutable {
                         if (id > 0) {
+                            (void)parent.graph.shard.invoke_on_all([](Shard&) {
+                                ragedb::gql::WccCache::local().clear();
+                            });
                             return parent.graph.shard.local().RelationshipGetPeered(id).then([rep = std::move(rep), rel_type] (Relationship relationship) mutable {
                                 rep->write_body("json", seastar::json::stream_object((relationship_json(relationship))));
                                 rep->set_status(seastar::http::reply::status_type::created);
@@ -176,6 +180,9 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipHan
                         .then([rep = std::move(rep), rel_type = req->get_path_param(Utilities::REL_TYPE), this](
                                 uint64_t id) mutable {
                             if (id > 0) {
+                                (void)parent.graph.shard.invoke_on_all([](Shard&) {
+                                    ragedb::gql::WccCache::local().clear();
+                                });
                                 return parent.graph.shard.local().RelationshipGetPeered(id).then(
                                         [rep = std::move(rep)](Relationship relationship) mutable {
                                             rep->write_body("json",
@@ -207,6 +214,9 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipByI
             return parent.graph.shard.local().RelationshipAddEmptyPeered(req->get_path_param(Utilities::REL_TYPE), id, id2)
                     .then([rep = std::move(rep), rel_type=req->get_path_param(Utilities::REL_TYPE), this] (uint64_t relationship_id) mutable {
                         if (relationship_id > 0) {
+                            (void)parent.graph.shard.invoke_on_all([](Shard&) {
+                                ragedb::gql::WccCache::local().clear();
+                            });
                             return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then([rep = std::move(rep)] (Relationship relationship) mutable {
                                 rep->write_body("json", seastar::json::stream_object(relationship_json(relationship)));
                                 rep->set_status(seastar::http::reply::status_type::created);
@@ -226,6 +236,9 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::PostRelationshipByI
                         .then([rep = std::move(rep), rel_type = req->get_path_param(Utilities::REL_TYPE), this](
                                 uint64_t relationship_id) mutable {
                             if (relationship_id > 0) {
+                                (void)parent.graph.shard.invoke_on_all([](Shard&) {
+                                    ragedb::gql::WccCache::local().clear();
+                                });
                                 return parent.graph.shard.local().RelationshipGetPeered(relationship_id).then(
                                         [rep = std::move(rep)](Relationship relationship) mutable {
                                             rep->write_body("json",
@@ -251,8 +264,11 @@ future<std::unique_ptr<seastar::http::reply>> Relationships::DeleteRelationshipH
 
     if (id > 0) {
         parent.graph.Log(req->_method, req->get_url());
-        return parent.graph.shard.local().RelationshipRemovePeered(id).then([rep = std::move(rep)] (bool success) mutable {
+        return parent.graph.shard.local().RelationshipRemovePeered(id).then([rep = std::move(rep), this] (bool success) mutable {
             if(success) {
+                (void)parent.graph.shard.invoke_on_all([](Shard&) {
+                    ragedb::gql::WccCache::local().clear();
+                });
                 rep->set_status(seastar::http::reply::status_type::no_content);
             } else {
                 rep->set_status(seastar::http::reply::status_type::not_modified);

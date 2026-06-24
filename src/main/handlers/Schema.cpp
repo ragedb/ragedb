@@ -20,6 +20,7 @@
 #include "Utilities.h"
 #include "../json/JSON.h"
 #include <seastar/json/formatter.hh>
+#include "../../gql/GqlVirtualCatalog.h"
 
 void Schema::set_routes(seastar::httpd::routes &routes) {
     auto clearGraph = new seastar::httpd::match_rule(&clearGraphHandler);
@@ -160,6 +161,11 @@ void Schema::set_routes(seastar::httpd::routes &routes) {
     deleteRelationshipTypeProperty->add_param("property");
     routes.add(deleteRelationshipTypeProperty, seastar::httpd::operation_type::DELETE);
 
+    auto postRelationshipTypeAlgebra = new seastar::httpd::match_rule(&postRelationshipTypeAlgebraHandler);
+    postRelationshipTypeAlgebra->add_str("/db/" + graph.GetName() + "/schema/relationships");
+    postRelationshipTypeAlgebra->add_param("type");
+    postRelationshipTypeAlgebra->add_str("/algebra");
+    routes.add(postRelationshipTypeAlgebra, seastar::httpd::operation_type::POST);
 }
 
 future<std::unique_ptr<seastar::http::reply>>
@@ -570,3 +576,47 @@ Schema::GetRelationshipTypeIndexesHandler::handle([[maybe_unused]] const seastar
     }
     return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
 }
+
+future<std::unique_ptr<seastar::http::reply>>
+Schema::PostRelationshipTypeAlgebraHandler::handle([[maybe_unused]] const seastar::sstring &path, std::unique_ptr<seastar::http::request> req,
+                                                  std::unique_ptr<seastar::http::reply> rep) {
+    bool valid_type = Utilities::validate_parameter(Utilities::TYPE, req, rep, "Invalid type");
+
+    if (valid_type) {
+        parent.graph.Log(req->_method, req->get_url(), req->content);
+        std::string rel_type = req->get_path_param(Utilities::TYPE);
+
+        // Parse JSON array of properties from req->content
+        std::unordered_set<std::string> props;
+        try {
+            simdjson::dom::parser parser;
+            simdjson::dom::element value;
+            simdjson::error_code error = parser.parse(req->content).get(value);
+            if (!error && value.type() == simdjson::dom::element_type::ARRAY) {
+                simdjson::dom::array array = value.get_array();
+                for (auto val : array) {
+                    props.insert(std::string(val.get_string().value()));
+                }
+            } else {
+                rep->set_status(seastar::http::reply::status_type::bad_request);
+                rep->write_body("json", seastar::json::stream_object("Invalid JSON array of strings"));
+                return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+            }
+        } catch (const std::exception& e) {
+            rep->set_status(seastar::http::reply::status_type::bad_request);
+            rep->write_body("json", seastar::json::stream_object(std::string("Error parsing JSON: ") + e.what()));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+        }
+
+        // Broadcast to all reactors to update thread-local GqlVirtualCatalog
+        return parent.graph.shard.invoke_on_all([rel_type, props](ragedb::Shard&) {
+            ragedb::gql::GqlVirtualCatalog::local().set_relationship_algebraic_properties(rel_type, props);
+        }).then([rep = std::move(rep)]() mutable {
+            rep->set_status(seastar::http::reply::status_type::ok);
+            rep->write_body("json", seastar::json::stream_object("Algebraic properties updated"));
+            return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+        });
+    }
+    return seastar::make_ready_future<std::unique_ptr<seastar::http::reply>>(std::move(rep));
+}
+

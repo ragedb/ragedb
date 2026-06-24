@@ -39,6 +39,11 @@
 #include "optimizer/EqualityJoinEliminator.h"
 #include "optimizer/DisjointConceptPruner.h"
 #include "optimizer/DirectionSwapOptimizer.h"
+#include "optimizer/SymmetricTraversalOptimizer.h"
+#include "optimizer/TransitivePathOptimizer.h"
+#include "optimizer/IrreflexiveContradictionPruner.h"
+#include "optimizer/AntisymmetricLoopCollapser.h"
+#include "optimizer/EquivalenceClassOptimizer.h"
 #include "../graph/Graph.h"
 #include <limits>
 #include <algorithm>
@@ -474,6 +479,22 @@ void GqlOptimizer::optimize(GqlQuery& query) {
 
     // Phase 21: Reverse inner match traversal directions to start at selective index lookups.
     DirectionSwapOptimizer::direction_swap_pass(query);
+
+    // Phase 22: Symmetric Traversal Simplification pass.
+    SymmetricTraversalOptimizer::symmetric_traversal_pass(query);
+
+    // Phase 26: Equivalence Class Coalescing pass.
+    EquivalenceClassOptimizer::equivalence_class_pass(query);
+
+    // Phase 23: Transitive Path Pruning pass.
+    TransitivePathOptimizer::transitive_path_pass(query);
+
+    // Phase 24: Irreflexive Contradiction Pruning pass.
+    IrreflexiveContradictionPruner::irreflexive_contradiction_pass(query);
+    if (query.no_op) return;
+
+    // Phase 25: Antisymmetric Loop Collapse pass.
+    AntisymmetricLoopCollapser::antisymmetric_loop_pass(query);
 
     std::set<std::string> outer_vars;
     collect_variables_from_matches(query.matches, outer_vars);

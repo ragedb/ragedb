@@ -708,6 +708,10 @@ LIMIT 5
   - If the cumulative number of paths found so far matches or exceeds the limit, the loop is broken and further asynchronous peering fetches are aborted.
 * **Result**: Halts traversal early, resulting in a **115.0x speedup** on large neighborhoods.
 
+---
 
+## 9. Future Work: Algebraic Relation Integration (`alglib`)
 
+We have designed a comprehensive plan to integrate RelationalAI's algebraic relation library (`alglib`) into `pyrage` and RageDB's semantic query optimizer. This integration will enable declarative constraints on relationships (transitivity, symmetry, reflexivity, antisymmetry, etc.) and map them to 5 new optimization passes (Phases 22-26).
 
+For the full design, API specifications, and optimization logic, see the [alglib_integration_plan.md](file:///home/maxdemarzi/.gemini/antigravity-ide/brain/f9a20cfa-52e9-4fd3-9aa2-1c529a03e7ab/alglib_integration_plan.md) artifact.

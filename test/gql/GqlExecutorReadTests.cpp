@@ -19,6 +19,8 @@
 #include "../../src/gql/GqlParser.h"
 #include "../../src/gql/GqlOptimizer.h"
 #include "../../src/gql/GqlExecutor.h"
+#include "../../src/gql/GqlVirtualCatalog.h"
+#include "../../src/gql/executor/WccCache.h"
 
 using namespace ragedb;
 using namespace ragedb::gql;
@@ -300,13 +302,78 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
             REQUIRE(results_json.find("Charlie") == std::string::npos);
         }
         {
-            // Case sensitivity check for CONTAINS
             std::string query_str = "MATCH (p:Person) WHERE p.name CONTAINS 'O' RETURN p.name";
             auto query = GqlParser::parse(query_str);
             GqlOptimizer::optimize(query);
             std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
             REQUIRE(results_json.find("Bob") == std::string::npos);
         }
+    }
+
+    SECTION("Equivalence Relation WCC Caching and Lookup Correctness") {
+        graph.shard.local().RelationshipTypeInsertPeered("same_group").get();
+        GqlVirtualCatalog::local().clear();
+        GqlVirtualCatalog::local().set_relationship_algebraic_properties("same_group", {"reflexive", "symmetric", "transitive"});
+
+        WccCache::local().clear();
+
+        uint64_t id3 = graph.shard.local().NodeAddPeered("Person", "charlie", "{\"name\": \"Charlie\"}").get();
+        REQUIRE(id3 > 0);
+
+        uint64_t e1 = graph.shard.local().RelationshipAddPeered("same_group", id1, id2, "{}").get();
+        uint64_t e2 = graph.shard.local().RelationshipAddPeered("same_group", id2, id3, "{}").get();
+        REQUIRE(e1 > 0);
+        REQUIRE(e2 > 0);
+
+        {
+            std::string query_str = "MATCH (a:Person)-[:same_group*]->(b:Person) WHERE a.name = 'Alice' RETURN b.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            
+            REQUIRE(query.matches[0].equivalence_partition_lookup == true);
+
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Charlie") != std::string::npos);
+        }
+
+        REQUIRE(WccCache::local().has("same_group") == true);
+
+        uint64_t id4 = graph.shard.local().NodeAddPeered("Person", "david", "{\"name\": \"David\"}").get();
+        REQUIRE(id4 > 0);
+        uint64_t e3 = graph.shard.local().RelationshipAddPeered("same_group", id3, id4, "{}").get();
+        REQUIRE(e3 > 0);
+
+        REQUIRE(WccCache::local().has("same_group") == false);
+
+        {
+            std::string query_str = "MATCH (a:Person)-[:same_group*]->(b:Person) WHERE a.name = 'Alice' RETURN b.name";
+            auto query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(query);
+            std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+
+            REQUIRE(results_json.find("Alice") != std::string::npos);
+            REQUIRE(results_json.find("Bob") != std::string::npos);
+            REQUIRE(results_json.find("Charlie") != std::string::npos);
+            REQUIRE(results_json.find("David") != std::string::npos);
+        }
+    }
+
+    SECTION("Equivalence Relation Case-Insensitivity Verification") {
+        graph.shard.local().RelationshipTypeInsertPeered("sameGroup").get();
+        GqlVirtualCatalog::local().clear();
+        
+        // Register in mixed case, query in another mixed case
+        GqlVirtualCatalog::local().set_relationship_algebraic_properties("SameGroup", {"reflexive", "symmetric", "transitive"});
+
+        std::string query_str = "MATCH (a:Person)-[:sameGroup*]->(b:Person) WHERE a.name = 'Alice' RETURN b.name";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        
+        // The optimizer should normalize names and successfully trigger partition lookup
+        REQUIRE(query.matches[0].equivalence_partition_lookup == true);
     }
 
     guard.stop();
