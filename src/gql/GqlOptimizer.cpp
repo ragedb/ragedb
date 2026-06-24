@@ -27,6 +27,7 @@
 #include "optimizer/AlgebraicRewriter.h"
 #include "optimizer/TransitiveReachabilityPruner.h"
 #include "optimizer/FunctionalDependencyPruner.h"
+#include "optimizer/AutomorphicSymmetryOptimizer.h"
 #include "../graph/Graph.h"
 #include <limits>
 #include <algorithm>
@@ -35,6 +36,11 @@ namespace ragedb::gql {
 
 namespace {
 
+/**
+ * @brief Expands virtual views in a query pattern by looking up referenced view definitions in the catalog.
+ * @param query The GQL query to process.
+ * @return True if any virtual views were expanded, false otherwise.
+ */
 bool expand_virtual_views(GqlQuery& query) {
     bool expanded_any = false;
     for (auto& match : query.matches) {
@@ -156,14 +162,24 @@ bool expand_virtual_views(GqlQuery& query) {
     return expanded_any;
 }
 
+/**
+ * @brief Recursively expands virtual views up to a maximum depth of 20 to handle nested views.
+ * @param query The GQL query to process.
+ * @param depth The current recursion depth.
+ */
 void expand_views_recursive(GqlQuery& query, int depth = 0) {
-    if (depth > 5) return;
+    if (depth > 20) return;
     bool expanded = expand_virtual_views(query);
     if (expanded) {
         expand_views_recursive(query, depth + 1);
     }
 }
 
+/**
+ * @brief Extracts property filters from a WHERE clause expression.
+ * @param expr The expression to analyze.
+ * @param pushdowns A map containing the extracted property filters grouped by variable name.
+ */
 void extract_filters(Expression* expr, std::map<std::string, std::vector<PropertyFilter>>& pushdowns) {
     if (!expr) return;
 
@@ -204,6 +220,12 @@ void extract_filters(Expression* expr, std::map<std::string, std::vector<Propert
     }
 }
 
+/**
+ * @brief Rebuilds an expression tree by removing the predicates that have been successfully pushed down.
+ * @param expr The expression to rebuild.
+ * @param pushdowns The map of pushdown predicates to exclude.
+ * @return The rebuilt expression, or nullptr if the entire expression was pushed down.
+ */
 std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::unique_ptr<Expression> expr, const std::map<std::string, std::vector<PropertyFilter>>& pushdowns) {
     if (!expr) return nullptr;
 
@@ -264,6 +286,14 @@ std::unique_ptr<Expression> rebuild_expression_without_pushed_predicates(std::un
     return expr;
 }
 
+/**
+ * @brief Unnests EXISTS subqueries in an expression and moves them to optional match patterns.
+ * @param expr The expression to search for EXISTS subqueries.
+ * @param query_matches The match statements list to append unnested patterns to.
+ * @param outer_vars The set of variables defined in outer matches.
+ * @param has_unnested Flag updated to true if any unnesting occurs.
+ * @param var_counter Counter used to generate unique temporary variables.
+ */
 void unnest_subqueries_in_expr(
     std::unique_ptr<Expression>& expr,
     std::vector<MatchStatement>& query_matches,
@@ -387,6 +417,10 @@ void unnest_subqueries_in_expr(
     }
 }
 
+/**
+ * @brief Reverses a path pattern (nodes and edges) along with edge directions.
+ * @param pattern The path pattern to reverse.
+ */
 void reverse_path_pattern(PathPattern& pattern) {
     std::reverse(pattern.nodes.begin(), pattern.nodes.end());
     std::reverse(pattern.edges.begin(), pattern.edges.end());
@@ -399,6 +433,12 @@ void reverse_path_pattern(PathPattern& pattern) {
     }
 }
 
+/**
+ * @brief Checks if a node pattern has a property filter that can utilize a schema index seek.
+ * @param graph The database graph instance.
+ * @param node The pattern node to check.
+ * @return True if a matching node index exists, false otherwise.
+ */
 bool has_node_index_seek(ragedb::Graph& graph, const PatternNode& node) {
     if (!node.label_expr || node.label_expr->kind != LabelExprKind::LITERAL) {
         return false;
@@ -417,6 +457,12 @@ bool has_node_index_seek(ragedb::Graph& graph, const PatternNode& node) {
     return false;
 }
 
+/**
+ * @brief Checks if an edge pattern has a property filter that can utilize a schema index seek.
+ * @param graph The database graph instance.
+ * @param edge The pattern edge to check.
+ * @return True if a matching relationship index exists, false otherwise.
+ */
 bool has_relationship_index_seek(ragedb::Graph& graph, const PatternEdge& edge) {
     if (!edge.label_expr || edge.label_expr->kind != LabelExprKind::LITERAL) {
         return false;
@@ -437,6 +483,12 @@ bool has_relationship_index_seek(ragedb::Graph& graph, const PatternEdge& edge) 
 
 } // namespace
 
+/**
+ * @brief Performs GQL query optimization passes including views expansion, contradiction pruning,
+ * domain constraint reasoning, join elimination, subsumption pruning, cardinality short-circuiting,
+ * algebraic re-writing, functional dependency pruning, and automorphic symmetry deduplication.
+ * @param query The GQL query to optimize.
+ */
 void GqlOptimizer::optimize(GqlQuery& query) {
     if (query.schema_op.has_value()) {
         return;
@@ -452,26 +504,38 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         return;
     }
 
+    // Phase 1: Expand any virtual views recursively up to a limit of 20.
     expand_views_recursive(query);
 
+    // Phase 2: Apply semantic contradiction pruning to detect impossible class or property bounds early.
     ContradictionPruner::semantic_pruning_pass(query);
     if (query.no_op) return;
 
+    // Phase 4: Run domain constraint reasoning to infer additional type/value bounds.
     DomainConstraintReasoner::domain_constraint_reasoning_pass(query);
     if (query.no_op) return;
 
+    // Phase 7: Prune redundant traversals using transitive reachability constraints.
     TransitiveReachabilityPruner::transitive_reachability_pruning_pass(query);
     if (query.no_op) return;
 
+    // Phase 3: Eliminate redundant joins from semantic metadata.
     JoinEliminator::semantic_join_elimination_pass(query);
+    // Phase 5: Prune subsumed query conditions.
     SubsumptionPruner::semantic_subsumption_pass(query);
+    // Phase 2 (Part B): Run relational pruning for contradictions in the where clause.
     ContradictionPruner::relational_pruning_pass(query);
     if (query.no_op) return;
 
+    // Phase 6: Short-circuit query if cardinality limits (e.g. LIMIT 0) dictate it.
     CardinalityShortCircuiter::semantic_cardinality_limit_pass(query);
 
+    // Phase 8: Rewrite patterns algebraically (e.g., path counts, algebraic simplifications).
     AlgebraicRewriter::algebraic_rewriter_pass(query);
+    // Phase 9: Prune/optimize queries using functional dependency information.
     FunctionalDependencyPruner::functional_dependency_pass(query);
+    // Phase 10: Deduplicate automorphic graph symmetries for counting queries.
+    AutomorphicSymmetryOptimizer::automorphic_symmetry_pass(query);
 
     std::set<std::string> outer_vars;
     collect_variables_from_matches(query.matches, outer_vars);
@@ -713,6 +777,11 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     }
 }
 
+/**
+ * @brief Performs query optimizations including database-backed index-seek direction tuning.
+ * @param graph The database graph instance.
+ * @param query The GQL query to optimize.
+ */
 void GqlOptimizer::optimize(ragedb::Graph& graph, GqlQuery& query) {
     optimize(query);
 

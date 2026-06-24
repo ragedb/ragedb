@@ -86,7 +86,10 @@ struct QueryResult {
 };
 
 /**
- * @brief Sorts the combined query results.
+ * @brief Sorts the combined query results according to GQL ORDER BY specification.
+ * @param res The QueryResult containing column names and rows.
+ * @param order_by The sorting specifications.
+ * @param limit Optional limit constraint to restrict result size.
  */
 static void sort_combined_result(QueryResult& res, const std::vector<SortSpec>& order_by, std::optional<size_t> limit = std::nullopt) {
     if (order_by.empty()) return;
@@ -146,7 +149,13 @@ struct GqlRowOuterVarsLess {
         return false;
     }
 };
-
+/**
+ * @brief Internally executes a parsed GQL query against the database graph,
+ * managing joins, projections, filtering, and aggregation.
+ * @param graph The database graph instance.
+ * @param query_ptr Shared pointer to the GQL query.
+ * @return A future resolving to a QueryResult containing columns and values.
+ */
 static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr) {
     if (query_ptr->no_op) {
         QueryResult query_res;
@@ -790,6 +799,9 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
                                 }
                             }
                         }
+                        if (query.count_multiplication_factor > 1) {
+                            count *= query.count_multiplication_factor;
+                        }
                         aggregate_results[agg] = GqlValue(count);
                     } else if (agg->fn_kind == AggregateKind::SUM || agg->fn_kind == AggregateKind::AVG) {
                         int64_t sum_int = 0;
@@ -1013,7 +1025,11 @@ static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph,
         return seastar::make_ready_future<QueryResult>(std::move(query_res));
     });
 }
-
+/**
+ * @brief Validates database constraints after executing queries containing write operations.
+ * @param graph The database graph instance.
+ * @return A future resolving when validation completes successfully or throws on violation.
+ */
 static seastar::future<> validate_constraints(ragedb::Graph& graph) {
     const auto& constraints = GqlVirtualCatalog::local().get_constraints();
     if (constraints.empty()) {
@@ -1041,7 +1057,12 @@ static seastar::future<> validate_constraints(ragedb::Graph& graph) {
     return f;
 }
 
-
+/**
+ * @brief Executes a pre-parsed and typechecked GqlQuery.
+ * @param graph The database graph instance.
+ * @param query_val The GqlQuery object.
+ * @return A future resolving to the query result formatted as a JSON string.
+ */
 seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery query_val) {
     GqlTypechecker::typecheck(graph, query_val);
 
@@ -1159,14 +1180,23 @@ seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, GqlQuery
         return seastar::make_ready_future<std::string>(json_res);
     });
 }
-
+/**
+ * @brief Helper utility to trim whitespace from the start and end of a string.
+ * @param str The string to trim.
+ * @return The trimmed string.
+ */
 static std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\r\n");
     if (first == std::string::npos) return "";
     size_t last = str.find_last_not_of(" \t\r\n");
     return str.substr(first, (last - first + 1));
 }
-
+/**
+ * @brief Parses, optimizes, caches, and executes a GQL query string.
+ * @param graph The database graph instance.
+ * @param query_str The query string to run.
+ * @return A future resolving to the query result formatted as a JSON string.
+ */
 seastar::future<std::string> GqlExecutor::execute(ragedb::Graph& graph, const std::string& query_str) {
     std::string key = trim(query_str);
     if (key.empty()) {

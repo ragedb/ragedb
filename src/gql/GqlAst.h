@@ -486,6 +486,7 @@ struct GqlQuery {
     bool has_unnested_subquery = false;
     bool no_op = false;
     bool skip_semantic = false;
+    uint64_t count_multiplication_factor = 1;
 
     // Explain & Profile
     bool explain = false;
@@ -528,6 +529,7 @@ struct GqlQuery {
         copy.has_unnested_subquery = has_unnested_subquery;
         copy.no_op = no_op;
         copy.skip_semantic = skip_semantic;
+        copy.count_multiplication_factor = count_multiplication_factor;
         copy.explain = explain;
         copy.profile = profile;
         copy.plan_cache_hit = plan_cache_hit;
