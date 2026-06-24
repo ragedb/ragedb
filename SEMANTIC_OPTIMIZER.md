@@ -1,0 +1,124 @@
+# Semantic Query Optimization in RageDB
+
+RageDB includes a native **Semantic Query Optimizer (SQO)** that uses registered schema constraints and mathematical axioms to rewrite, simplify, or prune query execution trees before sharded traversal begins.
+
+By resolving predicate satisfiability and relation structures at compile-time, RageDB eliminates redundant joins and traversal steps, short-circuiting execution when queries are mathematically guaranteed to yield zero results.
+
+---
+
+## 1. Mathematical Foundations & Implementation Mapping
+
+The optimizer uses four core mathematical axioms to prove query rewrites:
+
+### Phase 1: Range Contradiction Pruning
+* **Mathematical Axiom**: **Totality and Transitivity of Partially Ordered Sets (Posets)** $(S, \le)$.
+  - *Reflexivity*: $a \le a$
+  - *Anti-symmetry*: $a \le b \land b \le a \implies a = b$
+  - *Transitivity*: $a \le b \land b \le c \implies a \le c$
+  - *Totality*: $\forall a, b \in S$, either $a \le b$ or $b \le a$
+* **GQL Query**:
+  ```gql
+  MATCH (x:Person) WHERE x.age = -5 RETURN x.name
+  ```
+* **Optimizer Mapping**:
+  - We represent query filters as bounding intervals over a totally ordered set (integers/real numbers).
+  - Catalog check constraints define the **impossible regions** for specific label attributes.
+  - If the query interval for a variable is a subset of the impossible region (i.e. query interval $\cap$ valid region $= \emptyset$), the query is unsatisfiable.
+  - The optimizer marks `query.no_op = true` and the executor short-circuits to return an empty result set immediately.
+* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_pruning_pass`) and [GqlExecutor.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlExecutor.cpp) (`execute_query_internal` check).
+
+### Phase 2: Join Elimination / Pruning
+* **Mathematical Axiom**: **Referential Mappings & Existential Mappings**.
+  - A constraint of the form $\forall s \in \text{Source}, \exists t \in \text{Target s.t. } (s) \xrightarrow{\text{REL}} (t)$ guarantees relationship existence.
+* **GQL Query**:
+  ```gql
+  MATCH (s:Shipment)-[:SHIPPED_FROM]->(l:Location) RETURN s.name
+  ```
+* **Optimizer Mapping**:
+  - If a GQL constraint specifies that a relation is mandatory (e.g. `MATCH (s:Shipment) WHERE NOT EXISTS { MATCH (s)-[:SHIPPED_FROM]->(:Location) } RETURN s` returns empty), then any query containing `MATCH (s:Shipment)-[:SHIPPED_FROM]->(l:Location)` can eliminate the join to `Location` if `l` is neither filtered nor projected in the query.
+  - The pattern is rewritten to a simple single-node match `(s:Shipment)`.
+* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_join_elimination_pass`).
+
+### Phase 3: Multi-Variable Relational Predicate Reasoning
+* **Mathematical Axiom**: **Strict Inequalities and Directed Acyclic Graph (DAG) Cycle Contradictions**.
+  - A strict poset relation ($a < b$) is irreflexive: $\nexists a$ such that $a < a$.
+  - Therefore, any directed graph of inequalities containing a cycle with at least one strict edge is unsatisfiable.
+* **GQL Query**:
+  ```gql
+  MATCH (a:PosetNode), (b:PosetNode), (c:PosetNode) WHERE a.age < b.age AND b.age <= c.age AND c.age < a.age RETURN a.age
+  ```
+* **Optimizer Mapping**:
+  - The optimizer extracts all inequalities between query variables (e.g. `a.age < b.age AND b.age <= c.age AND c.age < a.age`).
+  - It constructs an inequality graph and runs the Floyd-Warshall transitive closure algorithm.
+  - If a strict cycle (self-loop with strict flag) is detected (e.g. `a.age < a.age`), a contradiction is proved and `query.no_op = true` is set.
+* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`relational_pruning_pass`).
+
+### Phase 4: Algebraic Query Rewrites
+* **Mathematical Axiom**: **Commutative Semiring Distributivity** $(K, \oplus, \otimes, 0, 1)$.
+  - Join maps to product ($\otimes$), union/aggregation maps to sum ($\oplus$).
+  - Distributive Axiom: $a \otimes (b \oplus c) = (a \otimes b) \oplus (a \otimes c)$.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, sum(p.age * f.age)
+  ```
+* **Optimizer Mapping**:
+  - When aggregating a multiplied expression: $\sum (A \times B)$.
+  - If $A$ is a grouping key or depends solely on grouping variables (constant within each aggregate group), $A$ is factored out of the summation:
+    $$\sum (A \times B) = A \times \sum B$$
+  - The optimizer rewrites `sum(p.age * f.age)` to `p.age * sum(f.age)`. This reduces multiplication overhead to occur once per group rather than once per joined row.
+* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`algebraic_rewriter_pass`).
+
+---
+
+## 2. Bypassing the Semantic Optimizer (Phase 5)
+
+Queries can dynamically skip the semantic query optimizer using prefix hints.
+
+### Syntax Options
+1. **Keyword Prefix**:
+   ```gql
+   NO_SEMANTIC MATCH (p:Person) WHERE p.age < -5 RETURN p
+   ```
+2. **Comment Directive**:
+   ```gql
+   /* no_semantic */ MATCH (p:Person) WHERE p.age < -5 RETURN p
+   ```
+
+When either prefix is matched, the parser sets `query.skip_semantic = true`. The optimizer checks this flag and exits immediately, bypassing all four semantic passes.
+
+---
+
+## 3. Performance & Cache Hits
+
+The semantic query optimizer is fully compatible with the RageDB query cache (`GqlQueryCache`).
+
+* **Cold Query Execution**:
+  - The raw GQL string is parsed.
+  - Semantic optimizer runs passes (proving range/cycle satisfiability and factoring terms).
+  - The pre-optimized AST is saved to the thread-local query cache.
+* **Hot Query Execution**:
+  - The pre-optimized AST is retrieved directly from the query cache.
+  - Compilation, semantic analysis, and optimization passes are skipped entirely, going straight to sharded execution.
+* **Dynamic Invalidation**:
+  - Adding or dropping catalog constraints (e.g. `CREATE CONSTRAINT` or `DROP_CONSTRAINT`) automatically invalidates/flushes the query cache on all reactor threads to ensure outdated execution plans are never reused.
+
+---
+
+## 4. Optimization Performance Benchmarks
+
+The following benchmark table compares the execution latency of GQL queries optimized by the Semantic Query Optimizer under three states (averaged over 50 iterations on a scaled-up graph of 1,000 shipments, 10,000 friendship edges, and 15 cycle nodes):
+1. **Cold (Cache Miss)**: First execution where constraints are checked and the query plan is rewritten.
+2. **Hot (Cache Hit)**: Subsequent executions retrieving the pre-optimized query plan directly from the cache.
+3. **Unoptimized (Bypassed)**: Execution where semantic optimization is explicitly skipped via `NO_SEMANTIC`.
+
+| Optimization Pass | Cold (Cache Miss) | Hot (Cache Hit) | Unoptimized (Bypassed) | Speedup (Hot vs Unopt) |
+|---|---|---|---|---|
+| **Phase 1: Contradiction Pruning** | 0.1369 ms | 0.0076 ms | 0.0963 ms | **12.7x** |
+| **Phase 2: Join Elimination** | 9.0763 ms | 8.8437 ms | 38.6477 ms | **4.4x** |
+| **Phase 3: Relational Cycle Pruning** | 0.1983 ms | 0.0163 ms | 15.3529 ms | **939.8x** |
+| **Phase 4: Algebraic Sum Rewrite** | 8.1633 ms | 7.9157 ms | 17.0607 ms | **2.16x** |
+
+### Key Performance Insights
+* **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **930x+ speedup**.
+* **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.65 ms to 8.84 ms (**4.4x speedup**).
+* **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges. This avoids performing **9,995 property lookups** and **9,995 multiplication operations**, saving **9.14 ms** of CPU execution time per query (**2.16x speedup**).

@@ -696,6 +696,10 @@ void GqlOptimizer::optimize(GqlQuery& query) {
         return;
     }
 
+    if (query.skip_semantic) {
+        return;
+    }
+
     if (query.kind != QueryKind::SINGLE) {
         if (query.left) optimize(*query.left);
         if (query.right) optimize(*query.right);
@@ -704,6 +708,16 @@ void GqlOptimizer::optimize(GqlQuery& query) {
 
     // Expand virtual views recursively before applying other optimization passes
     expand_views_recursive(query);
+
+    // Apply Semantic Query Optimization Passes (Phases 1-4)
+    semantic_pruning_pass(query);
+    if (query.no_op) return;
+
+    semantic_join_elimination_pass(query);
+    relational_pruning_pass(query);
+    if (query.no_op) return;
+
+    algebraic_rewriter_pass(query);
 
     // --- Phase 10: Correlated Subquery Unnesting ---
     // Extract EXISTS subqueries, rewrite them, and append them as OPTIONAL MATCHes.
@@ -1044,6 +1058,683 @@ void GqlOptimizer::optimize(ragedb::Graph& graph, GqlQuery& query) {
     } else {
         if (query.left) optimize(graph, *query.left);
         if (query.right) optimize(graph, *query.right);
+    }
+}
+
+/**
+ * @struct Interval
+ * @brief Represents a value range interval for query predicate properties.
+ *
+ * Mathematically, values are compared using the Total Ordering (Poset) axioms of natural/real numbers.
+ * An interval represents a subset of the totally ordered set.
+ */
+struct Interval {
+    bool has_lower = false;
+    double lower_val = 0;
+    bool lower_inclusive = false;
+
+    bool has_upper = false;
+    double upper_val = 0;
+    bool upper_inclusive = false;
+
+    bool is_empty() const {
+        if (has_lower && has_upper) {
+            if (lower_val > upper_val) return true;
+            if (lower_val == upper_val && (!lower_inclusive || !upper_inclusive)) return true;
+        }
+        return false;
+    }
+
+    bool contains(const Interval& other) const {
+        if (has_lower) {
+            if (!other.has_lower) return false;
+            if (other.lower_val < lower_val) return false;
+            if (other.lower_val == lower_val && !lower_inclusive && other.lower_inclusive) return false;
+        }
+        if (has_upper) {
+            if (!other.has_upper) return false;
+            if (other.upper_val > upper_val) return false;
+            if (other.upper_val == upper_val && !upper_inclusive && other.upper_inclusive) return false;
+        }
+        return true;
+    }
+    
+    void intersect(const Interval& other) {
+        if (other.has_lower) {
+            if (!has_lower || other.lower_val > lower_val || (other.lower_val == lower_val && !other.lower_inclusive)) {
+                has_lower = true;
+                lower_val = other.lower_val;
+                lower_inclusive = other.lower_inclusive;
+            }
+        }
+        if (other.has_upper) {
+            if (!has_upper || other.upper_val < upper_val || (other.upper_val == upper_val && !other.upper_inclusive)) {
+                has_upper = true;
+                upper_val = other.upper_val;
+                upper_inclusive = other.upper_inclusive;
+            }
+        }
+    }
+};
+
+struct VarInfo {
+    std::string variable;
+    std::string label;
+    std::map<std::string, Interval> intervals;
+};
+
+struct MandatoryRelation {
+    std::string source_label;
+    std::string rel_type;
+    std::string target_label;
+};
+
+struct InequalityEdge {
+    std::string u;
+    std::string v;
+    bool strict;
+};
+
+static void add_comparison_to_intervals(BinaryOpKind op, const std::string& variable, const std::string& property, double val, std::map<std::string, Interval>& intervals) {
+    Interval& interval = intervals[property];
+    Interval filter_int;
+    if (op == BinaryOpKind::LT) {
+        filter_int.has_upper = true;
+        filter_int.upper_val = val;
+        filter_int.upper_inclusive = false;
+    } else if (op == BinaryOpKind::LE) {
+        filter_int.has_upper = true;
+        filter_int.upper_val = val;
+        filter_int.upper_inclusive = true;
+    } else if (op == BinaryOpKind::GT) {
+        filter_int.has_lower = true;
+        filter_int.lower_val = val;
+        filter_int.lower_inclusive = false;
+    } else if (op == BinaryOpKind::GE) {
+        filter_int.has_lower = true;
+        filter_int.lower_val = val;
+        filter_int.lower_inclusive = true;
+    } else if (op == BinaryOpKind::EQ) {
+        filter_int.has_lower = true;
+        filter_int.lower_val = val;
+        filter_int.lower_inclusive = true;
+        filter_int.has_upper = true;
+        filter_int.upper_val = val;
+        filter_int.upper_inclusive = true;
+    }
+    interval.intersect(filter_int);
+}
+
+static bool get_numeric_value(const Expression* expr, double& val) {
+    if (!expr) return false;
+    if (expr->kind == ExpressionKind::LITERAL) {
+        const auto* lit = static_cast<const LiteralExpr*>(expr);
+        if (std::holds_alternative<int64_t>(lit->value)) {
+            val = std::get<int64_t>(lit->value);
+            return true;
+        } else if (std::holds_alternative<double>(lit->value)) {
+            val = std::get<double>(lit->value);
+            return true;
+        }
+    } else if (expr->kind == ExpressionKind::UNARY_OP) {
+        const auto* un = static_cast<const UnaryOpExpr*>(expr);
+        if (un->op == UnaryOpKind::NEG) {
+            double inner_val = 0;
+            if (get_numeric_value(un->expr.get(), inner_val)) {
+                val = -inner_val;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static void extract_intervals_from_expr(const Expression* expr, const std::string& target_var, std::map<std::string, Interval>& intervals, bool negate = false) {
+    if (!expr) return;
+    if (expr->kind == ExpressionKind::UNARY_OP) {
+        const auto* un = static_cast<const UnaryOpExpr*>(expr);
+        if (un->op == UnaryOpKind::NOT) {
+            extract_intervals_from_expr(un->expr.get(), target_var, intervals, !negate);
+        }
+    } else if (expr->kind == ExpressionKind::BINARY_OP) {
+        const auto* bin = static_cast<const BinaryOpExpr*>(expr);
+        if (bin->op == BinaryOpKind::AND) {
+            if (!negate) {
+                extract_intervals_from_expr(bin->left.get(), target_var, intervals, false);
+                extract_intervals_from_expr(bin->right.get(), target_var, intervals, false);
+            }
+        } else if (bin->op == BinaryOpKind::OR) {
+            if (negate) {
+                extract_intervals_from_expr(bin->left.get(), target_var, intervals, true);
+                extract_intervals_from_expr(bin->right.get(), target_var, intervals, true);
+            }
+        } else {
+            const Expression* left = bin->left.get();
+            const Expression* right = bin->right.get();
+            bool reversed = false;
+            double left_val = 0;
+            double right_val = 0;
+            bool is_left_numeric = get_numeric_value(left, left_val);
+            bool is_right_numeric = get_numeric_value(right, right_val);
+
+            if (is_left_numeric && right->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                std::swap(left, right);
+                std::swap(left_val, right_val);
+                std::swap(is_left_numeric, is_right_numeric);
+                reversed = true;
+            }
+            if (left->kind == ExpressionKind::PROPERTY_LOOKUP && is_right_numeric) {
+                const auto* pl = static_cast<const PropertyLookupExpr*>(left);
+                if (pl->variable == target_var) {
+                    auto op = bin->op;
+                    if (reversed) {
+                        if (op == BinaryOpKind::LT) op = BinaryOpKind::GT;
+                        else if (op == BinaryOpKind::LE) op = BinaryOpKind::GE;
+                        else if (op == BinaryOpKind::GT) op = BinaryOpKind::LT;
+                        else if (op == BinaryOpKind::GE) op = BinaryOpKind::LE;
+                    }
+                    if (negate) {
+                        if (op == BinaryOpKind::LT) op = BinaryOpKind::GE;
+                        else if (op == BinaryOpKind::LE) op = BinaryOpKind::GT;
+                        else if (op == BinaryOpKind::GT) op = BinaryOpKind::LE;
+                        else if (op == BinaryOpKind::GE) op = BinaryOpKind::LT;
+                        else if (op == BinaryOpKind::EQ) return;
+                    }
+                    add_comparison_to_intervals(op, pl->variable, pl->property, right_val, intervals);
+                }
+            }
+        }
+    }
+}
+
+static std::vector<VarInfo> collect_query_vars(const GqlQuery& query) {
+    std::vector<VarInfo> vars;
+    for (const auto& match : query.matches) {
+        for (const auto& node : match.pattern.nodes) {
+            if (node.variable.empty()) continue;
+            std::string label;
+            if (node.label_expr && node.label_expr->kind == LabelExprKind::LITERAL) {
+                label = node.label_expr->name;
+            }
+            VarInfo vi;
+            vi.variable = node.variable;
+            vi.label = label;
+            
+            for (const auto& [prop, val_type] : node.properties) {
+                double val = 0;
+                bool is_numeric = false;
+                if (std::holds_alternative<int64_t>(val_type)) {
+                    val = std::get<int64_t>(val_type);
+                    is_numeric = true;
+                } else if (std::holds_alternative<double>(val_type)) {
+                    val = std::get<double>(val_type);
+                    is_numeric = true;
+                }
+                if (is_numeric) {
+                    Interval& interval = vi.intervals[prop];
+                    Interval eq_int;
+                    eq_int.has_lower = true;
+                    eq_int.lower_val = val;
+                    eq_int.lower_inclusive = true;
+                    eq_int.has_upper = true;
+                    eq_int.upper_val = val;
+                    eq_int.upper_inclusive = true;
+                    interval.intersect(eq_int);
+                }
+            }
+            
+            for (const auto& filter : node.property_filters) {
+                double val = 0;
+                bool is_numeric = false;
+                if (std::holds_alternative<int64_t>(filter.value)) {
+                    val = std::get<int64_t>(filter.value);
+                    is_numeric = true;
+                } else if (std::holds_alternative<double>(filter.value)) {
+                    val = std::get<double>(filter.value);
+                    is_numeric = true;
+                }
+                if (is_numeric) {
+                    Interval& interval = vi.intervals[filter.property];
+                    Interval filter_int;
+                    auto op = filter.op;
+                    if (op == Operation::LT) {
+                        filter_int.has_upper = true;
+                        filter_int.upper_val = val;
+                        filter_int.upper_inclusive = false;
+                    } else if (op == Operation::LTE) {
+                        filter_int.has_upper = true;
+                        filter_int.upper_val = val;
+                        filter_int.upper_inclusive = true;
+                    } else if (op == Operation::GT) {
+                        filter_int.has_lower = true;
+                        filter_int.lower_val = val;
+                        filter_int.lower_inclusive = false;
+                    } else if (op == Operation::GTE) {
+                        filter_int.has_lower = true;
+                        filter_int.lower_val = val;
+                        filter_int.lower_inclusive = true;
+                    } else if (op == Operation::EQ) {
+                        filter_int.has_lower = true;
+                        filter_int.lower_val = val;
+                        filter_int.lower_inclusive = true;
+                        filter_int.has_upper = true;
+                        filter_int.upper_val = val;
+                        filter_int.upper_inclusive = true;
+                    }
+                    interval.intersect(filter_int);
+                }
+            }
+            
+            if (node.where_expr) {
+                extract_intervals_from_expr(node.where_expr.get(), node.variable, vi.intervals);
+            }
+            
+            if (query.where_expr) {
+                extract_intervals_from_expr(query.where_expr.get(), node.variable, vi.intervals);
+            }
+            
+            vars.push_back(vi);
+        }
+    }
+    return vars;
+}
+
+static bool is_var_referenced_in_query_except_match(const GqlQuery& query, const std::string& var) {
+    auto check_expr = [&](const Expression* expr) -> bool {
+        if (!expr) return false;
+        std::vector<const Expression*> stack = { expr };
+        while (!stack.empty()) {
+            const auto* curr = stack.back();
+            stack.pop_back();
+            if (curr->kind == ExpressionKind::VARIABLE) {
+                if (static_cast<const VariableExpr*>(curr)->name == var) return true;
+            } else if (curr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                if (static_cast<const PropertyLookupExpr*>(curr)->variable == var) return true;
+            } else if (curr->kind == ExpressionKind::UNARY_OP) {
+                stack.push_back(static_cast<const UnaryOpExpr*>(curr)->expr.get());
+            } else if (curr->kind == ExpressionKind::BINARY_OP) {
+                const auto* bin = static_cast<const BinaryOpExpr*>(curr);
+                stack.push_back(bin->left.get());
+                stack.push_back(bin->right.get());
+            } else if (curr->kind == ExpressionKind::AGGREGATION) {
+                stack.push_back(static_cast<const AggregateExpr*>(curr)->expr.get());
+            }
+        }
+        return false;
+    };
+
+    for (const auto& item : query.returns) {
+        if (check_expr(item.expr.get())) return true;
+    }
+    if (check_expr(query.where_expr.get())) return true;
+    for (const auto& spec : query.order_by) {
+        if (check_expr(spec.expr.get())) return true;
+    }
+    for (const auto& w : query.writes) {
+        if (w.set_var == var || w.remove_var == var || w.delete_var == var) return true;
+        if (check_expr(w.set_expr.get())) return true;
+    }
+    
+    int match_count = 0;
+    for (const auto& m : query.matches) {
+        for (const auto& n : m.pattern.nodes) {
+            if (n.variable == var) match_count++;
+        }
+        for (const auto& e : m.pattern.edges) {
+            if (e.variable == var) match_count++;
+        }
+    }
+    if (match_count > 1) return true;
+    
+    return false;
+}
+
+static std::vector<MandatoryRelation> find_mandatory_relations() {
+    std::vector<MandatoryRelation> relations;
+    const auto& constraints = GqlVirtualCatalog::local().get_constraints();
+    for (const auto& [name, query_str] : constraints) {
+        try {
+            auto c_query = GqlParser::parse(query_str);
+            if (c_query.kind != QueryKind::SINGLE || c_query.matches.size() != 1) continue;
+            const auto& c_match = c_query.matches[0];
+            if (c_match.pattern.nodes.size() != 1) continue;
+            const auto& source_node = c_match.pattern.nodes[0];
+            if (source_node.variable.empty() || !source_node.label_expr || source_node.label_expr->kind != LabelExprKind::LITERAL) continue;
+            
+            std::string source_label = source_node.label_expr->name;
+            std::string source_var = source_node.variable;
+            
+            if (!c_query.where_expr || c_query.where_expr->kind != ExpressionKind::UNARY_OP) continue;
+            const auto* un = static_cast<const UnaryOpExpr*>(c_query.where_expr.get());
+            if (un->op != UnaryOpKind::NOT || !un->expr || un->expr->kind != ExpressionKind::EXISTS) continue;
+            
+            const auto* exists = static_cast<const ExistsExpr*>(un->expr.get());
+            if (exists->matches.size() != 1) continue;
+            const auto& exists_match = exists->matches[0];
+            const auto& exists_pattern = exists_match.pattern;
+            if (exists_pattern.nodes.size() != 2 || exists_pattern.edges.size() != 1) continue;
+            
+            if (exists_pattern.nodes[0].variable != source_var) continue;
+            
+            const auto& edge = exists_pattern.edges[0];
+            if (edge.direction != EdgeDirection::RIGHT || edge.is_variable_length || !edge.label_expr || edge.label_expr->kind != LabelExprKind::LITERAL) continue;
+            std::string rel_type = edge.label_expr->name;
+            
+            const auto& target_node = exists_pattern.nodes[1];
+            if (!target_node.label_expr || target_node.label_expr->kind != LabelExprKind::LITERAL) continue;
+            std::string target_label = target_node.label_expr->name;
+            
+            relations.push_back({source_label, rel_type, target_label});
+        } catch (...) {
+        }
+    }
+    return relations;
+}
+
+static void extract_inequalities(const Expression* expr, std::vector<InequalityEdge>& edges) {
+    if (!expr) return;
+    if (expr->kind == ExpressionKind::BINARY_OP) {
+        const auto* bin = static_cast<const BinaryOpExpr*>(expr);
+        if (bin->op == BinaryOpKind::AND) {
+            extract_inequalities(bin->left.get(), edges);
+            extract_inequalities(bin->right.get(), edges);
+        } else {
+            const Expression* left = bin->left.get();
+            const Expression* right = bin->right.get();
+            if (left->kind == ExpressionKind::PROPERTY_LOOKUP && right->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                const auto* pl1 = static_cast<const PropertyLookupExpr*>(left);
+                const auto* pl2 = static_cast<const PropertyLookupExpr*>(right);
+                
+                std::string u = pl1->variable + "." + pl1->property;
+                std::string v = pl2->variable + "." + pl2->property;
+                
+                auto op = bin->op;
+                if (op == BinaryOpKind::LT) {
+                    edges.push_back({u, v, true});
+                } else if (op == BinaryOpKind::LE) {
+                    edges.push_back({u, v, false});
+                } else if (op == BinaryOpKind::GT) {
+                    edges.push_back({v, u, true});
+                } else if (op == BinaryOpKind::GE) {
+                    edges.push_back({v, u, false});
+                } else if (op == BinaryOpKind::EQ) {
+                    edges.push_back({u, v, false});
+                    edges.push_back({v, u, false});
+                }
+            }
+        }
+    }
+}
+
+static bool has_inequality_contradiction(const std::vector<InequalityEdge>& edges) {
+    std::set<std::string> vertices;
+    for (const auto& edge : edges) {
+        vertices.insert(edge.u);
+        vertices.insert(edge.v);
+    }
+    if (vertices.empty()) return false;
+    
+    std::vector<std::string> v_list(vertices.begin(), vertices.end());
+    size_t n = v_list.size();
+    std::map<std::string, size_t> v_map;
+    for (size_t i = 0; i < n; ++i) {
+        v_map[v_list[i]] = i;
+    }
+    
+    std::vector<std::vector<bool>> reaches(n, std::vector<bool>(n, false));
+    std::vector<std::vector<bool>> strict(n, std::vector<bool>(n, false));
+    
+    for (const auto& edge : edges) {
+        size_t u_idx = v_map[edge.u];
+        size_t v_idx = v_map[edge.v];
+        reaches[u_idx][v_idx] = true;
+        if (edge.strict) {
+            strict[u_idx][v_idx] = true;
+        }
+    }
+    
+    for (size_t k = 0; k < n; ++k) {
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                if (reaches[i][k] && reaches[k][j]) {
+                    reaches[i][j] = true;
+                    if (strict[i][k] || strict[k][j]) {
+                        strict[i][j] = true;
+                    }
+                }
+            }
+        }
+    }
+    
+    for (size_t i = 0; i < n; ++i) {
+        if (reaches[i][i] && strict[i][i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Phase 1: Primitive Constraints & Contradiction Pruning.
+ *
+ * Mathematical Axioms Applied: Total Ordering (Poset) axioms of natural/real numbers (Totality, Transitivity).
+ *
+ * For each property filter in the query, we construct the query interval.
+ * We also retrieve the active constraints on the matching labels and construct their impossible intervals.
+ * If the intersection of the query interval with the valid region (complement of the impossible interval)
+ * is empty, then the query condition is unsatisfiable, meaning the query is mathematically guaranteed to
+ * return zero rows. In this case, we prune execution by setting query.no_op = true.
+ */
+void GqlOptimizer::semantic_pruning_pass(GqlQuery& query) {
+    if (query.kind != QueryKind::SINGLE) return;
+    
+    auto q_vars = collect_query_vars(query);
+    
+    // Check self-contradiction in query (e.g. x.age > 10 AND x.age < 5)
+    for (const auto& vi : q_vars) {
+        for (const auto& [prop, q_interval] : vi.intervals) {
+            if (q_interval.is_empty()) {
+                query.no_op = true;
+                return;
+            }
+        }
+    }
+    
+    // Check contradictions against catalog constraints
+    const auto& constraints = GqlVirtualCatalog::local().get_constraints();
+    for (const auto& [c_name, c_query_str] : constraints) {
+        try {
+            auto c_query = GqlParser::parse(c_query_str);
+            auto c_vars = collect_query_vars(c_query);
+            
+            for (const auto& c_vi : c_vars) {
+                if (c_vi.label.empty()) continue;
+                for (const auto& q_vi : q_vars) {
+                    if (q_vi.label == c_vi.label) {
+                        for (const auto& [prop, c_interval] : c_vi.intervals) {
+                            auto it = q_vi.intervals.find(prop);
+                            if (it != q_vi.intervals.end()) {
+                                if (c_interval.contains(it->second)) {
+                                    query.no_op = true;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (...) {
+        }
+    }
+}
+
+/**
+ * @brief Phase 2: Constraint-Based Join Pruning & Elimination.
+ *
+ * Mathematical Axioms Applied: Referential schema integrity, mandatory mappings.
+ *
+ * If a constraint query guarantees that every node of source_label has a target relationship rel_type
+ * of target_label, then a query matching (s:source_label)-[:rel_type]->(t:target_label) can eliminate
+ * the join traversal step to 't' if 't' is neither filtered nor projected in the query.
+ * This simplifies the execution plan to a single node match (s:source_label).
+ */
+void GqlOptimizer::semantic_join_elimination_pass(GqlQuery& query) {
+    if (query.kind != QueryKind::SINGLE) return;
+    
+    auto mandatory = find_mandatory_relations();
+    if (mandatory.empty()) return;
+    
+    for (auto& match : query.matches) {
+        if (match.is_search || match.is_optional) continue;
+        auto& pattern = match.pattern;
+        
+        if (pattern.nodes.size() == 2 && pattern.edges.size() == 1) {
+            const auto& start_node = pattern.nodes[0];
+            const auto& end_node = pattern.nodes[1];
+            const auto& edge = pattern.edges[0];
+            
+            if (start_node.label_expr && start_node.label_expr->kind == LabelExprKind::LITERAL &&
+                end_node.label_expr && end_node.label_expr->kind == LabelExprKind::LITERAL &&
+                edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL &&
+                edge.direction == EdgeDirection::RIGHT) {
+                
+                std::string s_label = start_node.label_expr->name;
+                std::string t_label = end_node.label_expr->name;
+                std::string r_type = edge.label_expr->name;
+                
+                bool is_mandatory = false;
+                for (const auto& rel : mandatory) {
+                    if (rel.source_label == s_label && rel.rel_type == r_type && rel.target_label == t_label) {
+                        is_mandatory = true;
+                        break;
+                    }
+                }
+                
+                if (is_mandatory) {
+                    bool target_referenced = false;
+                    if (!end_node.variable.empty()) {
+                        target_referenced = is_var_referenced_in_query_except_match(query, end_node.variable);
+                    }
+                    
+                    bool edge_referenced = false;
+                    if (!edge.variable.empty()) {
+                        edge_referenced = is_var_referenced_in_query_except_match(query, edge.variable);
+                    }
+                    
+                    bool target_has_filters = !end_node.properties.empty() || !end_node.property_filters.empty() || end_node.where_expr;
+                    bool edge_has_filters = !edge.properties.empty() || !edge.property_filters.empty() || edge.where_expr;
+                    
+                    if (!target_referenced && !edge_referenced && !target_has_filters && !edge_has_filters) {
+                        pattern.nodes.pop_back();
+                        pattern.edges.clear();
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * @brief Phase 3: Multi-Variable Relational Predicate Reasoning.
+ *
+ * Mathematical Axioms Applied: Poset Transitivity, Anti-symmetry, and Cycle Contradiction detection.
+ *
+ * We construct a directed inequality graph of all inequality predicates between query variables (e.g. a.x < b.x).
+ * Using the Floyd-Warshall transitive closure algorithm, we compute the reachability matrix and strictness matrix.
+ * If we detect any strict self-loop (e.g. a.x < a.x), we have identified a contradiction cycle in the Poset graph,
+ * which is mathematically impossible. The query is pruned immediately by setting query.no_op = true.
+ */
+void GqlOptimizer::relational_pruning_pass(GqlQuery& query) {
+    if (query.kind != QueryKind::SINGLE) return;
+    
+    std::vector<InequalityEdge> edges;
+    extract_inequalities(query.where_expr.get(), edges);
+    
+    for (const auto& match : query.matches) {
+        for (const auto& node : match.pattern.nodes) {
+            extract_inequalities(node.where_expr.get(), edges);
+        }
+        for (const auto& edge : match.pattern.edges) {
+            extract_inequalities(edge.where_expr.get(), edges);
+        }
+    }
+    
+    if (has_inequality_contradiction(edges)) {
+        query.no_op = true;
+    }
+}
+
+/**
+ * @brief Phase 4: Algebraic Query Rewrites (Aggregation Pushdown).
+ *
+ * Mathematical Axioms Applied: Semiring Distributivity (a * (b + c) = a * b + a * c).
+ *
+ * If the query returns a sum aggregation of a product sum(A * B) where A only references grouping
+ * variables (which are constant within each aggregate group) and B references the aggregated variables,
+ * we apply Semiring Distributivity to factor out the A term: sum(A * B) -> A * sum(B).
+ * This optimization avoids performing multiplication on every individual joined row, moving the operation
+ * to happen after aggregation.
+ */
+void GqlOptimizer::algebraic_rewriter_pass(GqlQuery& query) {
+    if (query.kind != QueryKind::SINGLE) return;
+    
+    std::set<std::string> grouping_vars;
+    for (const auto& item : query.returns) {
+        if (item.expr && item.expr->kind != ExpressionKind::AGGREGATION) {
+            if (item.expr->kind == ExpressionKind::VARIABLE) {
+                grouping_vars.insert(static_cast<VariableExpr*>(item.expr.get())->name);
+            } else if (item.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                grouping_vars.insert(static_cast<PropertyLookupExpr*>(item.expr.get())->variable);
+            }
+        }
+    }
+    
+    auto only_references_grouping = [&](const Expression* expr) -> bool {
+        if (!expr) return true;
+        std::vector<const Expression*> stack = { expr };
+        while (!stack.empty()) {
+            const auto* curr = stack.back();
+            stack.pop_back();
+            if (curr->kind == ExpressionKind::VARIABLE) {
+                if (grouping_vars.find(static_cast<const VariableExpr*>(curr)->name) == grouping_vars.end()) {
+                    return false;
+                }
+            } else if (curr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                if (grouping_vars.find(static_cast<const PropertyLookupExpr*>(curr)->variable) == grouping_vars.end()) {
+                    return false;
+                }
+            } else if (curr->kind == ExpressionKind::UNARY_OP) {
+                stack.push_back(static_cast<const UnaryOpExpr*>(curr)->expr.get());
+            } else if (curr->kind == ExpressionKind::BINARY_OP) {
+                const auto* bin = static_cast<const BinaryOpExpr*>(curr);
+                stack.push_back(bin->left.get());
+                stack.push_back(bin->right.get());
+            }
+        }
+        return true;
+    };
+    
+    for (auto& item : query.returns) {
+        if (item.expr && item.expr->kind == ExpressionKind::AGGREGATION) {
+            auto* agg = static_cast<AggregateExpr*>(item.expr.get());
+            if (agg->fn_kind == AggregateKind::SUM && agg->expr && agg->expr->kind == ExpressionKind::BINARY_OP) {
+                auto* bin = static_cast<BinaryOpExpr*>(agg->expr.get());
+                if (bin->op == BinaryOpKind::MUL) {
+                    if (only_references_grouping(bin->left.get())) {
+                        auto left_clone = bin->left->clone();
+                        auto right_clone = bin->right->clone();
+                        auto new_sum = std::make_unique<AggregateExpr>(AggregateKind::SUM, std::move(right_clone));
+                        item.expr = std::make_unique<BinaryOpExpr>(BinaryOpKind::MUL, std::move(left_clone), std::move(new_sum));
+                    }
+                    else if (only_references_grouping(bin->right.get())) {
+                        auto left_clone = bin->left->clone();
+                        auto right_clone = bin->right->clone();
+                        auto new_sum = std::make_unique<AggregateExpr>(AggregateKind::SUM, std::move(left_clone));
+                        item.expr = std::make_unique<BinaryOpExpr>(BinaryOpKind::MUL, std::move(right_clone), std::move(new_sum));
+                    }
+                }
+            }
+        }
     }
 }
 

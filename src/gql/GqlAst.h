@@ -478,6 +478,8 @@ struct GqlQuery {
     // Optimization tracking fields
     std::set<std::string> outer_vars;
     bool has_unnested_subquery = false;
+    bool no_op = false;
+    bool skip_semantic = false;
 
     // Explain & Profile
     bool explain = false;
@@ -518,6 +520,8 @@ struct GqlQuery {
         copy.schema_op = schema_op;
         copy.outer_vars = outer_vars;
         copy.has_unnested_subquery = has_unnested_subquery;
+        copy.no_op = no_op;
+        copy.skip_semantic = skip_semantic;
         copy.explain = explain;
         copy.profile = profile;
         copy.plan_cache_hit = plan_cache_hit;

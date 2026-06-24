@@ -21,6 +21,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlTokenizerTests.cpp
         gql/GqlParserTests.cpp
         gql/GqlOptimizerTests.cpp
+        gql/GqlOptimizerPerformanceTests.cpp
         gql/GqlExecutorReadTests.cpp
         gql/GqlExecutorComplexTests.cpp
         gql/GqlExecutorSubqueryTests.cpp

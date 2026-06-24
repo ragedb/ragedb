@@ -61,12 +61,26 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
                 advance();
             } else if (c == '/' && peek(1) == '*') {
                 // Multi-line comment: /* comment */
+                size_t start_pos = pos;
                 advance(2);
                 while (pos < length && !(peek() == '*' && peek(1) == '/')) {
                     advance();
                 }
+                size_t end_pos = pos;
                 if (pos < length) {
                     advance(2);
+                }
+                std::string comment_content = input.substr(start_pos + 2, end_pos - start_pos - 2);
+                // trim
+                comment_content.erase(0, comment_content.find_first_not_of(" \t\n\r"));
+                size_t last = comment_content.find_last_not_of(" \t\n\r");
+                if (last != std::string::npos) {
+                    comment_content = comment_content.substr(0, last + 1);
+                } else {
+                    comment_content = "";
+                }
+                if (to_upper(comment_content) == "NO_SEMANTIC") {
+                    tokens.push_back({TokenType::NO_SEMANTIC, "NO_SEMANTIC"});
                 }
             } else if (c == '/' && peek(1) == '/') {
                 // Single-line comment style 1: // comment
@@ -316,6 +330,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "EXISTS") type = TokenType::EXISTS;
             else if (upper_name == "EXPLAIN") type = TokenType::EXPLAIN;
             else if (upper_name == "PROFILE") type = TokenType::PROFILE;
+            else if (upper_name == "NO_SEMANTIC") type = TokenType::NO_SEMANTIC;
             else if (upper_name == "CREATE") type = TokenType::CREATE;
             else if (upper_name == "DROP") type = TokenType::DROP;
             else if (upper_name == "ALTER") type = TokenType::ALTER;

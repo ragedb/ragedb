@@ -148,6 +148,49 @@ struct GqlRowOuterVarsLess {
 };
 
 static seastar::future<QueryResult> execute_query_internal(ragedb::Graph& graph, std::shared_ptr<GqlQuery> query_ptr) {
+    if (query_ptr->no_op) {
+        QueryResult query_res;
+        for (size_t i = 0; i < query_ptr->returns.size(); ++i) {
+            const auto& item = query_ptr->returns[i];
+            std::string key;
+            if (item.alias) {
+                key = *item.alias;
+            } else {
+                if (item.expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                    auto* pl = static_cast<const PropertyLookupExpr*>(item.expr.get());
+                    key = pl->variable + "." + pl->property;
+                } else if (item.expr->kind == ExpressionKind::VARIABLE) {
+                    auto* ve = static_cast<const VariableExpr*>(item.expr.get());
+                    key = ve->name;
+                } else if (item.expr->kind == ExpressionKind::AGGREGATION) {
+                    auto* ae = static_cast<const AggregateExpr*>(item.expr.get());
+                    std::string fn_name;
+                    if (ae->fn_kind == AggregateKind::COUNT) fn_name = "count";
+                    else if (ae->fn_kind == AggregateKind::SUM) fn_name = "sum";
+                    else if (ae->fn_kind == AggregateKind::AVG) fn_name = "avg";
+                    else if (ae->fn_kind == AggregateKind::MIN) fn_name = "min";
+                    else fn_name = "max";
+
+                    if (!ae->expr) {
+                        key = fn_name + "(*)";
+                    } else if (ae->expr->kind == ExpressionKind::PROPERTY_LOOKUP) {
+                        auto* pl = static_cast<const PropertyLookupExpr*>(ae->expr.get());
+                        key = fn_name + "(" + pl->variable + "." + pl->property + ")";
+                    } else if (ae->expr->kind == ExpressionKind::VARIABLE) {
+                        auto* ve = static_cast<const VariableExpr*>(ae->expr.get());
+                        key = fn_name + "(" + ve->name + ")";
+                    } else {
+                        key = fn_name + "(expr)";
+                    }
+                } else {
+                    key = "column_" + std::to_string(i);
+                }
+            }
+            query_res.column_names.push_back(key);
+        }
+        return seastar::make_ready_future<QueryResult>(std::move(query_res));
+    }
+
     // 1. Handle Set Operations (UNION, UNION ALL, INTERSECT, INTERSECT ALL)
     if (query_ptr->kind != QueryKind::SINGLE) {
         // Release ownership of subqueries to execute them separately

@@ -215,3 +215,123 @@ TEST_CASE("GQL Optimizer virtual view expansion", "[gql_optimizer]") {
     GqlVirtualCatalog::local().clear();
 }
 
+TEST_CASE("GQL Optimizer Phase 1: Primitive Constraints & Contradiction Pruning", "[gql_optimizer][semantic]") {
+    GqlVirtualCatalog::local().clear();
+    // Register constraint: no Person has age < 0 (i.e. Person.age < 0 is impossible)
+    GqlVirtualCatalog::local().add_constraint("PositiveAge", "MATCH (p:Person) WHERE p.age < 0 RETURN p");
+
+    SECTION("Contradiction with constraint bounds") {
+        std::string query_str = "MATCH (x:Person) WHERE x.age = -5 RETURN x";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.no_op == true);
+    }
+
+    SECTION("Contradiction with constraint range bounds") {
+        std::string query_str = "MATCH (x:Person) WHERE x.age < -2 RETURN x";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.no_op == true);
+    }
+
+    SECTION("Self contradiction within query filters") {
+        std::string query_str = "MATCH (x:Person) WHERE x.age > 10 AND x.age < 5 RETURN x";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.no_op == true);
+    }
+
+    GqlVirtualCatalog::local().clear();
+}
+
+TEST_CASE("GQL Optimizer Phase 2: Join Elimination", "[gql_optimizer][semantic]") {
+    GqlVirtualCatalog::local().clear();
+    // Register mandatory relationship constraint: every Shipment must have a SHIPPED_FROM Location
+    GqlVirtualCatalog::local().add_constraint("MandatoryShippedFrom", "MATCH (s:Shipment) WHERE NOT EXISTS { MATCH (s)-[:SHIPPED_FROM]->(l:Location) } RETURN s");
+
+    std::string query_str = "MATCH (s:Shipment)-[:SHIPPED_FROM]->(l:Location) RETURN s";
+    auto query = GqlParser::parse(query_str);
+    GqlOptimizer::optimize(query);
+
+    // The join should be eliminated: the pattern should contain only the start node and no edges
+    REQUIRE(query.matches[0].pattern.nodes.size() == 1);
+    REQUIRE(query.matches[0].pattern.nodes[0].variable == "s");
+    REQUIRE(query.matches[0].pattern.edges.empty());
+
+    GqlVirtualCatalog::local().clear();
+}
+
+TEST_CASE("GQL Optimizer Phase 3: Multi-Variable Relational Predicate Reasoning", "[gql_optimizer][semantic]") {
+    GqlVirtualCatalog::local().clear();
+
+    SECTION("Impossible cycle (strict inequality contradiction)") {
+        // a < b AND b <= c AND c < a is impossible (transitivity implies a < a)
+        std::string query_str = "MATCH (a:Person), (b:Person), (c:Person) WHERE a.age < b.age AND b.age <= c.age AND c.age < a.age RETURN a";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.no_op == true);
+    }
+
+    SECTION("Possible cycle (non-strict cycle)") {
+        // a <= b AND b <= c AND c <= a is possible (implies equality)
+        std::string query_str = "MATCH (a:Person), (b:Person), (c:Person) WHERE a.age <= b.age AND b.age <= c.age AND c.age <= a.age RETURN a";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE_FALSE(query.no_op == true);
+    }
+}
+
+TEST_CASE("GQL Optimizer Phase 4: Algebraic Query Rewrites (Aggregation Pushdown)", "[gql_optimizer][semantic]") {
+    GqlVirtualCatalog::local().clear();
+
+    std::string query_str = "MATCH (p:Person)-[:FRIEND]->(f:Person) RETURN p.name, sum(p.age * f.age)";
+    auto query = GqlParser::parse(query_str);
+    GqlOptimizer::optimize(query);
+
+    // The sum(p.age * f.age) aggregation should be rewritten to p.age * sum(f.age)
+    REQUIRE(query.returns[1].expr->kind == ExpressionKind::BINARY_OP);
+    auto* bin = static_cast<const BinaryOpExpr*>(query.returns[1].expr.get());
+    REQUIRE(bin->op == BinaryOpKind::MUL);
+
+    // Left should be p.age
+    REQUIRE(bin->left->kind == ExpressionKind::PROPERTY_LOOKUP);
+    auto* pl = static_cast<const PropertyLookupExpr*>(bin->left.get());
+    REQUIRE(pl->variable == "p");
+    REQUIRE(pl->property == "age");
+
+    // Right should be sum(f.age)
+    REQUIRE(bin->right->kind == ExpressionKind::AGGREGATION);
+    auto* agg = static_cast<const AggregateExpr*>(bin->right.get());
+    REQUIRE(agg->fn_kind == AggregateKind::SUM);
+    REQUIRE(agg->expr->kind == ExpressionKind::PROPERTY_LOOKUP);
+    auto* pl_agg = static_cast<const PropertyLookupExpr*>(agg->expr.get());
+    REQUIRE(pl_agg->variable == "f");
+    REQUIRE(pl_agg->property == "age");
+}
+
+TEST_CASE("GQL Optimizer Phase 5: Skip Semantic Optimization", "[gql_optimizer][semantic]") {
+    GqlVirtualCatalog::local().clear();
+    GqlVirtualCatalog::local().add_constraint("PositiveAge", "MATCH (p:Person) WHERE p.age < 0 RETURN p");
+
+    SECTION("Using NO_SEMANTIC keyword prefix") {
+        std::string query_str = "NO_SEMANTIC MATCH (x:Person) WHERE x.age = -5 RETURN x";
+        auto query = GqlParser::parse(query_str);
+        REQUIRE(query.skip_semantic == true);
+        GqlOptimizer::optimize(query);
+        // Bypassed, so no_op should still be false
+        REQUIRE(query.no_op == false);
+    }
+
+    SECTION("Using /* no_semantic */ comment prefix") {
+        std::string query_str = "/* no_semantic */ MATCH (x:Person) WHERE x.age = -5 RETURN x";
+        auto query = GqlParser::parse(query_str);
+        REQUIRE(query.skip_semantic == true);
+        GqlOptimizer::optimize(query);
+        // Bypassed, so no_op should still be false
+        REQUIRE(query.no_op == false);
+    }
+
+    GqlVirtualCatalog::local().clear();
+}
+
+

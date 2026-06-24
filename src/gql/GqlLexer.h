@@ -69,6 +69,7 @@ enum class TokenType {
     EXISTS,
     EXPLAIN,
     PROFILE,
+    NO_SEMANTIC,
     STARTS_WITH,
     ENDS_WITH,
     CONTAINS,

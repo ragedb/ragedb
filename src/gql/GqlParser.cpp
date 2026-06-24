@@ -416,13 +416,20 @@ GqlQuery GqlParser::parse_single_query() {
 }
 
 GqlQuery GqlParser::parse_query() {
-    // 1. Detect optional EXPLAIN / PROFILE prefix at query start
+    // 1. Detect optional EXPLAIN / PROFILE / NO_SEMANTIC prefix at query start
     bool explain = false;
     bool profile = false;
-    if (match(TokenType::EXPLAIN)) {
-        explain = true;
-    } else if (match(TokenType::PROFILE)) {
-        profile = true;
+    bool skip_semantic = false;
+    while (true) {
+        if (match(TokenType::EXPLAIN)) {
+            explain = true;
+        } else if (match(TokenType::PROFILE)) {
+            profile = true;
+        } else if (match(TokenType::NO_SEMANTIC)) {
+            skip_semantic = true;
+        } else {
+            break;
+        }
     }
 
     // 2. Parse special CALL CLEAR CACHE utility command
@@ -433,6 +440,7 @@ GqlQuery GqlParser::parse_query() {
         query.clear_cache = true;
         query.explain = explain;
         query.profile = profile;
+        query.skip_semantic = skip_semantic;
         return query;
     }
 
@@ -659,6 +667,7 @@ GqlQuery GqlParser::parse_query() {
         query.schema_op = std::move(schema);
         query.explain = explain;
         query.profile = profile;
+        query.skip_semantic = skip_semantic;
         consume(TokenType::EOF_TOK, "Expected end of query");
         return query;
     }
@@ -690,6 +699,7 @@ GqlQuery GqlParser::parse_query() {
 
     query.explain = explain;
     query.profile = profile;
+    query.skip_semantic = skip_semantic;
 
     consume(TokenType::EOF_TOK, "Expected end of query");
     return query;
@@ -1019,23 +1029,29 @@ std::map<std::string, property_type_t> GqlParser::parse_properties() {
             consume(TokenType::COLON, "Expected ':' after property key");
 
             property_type_t value;
-            if (match(TokenType::TRUE_KW)) {
-                value = true;
-            } else if (match(TokenType::FALSE_KW)) {
-                value = false;
-            } else if (match(TokenType::NULL_KW)) {
-                value = std::monostate{};
-            } else if (check(TokenType::NUMBER)) {
-                value = peek().int_value;
+            bool is_negative = match(TokenType::MINUS);
+            if (check(TokenType::NUMBER)) {
+                value = is_negative ? -peek().int_value : peek().int_value;
                 advance();
             } else if (check(TokenType::FLOAT_LIT)) {
-                value = peek().float_value;
-                advance();
-            } else if (check(TokenType::STRING_LIT)) {
-                value = peek().text;
+                value = is_negative ? -peek().float_value : peek().float_value;
                 advance();
             } else {
-                throw std::runtime_error("Expected literal value for property map");
+                if (is_negative) {
+                    throw std::runtime_error("Expected numeric literal after '-' in property map");
+                }
+                if (match(TokenType::TRUE_KW)) {
+                    value = true;
+                } else if (match(TokenType::FALSE_KW)) {
+                    value = false;
+                } else if (match(TokenType::NULL_KW)) {
+                    value = std::monostate{};
+                } else if (check(TokenType::STRING_LIT)) {
+                    value = peek().text;
+                    advance();
+                } else {
+                    throw std::runtime_error("Expected literal value for property map");
+                }
             }
 
             props[key] = value;
