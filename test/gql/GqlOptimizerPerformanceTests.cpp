@@ -110,6 +110,13 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
         }
     }
 
+    // 4.5. FRIEND edges from FriendNode to FriendNode (to allow multi-hop paths)
+    for (int i = 0; i < 2000; ++i) {
+        uint64_t f1_id = graph.shard.local().NodeGetPeered("FriendNode", "Friend" + std::to_string(i)).get().getId();
+        uint64_t f2_id = graph.shard.local().NodeGetPeered("FriendNode", "Friend" + std::to_string((i + 1) % 2000)).get().getId();
+        graph.shard.local().RelationshipAddPeered("FRIEND", f1_id, f2_id, "{}").get();
+    }
+
     // 5. PosetNode (15 nodes for Phase 3 constraint cycle benchmark)
     for (int i = 0; i < 15; ++i) {
         std::string name = "PosetNode" + std::to_string(i);
@@ -160,6 +167,7 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
     run_bench("Phase 2: Join Elimination", "MATCH (s:Shipment)-[:SHIPPED_FROM]->(l:Location) RETURN s.name", "NO_SEMANTIC MATCH (s:Shipment)-[:SHIPPED_FROM]->(l:Location) RETURN s.name");
     run_bench("Phase 3: Relational Cycle Pruning", "MATCH (a:PosetNode), (b:PosetNode), (c:PosetNode) WHERE a.age < b.age AND b.age <= c.age AND c.age < a.age RETURN a.age", "NO_SEMANTIC MATCH (a:PosetNode), (b:PosetNode), (c:PosetNode) WHERE a.age < b.age AND b.age <= c.age AND c.age < a.age RETURN a.age");
     run_bench("Phase 4: Algebraic Sum Rewrite", "MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, sum(p.age * f.age)", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, sum(p.age * f.age)");
+    run_bench("Phase 4.5: Algebraic Path Count Rewrite", "MATCH (p:Person)-[:FRIEND]->(a)-[:FRIEND]->(b)-[:FRIEND]->(f:FriendNode) RETURN p.name, count(f)", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(a)-[:FRIEND]->(b)-[:FRIEND]->(f:FriendNode) RETURN p.name, count(f)");
     std::cout << "=========================================\n\n";
 
     GqlVirtualCatalog::local().clear();

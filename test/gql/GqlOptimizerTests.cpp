@@ -334,4 +334,55 @@ TEST_CASE("GQL Optimizer Phase 5: Skip Semantic Optimization", "[gql_optimizer][
     GqlVirtualCatalog::local().clear();
 }
 
+TEST_CASE("GQL Optimizer Algebraic Path Count Rewrite", "[gql_optimizer]") {
+    GqlVirtualCatalog::local().clear();
+
+    SECTION("Case 1: Variable-length pattern (a)-[:EDGE]->{k}(d)") {
+        std::string query_str = "MATCH (a:Person)-[:FRIEND]->{3}(d) RETURN a, count(d)";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+
+        // Assert optimizer flags are set
+        const auto& match = query.matches[0];
+        REQUIRE(match.algebraic_path_count == true);
+        REQUIRE(match.path_count_hops == 3);
+        REQUIRE(match.path_count_target_var == "d");
+        REQUIRE(match.path_count_rel_types == std::vector<std::string>{"FRIEND"});
+        REQUIRE(match.path_count_dir == EdgeDirection::RIGHT);
+
+        // Pattern should be truncated to just node 'a'
+        REQUIRE(match.pattern.nodes.size() == 1);
+        REQUIRE(match.pattern.nodes[0].variable == "a");
+        REQUIRE(match.pattern.edges.empty());
+
+        // Return expression should be rewritten to just 'd'
+        REQUIRE(query.returns[1].expr->kind == ExpressionKind::VARIABLE);
+        REQUIRE(static_cast<const VariableExpr*>(query.returns[1].expr.get())->name == "d");
+        REQUIRE(query.returns[1].alias == "count(d)");
+    }
+
+    SECTION("Case 2: Hop chain (a)-[:EDGE]->(b)-[:EDGE]->(c)-[:EDGE]->(d)") {
+        std::string query_str = "MATCH (a:Person)-[:FRIEND]->(b)-[:FRIEND]->(c)-[:FRIEND]->(d) RETURN a, count(d)";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+
+        const auto& match = query.matches[0];
+        REQUIRE(match.algebraic_path_count == true);
+        REQUIRE(match.path_count_hops == 3);
+        REQUIRE(match.path_count_target_var == "d");
+        REQUIRE(match.path_count_rel_types == std::vector<std::string>{"FRIEND"});
+        REQUIRE(match.path_count_dir == EdgeDirection::RIGHT);
+
+        // Pattern should be truncated to just node 'a'
+        REQUIRE(match.pattern.nodes.size() == 1);
+        REQUIRE(match.pattern.nodes[0].variable == "a");
+        REQUIRE(match.pattern.edges.empty());
+
+        // Return expression should be rewritten to just 'd'
+        REQUIRE(query.returns[1].expr->kind == ExpressionKind::VARIABLE);
+        REQUIRE(static_cast<const VariableExpr*>(query.returns[1].expr.get())->name == "d");
+        REQUIRE(query.returns[1].alias == "count(d)");
+    }
+}
+
 

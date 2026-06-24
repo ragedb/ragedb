@@ -222,7 +222,10 @@ static std::shared_ptr<PlanNode> build_match_plan(
         return build_match_plan(graph, remaining_matches, 0, incoming_vars, join_node);
     } else {
         auto node = std::make_shared<PlanNode>();
-        if (incoming_vars.empty()) {
+        if (stmt.algebraic_path_count) {
+            node->operator_name = "AlgebraicPathCountJoin";
+            node->detail = "Algebraic Path Count (" + std::to_string(stmt.path_count_hops) + " hops)";
+        } else if (incoming_vars.empty()) {
             // Seek optimization checks: check if we can seek by node/relationship index instead of scan
             bool has_node_seek = false;
             std::string node_indexed_prop = "";
@@ -297,6 +300,9 @@ static std::shared_ptr<PlanNode> build_match_plan(
         }
         for (const auto& e : stmt.pattern.edges) {
             if (!e.variable.empty()) incoming_vars.insert(e.variable);
+        }
+        if (stmt.algebraic_path_count && !stmt.path_count_target_var.empty()) {
+            incoming_vars.insert(stmt.path_count_target_var);
         }
         node->variables = join_strings(incoming_vars, ", ");
 

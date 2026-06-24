@@ -837,7 +837,125 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(ragedb::Graph& graph,
     });
 }
 
+static seastar::future<int64_t> propagate_path_counts(
+    ragedb::Graph& graph,
+    std::unordered_map<uint64_t, int64_t> current_counts,
+    uint16_t hops_remaining,
+    Direction dir,
+    std::vector<std::string> rel_types
+) {
+    if (hops_remaining == 0) {
+        int64_t total = 0;
+        for (const auto& [id, count] : current_counts) {
+            total += count;
+        }
+        return seastar::make_ready_future<int64_t>(total);
+    }
+    if (current_counts.empty()) {
+        return seastar::make_ready_future<int64_t>(0);
+    }
+    
+    std::vector<seastar::future<std::pair<std::vector<uint64_t>, int64_t>>> futs;
+    futs.reserve(current_counts.size());
+    for (const auto& [u, count] : current_counts) {
+        if (count > 0) {
+            futs.push_back(
+                graph.shard.local().KHopIdsPeered(u, 1, dir, rel_types)
+                .then([count](std::vector<uint64_t> neighbors) {
+                    return std::make_pair(std::move(neighbors), count);
+                })
+            );
+        }
+    }
+    
+    return seastar::when_all_succeed(futs.begin(), futs.end())
+    .then([&graph, hops_remaining, dir, rel_types = std::move(rel_types)](std::vector<std::pair<std::vector<uint64_t>, int64_t>> results) mutable {
+        std::unordered_map<uint64_t, int64_t> next_counts;
+        for (auto& [neighbors, count] : results) {
+            for (uint64_t nbr : neighbors) {
+                next_counts[nbr] += count;
+            }
+        }
+        return propagate_path_counts(graph, std::move(next_counts), hops_remaining - 1, dir, std::move(rel_types));
+    });
+}
+
 seastar::future<std::vector<GqlRow>> traverse_match_statement(ragedb::Graph& graph, const MatchStatement& stmt, const GqlRow& row, size_t limit, const ProjectionPruner& pruner, std::string sort_property, bool sort_ascending, bool sort_by_id) {
+    // Case 0.25: Algebraic Path Count Traversal.
+    if (stmt.algebraic_path_count) {
+        // Resolve start nodes candidate set.
+        seastar::future<std::vector<Node>> start_nodes_fut = seastar::make_ready_future<std::vector<Node>>();
+        auto start_node_var = stmt.pattern.nodes[0].variable;
+        if (!start_node_var.empty()) {
+            auto bound_start_it = row.bindings.find(start_node_var);
+            if (bound_start_it != row.bindings.end() && bound_start_it->second.type == GqlValue::NODE) {
+                start_nodes_fut = seastar::make_ready_future<std::vector<Node>>(std::vector<Node>{ *bound_start_it->second.node });
+            } else {
+                start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+            }
+        } else {
+            start_nodes_fut = get_start_nodes(graph, stmt.pattern.nodes[0], 0, pruner);
+        }
+
+        return start_nodes_fut.then([&graph, stmt, row](std::vector<Node> start_nodes) {
+            // Filter start node candidates by labels and property constraint expressions.
+            std::vector<Node> valid_starts;
+            for (const auto& node : start_nodes) {
+                if (stmt.pattern.nodes[0].label_expr && !matches_label_expr(node.getType(), stmt.pattern.nodes[0].label_expr)) {
+                    continue;
+                }
+                if (!matches_properties(node.getProperties(), stmt.pattern.nodes[0].properties) || !matches_filters(node.getProperties(), stmt.pattern.nodes[0].property_filters)) {
+                    continue;
+                }
+                valid_starts.push_back(node);
+            }
+
+            auto start_node_var = stmt.pattern.nodes[0].variable;
+            auto end_node_var = stmt.path_count_target_var;
+
+            if (valid_starts.empty()) {
+                if (stmt.is_optional || stmt.optional_group_id >= 0) {
+                    GqlRow opt_row = row;
+                    if (!start_node_var.empty() && opt_row.bindings.find(start_node_var) == opt_row.bindings.end()) {
+                        opt_row.bindings[start_node_var] = GqlValue();
+                    }
+                    if (!end_node_var.empty() && opt_row.bindings.find(end_node_var) == opt_row.bindings.end()) {
+                        opt_row.bindings[end_node_var] = GqlValue();
+                    }
+                    return seastar::make_ready_future<std::vector<GqlRow>>(std::vector<GqlRow>{opt_row});
+                }
+                return seastar::make_ready_future<std::vector<GqlRow>>(std::vector<GqlRow>{});
+            }
+
+            Direction dir = Direction::BOTH;
+            if (stmt.path_count_dir == EdgeDirection::RIGHT) dir = Direction::OUT;
+            else if (stmt.path_count_dir == EdgeDirection::LEFT) dir = Direction::IN;
+
+            std::vector<seastar::future<int64_t>> path_futs;
+            path_futs.reserve(valid_starts.size());
+            for (const auto& s : valid_starts) {
+                std::unordered_map<uint64_t, int64_t> start_counts;
+                start_counts[s.getId()] = 1;
+                path_futs.push_back(propagate_path_counts(graph, std::move(start_counts), stmt.path_count_hops, dir, stmt.path_count_rel_types));
+            }
+
+            return seastar::when_all_succeed(path_futs.begin(), path_futs.end())
+            .then([row, valid_starts, start_node_var, end_node_var](std::vector<int64_t> path_counts) {
+                std::vector<GqlRow> out_rows;
+                out_rows.reserve(valid_starts.size());
+                for (size_t i = 0; i < valid_starts.size(); ++i) {
+                    GqlRow new_row = row;
+                    if (!start_node_var.empty()) {
+                        new_row.bindings[start_node_var] = GqlValue(valid_starts[i]);
+                    }
+                    new_row.bindings[end_node_var] = GqlValue(property_type_t(path_counts[i]));
+                    out_rows.push_back(std::move(new_row));
+                }
+                return out_rows;
+            });
+        });
+    }
+
     // Case 0: K-Hop Traversal.
     if (stmt.is_khop) {
         // Resolve start nodes candidate set.

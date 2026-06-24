@@ -68,6 +68,26 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - The optimizer rewrites `sum(p.age * f.age)` to `p.age * sum(f.age)`. This reduces multiplication overhead to occur once per group rather than once per joined row.
 * **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`algebraic_rewriter_pass`).
 
+### Phase 4.5: Algebraic Path Count Rewrite
+* **Mathematical Axiom**: **Matrix-Vector Multiplication Associativity** $(A^k \cdot \mathbf{1} = A \cdot (A \cdot (\dots (A \cdot \mathbf{1})\dots)))$.
+  - BFS path/walk expansion scales exponentially $O(|V| \cdot d^k)$ with hops.
+  - Decomposing the walk count into iterative local degree sums scales linearly $O(k \cdot |E|)$.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->{3}(f) RETURN p.name, count(f)
+  ```
+  or
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->(a)-[:FRIEND]->(b)-[:FRIEND]->(f) RETURN p.name, count(f)
+  ```
+* **Optimizer Mapping**:
+  - The optimizer detects path-counting queries of length $k$ (represented via variable-length hops or explicit chained relationships) where intermediate and target variables are only referenced inside a `count()` aggregation.
+  - The query pattern is truncated to a 1-node match `(p:Person)` and execution maps to the `AlgebraicPathCountJoin` operator.
+  - The operator executes Seastar-peered iterative degree updates:
+    $$\mathbf{v}_m[u] = \sum_{v \in Neigh(u)} \mathbf{v}_{m-1}[v]$$
+  - Final walk counts are bound directly to output row variables, bypassing traversal expansion entirely.
+* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`algebraic_rewriter_pass`), [PlanBuilder.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PlanBuilder.cpp) (`build_match_plan`), and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`propagate_path_counts`).
+
 ---
 
 ## 2. Bypassing the Semantic Optimizer (Phase 5)
@@ -117,8 +137,10 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 2: Join Elimination** | 9.0763 ms | 8.8437 ms | 38.6477 ms | **4.4x** |
 | **Phase 3: Relational Cycle Pruning** | 0.1983 ms | 0.0163 ms | 15.3529 ms | **939.8x** |
 | **Phase 4: Algebraic Sum Rewrite** | 8.1633 ms | 7.9157 ms | 17.0607 ms | **2.16x** |
+| **Phase 4.5: Algebraic Path Count Rewrite** | 11.4990 ms | 11.4741 ms | 164.7380 ms | **14.35x** |
 
 ### Key Performance Insights
 * **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **930x+ speedup**.
 * **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.65 ms to 8.84 ms (**4.4x speedup**).
 * **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges. This avoids performing **9,995 property lookups** and **9,995 multiplication operations**, saving **9.14 ms** of CPU execution time per query (**2.16x speedup**).
+* **Algebraic Path Count Rewrite (Phase 4.5)**: Rewriting a 3-hop path count query into iterative degree propagation bypasses path/walk expansion completely. For 10,000 paths across 3 hops, this reduces intermediate rows from **10,000** to **5** (one per starting person), avoiding join allocation, traversal state management, and projection overhead. This results in a massive **14.3x speedup**, slashing execution latency from 164.74 ms to 11.47 ms (**saving 153.26 ms**).

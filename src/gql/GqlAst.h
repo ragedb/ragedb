@@ -301,6 +301,11 @@ struct MatchStatement {
 
     bool is_khop = false;
     bool khop_count_only = false;
+    bool algebraic_path_count = false;
+    uint16_t path_count_hops = 0;
+    std::string path_count_target_var;
+    std::vector<std::string> path_count_rel_types;
+    EdgeDirection path_count_dir = EdgeDirection::RIGHT;
 
     // FTS parameters
     bool is_search = false;

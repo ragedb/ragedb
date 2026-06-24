@@ -585,6 +585,9 @@ void GqlTypechecker::check_query(const GqlQuery& query) {
             if (!match.path_variable.empty()) {
                 meet_variable(match.path_variable, GqlType::PATH, {});
             }
+            if (match.algebraic_path_count && !match.path_count_target_var.empty()) {
+                meet_variable(match.path_count_target_var, GqlType::INTEGER, {});
+            }
             // cost_expr typechecking is now performed inside check_path_pattern per edge.
         }
     }
