@@ -119,6 +119,23 @@ The optimizer uses several mathematical axioms and techniques to prove query rew
   - The second MATCH is pruned from the query execution tree.
 * **Code Location**: [SubsumptionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SubsumptionPruner.cpp) (`semantic_subsumption_pass`).
 
+### Phase 7: Composite Attribute Domain Constraint Reasoning (SAT/SMT Solver)
+* **Mathematical Axiom**: **Satisfiability Modulo Theories (SMT) over Boolean Logic and Domain Theories**.
+  - A logical conjunct $\phi_Q \land \bigwedge \neg \phi_C$ is unsatisfiable if no assignment of variables to values satisfies the formula.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person) WHERE p.age = 15 RETURN p.name
+  ```
+  *(with composite catalog constraint registered as: `MATCH (p:Person) WHERE p.age < 18 OR p.status = 'minor' OR p.is_student = true RETURN p`)*
+* **Optimizer Mapping**:
+  - The optimizer conjuncts the query filter logic formula $\phi_Q$ with the negations of all matching registered catalog check constraints $\neg \phi_C$.
+  - It compiles the logic tree into CNF clauses via Tseitin transformation.
+  - It executes a DPLL(T) unit propagation SAT solver integrated with SMT theory consistency checks:
+    - **Numeric Interval Theory**: Propagates bounds over totally ordered variables (using the `Interval` poset solver), finding a contradiction if any interval becomes empty.
+    - **Domain Theory**: Tracks allowed/excluded domains for string and boolean values, finding a contradiction if any value domain is inconsistent.
+  - If unsatisfiable, the query is marked `no_op = true` and short-circuits.
+* **Code Location**: [DomainConstraintReasoner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DomainConstraintReasoner.cpp) (`domain_constraint_reasoning_pass`).
+
 ---
 
 ## 2. Bypassing the Semantic Optimizer
@@ -164,21 +181,23 @@ The following benchmark table compares the execution latency of GQL queries opti
 
 | Optimization Pass | Cold (Cache Miss) | Hot (Cache Hit) | Unoptimized (Bypassed) | Speedup (Hot vs Unopt) |
 |---|---|---|---|---|
-| **Phase 1: Contradiction Pruning** | 0.1557 ms | 0.0090 ms | 0.1013 ms | **11.3x** |
-| **Phase 2: Join Elimination** | 8.6752 ms | 8.4164 ms | 37.4491 ms | **4.45x** |
-| **Phase 3: Relational Cycle Pruning** | 0.2303 ms | 0.0168 ms | 14.7767 ms | **879.6x** |
-| **Phase 4: Algebraic Sum Rewrite** | 344.458 ms | 341.624 ms | 348.001 ms | **1.02x** |
-| **Phase 4.5: Algebraic Path Count Rewrite** | 144.787 ms | 147.680 ms | 1367.08 ms | **9.26x** |
-| **Phase 5: Cardinality Short-Circuit** | 5.4918 ms | 5.0711 ms | 336.716 ms | **66.4x** |
-| **Phase 6: Subsumption Pruning** | 2.7827 ms | 2.2994 ms | 79.4742 ms | **34.6x** |
+| **Phase 1: Contradiction Pruning** | 0.1892 ms | 0.0087 ms | 0.1134 ms | **13.0x** |
+| **Phase 2: Join Elimination** | 9.1028 ms | 8.7722 ms | 38.5647 ms | **4.40x** |
+| **Phase 3: Relational Cycle Pruning** | 0.2949 ms | 0.0163 ms | 15.9512 ms | **978.1x** |
+| **Phase 4: Algebraic Sum Rewrite** | 352.303 ms | 349.933 ms | 355.845 ms | **1.02x** |
+| **Phase 4.5: Algebraic Path Count Rewrite** | 145.190 ms | 147.661 ms | 1408.800 ms | **9.54x** |
+| **Phase 5: Cardinality Short-Circuit** | 5.1358 ms | 4.5527 ms | 342.913 ms | **75.3x** |
+| **Phase 6: Subsumption Pruning** | 3.0371 ms | 2.3930 ms | 82.7410 ms | **34.6x** |
+| **Phase 7: Composite Domain Constraint** | 0.5327 ms | 0.0086 ms | 0.1078 ms | **12.5x** |
 
 ### Key Performance Insights
-* **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **879.6x speedup**.
-* **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 37.45 ms to 8.42 ms (**4.45x speedup**).
+* **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **978.1x speedup**.
+* **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.56 ms to 8.77 ms (**4.40x speedup**).
 * **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges.
-* **Algebraic Path Count Rewrite (Phase 4.5)**: Rewriting a 3-hop path count query into iterative degree propagation bypasses path/walk expansion completely. For 10,000 paths across 3 hops, this reduces intermediate rows from **10,000** to **5** (one per starting person), avoiding join allocation, traversal state management, and projection overhead. This results in a **9.26x speedup**, slashing execution latency from 1367.08 ms to 147.68 ms (**saving 1219.4 ms**).
-* **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., a shipment having at most 1 origin warehouse) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 relationships in the test graph, this cuts the active traversal branch size to 1, leading to a **66.4x speedup**, slashing latency from 336.72 ms to 5.07 ms.
-* **Subsumption Pruning (Phase 6)**: Detecting isomorphic query paths originating from the same node and pruning redundant ones (e.g., where the filters of one path are completely subsumed by another path, and the pruned variable is not projected or referenced elsewhere) bypasses traversing duplicate relationships. For a person with 20 friend edges in the test graph, this cuts duplicate relationship traverses, leading to a **34.6x speedup**, slashing latency from 79.47 ms to 2.30 ms.
+* **Algebraic Path Count Rewrite (Phase 4.5)**: Rewriting a 3-hop path count query into iterative degree propagation bypasses path/walk expansion completely. For 10,000 paths across 3 hops, this reduces intermediate rows from **10,000** to **5** (one per starting person), avoiding join allocation, traversal state management, and projection overhead. This results in a **9.54x speedup**, slashing execution latency from 1408.80 ms to 147.66 ms (**saving 1261.1 ms**).
+* **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., a shipment having at most 1 origin warehouse) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 relationships in the test graph, this cuts the active traversal branch size to 1, leading to a **75.3x speedup**, slashing latency from 342.91 ms to 4.55 ms.
+* **Subsumption Pruning (Phase 6)**: Detecting isomorphic query paths originating from the same node and pruning redundant ones (e.g., where the filters of one path are completely subsumed by another path, and the pruned variable is not projected or referenced elsewhere) bypasses traversing duplicate relationships. For a person with 20 friend edges in the test graph, this cuts duplicate relationship traverses, leading to a **34.6x speedup**, slashing latency from 82.74 ms to 2.39 ms.
+* **Composite Domain Constraint Reasoning (Phase 7)**: Compiling logical query conjuncts along with the negations of check constraints, then executing a DPLL(T) SMT solver with Numeric/Domain theories, identifies domain contradictions on composite check constraints at compile-time. If a contradiction is proved, the traverser short-circuits and skips database scans completely, yielding a **12.5x speedup** (slashing latency from 0.108 ms to 0.0086 ms).
 
 ---
 
@@ -203,3 +222,5 @@ To maintain code readability and extensibility as more optimization rules are in
    - *Phase 5 (Cardinality Short-Circuiting)*: Resolves schema cardinality upper bounds (1-to-1 or N-to-1) to inject early traversal termination limits on match steps.
 6. **[SubsumptionPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SubsumptionPruner.h)**:
    - *Phase 6 (Subsumption / Query Containment)*: Identifies duplicate or redundant isomorphic query traversal paths originating from the same query node variable, pruning them if their constraints are completely subsumed by another path.
+7. **[DomainConstraintReasoner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DomainConstraintReasoner.h)**:
+   - *Phase 7 (Composite Attribute Domain Constraint Reasoning)*: Leverages a DPLL(T) SMT solver integration to prove satisfiability of multi-variable logic conjuncts mixed with complex catalog check constraints (such as range, string domain, and boolean theories).

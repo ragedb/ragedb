@@ -56,6 +56,8 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
     graph.shard.local().NodeTypeInsertPeered("Person").get();
     graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
     graph.shard.local().NodePropertyTypeAddPeered("Person", "age", "integer").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "status", "string").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "is_student", "boolean").get();
 
     graph.shard.local().NodeTypeInsertPeered("FriendNode").get();
     graph.shard.local().NodePropertyTypeAddPeered("FriendNode", "age", "integer").get();
@@ -92,7 +94,7 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
     // 2. Person nodes (5 nodes)
     for (int i = 0; i < 5; ++i) {
         std::string name = "Person" + std::to_string(i);
-        graph.shard.local().NodeAddPeered("Person", name, "{\"name\": \"" + name + "\", \"age\": " + std::to_string(20 + i) + "}").get();
+        graph.shard.local().NodeAddPeered("Person", name, "{\"name\": \"" + name + "\", \"age\": " + std::to_string(20 + i) + ", \"status\": \"adult\", \"is_student\": false}").get();
     }
 
     // 3. FriendNode nodes (2,000 nodes)
@@ -188,6 +190,9 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
     GqlVirtualCatalog::local().add_constraint("PersonFriendMaxCard", "MATCH (p:Person)-[:FRIEND]->(f1:FriendNode) MATCH (p)-[:FRIEND]->(f2:FriendNode) WHERE f1 != f2 RETURN p");
     run_bench("Phase 5: Cardinality Short-Circuit", "MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age");
     run_bench("Phase 6: Subsumption Pruning", "MATCH (p:Person)-[:SUB_FRIEND]->(b:SubsumptionNode), (p)-[:SUB_FRIEND]->(c:SubsumptionNode) WHERE b.age > 21 AND c.age > 18 RETURN p.name", "NO_SEMANTIC MATCH (p:Person)-[:SUB_FRIEND]->(b:SubsumptionNode), (p)-[:SUB_FRIEND]->(c:SubsumptionNode) WHERE b.age > 21 AND c.age > 18 RETURN p.name");
+    // Register Phase 7 constraint
+    GqlVirtualCatalog::local().add_constraint("CompositePersonConstraint", "MATCH (p:Person) WHERE p.age < 18 OR p.status = 'minor' OR p.is_student = true RETURN p");
+    run_bench("Phase 7: Composite Domain Constraint", "MATCH (p:Person) WHERE p.age = 15 RETURN p.name", "NO_SEMANTIC MATCH (p:Person) WHERE p.age = 15 RETURN p.name");
     std::cout << "=========================================\n\n";
 
     GqlVirtualCatalog::local().clear();

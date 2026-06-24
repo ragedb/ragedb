@@ -20,6 +20,7 @@
 #include "GqlParser.h"
 #include "optimizer/OptimizerUtils.h"
 #include "optimizer/ContradictionPruner.h"
+#include "optimizer/DomainConstraintReasoner.h"
 #include "optimizer/JoinEliminator.h"
 #include "optimizer/SubsumptionPruner.h"
 #include "optimizer/CardinalityShortCircuiter.h"
@@ -452,6 +453,9 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     expand_views_recursive(query);
 
     ContradictionPruner::semantic_pruning_pass(query);
+    if (query.no_op) return;
+
+    DomainConstraintReasoner::domain_constraint_reasoning_pass(query);
     if (query.no_op) return;
 
     JoinEliminator::semantic_join_elimination_pass(query);
