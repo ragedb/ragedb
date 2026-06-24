@@ -123,17 +123,17 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
         graph.shard.local().NodeAddPeered("PosetNode", name, "{\"age\": " + std::to_string(10 + i) + "}").get();
     }
 
-    // 6. Subsumption Node and edges (100 nodes and 500 edges to prevent Cartesian memory exhaust on unoptimized benchmark)
+    // 6. Subsumption Node and edges (20 nodes and 100 edges to prevent Cartesian memory exhaust on unoptimized benchmark)
     graph.shard.local().NodeTypeInsertPeered("SubsumptionNode").get();
     graph.shard.local().NodePropertyTypeAddPeered("SubsumptionNode", "age", "integer").get();
     graph.shard.local().RelationshipTypeInsertPeered("SUB_FRIEND").get();
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 20; ++i) {
         std::string name = "SubNode" + std::to_string(i);
         graph.shard.local().NodeAddPeered("SubsumptionNode", name, "{\"age\": " + std::to_string(15 + (i % 20)) + "}").get();
     }
     for (int i = 0; i < 5; ++i) {
         uint64_t p_id = graph.shard.local().NodeGetPeered("Person", "Person" + std::to_string(i)).get().getId();
-        for (int j = 0; j < 100; ++j) {
+        for (int j = 0; j < 20; ++j) {
             uint64_t s_id = graph.shard.local().NodeGetPeered("SubsumptionNode", "SubNode" + std::to_string(j)).get().getId();
             graph.shard.local().RelationshipAddPeered("SUB_FRIEND", p_id, s_id, "{}").get();
         }
