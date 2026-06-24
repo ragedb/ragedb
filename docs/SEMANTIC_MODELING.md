@@ -137,6 +137,27 @@ same_group = model.Relationship("{Person} same_group {Person:peer}")
 alglib.equivalence_relation(same_group, domain=Person)
 ```
 
+### Understanding Algebraic Relationship Properties
+To help select the correct annotations, here is what these properties mean in simple terms:
+
+*   **Symmetric**: If a relationship goes one way, it must go the other way too.
+    *   *Example*: If `A knows B`, then `B knows A`.
+    *   *Optimization*: Allows the query planner to reverse traversal directions to start at the node with the most selective filters.
+*   **Transitive**: If A relates to B, and B relates to C, then A relates to C.
+    *   *Example*: If `A ancestor_of B` and `B ancestor_of C`, then `A ancestor_of C`.
+    *   *Optimization*: Simplifies multi-hop path checks into virtual index reachability lookups and prunes redundant shortcut edges.
+*   **Reflexive**: Every node relates to itself.
+    *   *Example*: Every person belongs to the same department as themselves (`A same_group A`).
+*   **Irreflexive**: No node can relate to itself.
+    *   *Example*: A person cannot be their own parent (`A parent_of A` is impossible).
+    *   *Optimization*: Allows the compiler to instantly identify self-loop queries as impossible contradictions and return empty results without scanning the database.
+*   **Antisymmetric**: If A relates to B, and B relates to A, then A and B must be the exact same node.
+    *   *Example*: If `A part_of B` and `B part_of A`, then `A` and `B` are the same component.
+    *   *Optimization*: Collapses two-node cycles on antisymmetric relationships into a single node during execution.
+*   **Equivalence Relation**: A relationship that is **Reflexive**, **Symmetric**, and **Transitive** all at the same time.
+    *   *Example*: `same_group` or `has_same_type`. These partition the nodes into distinct, non-overlapping groups.
+    *   *Optimization*: Bypasses recursive path traversals completely by mapping reachability checks to instant Union-Find/WCC partition lookups in memory.
+
 Adding these annotations automatically:
 1. Registers the constraints to the RageDB `GqlVirtualCatalog`.
 2. Enables C++ optimization passes (Phases 22 to 26) to rewrite GQL queries utilizing these traits at compile-time.
