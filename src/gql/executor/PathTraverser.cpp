@@ -315,6 +315,13 @@ static seastar::future<std::vector<PathHop>> traverse_var_len_async(
             }
         }
 
+        if (edge.max_cardinality_limit.has_value()) {
+            size_t max_limit = *edge.max_cardinality_limit;
+            if (rels.size() > max_limit) {
+                rels.resize(max_limit);
+            }
+        }
+
         std::vector<seastar::future<std::vector<PathHop>>> branch_futs;
         for (const auto& rel : rels) {
             uint64_t target_id = (rel.getStartingNodeId() == current_node_id) ? rel.getEndingNodeId() : rel.getStartingNodeId();
@@ -478,6 +485,13 @@ static seastar::future<std::vector<GqlRow>> traverse_step(ragedb::Graph& graph, 
             auto keys = pruner.get_keys(edge.variable);
             for (auto& r : rels) {
                 r.pruneProperties(keys);
+            }
+        }
+
+        if (edge.max_cardinality_limit.has_value()) {
+            size_t max_limit = *edge.max_cardinality_limit;
+            if (rels.size() > max_limit) {
+                rels.resize(max_limit);
             }
         }
         std::vector<seastar::future<std::optional<GqlRow>>> futs;

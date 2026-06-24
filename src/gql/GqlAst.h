@@ -260,6 +260,7 @@ struct PatternEdge {
     uint64_t max_hops = 1;                            ///< Maximum number of repetitions.
     std::shared_ptr<Expression> where_expr;           ///< Inline WHERE filter expression.
     std::shared_ptr<Expression> cost_expr;            ///< COST expression for Cheapest path.
+    std::optional<uint64_t> max_cardinality_limit;    ///< Optional max cardinality constraint limit.
 };
 
 /**

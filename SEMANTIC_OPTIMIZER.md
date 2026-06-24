@@ -88,9 +88,22 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - Final walk counts are bound directly to output row variables, bypassing traversal expansion entirely.
 * **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`algebraic_rewriter_pass`), [PlanBuilder.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PlanBuilder.cpp) (`build_match_plan`), and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`propagate_path_counts`).
 
+### Phase 5: Cardinality-Constrained Traversal Short-Circuiting
+* **Mathematical Axiom**: Cardinality bounds on functions and relations.
+  - If a relationship type is constrained to be at most 1-to-1 or $N$-to-1 (e.g. max-cardinality of outgoing edges of type $R$ is $C$), then the size of the image set is bounded: $|R(u)| \le C$.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age
+  ```
+* **Optimizer Mapping**:
+  - The optimizer detects cardinality constraints registered in the virtual catalog (e.g. `CREATE CONSTRAINT PersonFriendMaxCard AS MATCH (p:Person)-[:FRIEND]->(f1) MATCH (p)-[:FRIEND]->(f2) WHERE f1 != f2 RETURN p` which implies FRIEND outdegree $\le 1$).
+  - It sets `max_cardinality_limit = 1` on the FRIEND pattern edge.
+  - The traverser truncates neighbor lists to 1 when scanning edges, short-circuiting traversal and avoiding redundant shard communications.
+* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_cardinality_limit_pass`) and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`traverse_step` and `traverse_var_len_async`).
+
 ---
 
-## 2. Bypassing the Semantic Optimizer (Phase 5)
+## 2. Bypassing the Semantic Optimizer
 
 Queries can dynamically skip the semantic query optimizer using prefix hints.
 
@@ -138,9 +151,11 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 3: Relational Cycle Pruning** | 0.1983 ms | 0.0163 ms | 15.3529 ms | **939.8x** |
 | **Phase 4: Algebraic Sum Rewrite** | 8.1633 ms | 7.9157 ms | 17.0607 ms | **2.16x** |
 | **Phase 4.5: Algebraic Path Count Rewrite** | 11.4990 ms | 11.4741 ms | 164.7380 ms | **14.35x** |
+| **Phase 5: Cardinality Short-Circuit** | 5.5328 ms | 5.1012 ms | 355.4320 ms | **69.67x** |
 
 ### Key Performance Insights
 * **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **930x+ speedup**.
 * **Join Elimination (Phase 2)**: Bypassing sharded join hops to `Location` nodes across 1,000 active shipments saves physical networking and index lookup overhead, cutting traversal execution latency from 38.65 ms to 8.84 ms (**4.4x speedup**).
 * **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges. This avoids performing **9,995 property lookups** and **9,995 multiplication operations**, saving **9.14 ms** of CPU execution time per query (**2.16x speedup**).
 * **Algebraic Path Count Rewrite (Phase 4.5)**: Rewriting a 3-hop path count query into iterative degree propagation bypasses path/walk expansion completely. For 10,000 paths across 3 hops, this reduces intermediate rows from **10,000** to **5** (one per starting person), avoiding join allocation, traversal state management, and projection overhead. This results in a massive **14.3x speedup**, slashing execution latency from 164.74 ms to 11.47 ms (**saving 153.26 ms**).
+* **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., at most 1 friend) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 friends, this cuts the active traversal branch size to 1, leading to a **69.67x speedup**, slashing latency from 355.43 ms to 5.10 ms.

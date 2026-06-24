@@ -40,6 +40,7 @@ public:
     static void semantic_pruning_pass(GqlQuery& query);
     static void semantic_join_elimination_pass(GqlQuery& query);
     static void relational_pruning_pass(GqlQuery& query);
+    static void semantic_cardinality_limit_pass(GqlQuery& query);
     static void algebraic_rewriter_pass(GqlQuery& query);
 };
 

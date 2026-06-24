@@ -168,6 +168,9 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
     run_bench("Phase 3: Relational Cycle Pruning", "MATCH (a:PosetNode), (b:PosetNode), (c:PosetNode) WHERE a.age < b.age AND b.age <= c.age AND c.age < a.age RETURN a.age", "NO_SEMANTIC MATCH (a:PosetNode), (b:PosetNode), (c:PosetNode) WHERE a.age < b.age AND b.age <= c.age AND c.age < a.age RETURN a.age");
     run_bench("Phase 4: Algebraic Sum Rewrite", "MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, sum(p.age * f.age)", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, sum(p.age * f.age)");
     run_bench("Phase 4.5: Algebraic Path Count Rewrite", "MATCH (p:Person)-[:FRIEND]->(a)-[:FRIEND]->(b)-[:FRIEND]->(f:FriendNode) RETURN p.name, count(f)", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(a)-[:FRIEND]->(b)-[:FRIEND]->(f:FriendNode) RETURN p.name, count(f)");
+    // Register Phase 5 constraint
+    GqlVirtualCatalog::local().add_constraint("PersonFriendMaxCard", "MATCH (p:Person)-[:FRIEND]->(f1:FriendNode) MATCH (p)-[:FRIEND]->(f2:FriendNode) WHERE f1 != f2 RETURN p");
+    run_bench("Phase 5: Cardinality Short-Circuit", "MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age");
     std::cout << "=========================================\n\n";
 
     GqlVirtualCatalog::local().clear();

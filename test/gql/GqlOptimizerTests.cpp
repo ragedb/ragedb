@@ -385,4 +385,41 @@ TEST_CASE("GQL Optimizer Algebraic Path Count Rewrite", "[gql_optimizer]") {
     }
 }
 
+TEST_CASE("GQL Optimizer Phase 5: Cardinality-Constrained Traversal Short-Circuiting", "[gql_optimizer][semantic]") {
+    GqlVirtualCatalog::local().clear();
+
+    // Register cardinality constraint: Person has FRIEND out-degree <= 1
+    GqlVirtualCatalog::local().add_constraint(
+        "PersonFriendMaxCard",
+        "MATCH (p:Person)-[:FRIEND]->(f1) MATCH (p)-[:FRIEND]->(f2) WHERE f1 != f2 RETURN p"
+    );
+
+    SECTION("Matches constraint out-degree <= 1") {
+        std::string query_str = "MATCH (p:Person)-[r:FRIEND]->(f:Person) RETURN p, f";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+
+        REQUIRE(query.matches[0].pattern.edges[0].max_cardinality_limit.has_value());
+        REQUIRE(*query.matches[0].pattern.edges[0].max_cardinality_limit == 1);
+    }
+
+    SECTION("Does not match constraint due to direction") {
+        std::string query_str = "MATCH (p:Person)<-[r:FRIEND]-(f:Person) RETURN p, f";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+
+        REQUIRE_FALSE(query.matches[0].pattern.edges[0].max_cardinality_limit.has_value());
+    }
+
+    SECTION("Does not match constraint due to relationship type") {
+        std::string query_str = "MATCH (p:Person)-[r:KNOWS]->(f:Person) RETURN p, f";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+
+        REQUIRE_FALSE(query.matches[0].pattern.edges[0].max_cardinality_limit.has_value());
+    }
+
+    GqlVirtualCatalog::local().clear();
+}
+
 
