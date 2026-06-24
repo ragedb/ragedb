@@ -117,6 +117,30 @@ knows = model.Relationship("{Person} knows {Person:friend}")
 Order.shipments = model.Relationship(f"{Order} has shipment {Shipment:shipment}")
 ```
 
+### Declaring Algebraic Properties (via `alglib`)
+To enable the Semantic Query Optimizer to prune traversal paths, eliminate redundant join hops, and collapse loops, you can declare algebraic properties (such as symmetry, transitivity, reflexivity, etc.) on relationship schemas:
+
+```python
+from pyragedb.semantics.std import alglib
+
+# 1. Symmetric Relationship
+knows = model.Relationship("{Person} knows {Person:friend}")
+alglib.symmetric(knows)
+
+# 2. Transitive & Irreflexive Relationship
+ancestor_of = model.Relationship("{Person} ancestor_of {Person:descendant}")
+alglib.transitive(ancestor_of)
+alglib.irreflexive(ancestor_of)
+
+# 3. Equivalence Relation (reflexive, symmetric, transitive)
+same_group = model.Relationship("{Person} same_group {Person:peer}")
+alglib.equivalence_relation(same_group, domain=Person)
+```
+
+Adding these annotations automatically:
+1. Registers the constraints to the RageDB `GqlVirtualCatalog`.
+2. Enables C++ optimization passes (Phases 22 to 26) to rewrite GQL queries utilizing these traits at compile-time.
+
 ---
 
 ## 6. Derived Facts & Rules (Logic Views)
