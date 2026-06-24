@@ -131,10 +131,25 @@ The optimizer uses several mathematical axioms and techniques to prove query rew
   - The optimizer conjuncts the query filter logic formula $\phi_Q$ with the negations of all matching registered catalog check constraints $\neg \phi_C$.
   - It compiles the logic tree into CNF clauses via Tseitin transformation.
   - It executes a DPLL(T) unit propagation SAT solver integrated with SMT theory consistency checks:
-    - **Numeric Interval Theory**: Propagates bounds over totally ordered variables (using the `Interval` poset solver), finding a contradiction if any interval becomes empty.
+    - **Interval Theory**: Propagates bounds over totally ordered variables (using the `Interval` poset solver), finding a contradiction if any interval becomes empty.
     - **Domain Theory**: Tracks allowed/excluded domains for string and boolean values, finding a contradiction if any value domain is inconsistent.
   - If unsatisfiable, the query is marked `no_op = true` and short-circuits.
 * **Code Location**: [DomainConstraintReasoner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DomainConstraintReasoner.cpp) (`domain_constraint_reasoning_pass`).
+
+### Phase 8: Transitive DAG Reachability Short-Circuiting
+* **Mathematical Axiom**: **Directed Acyclic Graph (DAG) Reachability & Transitive Closures**.
+  - A taxonomy is a partial order defining a DAG.
+  - If a path query specifies a traversal between nodes of category $C_1$ and $C_2$ via transitive subclass relationships (e.g. `(c1)-[:SUBCLASS_OF*]->(c2)`), and $C_2$ is not reachable from $C_1$ in the transitive closure of the taxonomy DAG, the query is unsatisfiable.
+  - Further, if the path length constraint (hops boundary $H$) is disjoint from the set of possible path lengths in the DAG between $C_1$ and $C_2$, the query is unsatisfiable.
+* **GQL Query**:
+  ```gql
+  MATCH (c1:Category)-[:SUBCLASS_OF*]->(c2:Category) WHERE c1.name = 'SpaceOpera' AND c2.name = 'Gardening_Tools' RETURN count(*)
+  ```
+* **Optimizer Mapping**:
+  - The optimizer parses the catalog constraints to construct a taxonomy DAG of hierarchy edges.
+  - It runs a BFS search (respecting hop bounds) to verify reachability.
+  - If unreachable, `query.no_op = true` is set, short-circuiting traversal at compile time.
+* **Code Location**: [TransitiveReachabilityPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveReachabilityPruner.cpp) (`transitive_reachability_pruning_pass`).
 
 ---
 
@@ -189,6 +204,7 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 5: Cardinality Short-Circuit** | 5.1358 ms | 4.5527 ms | 342.913 ms | **75.3x** |
 | **Phase 6: Subsumption Pruning** | 3.0371 ms | 2.3930 ms | 82.7410 ms | **34.6x** |
 | **Phase 7: Composite Domain Constraint** | 0.5327 ms | 0.0086 ms | 0.1078 ms | **12.5x** |
+| **Phase 8: Transitive DAG Reachability** | 0.5420 ms | 0.0100 ms | 16.9726 ms | **1702.6x** |
 
 ### Key Performance Insights
 * **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **978.1x speedup**.
@@ -198,6 +214,7 @@ The following benchmark table compares the execution latency of GQL queries opti
 * **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., a shipment having at most 1 origin warehouse) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 relationships in the test graph, this cuts the active traversal branch size to 1, leading to a **75.3x speedup**, slashing latency from 342.91 ms to 4.55 ms.
 * **Subsumption Pruning (Phase 6)**: Detecting isomorphic query paths originating from the same node and pruning redundant ones (e.g., where the filters of one path are completely subsumed by another path, and the pruned variable is not projected or referenced elsewhere) bypasses traversing duplicate relationships. For a person with 20 friend edges in the test graph, this cuts duplicate relationship traverses, leading to a **34.6x speedup**, slashing latency from 82.74 ms to 2.39 ms.
 * **Composite Domain Constraint Reasoning (Phase 7)**: Compiling logical query conjuncts along with the negations of check constraints, then executing a DPLL(T) SMT solver with Numeric/Domain theories, identifies domain contradictions on composite check constraints at compile-time. If a contradiction is proved, the traverser short-circuits and skips database scans completely, yielding a **12.5x speedup** (slashing latency from 0.108 ms to 0.0086 ms).
+* **Transitive DAG Reachability (Phase 8)**: Short-circuiting disjoint categories at compile time avoids expensive variable-length path expansion $O(|V| \cdot d^k)$ for queries with no reachable paths, yielding a **1702.6x speedup** (slashing latency from 16.97 ms to 0.010 ms).
 
 ---
 
@@ -224,3 +241,5 @@ To maintain code readability and extensibility as more optimization rules are in
    - *Phase 6 (Subsumption / Query Containment)*: Identifies duplicate or redundant isomorphic query traversal paths originating from the same query node variable, pruning them if their constraints are completely subsumed by another path.
 7. **[DomainConstraintReasoner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DomainConstraintReasoner.h)**:
    - *Phase 7 (Composite Attribute Domain Constraint Reasoning)*: Leverages a DPLL(T) SMT solver integration to prove satisfiability of multi-variable logic conjuncts mixed with complex catalog check constraints (such as range, string domain, and boolean theories).
+8. **[TransitiveReachabilityPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveReachabilityPruner.h)**:
+   - *Phase 8 (Transitive DAG Reachability Short-Circuiting)*: Verifies reachability between node categories using taxonomy constraints and path hop bounds to prune unreachable query paths at compile time.

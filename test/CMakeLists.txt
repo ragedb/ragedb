@@ -20,8 +20,21 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         types/Date.cpp
         gql/GqlTokenizerTests.cpp
         gql/GqlParserTests.cpp
-        gql/GqlOptimizerTests.cpp
-        gql/GqlOptimizerPerformanceTests.cpp
+        gql/optimizer/BasicOptimizerTests.cpp
+        gql/optimizer/ContradictionPrunerTests.cpp
+        gql/optimizer/JoinEliminatorTests.cpp
+        gql/optimizer/AlgebraicRewriterTests.cpp
+        gql/optimizer/CardinalityShortCircuiterTests.cpp
+        gql/optimizer/SubsumptionPrunerTests.cpp
+        gql/optimizer/DomainConstraintReasonerTests.cpp
+        gql/optimizer/TransitiveReachabilityPrunerTests.cpp
+        gql/optimizer_performance/ContradictionPerformanceTests.cpp
+        gql/optimizer_performance/JoinEliminationPerformanceTests.cpp
+        gql/optimizer_performance/AlgebraicPerformanceTests.cpp
+        gql/optimizer_performance/CardinalityPerformanceTests.cpp
+        gql/optimizer_performance/SubsumptionPerformanceTests.cpp
+        gql/optimizer_performance/CompositeDomainPerformanceTests.cpp
+        gql/optimizer_performance/TransitiveReachabilityPerformanceTests.cpp
         gql/GqlExecutorReadTests.cpp
         gql/GqlExecutorComplexTests.cpp
         gql/GqlExecutorSubqueryTests.cpp
@@ -61,6 +74,7 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/optimizer/OptimizerUtils.cpp ../src/gql/optimizer/OptimizerUtils.h
         ../src/gql/optimizer/ContradictionPruner.cpp ../src/gql/optimizer/ContradictionPruner.h
         ../src/gql/optimizer/DomainConstraintReasoner.cpp ../src/gql/optimizer/DomainConstraintReasoner.h
+        ../src/gql/optimizer/TransitiveReachabilityPruner.cpp ../src/gql/optimizer/TransitiveReachabilityPruner.h
         ../src/gql/optimizer/JoinEliminator.cpp ../src/gql/optimizer/JoinEliminator.h
         ../src/gql/optimizer/SubsumptionPruner.cpp ../src/gql/optimizer/SubsumptionPruner.h
         ../src/gql/optimizer/CardinalityShortCircuiter.cpp ../src/gql/optimizer/CardinalityShortCircuiter.h
@@ -136,6 +150,7 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/optimizer/OptimizerUtils.cpp ../src/gql/optimizer/OptimizerUtils.h
         ../src/gql/optimizer/ContradictionPruner.cpp ../src/gql/optimizer/ContradictionPruner.h
         ../src/gql/optimizer/DomainConstraintReasoner.cpp ../src/gql/optimizer/DomainConstraintReasoner.h
+        ../src/gql/optimizer/TransitiveReachabilityPruner.cpp ../src/gql/optimizer/TransitiveReachabilityPruner.h
         ../src/gql/optimizer/JoinEliminator.cpp ../src/gql/optimizer/JoinEliminator.h
         ../src/gql/optimizer/SubsumptionPruner.cpp ../src/gql/optimizer/SubsumptionPruner.h
         ../src/gql/optimizer/CardinalityShortCircuiter.cpp ../src/gql/optimizer/CardinalityShortCircuiter.h

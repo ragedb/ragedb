@@ -25,6 +25,7 @@
 #include "optimizer/SubsumptionPruner.h"
 #include "optimizer/CardinalityShortCircuiter.h"
 #include "optimizer/AlgebraicRewriter.h"
+#include "optimizer/TransitiveReachabilityPruner.h"
 #include "../graph/Graph.h"
 #include <limits>
 #include <algorithm>
@@ -456,6 +457,9 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     if (query.no_op) return;
 
     DomainConstraintReasoner::domain_constraint_reasoning_pass(query);
+    if (query.no_op) return;
+
+    TransitiveReachabilityPruner::transitive_reachability_pruning_pass(query);
     if (query.no_op) return;
 
     JoinEliminator::semantic_join_elimination_pass(query);
