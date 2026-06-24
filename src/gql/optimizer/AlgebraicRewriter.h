@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_GQLOPTIMIZER_H
-#define RAGEDB_GQLOPTIMIZER_H
+#ifndef RAGEDB_ALGEBRAICREWRITER_H
+#define RAGEDB_ALGEBRAICREWRITER_H
 
-#include "GqlAst.h"
-
-namespace ragedb {
-    class Graph;
-}
+#include "../GqlAst.h"
 
 namespace ragedb::gql {
 
-class GqlOptimizer {
+class AlgebraicRewriter {
 public:
-    static void optimize(GqlQuery& query);
-    static void optimize(ragedb::Graph& graph, GqlQuery& query);
+    static void algebraic_rewriter_pass(GqlQuery& query);
 };
 
 } // namespace ragedb::gql
 
-#endif // RAGEDB_GQLOPTIMIZER_H
+#endif // RAGEDB_ALGEBRAICREWRITER_H

@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_GQLOPTIMIZER_H
-#define RAGEDB_GQLOPTIMIZER_H
+#ifndef RAGEDB_CONTRADICTIONPRUNER_H
+#define RAGEDB_CONTRADICTIONPRUNER_H
 
-#include "GqlAst.h"
-
-namespace ragedb {
-    class Graph;
-}
+#include "../GqlAst.h"
 
 namespace ragedb::gql {
 
-class GqlOptimizer {
+class ContradictionPruner {
 public:
-    static void optimize(GqlQuery& query);
-    static void optimize(ragedb::Graph& graph, GqlQuery& query);
+    static void semantic_pruning_pass(GqlQuery& query);
+    static void relational_pruning_pass(GqlQuery& query);
 };
 
 } // namespace ragedb::gql
 
-#endif // RAGEDB_GQLOPTIMIZER_H
+#endif // RAGEDB_CONTRADICTIONPRUNER_H

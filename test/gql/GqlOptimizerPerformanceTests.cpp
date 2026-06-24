@@ -123,6 +123,22 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
         graph.shard.local().NodeAddPeered("PosetNode", name, "{\"age\": " + std::to_string(10 + i) + "}").get();
     }
 
+    // 6. Subsumption Node and edges (100 nodes and 500 edges to prevent Cartesian memory exhaust on unoptimized benchmark)
+    graph.shard.local().NodeTypeInsertPeered("SubsumptionNode").get();
+    graph.shard.local().NodePropertyTypeAddPeered("SubsumptionNode", "age", "integer").get();
+    graph.shard.local().RelationshipTypeInsertPeered("SUB_FRIEND").get();
+    for (int i = 0; i < 100; ++i) {
+        std::string name = "SubNode" + std::to_string(i);
+        graph.shard.local().NodeAddPeered("SubsumptionNode", name, "{\"age\": " + std::to_string(15 + (i % 20)) + "}").get();
+    }
+    for (int i = 0; i < 5; ++i) {
+        uint64_t p_id = graph.shard.local().NodeGetPeered("Person", "Person" + std::to_string(i)).get().getId();
+        for (int j = 0; j < 100; ++j) {
+            uint64_t s_id = graph.shard.local().NodeGetPeered("SubsumptionNode", "SubNode" + std::to_string(j)).get().getId();
+            graph.shard.local().RelationshipAddPeered("SUB_FRIEND", p_id, s_id, "{}").get();
+        }
+    }
+
     auto run_bench = [&](const std::string& name, const std::string& query, const std::string& unopt_query) {
         const int iterations = 50;
 
@@ -171,6 +187,7 @@ TEST_CASE("GQL Semantic Query Optimizer Performance Benchmarks", "[gql_optimizer
     // Register Phase 5 constraint
     GqlVirtualCatalog::local().add_constraint("PersonFriendMaxCard", "MATCH (p:Person)-[:FRIEND]->(f1:FriendNode) MATCH (p)-[:FRIEND]->(f2:FriendNode) WHERE f1 != f2 RETURN p");
     run_bench("Phase 5: Cardinality Short-Circuit", "MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age", "NO_SEMANTIC MATCH (p:Person)-[:FRIEND]->(f:FriendNode) RETURN p.name, f.age");
+    run_bench("Phase 6: Subsumption Pruning", "MATCH (p:Person)-[:SUB_FRIEND]->(b:SubsumptionNode), (p)-[:SUB_FRIEND]->(c:SubsumptionNode) WHERE b.age > 21 AND c.age > 18 RETURN p.name", "NO_SEMANTIC MATCH (p:Person)-[:SUB_FRIEND]->(b:SubsumptionNode), (p)-[:SUB_FRIEND]->(c:SubsumptionNode) WHERE b.age > 21 AND c.age > 18 RETURN p.name");
     std::cout << "=========================================\n\n";
 
     GqlVirtualCatalog::local().clear();

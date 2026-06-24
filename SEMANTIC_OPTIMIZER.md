@@ -8,7 +8,7 @@ By resolving predicate satisfiability and relation structures at compile-time, R
 
 ## 1. Mathematical Foundations & Implementation Mapping
 
-The optimizer uses four core mathematical axioms to prove query rewrites:
+The optimizer uses several mathematical axioms and techniques to prove query rewrites:
 
 ### Phase 1: Range Contradiction Pruning
 * **Mathematical Axiom**: **Totality and Transitivity of Partially Ordered Sets (Posets)** $(S, \le)$.
@@ -25,7 +25,7 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - Catalog check constraints define the **impossible regions** for specific label attributes.
   - If the query interval for a variable is a subset of the impossible region (i.e. query interval $\cap$ valid region $= \emptyset$), the query is unsatisfiable.
   - The optimizer marks `query.no_op = true` and the executor short-circuits to return an empty result set immediately.
-* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_pruning_pass`) and [GqlExecutor.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlExecutor.cpp) (`execute_query_internal` check).
+* **Code Location**: [ContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/ContradictionPruner.cpp) (`semantic_pruning_pass`) and [GqlExecutor.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlExecutor.cpp) (`execute_query_internal` check).
 
 ### Phase 2: Join Elimination / Pruning
 * **Mathematical Axiom**: **Referential Mappings & Existential Mappings**.
@@ -37,7 +37,7 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
 * **Optimizer Mapping**:
   - If a GQL constraint specifies that a relation is mandatory (e.g. `MATCH (s:Shipment) WHERE NOT EXISTS { MATCH (s)-[:SHIPPED_FROM]->(:Location) } RETURN s` returns empty), then any query containing `MATCH (s:Shipment)-[:SHIPPED_FROM]->(l:Location)` can eliminate the join to `Location` if `l` is neither filtered nor projected in the query.
   - The pattern is rewritten to a simple single-node match `(s:Shipment)`.
-* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_join_elimination_pass`).
+* **Code Location**: [JoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/JoinEliminator.cpp) (`semantic_join_elimination_pass`).
 
 ### Phase 3: Multi-Variable Relational Predicate Reasoning
 * **Mathematical Axiom**: **Strict Inequalities and Directed Acyclic Graph (DAG) Cycle Contradictions**.
@@ -51,7 +51,7 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - The optimizer extracts all inequalities between query variables (e.g. `a.age < b.age AND b.age <= c.age AND c.age < a.age`).
   - It constructs an inequality graph and runs the Floyd-Warshall transitive closure algorithm.
   - If a strict cycle (self-loop with strict flag) is detected (e.g. `a.age < a.age`), a contradiction is proved and `query.no_op = true` is set.
-* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`relational_pruning_pass`).
+* **Code Location**: [ContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/ContradictionPruner.cpp) (`relational_pruning_pass`).
 
 ### Phase 4: Algebraic Query Rewrites
 * **Mathematical Axiom**: **Commutative Semiring Distributivity** $(K, \oplus, \otimes, 0, 1)$.
@@ -66,7 +66,7 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - If $A$ is a grouping key or depends solely on grouping variables (constant within each aggregate group), $A$ is factored out of the summation:
     $$\sum (A \times B) = A \times \sum B$$
   - The optimizer rewrites `sum(p.age * f.age)` to `p.age * sum(f.age)`. This reduces multiplication overhead to occur once per group rather than once per joined row.
-* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`algebraic_rewriter_pass`).
+* **Code Location**: [AlgebraicRewriter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AlgebraicRewriter.cpp) (`algebraic_rewriter_pass`).
 
 ### Phase 4.5: Algebraic Path Count Rewrite
 * **Mathematical Axiom**: **Matrix-Vector Multiplication Associativity** $(A^k \cdot \mathbf{1} = A \cdot (A \cdot (\dots (A \cdot \mathbf{1})\dots)))$.
@@ -86,7 +86,7 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - The operator executes Seastar-peered iterative degree updates:
     $$\mathbf{v}_m[u] = \sum_{v \in Neigh(u)} \mathbf{v}_{m-1}[v]$$
   - Final walk counts are bound directly to output row variables, bypassing traversal expansion entirely.
-* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`algebraic_rewriter_pass`), [PlanBuilder.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PlanBuilder.cpp) (`build_match_plan`), and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`propagate_path_counts`).
+* **Code Location**: [AlgebraicRewriter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AlgebraicRewriter.cpp) (`algebraic_rewriter_pass`), [PlanBuilder.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PlanBuilder.cpp) (`build_match_plan`), and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`propagate_path_counts`).
 
 ### Phase 5: Cardinality-Constrained Traversal Short-Circuiting
 * **Mathematical Axiom**: Cardinality bounds on functions and relations.
@@ -99,7 +99,25 @@ The optimizer uses four core mathematical axioms to prove query rewrites:
   - The optimizer detects cardinality constraints registered in the virtual catalog (e.g. `CREATE CONSTRAINT ShipmentOriginMaxCard AS MATCH (s:Shipment)-[:SHIPPED_FROM]->(w1) MATCH (s)-[:SHIPPED_FROM]->(w2) WHERE w1 != w2 RETURN s` which implies `SHIPPED_FROM` outdegree $\le 1$).
   - It sets `max_cardinality_limit = 1` on the `SHIPPED_FROM` pattern edge.
   - The traverser truncates neighbor lists to 1 when scanning edges, short-circuiting traversal and avoiding redundant shard communications.
-* **Code Location**: [GqlOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/GqlOptimizer.cpp) (`semantic_cardinality_limit_pass`) and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`traverse_step` and `traverse_var_len_async`).
+* **Code Location**: [CardinalityShortCircuiter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/CardinalityShortCircuiter.cpp) (`semantic_cardinality_limit_pass`) and [PathTraverser.cpp](file:///home/maxdemarzi/ragedb/src/gql/executor/PathTraverser.cpp) (`traverse_step` and `traverse_var_len_async`).
+
+### Phase 6: Subsumption / Query Containment Pruning
+* **Mathematical Axiom**: **Subsumption / Query Containment**.
+  - A query pattern $Q_1$ is subsumed by another pattern $Q_2$ (denoted $Q_1 \sqsubseteq Q_2$) if for any database instance $D$, the results $Q_1(D) \subseteq Q_2(D)$.
+  - If the variables bound in $Q_2$ are not projected or referenced outside the match pattern, and $Q_1$ imposes equal or stricter constraints over an isomorphic path structure originating from the same variable, then the execution of $Q_2$ is redundant and its match can be pruned entirely.
+* **GQL Query**:
+  ```gql
+  MATCH (p:Person)-[:FRIEND]->(f1:Person) WHERE f1.age > 30
+  MATCH (p)-[:FRIEND]->(f2:Person) WHERE f2.age > 20
+  RETURN p.name
+  ```
+* **Optimizer Mapping**:
+  - The optimizer detects isomorphic `MATCH` patterns originating from the same node variable (e.g., `p`).
+  - It maps the variables in the patterns and computes interval intersections.
+  - For target nodes and relationships, it checks label hierarchy compatibility and ensures that the filters on `f2` ($age > 20$) are a superset of/subsume those on `f1` ($age > 30$).
+  - Since the variable `f2` is a dead-end (not projected, not sorted, not referenced in `WHERE` outside of simple range filters), the match of `f2` is redundant: any node `p` that has a friend older than 30 is guaranteed to have a friend older than 20.
+  - The second MATCH is pruned from the query execution tree.
+* **Code Location**: [SubsumptionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SubsumptionPruner.cpp) (`semantic_subsumption_pass`).
 
 ---
 
@@ -117,7 +135,7 @@ Queries can dynamically skip the semantic query optimizer using prefix hints.
    /* no_semantic */ MATCH (p:Person) WHERE p.age < -5 RETURN p
    ```
 
-When either prefix is matched, the parser sets `query.skip_semantic = true`. The optimizer checks this flag and exits immediately, bypassing all four semantic passes.
+When either prefix is matched, the parser sets `query.skip_semantic = true`. The optimizer checks this flag and exits immediately, bypassing all semantic passes.
 
 ---
 
@@ -159,3 +177,27 @@ The following benchmark table compares the execution latency of GQL queries opti
 * **Algebraic Rewrite (Phase 4)**: Factorization pushes independent variables out of the sum aggregation across 10,000 friendship edges. This avoids performing **9,995 property lookups** and **9,995 multiplication operations**, saving **9.14 ms** of CPU execution time per query (**2.16x speedup**).
 * **Algebraic Path Count Rewrite (Phase 4.5)**: Rewriting a 3-hop path count query into iterative degree propagation bypasses path/walk expansion completely. For 10,000 paths across 3 hops, this reduces intermediate rows from **10,000** to **5** (one per starting person), avoiding join allocation, traversal state management, and projection overhead. This results in a massive **14.3x speedup**, slashing execution latency from 164.74 ms to 11.47 ms (**saving 153.26 ms**).
 * **Cardinality Short-Circuit (Phase 5)**: Bypassing the traversal of excess outgoing edges when the schema catalog guarantees a cardinality limit (e.g., a shipment having at most 1 origin warehouse) avoids remote peered shard lookups for the remaining neighbors. For a node with 2,000 relationships in the test graph, this cuts the active traversal branch size to 1, leading to a **69.67x speedup**, slashing latency from 355.43 ms to 5.10 ms.
+
+---
+
+## 5. Modular Optimizer Architecture
+
+To maintain code readability and extensibility as more optimization rules are introduced, the monolithic `GqlOptimizer.cpp` is divided into separate optimization passes within the [optimizer](file:///home/maxdemarzi/ragedb/src/gql/optimizer) directory.
+
+### Directory Layout & Component Roles
+
+1. **[OptimizerUtils](file:///home/maxdemarzi/ragedb/src/gql/optimizer/OptimizerUtils.h)**:
+   - Shared internal structures such as `Interval` (representing bounds over ordered sets) and `VarInfo` (representing label, intervals, and degree optimizations per variable).
+   - Utility functions for AST inspection, variable mapping collection, label subsumption check, and value evaluation.
+2. **[ContradictionPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/ContradictionPruner.h)**:
+   - *Phase 1 (Contradiction Pruning)*: Checks single-variable bounding intervals against schema catalog impossible regions.
+   - *Phase 3 (Poset Relational Cycle Pruning)*: Builds a directed inequality graph over multivariable relational filters and runs Floyd-Warshall cycle detection to prove unsatisfiability.
+3. **[JoinEliminator](file:///home/maxdemarzi/ragedb/src/gql/optimizer/JoinEliminator.h)**:
+   - *Phase 2 (Join Elimination)*: Inspects mandatory relationship schema catalog constraints and prunes redundant structural joins where target variables are dead ends.
+4. **[AlgebraicRewriter](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AlgebraicRewriter.h)**:
+   - *Phase 4 (Algebraic Sum Rewrite)*: Applies distributivity by factoring terms out of summation operators.
+   - *Phase 4.5 (Algebraic Path Count Rewrite)*: Detects multi-hop path traversal count expressions and rewrites them into linear-time degree sum equations.
+5. **[CardinalityShortCircuiter](file:///home/maxdemarzi/ragedb/src/gql/optimizer/CardinalityShortCircuiter.h)**:
+   - *Phase 5 (Cardinality Short-Circuiting)*: Resolves schema cardinality upper bounds (1-to-1 or N-to-1) to inject early traversal termination limits on match steps.
+6. **[SubsumptionPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SubsumptionPruner.h)**:
+   - *Phase 6 (Subsumption / Query Containment)*: Identifies duplicate or redundant isomorphic query traversal paths originating from the same query node variable, pruning them if their constraints are completely subsumed by another path.

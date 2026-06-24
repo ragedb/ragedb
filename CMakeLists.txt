@@ -212,6 +212,12 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/GqlLexer.cpp src/gql/GqlLexer.h
         src/gql/GqlParser.cpp src/gql/GqlParser.h
         src/gql/GqlOptimizer.cpp src/gql/GqlOptimizer.h
+        src/gql/optimizer/OptimizerUtils.cpp src/gql/optimizer/OptimizerUtils.h
+        src/gql/optimizer/ContradictionPruner.cpp src/gql/optimizer/ContradictionPruner.h
+        src/gql/optimizer/JoinEliminator.cpp src/gql/optimizer/JoinEliminator.h
+        src/gql/optimizer/SubsumptionPruner.cpp src/gql/optimizer/SubsumptionPruner.h
+        src/gql/optimizer/CardinalityShortCircuiter.cpp src/gql/optimizer/CardinalityShortCircuiter.h
+        src/gql/optimizer/AlgebraicRewriter.cpp src/gql/optimizer/AlgebraicRewriter.h
         src/gql/GqlExecutor.cpp src/gql/GqlExecutor.h
         src/gql/GqlQueryCache.cpp src/gql/GqlQueryCache.h
         src/gql/executor/FactorNode.cpp src/gql/executor/FactorNode.h

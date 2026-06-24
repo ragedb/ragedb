@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef RAGEDB_GQLOPTIMIZER_H
-#define RAGEDB_GQLOPTIMIZER_H
+#ifndef RAGEDB_JOINELIMINATOR_H
+#define RAGEDB_JOINELIMINATOR_H
 
-#include "GqlAst.h"
-
-namespace ragedb {
-    class Graph;
-}
+#include "../GqlAst.h"
 
 namespace ragedb::gql {
 
-class GqlOptimizer {
+class JoinEliminator {
 public:
-    static void optimize(GqlQuery& query);
-    static void optimize(ragedb::Graph& graph, GqlQuery& query);
+    static void semantic_join_elimination_pass(GqlQuery& query);
 };
 
 } // namespace ragedb::gql
 
-#endif // RAGEDB_GQLOPTIMIZER_H
+#endif // RAGEDB_JOINELIMINATOR_H
