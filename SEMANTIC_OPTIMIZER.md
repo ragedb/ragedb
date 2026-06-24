@@ -205,6 +205,7 @@ The following benchmark table compares the execution latency of GQL queries opti
 | **Phase 6: Subsumption Pruning** | 3.0371 ms | 2.3930 ms | 82.7410 ms | **34.6x** |
 | **Phase 7: Composite Domain Constraint** | 0.5327 ms | 0.0086 ms | 0.1078 ms | **12.5x** |
 | **Phase 8: Transitive DAG Reachability** | 0.5420 ms | 0.0100 ms | 16.9726 ms | **1702.6x** |
+| **Phase 9: Functional Dependency** | 20.8887 ms | 20.4553 ms | 24.8487 ms | **1.21x** |
 
 ### Key Performance Insights
 * **Contradiction Pruning (Phases 1 & 3)**: Pruning query execution trees at compile-time when constraints are violated avoids unnecessary database scans and filters. Relational cycle pruning (Phase 3) short-circuits Cartesian product traversal completely, leading to a **978.1x speedup**.
@@ -215,6 +216,7 @@ The following benchmark table compares the execution latency of GQL queries opti
 * **Subsumption Pruning (Phase 6)**: Detecting isomorphic query paths originating from the same node and pruning redundant ones (e.g., where the filters of one path are completely subsumed by another path, and the pruned variable is not projected or referenced elsewhere) bypasses traversing duplicate relationships. For a person with 20 friend edges in the test graph, this cuts duplicate relationship traverses, leading to a **34.6x speedup**, slashing latency from 82.74 ms to 2.39 ms.
 * **Composite Domain Constraint Reasoning (Phase 7)**: Compiling logical query conjuncts along with the negations of check constraints, then executing a DPLL(T) SMT solver with Numeric/Domain theories, identifies domain contradictions on composite check constraints at compile-time. If a contradiction is proved, the traverser short-circuits and skips database scans completely, yielding a **12.5x speedup** (slashing latency from 0.108 ms to 0.0086 ms).
 * **Transitive DAG Reachability (Phase 8)**: Short-circuiting disjoint categories at compile time avoids expensive variable-length path expansion $O(|V| \cdot d^k)$ for queries with no reachable paths, yielding a **1702.6x speedup** (slashing latency from 16.97 ms to 0.010 ms).
+* **Functional Dependency (Phase 9)**: Rewriting a property-based aggregation (such as `count(b.state_name)`) to a property-free aggregation (`count(*)`) when the property `state_name` is functionally determined by a grouping key (such as `b.zip_code`) completely avoids disk/memory loading and value parsing for every grouped node. For 2,000 nodes, this yields a **1.21x speedup**, reducing execution latency from 24.85 ms to 20.46 ms.
 
 ---
 
@@ -243,3 +245,5 @@ To maintain code readability and extensibility as more optimization rules are in
    - *Phase 7 (Composite Attribute Domain Constraint Reasoning)*: Leverages a DPLL(T) SMT solver integration to prove satisfiability of multi-variable logic conjuncts mixed with complex catalog check constraints (such as range, string domain, and boolean theories).
 8. **[TransitiveReachabilityPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveReachabilityPruner.h)**:
    - *Phase 8 (Transitive DAG Reachability Short-Circuiting)*: Verifies reachability between node categories using taxonomy constraints and path hop bounds to prune unreachable query paths at compile time.
+9. **[FunctionalDependencyPruner](file:///home/maxdemarzi/ragedb/src/gql/optimizer/FunctionalDependencyPruner.h)**:
+   - *Phase 9 (Functional Dependency & Attribute-Correlation)*: Maps functional dependencies ($X \to Y$) from check constraints to rewrite grouping aggregations `count(b.Y)` -> `count(*)` when `b.X` is in grouping keys, bypassing property scans.

@@ -26,6 +26,7 @@
 #include "optimizer/CardinalityShortCircuiter.h"
 #include "optimizer/AlgebraicRewriter.h"
 #include "optimizer/TransitiveReachabilityPruner.h"
+#include "optimizer/FunctionalDependencyPruner.h"
 #include "../graph/Graph.h"
 #include <limits>
 #include <algorithm>
@@ -470,6 +471,7 @@ void GqlOptimizer::optimize(GqlQuery& query) {
     CardinalityShortCircuiter::semantic_cardinality_limit_pass(query);
 
     AlgebraicRewriter::algebraic_rewriter_pass(query);
+    FunctionalDependencyPruner::functional_dependency_pass(query);
 
     std::set<std::string> outer_vars;
     collect_variables_from_matches(query.matches, outer_vars);
