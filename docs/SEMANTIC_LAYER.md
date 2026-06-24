@@ -42,6 +42,9 @@ graph TD
 
 The entry point of the semantic layer begins with instantiating a [Model](file:///home/maxdemarzi/ragedb/python/pyragedb/semantics/model.py) instance and defining the graph ontology structure.
 
+> [!NOTE]
+> For a detailed guide on how to build, inherit, and validate semantic models in Python, see the [Semantic Modeling Guide (Python)](file:///home/maxdemarzi/ragedb/docs/SEMANTIC_MODELING.md).
+
 ### Component Roles & Inheritance
 1. **Concepts**: Declared via `m.Concept("Name")`, a [Concept](file:///home/maxdemarzi/ragedb/python/pyragedb/semantics/concept.py) represents a vertex category in the graph. Sibling concepts can inherit properties, relationships, and identity schemes using the `extends` argument (supporting single and multiple inheritance, checked via `inherits_from()`).
 2. **Properties**: Declared via `m.Property("Subject has name Type:prop_name")`, defining attribute schemas on nodes.
