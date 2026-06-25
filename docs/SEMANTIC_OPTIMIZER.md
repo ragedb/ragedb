@@ -242,6 +242,155 @@ The optimizer uses several mathematical axioms and techniques to prove query rew
   - The execution engine halts traversal branches as soon as the limit threshold is reached.
 * **Code Location**: [LimitPushdownOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/LimitPushdownOptimizer.cpp) (`limit_pushdown_pass`).
 
+### Phase 16: Transitive Filter Propagation
+* **Mathematical Axiom**: **Transitive Substitution of Equivalence**.
+  - If $a = b \land \phi(a) \implies \phi(b)$, where $\phi$ is a property filter predicate.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person), (b:Person) WHERE a == b AND a.age = 30 RETURN a
+  ```
+* **Optimizer Mapping**:
+  - The optimizer collects equated node variables or equated properties (e.g. `a == b` or `a.age == b.age`).
+  - It transitively propagates literal constant filters (e.g. `a.age = 30` to `b.age = 30`), appending the propagated constraints to the query filters. This allows both variables to utilize index seek lookups instead of falling back to a full join scan.
+* **Code Location**: [TransitiveFilterPropagator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitiveFilterPropagator.cpp) (`transitive_filter_propagation_pass`).
+
+### Phase 17: Relationship-Attribute Contradiction Pruning
+* **Mathematical Axiom**: **Empty Intersection of Query and Constraint Intervals**.
+  - If a relationship attribute constraint restricts values to a range $C$ (impossible regions), and the query filter restricts it to range $Q$, then if $Q \subseteq C$, the query is unsatisfiable.
+* **GQL Query**:
+  ```gql
+  MATCH (a)-[r:FRIEND]->(b) WHERE r.weight = -5 RETURN a
+  ```
+  *(with catalog constraint specifying positive weight, e.g., `MATCH ()-[r:FRIEND]->() WHERE r.weight < 0 RETURN r`)*
+* **Optimizer Mapping**:
+  - The optimizer checks for internal contradictions on edge properties (e.g. `weight > 10 AND weight < 5`).
+  - It also matches the edge properties against forbidden check constraints from the virtual catalog.
+  - If any contradiction is proved, the query is marked `query.no_op = true` and short-circuits.
+* **Code Location**: [EdgeContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EdgeContradictionPruner.cpp) (`edge_contradiction_pruning_pass`).
+
+### Phase 18: Anti-Semi-Join Promotion
+* **Mathematical Axiom**: **Null-Rejecting Predicate Translation to Negation**.
+  - If an optional traversal produces rows where target variable $y$ is null on join failure, and a predicate subsequently requires $y$ to be null (e.g. `y IS NULL`), the optional match is semantically equivalent to a negated existential check ($\neg \exists$).
+* **GQL Query**:
+  ```gql
+  OPTIONAL MATCH (a)-[r:FRIEND]->(b) WHERE b IS NULL RETURN a
+  ```
+* **Optimizer Mapping**:
+  - The optimizer scans `OPTIONAL MATCH` statements and identifies if the matched variables are checked for nullity (`b IS NULL`) in the `WHERE` clause.
+  - It promotes/rewrites the `OPTIONAL MATCH` into a `NOT EXISTS` subquery check (`MATCH (a) WHERE NOT EXISTS { MATCH (a)-[r:FRIEND]->(b) }`), avoiding record allocation and full property evaluation for unmatched traversals.
+* **Code Location**: [AntiSemiJoinPromoter.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AntiSemiJoinPromoter.cpp) (`optional_match_to_antisemijoin_pass`).
+
+### Phase 19: Equality Join Elimination
+* **Mathematical Axiom**: **Idempotence of Self-Joins Equated by Variable**.
+  - If two isomorphic join paths are matched from the same root node variable, and their target variables are equated ($b = c$), they represent the identical traversal path.
+* **GQL Query**:
+  ```gql
+  MATCH (a)-[:FRIEND]->(b) MATCH (a)-[:FRIEND]->(c) WHERE b == c RETURN a, b
+  ```
+* **Optimizer Mapping**:
+  - The optimizer detects redundant isomorphic self-joins that are equated in query filters.
+  - It coalesces the target variables (`c` into `b`) and deletes the duplicate traversal pattern from the query's match plan.
+* **Code Location**: [EqualityJoinEliminator.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EqualityJoinEliminator.cpp) (`equality_join_elimination_pass`).
+
+### Phase 20: Disjoint Concept Path Pruning
+* **Mathematical Axiom**: **Empty Intersection of Disjoint Concepts**.
+  - If two node categories/labels or hierarchy domains are declared disjoint ($A \cap B = \emptyset$), then no path of any length can connect them if they reside in mutually exclusive sub-trees of a taxonomy.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person)-[:WORKS_FOR*]->(b:Company) RETURN a
+  ```
+  *(with labels `Person` and `Company` declared disjoint in the virtual catalog)*
+* **Optimizer Mapping**:
+  - The optimizer parses the catalog's disjointness rules for labels and concept/taxonomy values.
+  - It verifies if a variable-length path connects endpoints whose labels or taxonomy value ancestors are disjoint.
+  - If a disjointness violation is found, the query is marked `query.no_op = true` and short-circuits.
+* **Code Location**: [DisjointConceptPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DisjointConceptPruner.cpp) (`disjoint_concept_pruning_pass`).
+
+### Phase 21: Traversal Direction Swap
+* **Mathematical Axiom**: **Adjacency Commutativity of Undirected Graph Traversal / Selectivity Principle**.
+  - An edge lookup can be traversed from source to target or target to source: $(u) \to (v) \equiv (v) \leftarrow (u)$.
+  - Commencing the traversal scan at the vertex with the smaller candidate set (higher selectivity) reduces intermediate path state space.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person)-[:FRIEND]->(b:Person) WHERE b.id = 1 RETURN a
+  ```
+* **Optimizer Mapping**:
+  - The optimizer estimates selectivity of query match endpoints.
+  - If the target end node has a higher estimated selectivity than the start node (e.g. a unique ID search vs a full label scan), it reverses the match pattern and the edge direction.
+* **Code Location**: [DirectionSwapOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/DirectionSwapOptimizer.cpp) (`direction_swap_pass`).
+
+### Phase 22: Symmetric Traversal Swap
+* **Mathematical Axiom**: **Symmetric Relation Commutativity**.
+  - If relationship type $R$ is symmetric, then $u \xrightarrow{R} v \iff v \xrightarrow{R} u$.
+  - This allows reversing the directed match sequence dynamically to begin from the more selective node, even without reversing the logical edge direction in the graph database.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person)-[:SPOUSE]->(b:Person) WHERE b.id = 1 RETURN a.name
+  ```
+  *(with `SPOUSE` registered as symmetric in the catalog)*
+* **Optimizer Mapping**:
+  - The optimizer checks if all edges in a match pattern belong to relationship types registered as `symmetric` in the virtual catalog.
+  - If they are symmetric, it estimates selectivity of start and end nodes. If the end node has higher selectivity, it reverses the match pattern and swaps the edge traversal directions.
+* **Code Location**: [SymmetricTraversalOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/SymmetricTraversalOptimizer.cpp) (`symmetric_traversal_pass`).
+
+### Phase 23: Transitive Path Pruning
+* **Mathematical Axiom**: **Transitive Reachability Reduction & Shortcut Redundancy**.
+  - If a relation $R$ is transitive, any variable-length path $a \xrightarrow{R*} b$ can be simplified to a single-hop lookup on a transitive reachability index.
+  - Additionally, if the join tree contains both $a \xrightarrow{R} b \land b \xrightarrow{R} c$ and the shortcut $a \xrightarrow{R} c$, the shortcut is logically redundant and can be pruned.
+* **GQL Query**:
+  ```gql
+  MATCH (x)-[:PART_OF*]->(y) RETURN x, y
+  ```
+  and
+  ```gql
+  MATCH (x)-[:PART_OF]->(y) MATCH (y)-[:PART_OF]->(z) MATCH (x)-[:PART_OF]->(z) RETURN x, y, z
+  ```
+  *(with `PART_OF` registered as transitive in the catalog)*
+* **Optimizer Mapping**:
+  - The optimizer simplifies variable-length paths of transitive relations to single hops and flags `match.transitive_reachability_lookup = true` for index lookup.
+  - It builds a variable adjacency graph of transitive matches and prunes redundant shortcut edges from the join tree.
+* **Code Location**: [TransitivePathOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/TransitivePathOptimizer.cpp) (`transitive_path_pass`).
+
+### Phase 24: Irreflexive Contradiction Pruning
+* **Mathematical Axiom**: **Irreflexivity Axiom**.
+  - A relation $R$ is irreflexive if $\forall u$, $\neg (u \xrightarrow{R} u)$.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person)-[:PARENT_OF]->(b:Person) WHERE a == b RETURN a
+  ```
+  *(with `PARENT_OF` registered as irreflexive in the catalog)*
+* **Optimizer Mapping**:
+  - The optimizer collects equated variables from the query's filter expressions.
+  - It checks if any edge belongs to an `irreflexive` relationship type and links nodes that are equated (either directly or via transitive equality). If so, it sets `query.no_op = true` and short-circuits.
+* **Code Location**: [IrreflexiveContradictionPruner.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/IrreflexiveContradictionPruner.cpp) (`irreflexive_contradiction_pass`).
+
+### Phase 25: Antisymmetric Loop Collapse
+* **Mathematical Axiom**: **Antisymmetry Axiom**.
+  - A relation $R$ is antisymmetric if $\forall u, v$, $u \xrightarrow{R} v \land v \xrightarrow{R} u \implies u = v$.
+* **GQL Query**:
+  ```gql
+  MATCH (x)-[:PART_OF]->(y) MATCH (y)-[:PART_OF]->(x) RETURN x, y
+  ```
+  *(with `PART_OF` registered as antisymmetric in the catalog)*
+* **Optimizer Mapping**:
+  - The optimizer scans for directed loops of length 2 (e.g. $x \to y$ and $y \to x$) on antisymmetric relationship types.
+  - It coalesces/renames $y$ to $x$ across all query statements and deletes the redundant traversal edge. If the relation is reflexive, both edges are deleted; otherwise, it keeps one edge as a self-loop.
+* **Code Location**: [AntisymmetricLoopCollapser.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/AntisymmetricLoopCollapser.cpp) (`antisymmetric_loop_pass`).
+
+### Phase 26: Equivalence Class Coalescing
+* **Mathematical Axiom**: **Partitioning of Equivalence Classes**.
+  - If a relationship $R$ is reflexive, symmetric, and transitive, it defines an equivalence relation.
+  - Evaluating reachability over an equivalence relation partitions the vertices into Weakly Connected Components (WCC), reducing path reachability checks to $O(1)$ Union-Find partition checks.
+* **GQL Query**:
+  ```gql
+  MATCH (a:Person)-[:SAME_FAMILY*]->(b:Person) RETURN a, b
+  ```
+  *(with `SAME_FAMILY` registered as reflexive, symmetric, and transitive in the catalog)*
+* **Optimizer Mapping**:
+  - The optimizer detects variable-length path matches on equivalence relations.
+  - It rewrites them to a single-hop lookup and flags `match.equivalence_partition_lookup = true` to inform the execution engine to perform a Union-Find WCC lookup.
+* **Code Location**: [EquivalenceClassOptimizer.cpp](file:///home/maxdemarzi/ragedb/src/gql/optimizer/EquivalenceClassOptimizer.cpp) (`equivalence_class_pass`).
+
 ---
 
 ## 2. Bypassing the Semantic Optimizer
