@@ -77,6 +77,17 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
         REQUIRE(results_json.find("35") != std::string::npos);
     }
 
+    SECTION("Node .key resolves to the external key, not a properties-map lookup") {
+        std::string query_str = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.key AS k";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+
+        std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
+
+        // alice was added with key "alice"; .key must return it (previously null).
+        REQUIRE(results_json.find("alice") != std::string::npos);
+    }
+
     SECTION("Filtered match return properties") {
         std::string query_str = "MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.name, p.age";
         auto query = GqlParser::parse(query_str);
@@ -380,12 +391,12 @@ TEST_CASE("GQL Execution Read Tests", "[gql_executor_read]") {
     guard.stop();
 }
 
-// NOTE: the transitive/equivalence fast paths execute via seastar::async (task 002) and cannot be
+// NOTE: the transitive/equivalence fast paths execute via seastar::async and cannot be
 // driven from inside the Catch harness (which itself runs the session in a seastar::async), so 016 is
 // verified on the live server instead--the unlabeled transitive query no longer OOMs and bounded
 // queries still return the correct closure.
 
-TEST_CASE("GQL LIMIT with a residual WHERE returns the full LIMIT", "[gql_executor_read][task009]") {
+TEST_CASE("GQL LIMIT with a residual WHERE returns the full LIMIT", "[gql_executor_read]") {
     auto graph = Graph("gql_limit_pushdown_test");
     graph.Start().get();
     graph.Clear();

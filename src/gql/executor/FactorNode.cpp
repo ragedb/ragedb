@@ -123,17 +123,17 @@ std::map<GqlValue, FactorNodePtr, GqlValueLess> FactorNode::partition(const std:
         for (size_t i = 0; i < children.size(); ++i) {
             auto free_vars = children[i]->freevars();
             if (free_vars.count(var)) {
-                target_idx = i;
+                target_idx = static_cast<int>(i);
                 break;
             }
         }
         if (target_idx != -1) {
-            auto target_node = children[target_idx];
+            auto target_node = children[static_cast<size_t>(target_idx)];
             auto target_parts = target_node->partition(var);
             for (auto& [val, part] : target_parts) {
                 auto product_node = std::make_shared<FactorNode>(type);
                 product_node->children = children;
-                product_node->children[target_idx] = part;
+                product_node->children[static_cast<size_t>(target_idx)] = part;
                 partition_map[val] = product_node;
             }
         }

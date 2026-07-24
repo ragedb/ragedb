@@ -23,13 +23,13 @@ using namespace ragedb;
 using namespace ragedb::gql;
 
 /*
- * Task 026: optimizer passes that rewrite COUNT shapes (count -> count(*), count -> degree sum,
+ * optimizer passes that rewrite COUNT shapes (count -> count(*), count -> degree sum,
  * count -> algebraic path count) change row multiplicity, which is exactly what DISTINCT
  * aggregates observe. Each pass must leave DISTINCT aggregates untouched. Every section pairs a
  * positive control (the plain-count rewrite still fires) with the DISTINCT bail-out.
  */
 
-TEST_CASE("FunctionalDependencyPruner keeps count(DISTINCT b.y)", "[gql_optimizer][task026]") {
+TEST_CASE("FunctionalDependencyPruner keeps count(DISTINCT b.y)", "[gql_optimizer]") {
     GqlVirtualCatalog::local().clear();
     GqlVirtualCatalog::local().add_constraint(
         "CityZipToState",
@@ -56,7 +56,7 @@ TEST_CASE("FunctionalDependencyPruner keeps count(DISTINCT b.y)", "[gql_optimize
     GqlVirtualCatalog::local().clear();
 }
 
-TEST_CASE("degree-sum rewrite skips DISTINCT counts", "[gql_optimizer][task026]") {
+TEST_CASE("degree-sum rewrite skips DISTINCT counts", "[gql_optimizer]") {
     GqlVirtualCatalog::local().clear();
 
     SECTION("positive control: count(b) over one hop becomes a degree sum") {
@@ -81,7 +81,7 @@ TEST_CASE("degree-sum rewrite skips DISTINCT counts", "[gql_optimizer][task026]"
     GqlVirtualCatalog::local().clear();
 }
 
-TEST_CASE("algebraic path-count rewrite skips DISTINCT counts", "[gql_optimizer][task026]") {
+TEST_CASE("algebraic path-count rewrite skips DISTINCT counts", "[gql_optimizer]") {
     GqlVirtualCatalog::local().clear();
 
     SECTION("positive control: count(b) over a two-hop chain becomes a path count") {

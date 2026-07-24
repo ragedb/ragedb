@@ -95,4 +95,25 @@ TEST_CASE("GQL Optimizer Phase 10: Automorphic Graph Symmetry Deduplication", "[
         REQUIRE(query.matches[0].pattern.nodes[0].property_filters[0].property == "name");
         REQUIRE(query.matches[0].pattern.nodes[0].property_filters[0].op == Operation::EQ);
     }
+
+    SECTION("Case 6: a transitive triangle is NOT a directed cycle, so no factor-3 symmetry applies") {
+        // a->b, b->c, a->c is pairwise-connected but has no nontrivial automorphism (a is the source of
+        // two, c the sink of two). Applying factor 3 (and dropping non-min-anchored matches) would return a
+        // wrong count.
+        std::string query_str = "MATCH (a:Person)-[:FRIEND]->(b:Person), (b)-[:FRIEND]->(c:Person), (a)-[:FRIEND]->(c) RETURN count(*)";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.count_multiplication_factor == 1);
+        for (const auto& m : query.matches) {
+            for (const auto& n : m.pattern.nodes) REQUIRE(n.where_expr == nullptr);
+        }
+    }
+
+    SECTION("Case 7: a triangle with a sink vertex is not a cycle either") {
+        // a->b, c->b, a->c: b has in-degree 2, so not a directed 3-cycle; factor must stay 1.
+        std::string query_str = "MATCH (a:Person)-[:FRIEND]->(b:Person), (c:Person)-[:FRIEND]->(b), (a)-[:FRIEND]->(c) RETURN count(*)";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        REQUIRE(query.count_multiplication_factor == 1);
+    }
 }

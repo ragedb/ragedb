@@ -81,13 +81,27 @@ void AntiSemiJoinPromoter::optional_match_to_antisemijoin_pass(GqlQuery& query) 
             continue;
         }
         
-        // Collect all variable names introduced by this OPTIONAL MATCH pattern
+        // Variables bound by an earlier match: this OPTIONAL MATCH's anchor is pre-bound there. A
+        // `<pre-bound var> IS NULL` is a contradiction (an earlier binding is never null), NOT an
+        // anti-join on this optional pattern -- promoting it would drop the IS NULL and wrongly turn an
+        // always-empty result into the pattern's anti-join. Only variables THIS match introduces qualify.
+        std::set<std::string> prebound;
+        for (auto pit = query.matches.begin(); pit != it; ++pit) {
+            for (const auto& node : pit->pattern.nodes) {
+                if (!node.variable.empty()) prebound.insert(node.variable);
+            }
+            for (const auto& edge : pit->pattern.edges) {
+                if (!edge.variable.empty()) prebound.insert(edge.variable);
+            }
+        }
+
+        // Collect the variable names this OPTIONAL MATCH pattern newly introduces
         std::set<std::string> opt_vars;
         for (const auto& node : it->pattern.nodes) {
-            if (!node.variable.empty()) opt_vars.insert(node.variable);
+            if (!node.variable.empty() && !prebound.count(node.variable)) opt_vars.insert(node.variable);
         }
         for (const auto& edge : it->pattern.edges) {
-            if (!edge.variable.empty()) opt_vars.insert(edge.variable);
+            if (!edge.variable.empty() && !prebound.count(edge.variable)) opt_vars.insert(edge.variable);
         }
         
         if (opt_vars.empty()) {

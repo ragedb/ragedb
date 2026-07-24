@@ -22,6 +22,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <functional>
 #include "../graph/Graph.h"
 #include "../graph/paths/Path.h"
 #include "GqlAst.h"
@@ -106,11 +107,60 @@ bool matches_filters(const std::map<std::string, property_type_t>& target, const
  */
 GqlValue evaluate_expression(const GqlRow& row, const Expression* expr);
 
+/// Extracts a temporal component (year/month/day/hour/minute/second) from an epoch-millisecond UTC
+/// datetime as an integer; returns NULL for an unrecognized field.
+GqlValue gql_temporal_field(int64_t epoch_ms, const std::string& field);
+
 /**
  * @brief Evaluates a scalar function call (e.g. length(path), zoned_datetime('2010-01-01')) against a
- *        row. Unknown functions return NIL. Shared by the row and group expression evaluators.
+ *        row. Shared by the row and group expression evaluators. The parser rejects any name this does not
+ *        implement, so an unimplemented function cannot reach here and silently evaluate to NULL.
  */
 GqlValue evaluate_scalar_function(const GqlRow& row, const FunctionCallExpr* fc);
+
+/**
+ * @brief Applies a scalar function, evaluating each argument through eval_arg. The group evaluator passes
+ *        an eval_arg that resolves nested aggregates from its results map, so a scalar function wrapping an
+ *        aggregate -- cardinality(collect_list(x)) -- sees the aggregated value rather than a per-row NULL.
+ */
+GqlValue evaluate_scalar_function_with(const FunctionCallExpr* fc,
+                                       const std::function<GqlValue(const Expression*)>& eval_arg);
+
+/**
+ * @brief Whether a (lower-cased) scalar function name is one the evaluator implements. Lives beside
+ *        evaluate_scalar_function so the allowlist cannot drift from the dispatch it guards.
+ */
+bool is_supported_scalar_function(const std::string& lower_name);
+
+/// The supported scalar function names, comma-separated, for error messages.
+std::string supported_scalar_function_list();
+
+/**
+ * @brief Whether a node or relationship type satisfies a label expression (LITERAL / AND / OR / NOT /
+ *        wildcard). Used both by pattern matching and by the `IS LABELED` predicate.
+ */
+bool matches_label_expr(const std::string& actual_type, const std::shared_ptr<LabelExpression>& expr);
+
+/**
+ * @brief Converts a value to a CAST target type, yielding NULL when it has no representation there (e.g.
+ *        CAST('abc' AS INTEGER)). Shared by the row and group expression evaluators.
+ */
+GqlValue apply_cast(const GqlValue& value, CastType target);
+
+/**
+ * @brief Evaluates `IS [NOT] LABELED` for an already-evaluated operand: true when the bound node or
+ *        relationship carries the label. A non-entity operand (or an unbound one) is NULL, not false, so
+ *        it propagates like any other unknown.
+ */
+GqlValue apply_is_labeled(const GqlValue& value, const std::shared_ptr<LabelExpression>& label_expr, bool negated);
+
+/**
+ * @brief Views a value as a sequence of elements, for the things that are lists in GQL but are not all
+ *        the LIST type at runtime: a LIST, a relationship list, and a list-valued property (a stored
+ *        vector of bools/ints/doubles/strings). Returns nullopt for anything that is not a list, which
+ *        FOR expands to no rows. Used by FOR (UNWIND).
+ */
+std::optional<std::vector<GqlValue>> as_list_elements(const GqlValue& value);
 
 /**
  * @brief Serializes a GqlValue to its JSON string representation.

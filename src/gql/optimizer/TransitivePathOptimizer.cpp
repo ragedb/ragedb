@@ -54,7 +54,7 @@ void TransitivePathOptimizer::transitive_path_pass(GqlQuery& query) {
 
     // 1. Simplify variable-length paths of transitive relations to single hops
     for (auto& match : query.matches) {
-        if (match.is_optional || match.is_search || match.is_khop) continue;
+        if (match.is_optional || match.is_search || match.is_propagate || match.is_khop) continue;
         if (match.pattern.nodes.size() == 2 && match.pattern.edges.size() == 1) {
             auto& edge = match.pattern.edges[0];
             if (edge.is_variable_length && edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
@@ -85,7 +85,7 @@ void TransitivePathOptimizer::transitive_path_pass(GqlQuery& query) {
 
     // First collect all 1-hop matches on transitive relationship types
     for (const auto& match : query.matches) {
-        if (match.is_optional || match.is_search || match.is_khop) continue;
+        if (match.is_optional || match.is_search || match.is_propagate || match.is_khop) continue;
         if (match.pattern.nodes.size() == 2 && match.pattern.edges.size() == 1) {
             const auto& edge = match.pattern.edges[0];
             if (!edge.is_variable_length && edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
@@ -113,7 +113,7 @@ void TransitivePathOptimizer::transitive_path_pass(GqlQuery& query) {
     std::vector<MatchStatement> filtered_matches;
     for (auto& match : query.matches) {
         bool prune = false;
-        if (!match.is_optional && !match.is_search && !match.is_khop &&
+        if (!match.is_optional && !match.is_search && !match.is_propagate && !match.is_khop &&
             match.pattern.nodes.size() == 2 && match.pattern.edges.size() == 1) {
             const auto& edge = match.pattern.edges[0];
             if (!edge.is_variable_length && edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {

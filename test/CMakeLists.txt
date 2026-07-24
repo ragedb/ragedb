@@ -16,16 +16,38 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         shard/algorithms/Community.cpp
         shard/algorithms/Clustering.cpp
         shard/algorithms/Distance.cpp
+        shard/algorithms/Propagate.cpp
         Link.cpp Node.cpp Graph.cpp
         types/Date.cpp
+        types/NTriplesParserTests.cpp
+        types/NTriplesLoaderTests.cpp
         gql/GqlTokenizerTests.cpp
+        gql/GqlValueTests.cpp
+        gql/GqlValueFunctionsTests.cpp
         gql/GqlParserTests.cpp
+        gql/GqlParserLinearQueryTests.cpp
+        gql/GqlParserCallTests.cpp
+        gql/GqlParserDdlTests.cpp
+        gql/GqlParserScalarCaseTests.cpp
+        gql/GqlParserNotPrecedenceTests.cpp
+        gql/GqlParserQuantifierTests.cpp
         gql/optimizer/BasicOptimizerTests.cpp
         gql/optimizer/ContradictionPrunerTests.cpp
         gql/optimizer/JoinEliminatorTests.cpp
+        gql/optimizer/LimitPushdownOptimizerTests.cpp
+        gql/optimizer/DisjointConceptPrunerTests.cpp
+        gql/optimizer/OptimizerUtilsTests.cpp
+        gql/optimizer/OptimizerUtilsAnalysisTests.cpp
+        gql/optimizer/EqualityJoinEliminatorTests.cpp
         gql/optimizer/AlgebraicRewriterTests.cpp
         gql/optimizer/CardinalityShortCircuiterTests.cpp
         gql/optimizer/SubsumptionPrunerTests.cpp
+        gql/optimizer/AntiSemiJoinPromoterTests.cpp
+        gql/optimizer/AntisymmetricLoopCollapserTests.cpp
+        gql/optimizer/IrreflexiveContradictionPrunerTests.cpp
+        gql/optimizer/EdgeContradictionPrunerTests.cpp
+        gql/optimizer/OptionalNoOpPruningTests.cpp
+        gql/optimizer/TransitiveFilterPropagatorTests.cpp
         gql/optimizer/DomainConstraintReasonerTests.cpp
         gql/optimizer/TransitiveReachabilityPrunerTests.cpp
         gql/optimizer/FunctionalDependencyPrunerTests.cpp
@@ -63,6 +85,8 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlExecutorSubqueryTests.cpp
         gql/GqlExecutorExplainProfileTests.cpp
         gql/GqlExecutorHoneycombTests.cpp
+        gql/StarJoinCandidateTests.cpp
+        gql/GqlExecutorStarJoinTests.cpp
         gql/GqlExecutorFtsTests.cpp
         gql/GqlExecutorShortestPathTests.cpp
         gql/GqlExecutorKHopTests.cpp
@@ -70,6 +94,10 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         gql/GqlExecutorWriteTests.cpp
         gql/GqlExecutorAggregationTests.cpp
         gql/GqlExecutorGroupedExpansionTests.cpp
+        gql/GqlExecutorPagingTests.cpp
+        gql/GqlExecutorCastLabelTests.cpp
+        gql/GqlExecutorForTests.cpp
+        gql/GqlExecutorScalarFunctionTests.cpp
         gql/GqlExecutorSchemaTests.cpp
         gql/GqlTypecheckerTests.cpp
         gql/GqlQueryCacheTests.cpp
@@ -95,8 +123,13 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/main/handlers/Gql.cpp ../src/main/handlers/Gql.h
         ../src/gql/GqlLexer.cpp ../src/gql/GqlLexer.h
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
+        ../src/gql/GqlParserPrimary.cpp
+        ../src/gql/GqlParserPatterns.cpp
+        ../src/gql/GqlParserExpressions.cpp
+        ../src/gql/GqlParserStatements.cpp
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/optimizer/OptimizerUtils.cpp ../src/gql/optimizer/OptimizerUtils.h
+        ../src/gql/optimizer/OptimizerRewrites.cpp
         ../src/gql/optimizer/ContradictionPruner.cpp ../src/gql/optimizer/ContradictionPruner.h
         ../src/gql/optimizer/DomainConstraintReasoner.cpp ../src/gql/optimizer/DomainConstraintReasoner.h
         ../src/gql/optimizer/TransitiveReachabilityPruner.cpp ../src/gql/optimizer/TransitiveReachabilityPruner.h
@@ -132,13 +165,25 @@ add_executable(tests tests.cpp shard/ShardIds.cpp shard/Ids.cpp shard/NodeTypes.
         ../src/gql/executor/PlanBuilder.cpp ../src/gql/executor/PlanBuilder.h
         ../src/gql/executor/HoneycombExecutor.cpp ../src/gql/executor/HoneycombExecutor.h
         ../src/gql/executor/LftjExecutor.cpp ../src/gql/executor/LftjExecutor.h
+        ../src/gql/executor/StreamingAggregates.cpp ../src/gql/executor/ExecutorInternal.h
         ../src/gql/GqlCatalog.cpp ../src/gql/GqlCatalog.h
         ../src/gql/GqlTypechecker.cpp ../src/gql/GqlTypechecker.h
         ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
+        ../src/gql/GqlValueFunctions.cpp
+        ../src/gql/GqlValueEvaluate.cpp
+        ../src/gql/GqlValueSerialize.cpp
         ../src/gql/GqlWriter.cpp ../src/gql/GqlWriter.h
         ../src/gql/GqlAst.h
         )
 target_link_libraries(tests PRIVATE project_warnings project_options catch_main Graph Seastar::seastar)
+# lld links the tests binary in a fraction of GNU ld's peak memory (149 TUs statically linked against
+# seastar + iresearch), keeping the link under a 16GB box's budget where GNU ld OOM-killed it.
+target_link_options(tests PRIVATE -fuse-ld=lld)
+# Coverage is measured for the GQL sources only, so only those are instrumented -- the test binary
+# compiles them from this directory, which is a separate source-property scope from the root list.
+file(GLOB_RECURSE RAGEDB_TEST_GQL_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../src/gql/*.cpp")
+ragedb_instrument_gql_sources(${RAGEDB_TEST_GQL_SOURCES})
+ragedb_link_gql_coverage(tests)
 target_include_directories(tests PRIVATE
         ../src/graph
         ../src/graph/eve
@@ -188,8 +233,13 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/main/handlers/Gql.cpp ../src/main/handlers/Gql.h
         ../src/gql/GqlLexer.cpp ../src/gql/GqlLexer.h
         ../src/gql/GqlParser.cpp ../src/gql/GqlParser.h
+        ../src/gql/GqlParserPrimary.cpp
+        ../src/gql/GqlParserPatterns.cpp
+        ../src/gql/GqlParserExpressions.cpp
+        ../src/gql/GqlParserStatements.cpp
         ../src/gql/GqlOptimizer.cpp ../src/gql/GqlOptimizer.h
         ../src/gql/optimizer/OptimizerUtils.cpp ../src/gql/optimizer/OptimizerUtils.h
+        ../src/gql/optimizer/OptimizerRewrites.cpp
         ../src/gql/optimizer/ContradictionPruner.cpp ../src/gql/optimizer/ContradictionPruner.h
         ../src/gql/optimizer/DomainConstraintReasoner.cpp ../src/gql/optimizer/DomainConstraintReasoner.h
         ../src/gql/optimizer/TransitiveReachabilityPruner.cpp ../src/gql/optimizer/TransitiveReachabilityPruner.h
@@ -225,9 +275,13 @@ add_executable(tests2 main/ConnectedHandler.cpp
         ../src/gql/executor/PlanBuilder.cpp ../src/gql/executor/PlanBuilder.h
         ../src/gql/executor/HoneycombExecutor.cpp ../src/gql/executor/HoneycombExecutor.h
         ../src/gql/executor/LftjExecutor.cpp ../src/gql/executor/LftjExecutor.h
+        ../src/gql/executor/StreamingAggregates.cpp ../src/gql/executor/ExecutorInternal.h
         ../src/gql/GqlCatalog.cpp ../src/gql/GqlCatalog.h
         ../src/gql/GqlTypechecker.cpp ../src/gql/GqlTypechecker.h
         ../src/gql/GqlValue.cpp ../src/gql/GqlValue.h
+        ../src/gql/GqlValueFunctions.cpp
+        ../src/gql/GqlValueEvaluate.cpp
+        ../src/gql/GqlValueSerialize.cpp
         ../src/gql/GqlWriter.cpp ../src/gql/GqlWriter.h
         ../src/gql/GqlAst.h
         )

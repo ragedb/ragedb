@@ -69,6 +69,18 @@ int main(int argc, char** argv) {
                       })
                   .get();
 
+                // Report the build's git revision so a benchmark client can record exactly which
+                // ragedb build it exercised: GET /version -> {"ragedb_sha": "<sha>"}.
+                server->set_routes([](seastar::httpd::routes &r) {
+                        r.add(seastar::httpd::operation_type::GET,
+                          seastar::httpd::url("/version"),
+                          new seastar::httpd::function_handler([]([[maybe_unused]] seastar::httpd::const_req req) {
+                            // RAGEDB_GIT_SHA is a string-literal macro, so this concatenates at compile time.
+                            return "{\"ragedb_sha\": \"" RAGEDB_GIT_SHA "\"}";
+                          }, "json"));
+                      })
+                  .get();
+
                 server->set_routes([](seastar::httpd::routes &r) {
                   r.add(seastar::httpd::operation_type::GET, seastar::httpd::url("").remainder("path"),
                     new seastar::httpd::directory_handler("./public/"));

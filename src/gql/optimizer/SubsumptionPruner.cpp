@@ -83,6 +83,58 @@ bool is_var_safe_in_where_expr(const Expression* expr, const std::string& var) {
     return false;
 }
 
+/// Whether an expression tree contains an aggregate anywhere. Local to this pass so the optimizer keeps
+/// no dependency on the executor's evaluator, where the general has_aggregates lives.
+static bool subsumption_expr_has_aggregate(const Expression* expr) {
+    if (!expr) return false;
+    std::vector<const Expression*> stack = { expr };
+    while (!stack.empty()) {
+        const auto* curr = stack.back();
+        stack.pop_back();
+        if (!curr) continue;
+        if (curr->kind == ExpressionKind::AGGREGATION) return true;
+        if (curr->kind == ExpressionKind::UNARY_OP) {
+            stack.push_back(static_cast<const UnaryOpExpr*>(curr)->expr.get());
+        } else if (curr->kind == ExpressionKind::BINARY_OP) {
+            const auto* bin = static_cast<const BinaryOpExpr*>(curr);
+            stack.push_back(bin->left.get());
+            stack.push_back(bin->right.get());
+        }
+    }
+    return false;
+}
+
+/// Set semantics: a DISTINCT projection with no aggregate. Under it, dropping a self-join arm's row
+/// multiplication is invisible -- the DISTINCT dedups it and the arm's variables are dead (unprojected).
+static bool subsumption_query_is_set_semantic(const GqlQuery& q) {
+    if (!q.distinct) return false;
+    for (const auto& item : q.returns) {
+        if (subsumption_expr_has_aggregate(item.expr.get())) return false;
+    }
+    for (const auto& spec : q.order_by) {
+        if (subsumption_expr_has_aggregate(spec.expr.get())) return false;
+    }
+    return true;
+}
+
+/// Whether the erasure candidate m2 binds exactly the same variables as m1 in every position. Such a
+/// match is a TRUE DUPLICATE: it contributes multiplicity 1, so erasing it never changes the result and
+/// is always safe. When any variable differs, m1 and m2 are a self-join, and erasing m2 drops the rows
+/// it multiplies in -- sound only under set semantics.
+static bool subsumption_binds_same_vars(const MatchStatement& m1, const MatchStatement& m2) {
+    if (m1.pattern.nodes.size() != m2.pattern.nodes.size() ||
+        m1.pattern.edges.size() != m2.pattern.edges.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < m1.pattern.nodes.size(); ++i) {
+        if (m1.pattern.nodes[i].variable != m2.pattern.nodes[i].variable) return false;
+    }
+    for (size_t i = 0; i < m1.pattern.edges.size(); ++i) {
+        if (m1.pattern.edges[i].variable != m2.pattern.edges[i].variable) return false;
+    }
+    return true;
+}
+
 bool is_var_dead_end_except_global_where(const GqlQuery& query, const std::string& var, int my_match_id) {
     auto check_expr = [&](const Expression* expr) -> bool {
         if (!expr) return false;
@@ -90,6 +142,9 @@ bool is_var_dead_end_except_global_where(const GqlQuery& query, const std::strin
         while (!stack.empty()) {
             const auto* curr = stack.back();
             stack.pop_back();
+            // A child pushed below can be null: count(*) is an AggregateExpr with no argument, and a
+            // malformed binary/unary op can carry a null operand. Skip it rather than dereference kind.
+            if (!curr) continue;
             if (curr->kind == ExpressionKind::VARIABLE) {
                 if (static_cast<const VariableExpr*>(curr)->name == var) return true;
             } else if (curr->kind == ExpressionKind::PROPERTY_LOOKUP) {
@@ -236,7 +291,8 @@ std::unique_ptr<Expression> rebuild_expr_without_vars(std::unique_ptr<Expression
 
 void SubsumptionPruner::semantic_subsumption_pass(GqlQuery& query) {
     if (query.skip_semantic || query.kind != QueryKind::SINGLE) return;
-    
+    const bool set_semantic = subsumption_query_is_set_semantic(query);
+
     bool pruned_any = false;
     
     do {
@@ -249,10 +305,10 @@ void SubsumptionPruner::semantic_subsumption_pass(GqlQuery& query) {
         }
         
         for (auto it2 = query.matches.begin(); it2 != query.matches.end(); ++it2) {
-            if (it2->is_optional || it2->is_search) continue;
+            if (it2->is_optional || it2->is_search || it2->is_propagate) continue;
             
             for (auto it1 = query.matches.begin(); it1 != query.matches.end(); ++it1) {
-                if (it1 == it2 || it1->is_optional || it1->is_search) continue;
+                if (it1 == it2 || it1->is_optional || it1->is_search || it1->is_propagate) continue;
                 
                 const auto& m1 = *it1;
                 const auto& m2 = *it2;
@@ -347,11 +403,16 @@ void SubsumptionPruner::semantic_subsumption_pass(GqlQuery& query) {
                     }
                 }
                 if (!subsumed) continue;
-                
+
+                // Erasing m2 is sound when it is a true duplicate of m1 (same variables, multiplicity 1)
+                // or when the query is set-semantic. Otherwise m2 is a self-join arm whose row
+                // multiplication would be lost -- undercounting count(*) and dropping bag-semantic rows.
+                if (!subsumption_binds_same_vars(m1, m2) && !set_semantic) continue;
+
                 if (!dead_vars.empty() && query.where_expr) {
                     query.where_expr = rebuild_expr_without_vars(std::move(query.where_expr), dead_vars);
                 }
-                
+
                 query.matches.erase(it2);
                 pruned_any = true;
                 break;

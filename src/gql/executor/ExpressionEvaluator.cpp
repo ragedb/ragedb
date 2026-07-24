@@ -68,6 +68,40 @@ bool has_aggregates(const Expression* expr) {
         auto* in = static_cast<const InExpr*>(expr);
         return has_aggregates(in->value.get()) || has_aggregates(in->list.get());
     }
+    if (expr->kind == ExpressionKind::CAST) {
+        return has_aggregates(static_cast<const CastExpr*>(expr)->value.get());
+    }
+    if (expr->kind == ExpressionKind::IS_LABELED) {
+        return has_aggregates(static_cast<const IsLabeledExpr*>(expr)->value.get());
+    }
+    if (expr->kind == ExpressionKind::IS_DIRECTED) {
+        return has_aggregates(static_cast<const IsDirectedExpr*>(expr)->value.get());
+    }
+    if (expr->kind == ExpressionKind::IS_SOURCE_DEST) {
+        auto* s = static_cast<const IsSourceDestExpr*>(expr);
+        return has_aggregates(s->value.get()) || has_aggregates(s->edge.get());
+    }
+    if (expr->kind == ExpressionKind::LIST_LITERAL) {
+        for (const auto& element : static_cast<const ListExpr*>(expr)->elements) {
+            if (has_aggregates(element.get())) return true;
+        }
+        return false;
+    }
+    if (expr->kind == ExpressionKind::LIST_INDEX) {
+        auto* ie = static_cast<const IndexExpr*>(expr);
+        return has_aggregates(ie->list.get()) || has_aggregates(ie->index.get());
+    }
+    if (expr->kind == ExpressionKind::LIST_COMPREHENSION) {
+        auto* lc = static_cast<const ListComprehensionExpr*>(expr);
+        return has_aggregates(lc->list.get()) || has_aggregates(lc->filter.get()) || has_aggregates(lc->projection.get());
+    }
+    if (expr->kind == ExpressionKind::QUANTIFIED_PREDICATE) {
+        auto* qp = static_cast<const QuantifiedPredicateExpr*>(expr);
+        return has_aggregates(qp->list.get()) || has_aggregates(qp->predicate.get());
+    }
+    if (expr->kind == ExpressionKind::TEMPORAL_FIELD) {
+        return has_aggregates(static_cast<const TemporalFieldExpr*>(expr)->value.get());
+    }
     return false;
 }
 
@@ -107,6 +141,35 @@ void find_aggregates(const Expression* expr, std::vector<const AggregateExpr*>& 
         auto* in = static_cast<const InExpr*>(expr);
         find_aggregates(in->value.get(), aggregates);
         find_aggregates(in->list.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::CAST) {
+        find_aggregates(static_cast<const CastExpr*>(expr)->value.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::IS_LABELED) {
+        find_aggregates(static_cast<const IsLabeledExpr*>(expr)->value.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::IS_DIRECTED) {
+        find_aggregates(static_cast<const IsDirectedExpr*>(expr)->value.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::IS_SOURCE_DEST) {
+        auto* s = static_cast<const IsSourceDestExpr*>(expr);
+        find_aggregates(s->value.get(), aggregates);
+        find_aggregates(s->edge.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::LIST_LITERAL) {
+        for (const auto& element : static_cast<const ListExpr*>(expr)->elements) {
+            find_aggregates(element.get(), aggregates);
+        }
+    } else if (expr->kind == ExpressionKind::LIST_INDEX) {
+        auto* ie = static_cast<const IndexExpr*>(expr);
+        find_aggregates(ie->list.get(), aggregates);
+        find_aggregates(ie->index.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::LIST_COMPREHENSION) {
+        auto* lc = static_cast<const ListComprehensionExpr*>(expr);
+        find_aggregates(lc->list.get(), aggregates);
+        find_aggregates(lc->filter.get(), aggregates);
+        find_aggregates(lc->projection.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::QUANTIFIED_PREDICATE) {
+        auto* qp = static_cast<const QuantifiedPredicateExpr*>(expr);
+        find_aggregates(qp->list.get(), aggregates);
+        find_aggregates(qp->predicate.get(), aggregates);
+    } else if (expr->kind == ExpressionKind::TEMPORAL_FIELD) {
+        find_aggregates(static_cast<const TemporalFieldExpr*>(expr)->value.get(), aggregates);
     }
 }
 
@@ -153,8 +216,104 @@ GqlValue evaluate_group_expression(const GqlRow& representative, const std::map<
             return GqlValue();
         }
         case ExpressionKind::FUNCTION_CALL: {
-            // Scalar functions evaluate over the representative row's bindings (grouping keys).
-            return evaluate_scalar_function(representative, static_cast<const FunctionCallExpr*>(expr));
+            // Scalar functions evaluate over the representative row's grouping keys, but a nested aggregate
+            // argument must resolve from the results map rather than re-evaluate per row -- so
+            // cardinality(collect_list(x)) sees the whole list, not a per-row NULL.
+            return evaluate_scalar_function_with(
+                static_cast<const FunctionCallExpr*>(expr),
+                [&representative, &aggregate_results](const Expression* e) {
+                    return evaluate_group_expression(representative, aggregate_results, e);
+                });
+        }
+        case ExpressionKind::LIST_LITERAL: {
+            auto* le = static_cast<const ListExpr*>(expr);
+            auto items = std::make_shared<std::vector<GqlValue>>();
+            items->reserve(le->elements.size());
+            for (const auto& element : le->elements) {
+                items->push_back(evaluate_group_expression(representative, aggregate_results, element.get()));
+            }
+            GqlValue out;
+            out.type = GqlValue::LIST;
+            out.list = std::move(items);
+            return out;
+        }
+        case ExpressionKind::LIST_INDEX: {
+            auto* ie = static_cast<const IndexExpr*>(expr);
+            GqlValue list = evaluate_group_expression(representative, aggregate_results, ie->list.get());
+            GqlValue idx = evaluate_group_expression(representative, aggregate_results, ie->index.get());
+            if (list.type != GqlValue::LIST || !list.list) return GqlValue();
+            if (idx.type != GqlValue::PROPERTY || !std::holds_alternative<int64_t>(idx.property)) return GqlValue();
+            int64_t i = std::get<int64_t>(idx.property);
+            int64_t n = static_cast<int64_t>(list.list->size());
+            if (i < 0) i += n;
+            if (i < 0 || i >= n) return GqlValue();
+            return (*list.list)[static_cast<size_t>(i)];
+        }
+        case ExpressionKind::LIST_COMPREHENSION: {
+            auto* lc = static_cast<const ListComprehensionExpr*>(expr);
+            GqlValue src = evaluate_group_expression(representative, aggregate_results, lc->list.get());
+            if (src.type != GqlValue::LIST || !src.list) return GqlValue();
+            auto items = std::make_shared<std::vector<GqlValue>>();
+            for (const auto& elem : *src.list) {
+                GqlRow scoped = representative;
+                scoped.bindings[lc->variable] = elem;
+                if (lc->filter && !evaluate_group_expression(scoped, aggregate_results, lc->filter.get()).is_truthy()) continue;
+                items->push_back(lc->projection ? evaluate_group_expression(scoped, aggregate_results, lc->projection.get()) : elem);
+            }
+            GqlValue out;
+            out.type = GqlValue::LIST;
+            out.list = std::move(items);
+            return out;
+        }
+        case ExpressionKind::QUANTIFIED_PREDICATE: {
+            auto* qp = static_cast<const QuantifiedPredicateExpr*>(expr);
+            GqlValue src = evaluate_group_expression(representative, aggregate_results, qp->list.get());
+            if (src.type != GqlValue::LIST || !src.list) return GqlValue();
+            int64_t matched = 0, total = 0;
+            for (const auto& elem : *src.list) {
+                GqlRow scoped = representative;
+                scoped.bindings[qp->variable] = elem;
+                ++total;
+                if (!qp->predicate || evaluate_group_expression(scoped, aggregate_results, qp->predicate.get()).is_truthy()) ++matched;
+            }
+            switch (qp->quant) {
+                case QuantifiedPredicateExpr::ALL:    return GqlValue(matched == total);
+                case QuantifiedPredicateExpr::ANY:    return GqlValue(matched > 0);
+                case QuantifiedPredicateExpr::NONE:   return GqlValue(matched == 0);
+                case QuantifiedPredicateExpr::SINGLE: return GqlValue(matched == 1);
+            }
+            return GqlValue(false);
+        }
+        case ExpressionKind::TEMPORAL_FIELD: {
+            auto* tf = static_cast<const TemporalFieldExpr*>(expr);
+            GqlValue v = evaluate_group_expression(representative, aggregate_results, tf->value.get());
+            if (v.type != GqlValue::PROPERTY || !std::holds_alternative<int64_t>(v.property)) return GqlValue();
+            return gql_temporal_field(std::get<int64_t>(v.property), tf->field);
+        }
+        case ExpressionKind::CAST: {
+            auto* c = static_cast<const CastExpr*>(expr);
+            return apply_cast(evaluate_group_expression(representative, aggregate_results, c->value.get()), c->target);
+        }
+        case ExpressionKind::IS_LABELED: {
+            auto* l = static_cast<const IsLabeledExpr*>(expr);
+            return apply_is_labeled(evaluate_group_expression(representative, aggregate_results, l->value.get()),
+                                    l->label_expr, l->negated);
+        }
+        case ExpressionKind::IS_DIRECTED: {
+            auto* d = static_cast<const IsDirectedExpr*>(expr);
+            GqlValue v = evaluate_group_expression(representative, aggregate_results, d->value.get());
+            if (v.type != GqlValue::RELATIONSHIP) return GqlValue();
+            return GqlValue(d->negated ? false : true);
+        }
+        case ExpressionKind::IS_SOURCE_DEST: {
+            auto* s = static_cast<const IsSourceDestExpr*>(expr);
+            GqlValue node = evaluate_group_expression(representative, aggregate_results, s->value.get());
+            GqlValue edge = evaluate_group_expression(representative, aggregate_results, s->edge.get());
+            if (node.type != GqlValue::NODE || edge.type != GqlValue::RELATIONSHIP) return GqlValue();
+            uint64_t endpoint = s->is_source ? edge.relationship->getStartingNodeId()
+                                             : edge.relationship->getEndingNodeId();
+            bool result = (node.node->getId() == endpoint);
+            return GqlValue(s->negated ? !result : result);
         }
         case ExpressionKind::IN_LIST: {
             auto* in = static_cast<const InExpr*>(expr);
@@ -187,6 +346,10 @@ GqlValue evaluate_group_expression(const GqlRow& representative, const std::map<
             if (it != representative.bindings.end()) {
                 const auto& val = it->second;
                 if (val.type == GqlValue::NODE) {
+                    // `key` is a distinct Node field, not a properties-map entry (see GqlValue.cpp).
+                    if (prop_lookup->property == "key") {
+                        return GqlValue(property_type_t(val.node->getKey()));
+                    }
                     return GqlValue(val.node->getProperty(prop_lookup->property));
                 } else if (val.type == GqlValue::RELATIONSHIP) {
                     return GqlValue(val.relationship->getProperty(prop_lookup->property));

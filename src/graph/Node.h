@@ -54,9 +54,7 @@ namespace ragedb {
 
         [[nodiscard]] property_type_t getProperty(const std::string& property) const;
 
-//        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state) const;
-
-        [[nodiscard]] sol::lua_value getPropertyLua(const std::string& property, sol::this_state) const;
+        [[nodiscard]] sol::object getPropertyLua(const std::string& property, sol::this_state) const;
 
         void pruneProperties(const std::set<std::string>& keys);
 

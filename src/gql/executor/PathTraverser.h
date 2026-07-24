@@ -44,7 +44,7 @@ namespace ragedb::gql {
 
 /**
  * @brief Page size for chunked start-node scans: edge patterns scan the label in pages of this
- *        many nodes instead of materialising the whole label up front (task 020). Tests shrink it
+ *        many nodes instead of materialising the whole label up front. Tests shrink it
  *        to exercise chunk boundaries on small graphs.
  */
 inline size_t gql_scan_chunk_size = 65536;
@@ -57,16 +57,46 @@ inline size_t gql_scan_chunk_size = 65536;
  */
 inline size_t gql_stream_chunk_size = 256;
 
-// Max incoming rows driven concurrently through a streamed traversal (task 029): the per-row drives
+// Max incoming rows driven concurrently through a streamed traversal: the per-row drives
 // await graph I/O independently, so bounding the in-flight count keeps memory O(concurrency x chunk)
 // while overlapping the latency of a large piped frontier (FoF expansion) instead of serialising it.
 inline size_t gql_stream_concurrency = 32;
 
-// Max rows driven concurrently at each INNER step of a multi-match chain (task 029): a chain step's
+// Max rows driven concurrently at each INNER step of a multi-match chain: a chain step's
 // output (e.g. a friend's forums) fans into the next match (each forum's posts) concurrently. Kept
 // small so the nested product with gql_stream_concurrency stays bounded (independent semaphores per
 // level, so no cross-level deadlock).
 inline size_t gql_stream_inner_concurrency = 8;
+
+// Max (start, end) pairs searched concurrently by a shortest-path selector (ANY/ALL SHORTEST and the
+// CHEAPEST forms). Each pair runs its own BFS and holds its own frontier plus result paths, so an
+// unbounded fan-out over the candidate cartesian product makes peak memory O(pairs) -- a pattern with
+// many candidate endpoints (one person to every Person of a given first name) exhausts the heap.
+// Bounding the in-flight searches keeps it O(concurrency).
+inline size_t gql_shortest_path_concurrency = 8;
+
+// Max relationship branches expanded concurrently at a single node of a var-length traversal. Every
+// branch carries its own copy of the path built so far (the nodes and relationships along it, with
+// their property maps), so expanding all of a high-degree node's branches at once made live memory the
+// product of that degree and the path length.
+inline size_t gql_var_len_branch_concurrency = 16;
+
+// Completed var-length paths handed to a streaming consumer per batch. Bounds how many finished paths
+// are held before the consumer folds them away.
+inline size_t gql_var_len_hop_batch = 1024;
+
+// Two guards for an UNBOUNDED var-length pattern ({n,} or *) under the WALK path mode, which has no finite
+// result on cyclic data (a walk may re-cross an edge). Both apply ONLY to that case -- a bounded quantifier
+// is stopped by its own upper bound, and a restrictor (TRAIL / ACYCLIC / SIMPLE) makes the path set finite,
+// so neither guard touches them. Tests shrink these to force the limits.
+//
+//  - depth cap: catches a low-branching cycle (e.g. a 2-node ring walking A-B-A-B...), which recurses
+//    forever at ~one path per depth without exploding in count.
+inline uint64_t gql_var_len_walk_depth_cap = 100;
+//  - path budget: catches an exponential blow-up (a dense/clique-like cycle), where the path COUNT
+//    explodes at shallow depths and would exhaust the heap long before the depth cap. Bounds the total
+//    paths recorded across the whole expansion.
+inline uint64_t gql_var_len_walk_path_budget = 5'000'000;
 
 /**
  * @brief Consumer for streamed traversal output: when passed to traverse_path_pattern, matched
@@ -98,7 +128,7 @@ seastar::future<std::vector<GqlRow>> traverse_path_pattern(
     std::string sort_property = "",
     bool sort_ascending = true,
     bool sort_by_id = false,
-    PathMode path_mode = PathMode::TRAIL,
+    PathMode path_mode = PathMode::WALK,   // GQL's default: no path filtering
     GqlRowSink* sink = nullptr
 );
 

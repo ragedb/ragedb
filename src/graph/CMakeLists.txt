@@ -45,6 +45,7 @@ set(SOURCE_FILES
         algorithms/Clustering.cpp
         algorithms/Connectivity.cpp
         algorithms/Distance.cpp
+        algorithms/Propagate.cpp
         lua/All.cpp peered/All.cpp shard/All.cpp
         lua/Bulk.cpp peered/Bulk.cpp shard/Bulk.cpp
         lua/Connected.cpp peered/Connected.cpp # no shard
@@ -63,6 +64,7 @@ set(SOURCE_FILES
         lua/Traversing.cpp peered/Traversing.cpp shard/Traversing.cpp
         lua/Types.cpp peered/Types.cpp shard/Types.cpp
         lua/LoadCSV.cpp peered/LoadCSV.cpp shard/LoadCSV.cpp
+        lua/LoadNTriples.cpp # RDF loader (header-only core in types/NTriplesLoader.h)
         lua/ShortestPath.cpp peered/ShortestPath.cpp
 
         node/Find.cpp relationship/Find.cpp

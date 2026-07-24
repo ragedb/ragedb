@@ -107,11 +107,15 @@ TEST_CASE("Alglib Performance Benchmarks", "[gql_optimizer_perf]") {
     );
 
     // 5. Phase 26: Equivalence Class Coalescing
+    // TRAIL is required on the unoptimised side: same_group is reflexive+symmetric, so an unbounded
+    // quantifier under GQL's default WALK mode admits infinitely many walks (a walk may re-cross an edge).
+    // TRAIL is what the query means -- reachability without reusing an edge -- and keeps both sides
+    // comparing the same thing.
     run_bench(
         graph,
         "Phase 26: Equivalence Class Coalescing",
-        "MATCH (a:Person)-[:same_group*]->(b:Person) WHERE a.id = 0 RETURN a.name, b.name",
-        "NO_SEMANTIC MATCH (a:Person)-[:same_group*]->(b:Person) WHERE a.id = 0 RETURN a.name, b.name",
+        "MATCH TRAIL (a:Person)-[:same_group*]->(b:Person) WHERE a.id = 0 RETURN a.name, b.name",
+        "NO_SEMANTIC MATCH TRAIL (a:Person)-[:same_group*]->(b:Person) WHERE a.id = 0 RETURN a.name, b.name",
         2
     );
 

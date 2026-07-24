@@ -47,8 +47,36 @@ namespace ragedb {
         return properties;
     }
 
-    sol::lua_value Node::getPropertyLua(const std::string& property, sol::this_state ts) const {
-      return getProperty(property);
+    sol::object Node::getPropertyLua(const std::string& property, sol::this_state ts) const {
+      // Convert the property variant to its concrete Lua type explicitly, matching Relationship::
+      // getPropertyLua and getPropertiesLua. Returning the raw property_type_t and relying on sol2's
+      // implicit variant conversion could surface the value as a userdata, breaking Lua arithmetic
+      // (e.g. node:getProperty('creationDate') / 86400000).
+      property_type_t value = getProperty(property);
+      sol::state_view lua = ts;
+
+      switch (value.index()) {
+      case 0:
+        return sol::lua_nil;
+      case 1:
+        return sol::make_object(lua, get<bool>(value));
+      case 2:
+        return sol::make_object(lua, get<int64_t>(value));
+      case 3:
+        return sol::make_object(lua, get<double>(value));
+      case 4:
+        return sol::make_object(lua, get<std::string>(value));
+      case 5:
+        return sol::make_object(lua, sol::as_table(get<std::vector<bool>>(value)));
+      case 6:
+        return sol::make_object(lua, sol::as_table(get<std::vector<int64_t>>(value)));
+      case 7:
+        return sol::make_object(lua, sol::as_table(get<std::vector<double>>(value)));
+      case 8:
+        return sol::make_object(lua, sol::as_table(get<std::vector<std::string>>(value)));
+      default:
+        return sol::lua_nil;
+      }
     }
 
     sol::table Node::getPropertiesLua(sol::this_state ts) const {

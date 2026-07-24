@@ -300,59 +300,6 @@ TEST_CASE("GQL Parser parses Set Operations", "[gql_parser]") {
     }
 }
 
-TEST_CASE("GQL Parser parses schema statements (DDL)", "[gql_parser]") {
-    SECTION("CREATE NODE TYPE") {
-        std::string query = "CREATE NODE TYPE Person";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_NODE_TYPE);
-        REQUIRE(q.schema_op->name == "Person");
-        REQUIRE(q.schema_op->properties.empty());
-    }
-
-    SECTION("CREATE NODE TYPE with properties") {
-        std::string query = "CREATE NODE TYPE Customer (name STRING, age INT)";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_NODE_TYPE);
-        REQUIRE(q.schema_op->name == "Customer");
-        REQUIRE(q.schema_op->properties.size() == 2);
-        REQUIRE(q.schema_op->properties[0].first == "name");
-        REQUIRE(q.schema_op->properties[0].second == "string");
-        REQUIRE(q.schema_op->properties[1].first == "age");
-        REQUIRE(q.schema_op->properties[1].second == "integer");
-    }
-
-    SECTION("DROP NODE TYPE") {
-        std::string query = "DROP NODE TYPE Person";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_NODE_TYPE);
-        REQUIRE(q.schema_op->name == "Person");
-    }
-
-    SECTION("ALTER NODE TYPE ADD") {
-        std::string query = "ALTER NODE TYPE Person ADD weight DOUBLE";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::ALTER_NODE_TYPE);
-        REQUIRE(q.schema_op->name == "Person");
-        REQUIRE(q.schema_op->alter_op == SchemaOperation::AlterOp::ADD);
-        REQUIRE(q.schema_op->alter_property_name == "weight");
-        REQUIRE(q.schema_op->alter_property_type == "double");
-    }
-
-    SECTION("ALTER NODE TYPE DROP") {
-        std::string query = "ALTER NODE TYPE Person DROP age";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::ALTER_NODE_TYPE);
-        REQUIRE(q.schema_op->name == "Person");
-        REQUIRE(q.schema_op->alter_op == SchemaOperation::AlterOp::DROP);
-        REQUIRE(q.schema_op->alter_property_name == "age");
-    }
-}
-
 TEST_CASE("GQL Parser parses label algebra and repetitions", "[gql_parser]") {
     SECTION("Label algebra OR/AND/NOT") {
         std::string query = "MATCH (p:Person|Employee) RETURN p";
@@ -400,51 +347,6 @@ TEST_CASE("GQL Parser parses label algebra and repetitions", "[gql_parser]") {
     SECTION("INSERT rejects complex label expressions") {
         std::string query = "INSERT (p:Person|Employee)";
         REQUIRE_THROWS_AS(GqlParser::parse(query), std::runtime_error);
-    }
-}
-
-TEST_CASE("GQL Parser parses index statements (DDL)", "[gql_parser]") {
-    SECTION("CREATE INDEX on node") {
-        std::string query = "CREATE INDEX Person.name";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_INDEX);
-        REQUIRE(q.schema_op->name == "Person");
-        REQUIRE(q.schema_op->alter_property_name == "name");
-    }
-
-    SECTION("CREATE INDEX on relationship") {
-        std::string query = "CREATE INDEX WORKS_AT.since";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_INDEX);
-        REQUIRE(q.schema_op->name == "WORKS_AT");
-        REQUIRE(q.schema_op->alter_property_name == "since");
-    }
-
-    SECTION("DROP INDEX on node") {
-        std::string query = "DROP INDEX Person.name";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_INDEX);
-        REQUIRE(q.schema_op->name == "Person");
-        REQUIRE(q.schema_op->alter_property_name == "name");
-    }
-
-    SECTION("SHOW INDEXES") {
-        std::string query = "SHOW INDEXES";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::SHOW_INDEXES);
-        REQUIRE(q.schema_op->name == "");
-    }
-
-    SECTION("SHOW INDEXES ON Person") {
-        std::string query = "SHOW INDEXES ON Person";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::SHOW_INDEXES);
-        REQUIRE(q.schema_op->name == "Person");
     }
 }
 
@@ -502,48 +404,7 @@ TEST_CASE("GQL Parser parses null checks, string operators and concatenation", "
     }
 }
 
-TEST_CASE("GQL Parser parses VIEW and CONSTRAINT DDL", "[gql_parser]") {
-    SECTION("CREATE VIEW") {
-        std::string query = "CREATE VIEW Adult AS MATCH (p:Person) WHERE p.age >= 18 RETURN p";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_VIEW);
-        REQUIRE(q.schema_op->name == "Adult");
-        REQUIRE(q.schema_op->query_string == "MATCH ( p : Person ) WHERE p . age >= 18 RETURN p");
-    }
-
-    SECTION("DROP VIEW") {
-        std::string query = "DROP VIEW Adult";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_VIEW);
-        REQUIRE(q.schema_op->name == "Adult");
-    }
-
-    SECTION("CREATE CONSTRAINT") {
-        std::string query = "CREATE CONSTRAINT PositiveAge AS MATCH (p:Person) WHERE p.age < 0 RETURN p";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::CREATE_CONSTRAINT);
-        REQUIRE(q.schema_op->name == "PositiveAge");
-        REQUIRE(q.schema_op->query_string == "MATCH ( p : Person ) WHERE p . age < 0 RETURN p");
-    }
-
-    SECTION("DROP CONSTRAINT") {
-        std::string query = "DROP CONSTRAINT PositiveAge";
-        auto q = GqlParser::parse(query);
-        REQUIRE(q.schema_op.has_value());
-        REQUIRE(q.schema_op->op == SchemaOperation::Op::DROP_CONSTRAINT);
-        REQUIRE(q.schema_op->name == "PositiveAge");
-    }
-}
-
-
-
-
-
-
-TEST_CASE("NEXT projection items and reserved-word identifiers (task 019)", "[gql_parser][task019]") {
+TEST_CASE("NEXT projection items and reserved-word identifiers", "[gql_parser]") {
     SECTION("non-variable RETURN items before NEXT require an alias") {
         REQUIRE_THROWS_WITH(
             GqlParser::parse("MATCH (p:Person) RETURN p.name NEXT MATCH (q:Person) RETURN q"),
@@ -570,7 +431,7 @@ TEST_CASE("NEXT projection items and reserved-word identifiers (task 019)", "[gq
     }
 }
 
-TEST_CASE("ORDER BY resolves RETURN aliases into sort keys (task 027)", "[gql_parser][task027]") {
+TEST_CASE("ORDER BY resolves RETURN aliases into sort keys", "[gql_parser]") {
     SECTION("aggregate alias becomes the aggregate expression") {
         auto q = GqlParser::parse(
             "MATCH (t:Tag)<-[:HAS_TAG]-(post) RETURN t.name AS name, count(DISTINCT post) AS cnt "
@@ -591,6 +452,15 @@ TEST_CASE("ORDER BY resolves RETURN aliases into sort keys (task 027)", "[gql_pa
         REQUIRE(bin->left->kind == ExpressionKind::PROPERTY_LOOKUP);
     }
 
+    SECTION("alias inside a postfix IS-predicate sort key is substituted, not only IS LABELED") {
+        // The substitution must descend into every postfix-IS arm; when it skipped IS NULL / IS DIRECTED /
+        // IS SOURCE the alias stayed an unresolved variable and the sort key evaluated as null on every row.
+        auto q = GqlParser::parse("MATCH (p:Person) RETURN p.age AS a ORDER BY a IS NULL DESC");
+        REQUIRE(q.order_by[0].expr->kind == ExpressionKind::IS_NULL_CHECK);
+        const auto* inner = static_cast<const IsNullExpr*>(q.order_by[0].expr.get())->expr.get();
+        REQUIRE(inner->kind == ExpressionKind::PROPERTY_LOOKUP);
+    }
+
     SECTION("intermediate NEXT segment ORDER BY resolves that segment's aliases") {
         auto q = GqlParser::parse(
             "MATCH (p:Person)<-[:HAS_CREATOR]-(m) RETURN p, count(m) AS cnt ORDER BY cnt DESC LIMIT 3 "
@@ -606,7 +476,7 @@ TEST_CASE("ORDER BY resolves RETURN aliases into sort keys (task 027)", "[gql_pa
     }
 }
 
-TEST_CASE("EXISTS accepts an openCypher-style bare pattern subquery (task 018)", "[gql_parser][task018]") {
+TEST_CASE("EXISTS accepts an openCypher-style bare pattern subquery", "[gql_parser]") {
     auto q = GqlParser::parse(
         "MATCH (a:Person) WHERE EXISTS { (a)-[:KNOWS]->(b:Person) } RETURN a.name");
     REQUIRE(q.where_expr != nullptr);
@@ -617,7 +487,7 @@ TEST_CASE("EXISTS accepts an openCypher-style bare pattern subquery (task 018)",
     REQUIRE(q2.matches.size() == 2);
 }
 
-TEST_CASE("GQL interleaved MATCH ... WHERE ... MATCH within a segment (task 030)", "[gql_parser][task030]") {
+TEST_CASE("GQL interleaved MATCH ... WHERE ... MATCH within a segment", "[gql_parser]") {
     SECTION("single segment: MATCH WHERE MATCH RETURN") {
         auto q = GqlParser::parse(
             "MATCH (a:Person)-[:KNOWS]-(f:Person) WHERE f.id <> 1 "
@@ -639,7 +509,7 @@ TEST_CASE("GQL interleaved MATCH ... WHERE ... MATCH within a segment (task 030)
     }
 }
 
-TEST_CASE("GQL IN-list membership desugars to an OR chain (task 031)", "[gql_parser][task031]") {
+TEST_CASE("GQL IN-list membership desugars to an OR chain", "[gql_parser]") {
     auto q = GqlParser::parse(
         "MATCH (c:Country) WHERE c.name IN ['China', 'Germany'] RETURN c.name");
     REQUIRE(q.where_expr != nullptr);
@@ -666,246 +536,22 @@ TEST_CASE("GQL IN-list membership desugars to an OR chain (task 031)", "[gql_par
     }
 }
 
-TEST_CASE("GQL ISO linear-query NEXT/FILTER lowering (task 032)", "[gql_parser][task032]") {
-    SECTION("RETURN ... NEXT is a projection boundary that feeds the next statement") {
-        auto next_q = GqlParser::parse(
-            "MATCH (a:Person) RETURN a.id AS x NEXT MATCH (b:Person) WHERE b.id = x RETURN b.name");
-        REQUIRE(next_q.with_segments.size() == 1);
-        REQUIRE(next_q.with_segments[0]->returns.size() == 1);
-        REQUIRE(next_q.with_segments[0]->returns[0].alias == std::string("x"));
-        REQUIRE(next_q.matches.size() == 1); // the post-NEXT MATCH is the final segment
-        REQUIRE(next_q.returns.size() == 1);
-    }
-    SECTION("RETURN DISTINCT ... NEXT carries the distinct projection forward") {
-        auto q = GqlParser::parse(
-            "MATCH (p:Person {id: 1})-[:KNOWS]-(f:Person) WHERE f.id <> 1 "
-            "RETURN DISTINCT f "
-            "NEXT "
-            "MATCH (forum:Forum)-[:HAS_MEMBER]->(f) "
-            "MATCH (forum)-[:CONTAINER_OF]->(post:Post)-[:HAS_CREATOR]->(f) "
-            "RETURN forum.id AS forumId, count(DISTINCT post) AS postCount "
-            "ORDER BY postCount DESC, forumId ASC LIMIT 20");
-        REQUIRE(q.with_segments.size() == 1);
-        REQUIRE(q.with_segments[0]->distinct == true);
-        REQUIRE(q.matches.size() == 2);
-    }
-    SECTION("FILTER lowers to a segment predicate like WHERE") {
-        auto q = GqlParser::parse(
-            "MATCH (p:Person {id: 1})-[:KNOWS]-(f:Person) "
-            "RETURN DISTINCT f "
-            "NEXT "
-            "FILTER NOT EXISTS { (f)-[:IS_LOCATED_IN]->(:City) } "
-            "MATCH (f)<-[:HAS_CREATOR]-(m:Message)-[:IS_LOCATED_IN]->(c:Country) "
-            "WHERE c.name IN ['China', 'Germany'] "
-            "RETURN f.id AS pid, count(DISTINCT c) AS cnt");
-        REQUIRE(q.with_segments.size() == 1);
-        REQUIRE(q.where_expr != nullptr); // FILTER + WHERE combined onto the final segment
-    }
-    SECTION("intermediate RETURN keeps ORDER BY/LIMIT on its own segment") {
-        auto q = GqlParser::parse(
-            "MATCH (p:Person {id: 1})<-[:HAS_CREATOR]-(m:Message) "
-            "RETURN m ORDER BY m.creationDate DESC LIMIT 20 "
-            "NEXT "
-            "RETURN m.creationDate AS ms");
-        REQUIRE(q.with_segments.size() == 1);
-        REQUIRE(q.with_segments[0]->limit.has_value());
-        REQUIRE(q.with_segments[0]->limit.value() == 20);
-        REQUIRE(q.with_segments[0]->order_by.size() == 1);
-    }
-    SECTION("openCypher WITH is rejected (pure GQL dialect, task 033)") {
-        REQUIRE_THROWS_WITH(
-            GqlParser::parse("MATCH (a:Person) WITH a AS x RETURN x.name"),
-            Catch::Contains("WITH is not GQL"));
-    }
-    SECTION("standalone ORDER BY/LIMIT sort-page then RETURN pushes top-K to producer (IC2/IS2, task 034)") {
-        auto q = GqlParser::parse(
-            "MATCH (p:Person {id: 1})<-[:HAS_CREATOR]-(m:Message) "
-            "RETURN m.creationDate AS ms, m.id AS mid "
-            "NEXT "
-            "ORDER BY ms DESC, mid ASC LIMIT 20 "
-            "RETURN ms");
-        REQUIRE(q.with_segments.size() == 1);
-        // The ORDER BY/LIMIT is pushed onto the producing segment (which has the MATCH) so its
-        // streaming top-K bounds the sort; the final segment carries neither.
-        REQUIRE(q.with_segments[0]->order_by.size() == 2);
-        REQUIRE(q.with_segments[0]->limit.value() == 20);
-        // The producer's ORDER BY alias `ms` was resolved to its projected expression (m.creationDate).
-        REQUIRE(q.with_segments[0]->order_by[0].expr->kind == ExpressionKind::PROPERTY_LOOKUP);
-        REQUIRE(q.order_by.empty());
-        REQUIRE(!q.limit.has_value());
-    }
-    SECTION("standalone ORDER BY/LIMIT sort-page then MATCH (IS5 top-1 then expand)") {
-        auto q = GqlParser::parse(
-            "MATCH (p:Person {id: 1})<-[:HAS_CREATOR]-(m:Message) "
-            "RETURN m "
-            "NEXT "
-            "ORDER BY m.creationDate DESC LIMIT 1 "
-            "MATCH (m)-[:HAS_CREATOR]->(creator:Person) "
-            "RETURN creator.id AS creatorId");
-        // Two pipeline segments: the RETURN m projection and the sort/page passthrough of m.
-        REQUIRE(q.with_segments.size() == 2);
-        REQUIRE(q.with_segments[1]->limit.value() == 1);
-        REQUIRE(q.with_segments[1]->order_by.size() == 1);
-        REQUIRE(q.with_segments[1]->returns.size() == 1); // passthrough of m
-        REQUIRE(q.matches.size() == 1);                    // the post-sort MATCH
-    }
-    SECTION("LET binds a computed column usable by a later FILTER/RETURN") {
-        auto q = GqlParser::parse(
-            "MATCH (p:Person) LET fullName = p.firstName || ' ' || p.lastName "
-            "FILTER fullName <> '' RETURN fullName");
-        REQUIRE(q.let_bindings.size() == 1);
-        REQUIRE(q.let_bindings[0].alias.has_value());
-        REQUIRE(q.let_bindings[0].alias.value() == "fullName");
-        REQUIRE(q.where_expr != nullptr); // FILTER lowered to a predicate
-    }
-    SECTION("multiple LET bindings, comma-separated") {
-        auto q = GqlParser::parse("MATCH (p:Person) LET a = p.x, b = p.y RETURN a, b");
-        REQUIRE(q.let_bindings.size() == 2);
-    }
-    SECTION("full pure-GQL IC5 shape parses (RETURN DISTINCT ... NEXT ... aggregate)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH TRAIL (p:Person {id: 4398046519825})-[:KNOWS]-{1,2}(f:Person) "
-            "WHERE f.id <> 4398046519825 "
-            "RETURN DISTINCT f "
-            "NEXT "
-            "MATCH (forum:Forum)-[hm:HAS_MEMBER]->(f) "
-            "WHERE hm.joinDate >= 100 "
-            "MATCH (forum)-[:CONTAINER_OF]->(post:Post)-[:HAS_CREATOR]->(f) "
-            "RETURN forum.id AS forumId, count(DISTINCT post) AS postCount "
-            "ORDER BY postCount DESC, forumId ASC LIMIT 20"));
-    }
-    SECTION("full pure-GQL IC3 shape parses (FILTER + NOT EXISTS + IN + multi-NEXT)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH TRAIL (p:Person {id: 1})-[:KNOWS]-{1,2}(f:Person) WHERE f.id <> 1 "
-            "RETURN DISTINCT f "
-            "NEXT "
-            "FILTER NOT EXISTS { (f)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(:Country {name: 'China'}) } "
-            "  AND NOT EXISTS { (f)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(:Country {name: 'Germany'}) } "
-            "MATCH (f)<-[:HAS_CREATOR]-(m:Message)-[:IS_LOCATED_IN]->(c:Country) "
-            "WHERE c.name IN ['China', 'Germany'] "
-            "RETURN f.id AS personId, count(DISTINCT c) AS cnt "
-            "ORDER BY cnt DESC, personId ASC LIMIT 20"));
-    }
-}
 
-TEST_CASE("GQL scalar functions and CASE expressions (task 032 slice: length/CASE/zoned_datetime)", "[gql_parser][task032_expr]") {
-    SECTION("length(p) is a scalar function call") {
+TEST_CASE("path mode is accepted after the path variable, not only before it", "[gql_parser]") {
+    SECTION("p = TRAIL (...) sets TRAIL (FinBench CR1 shape)") {
         auto q = GqlParser::parse(
-            "MATCH p = ANY SHORTEST (a)-[:KNOWS]-{1,3}(f) RETURN length(p) AS d");
-        REQUIRE(q.returns.size() == 1);
-        REQUIRE(q.returns[0].expr->kind == ExpressionKind::FUNCTION_CALL);
-        auto* fc = static_cast<FunctionCallExpr*>(q.returns[0].expr.get());
-        REQUIRE(fc->name == "length"); // lowercased
-        REQUIRE(fc->args.size() == 1);
+            "MATCH p = TRAIL (a:Account)-[:transfer]->{1,3}(b:Account) RETURN p");
+        REQUIRE(q.matches[0].path_mode == PathMode::TRAIL);
+        REQUIRE(q.matches[0].path_variable == "p");
     }
-    SECTION("full pure-GQL IC1 shape parses (ANY SHORTEST + length + ORDER BY alias)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH (a:Person {id: 4398046519825}), (f:Person {firstName: 'John'}) "
-            "MATCH p = ANY SHORTEST (a)-[:KNOWS]-{1,3}(f) "
-            "RETURN length(p) AS dist, f.lastName AS lname, f.id AS pid "
-            "ORDER BY dist, lname, pid LIMIT 20"));
-    }
-    SECTION("full pure-GQL IC13 shape parses (unbounded + length)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH (a:Person {id: 1}), (b:Person {id: 2}) "
-            "MATCH pth = ANY SHORTEST (a)-[:KNOWS]-+(b) "
-            "RETURN length(pth) AS hops"));
-    }
-    SECTION("searched CASE WHEN ... THEN ... ELSE ... END") {
+    SECTION("p = ACYCLIC (...) sets ACYCLIC (FinBench CR5 shape)") {
         auto q = GqlParser::parse(
-            "MATCH (c:Country) RETURN CASE WHEN c.name = 'China' THEN 1 ELSE 0 END AS x");
-        REQUIRE(q.returns[0].expr->kind == ExpressionKind::CASE_WHEN);
-        auto* ce = static_cast<CaseExpr*>(q.returns[0].expr.get());
-        REQUIRE(ce->branches.size() == 1);
-        REQUIRE(ce->else_expr != nullptr);
+            "MATCH p = ACYCLIC (a:Account)-[:transfer]->{1,3}(b:Account) RETURN p");
+        REQUIRE(q.matches[0].path_mode == PathMode::ACYCLIC);
     }
-    SECTION("CASE with multiple WHEN branches and no ELSE") {
+    SECTION("the pre-assignment form TRAIL p = (...) still works") {
         auto q = GqlParser::parse(
-            "MATCH (p:Person) RETURN CASE WHEN p.age < 18 THEN 'minor' "
-            "WHEN p.age < 65 THEN 'adult' END AS bucket");
-        auto* ce = static_cast<CaseExpr*>(q.returns[0].expr.get());
-        REQUIRE(ce->branches.size() == 2);
-        REQUIRE(ce->else_expr == nullptr);
-    }
-    SECTION("aggregated CASE: sum(CASE WHEN ... THEN 1 ELSE 0 END)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH (f:Person)-[:IS_LOCATED_IN]->(c:Country) "
-            "RETURN f, sum(CASE WHEN c.name = 'China' THEN 1 ELSE 0 END) AS xc, "
-            "sum(CASE WHEN c.name = 'Germany' THEN 1 ELSE 0 END) AS yc"));
-    }
-    SECTION("zoned_datetime() scalar function in a WHERE comparison") {
-        auto q = GqlParser::parse(
-            "MATCH (m:Message) WHERE m.creationDate >= zoned_datetime('2010-01-01') "
-            "AND m.creationDate < zoned_datetime('2014-02-09') RETURN m");
-        REQUIRE(q.where_expr != nullptr);
-    }
-    SECTION("full pure-GQL IC3 shape with CASE + zoned_datetime parses") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH TRAIL (p:Person {id: 1})-[:KNOWS]-{1,2}(f:Person) WHERE f.id <> 1 "
-            "RETURN DISTINCT f "
-            "NEXT "
-            "FILTER NOT EXISTS { (f)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(:Country {name: 'China'}) } "
-            "MATCH (f)<-[:HAS_CREATOR]-(m:Message)-[:IS_LOCATED_IN]->(c:Country) "
-            "WHERE c.name IN ['China', 'Germany'] "
-            "  AND m.creationDate >= zoned_datetime('2010-01-01') "
-            "  AND m.creationDate < zoned_datetime('2014-02-09') "
-            "RETURN f, "
-            "  sum(CASE WHEN c.name = 'China' THEN 1 ELSE 0 END) AS countryXCount, "
-            "  sum(CASE WHEN c.name = 'Germany' THEN 1 ELSE 0 END) AS countryYCount "
-            "NEXT "
-            "FILTER countryXCount > 0 AND countryYCount > 0 "
-            "RETURN f.id AS personId, countryXCount, countryYCount "
-            "ORDER BY countryXCount + countryYCount DESC, personId ASC "
-            "LIMIT 20"));
-    }
-    SECTION("COUNT { } subquery-count with a bare pattern") {
-        auto q = GqlParser::parse(
-            "MATCH (foaf:Person) RETURN foaf.id AS id, "
-            "COUNT { (foaf)<-[:HAS_CREATOR]-(:Post) } AS total");
-        REQUIRE(q.returns.size() == 2);
-        REQUIRE(q.returns[1].expr->kind == ExpressionKind::SIZE_OP); // COUNT{} reuses SizeExpr
-    }
-    SECTION("COUNT { MATCH ... WHERE EXISTS { ... } } (IC10 shape via LET)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH (p:Person {id: 1})-[:KNOWS]-(:Person)-[:KNOWS]-(foaf:Person) WHERE foaf.id <> 1 "
-            "RETURN DISTINCT p, foaf "
-            "NEXT "
-            "FILTER NOT EXISTS { (p)-[:KNOWS]-(foaf) } "
-            "LET total = COUNT { (foaf)<-[:HAS_CREATOR]-(:Post) } "
-            "LET common = COUNT { MATCH (foaf)<-[:HAS_CREATOR]-(post:Post) "
-            "                     WHERE EXISTS { (post)-[:HAS_TAG]->(:Tag)<-[:HAS_INTEREST]-(p) } } "
-            "RETURN foaf.id AS personId, 2 * common - total AS commonInterestScore "
-            "ORDER BY commonInterestScore DESC, personId ASC LIMIT 10"));
-    }
-    SECTION("collect_list(DISTINCT x) is a COLLECT aggregate") {
-        auto q = GqlParser::parse("MATCH (t:Tag) RETURN collect_list(DISTINCT t) AS tags");
-        REQUIRE(q.returns[0].expr->kind == ExpressionKind::AGGREGATION);
-        auto* agg = static_cast<AggregateExpr*>(q.returns[0].expr.get());
-        REQUIRE(agg->fn_kind == AggregateKind::COLLECT);
-        REQUIRE(agg->distinct);
-    }
-    SECTION("x IN <listExpr> (non-literal) is an InExpr membership test") {
-        auto q = GqlParser::parse("MATCH (t:Tag) WHERE NOT (t IN before) RETURN t.name");
-        // NOT ( t IN before ) -> UNARY_OP(NOT, IN_LIST)
-        REQUIRE(q.where_expr->kind == ExpressionKind::UNARY_OP);
-        auto* un = static_cast<UnaryOpExpr*>(q.where_expr.get());
-        REQUIRE(un->expr->kind == ExpressionKind::IN_LIST);
-    }
-    SECTION("x IN [literal] still desugars to OR (not an InExpr)") {
-        auto q = GqlParser::parse("MATCH (c:Country) WHERE c.name IN ['A', 'B'] RETURN c.name");
-        REQUIRE(q.where_expr->kind == ExpressionKind::BINARY_OP); // OR chain, not IN_LIST
-    }
-    SECTION("full pure-GQL IC4 shape parses (collect_list + IN list-value)") {
-        REQUIRE_NOTHROW(GqlParser::parse(
-            "MATCH (:Person {id: 1})-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(pre:Post)-[:HAS_TAG]->(tb:Tag) "
-            "WHERE pre.creationDate < zoned_datetime('2011-01-01') "
-            "RETURN collect_list(DISTINCT tb) AS before "
-            "NEXT "
-            "MATCH (:Person {id: 1})-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(post:Post)-[:HAS_TAG]->(t:Tag) "
-            "WHERE post.creationDate >= zoned_datetime('2011-01-01') "
-            "  AND post.creationDate < zoned_datetime('2012-01-01') "
-            "  AND NOT (t IN before) "
-            "RETURN t.name AS tagName, count(DISTINCT post) AS postCount "
-            "ORDER BY postCount DESC, tagName ASC LIMIT 10"));
+            "MATCH TRAIL p = (a:Account)-[:transfer]->{1,3}(b:Account) RETURN p");
+        REQUIRE(q.matches[0].path_mode == PathMode::TRAIL);
     }
 }

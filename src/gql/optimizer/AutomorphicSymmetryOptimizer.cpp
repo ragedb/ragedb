@@ -53,7 +53,7 @@ void AutomorphicSymmetryOptimizer::automorphic_symmetry_pass(GqlQuery& query) {
     std::vector<TempEdge> edges;
     
     for (const auto& match : query.matches) {
-        if (match.is_search || match.is_khop || match.algebraic_path_count) return;
+        if (match.is_search || match.is_propagate || match.is_khop || match.algebraic_path_count) return;
         
         // Ensure no inline where filters on nodes or edges
         for (const auto& node : match.pattern.nodes) {
@@ -127,6 +127,16 @@ void AutomorphicSymmetryOptimizer::automorphic_symmetry_pass(GqlQuery& query) {
     }
     
     if (has_12 && has_23 && has_31) {
+        // The factor-3 automorphism holds only for a directed 3-CYCLE (a->b->c->a), where every vertex has
+        // exactly one incoming and one outgoing edge among the three. A transitive triangle (a->b, b->c,
+        // a->c) is also pairwise-connected but has NO nontrivial automorphism -- its vertices have distinct
+        // in/out degrees -- so injecting a<b AND a<c and multiplying by 3 would return a WRONG count.
+        std::unordered_map<std::string, int> in_deg, out_deg;
+        for (const auto& e : edges) { out_deg[e.src]++; in_deg[e.tgt]++; }
+        for (const auto& v : {v1, v2, v3}) {
+            if (out_deg[v] != 1 || in_deg[v] != 1) return;
+        }
+
         bool injected_12 = false;
         bool injected_13 = false;
         std::set<std::string> seen_vars;

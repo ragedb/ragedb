@@ -28,7 +28,7 @@ void EquivalenceClassOptimizer::equivalence_class_pass(GqlQuery& query) {
     if (GqlVirtualCatalog::local().get_relationship_algebraic_properties().empty()) return;
 
     for (auto& match : query.matches) {
-        if (match.is_optional || match.is_search || match.is_khop) continue;
+        if (match.is_optional || match.is_search || match.is_propagate || match.is_khop) continue;
         if (match.pattern.nodes.size() == 2 && match.pattern.edges.size() == 1) {
             auto& edge = match.pattern.edges[0];
             if (edge.is_variable_length && edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {

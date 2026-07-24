@@ -79,6 +79,45 @@ TEST_CASE("GQL Execution EXPLAIN and PROFILE Tests", "[gql_explain_profile]") {
         REQUIRE(results_json.find("Actual Rows") == std::string::npos);
     }
 
+    SECTION("EXPLAIN reports the execution strategy (streaming vs materialising)") {
+        // A plain projection with no aggregate / ORDER BY+LIMIT / count fast path materialises.
+        std::string mat = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person)-[:FRIEND]->(friend) RETURN p.name, friend.name")).get();
+        INFO("materialising: " << mat);
+        REQUIRE(mat.find("\"Execution\":") != std::string::npos);
+        REQUIRE(mat.find("Materialising") != std::string::npos);
+
+        // A pure count over a single node label is answered from the count index -- a streaming path.
+        std::string cnt = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person) RETURN count(*)")).get();
+        INFO("count: " << cnt);
+        REQUIRE(cnt.find("Streaming (node-count)") != std::string::npos);
+        // The strategy is not the materialising label for this shape.
+        REQUIRE(cnt.find("\"Execution\": \"Materialising\"") == std::string::npos);
+    }
+
+    SECTION("EXPLAIN reports estimated per-operator row counts") {
+        // Two Person nodes, so a bare scan estimates 2.
+        std::string scan = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person) RETURN p.name")).get();
+        INFO("scan: " << scan);
+        REQUIRE(scan.find("\"Est. Rows\":") != std::string::npos);
+        REQUIRE(scan.find("\"Est. Rows\": 2") != std::string::npos);
+
+        // A global aggregate collapses to a single row.
+        std::string agg = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person) RETURN count(*)")).get();
+        INFO("agg: " << agg);
+        REQUIRE(agg.find("\"Est. Rows\": 2") != std::string::npos);   // the scan under the aggregate
+        REQUIRE(agg.find("\"Est. Rows\": 1") != std::string::npos);   // the aggregate itself
+
+        // An equality filter is highly selective: on two nodes the estimate floors to 1.
+        std::string byname = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person) WHERE p.name = 'Alice' RETURN p.name")).get();
+        INFO("byname: " << byname);
+        REQUIRE(byname.find("\"Est. Rows\": 1") != std::string::npos);
+    }
+
     SECTION("PROFILE query plan") {
         std::string query_str = "PROFILE MATCH (p:Person)-[:FRIEND]->(friend) RETURN p.name, friend.name";
         auto query = GqlParser::parse(query_str);
@@ -109,6 +148,30 @@ TEST_CASE("GQL Execution EXPLAIN and PROFILE Tests", "[gql_explain_profile]") {
         std::string results_json = GqlExecutor::execute(graph, std::move(query)).get();
         REQUIRE(results_json.find("SchemaOperation") != std::string::npos);
         REQUIRE(results_json.find("Student") != std::string::npos);
+    }
+
+    SECTION("EXPLAIN surfaces the constraint that filters a scan, wherever it lives") {
+        // An inline property map is bound to the anchor, so it shows on the Scan node; a FILTER stays a
+        // residual predicate on a Filter node. Both used to be invisible -- the map rendered as a bare
+        // `(p:Person)` and the Filter node said only "WHERE expression" -- so a constrained scan looked
+        // identical to a full one. Both now show the actual constraint.
+        std::string map_plan = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person {age: 30}) RETURN p.name")).get();
+        INFO("map plan: " << map_plan);
+        REQUIRE(map_plan.find("age = 30") != std::string::npos);
+
+        std::string filter_plan = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person) FILTER p.age > 30 RETURN p.name")).get();
+        INFO("filter plan: " << filter_plan);
+        REQUIRE(filter_plan.find("p.age > 30") != std::string::npos);
+        // No longer the useless generic label.
+        REQUIRE(filter_plan.find("WHERE expression") == std::string::npos);
+
+        // An unconstrained scan shows neither, so it is distinguishable from a constrained one.
+        std::string scan_plan = GqlExecutor::execute(graph, GqlParser::parse(
+            "EXPLAIN MATCH (p:Person) RETURN p.name")).get();
+        INFO("scan plan: " << scan_plan);
+        REQUIRE(scan_plan.find("age") == std::string::npos);
     }
 
     guard.stop();

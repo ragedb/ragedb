@@ -31,6 +31,10 @@ namespace ragedb::gql {
  * Entries are immutable shared snapshots: readers hold a shared_ptr instead of copying the
  * (potentially O(V)) map per query row, and invalidation just drops the cache's reference
  * while in-flight readers keep theirs.
+ *
+ * Footprint: one O(V) entry per distinct relationship type queried, per shard. Real schemas
+ * have few relationship types; kMaxEntries is only a runaway guard against a pathological
+ * stream of distinct type strings, and entries are re-derived on a miss.
  */
 class WccCache {
 public:
@@ -39,6 +43,7 @@ public:
 private:
     // Maps relationship type -> partition map (node_id -> component_id)
     std::unordered_map<std::string, std::shared_ptr<const PartitionMap>> cache;
+    static constexpr size_t kMaxEntries = 64;
 
 public:
     static WccCache& local() {
@@ -65,6 +70,9 @@ public:
     }
 
     std::shared_ptr<const PartitionMap> set(const std::string& rel_type, PartitionMap&& partitions) {
+        if (cache.size() >= kMaxEntries && cache.find(rel_type) == cache.end()) {
+            cache.clear();
+        }
         auto snapshot = std::make_shared<const PartitionMap>(std::move(partitions));
         cache[rel_type] = snapshot;
         return snapshot;

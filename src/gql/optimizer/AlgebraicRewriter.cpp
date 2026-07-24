@@ -44,7 +44,7 @@ void AlgebraicRewriter::algebraic_rewriter_pass(GqlQuery& query) {
                     !end_node.label_expr && end_node.properties.empty() && end_node.property_filters.empty() &&
                     edge.properties.empty() && edge.property_filters.empty()) {
                     
-                    path_count_hops = edge.min_hops;
+                    path_count_hops = static_cast<uint16_t>(edge.min_hops);
                     start_var = start_node.variable;
                     end_var = end_node.variable;
                     
@@ -104,7 +104,7 @@ void AlgebraicRewriter::algebraic_rewriter_pass(GqlQuery& query) {
                                 }
                                 
                                 if (valid) {
-                                    path_count_hops = num_edges;
+                                    path_count_hops = static_cast<uint16_t>(num_edges);
                                     start_var = start_node.variable;
                                     end_var = end_node.variable;
                                     rel_types = first_types;

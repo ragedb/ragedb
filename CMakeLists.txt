@@ -11,6 +11,14 @@ target_compile_features(project_options INTERFACE cxx_std_23)
 set_property(TARGET project_options PROPERTY CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Git SHA of the build, embedded so the running server can report which revision it is (GET /version).
+# Supplied at configure time (the Docker build passes -DRAGEDB_GIT_SHA=... from a build-arg); defaults to
+# "unknown" when not provided (e.g. local test builds), so the macro is always defined.
+if(NOT RAGEDB_GIT_SHA)
+  set(RAGEDB_GIT_SHA "unknown")
+endif()
+add_compile_definitions(RAGEDB_GIT_SHA="${RAGEDB_GIT_SHA}")
+
 # Workaround for Clang compiling with libstdc++ where hardware destructive/constructive size is not defined.
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
   add_compile_definitions(__GCC_DESTRUCTIVE_SIZE=64 __GCC_CONSTRUCTIVE_SIZE=64)
@@ -59,6 +67,9 @@ enable_doxygen()
 
 # allow for static analysis options
 include(cmake/StaticAnalyzers.cmake)
+
+# coverage instrumentation scoped to the GQL sources (see the module for why it is not the whole binary)
+include(cmake/GqlCoverage.cmake)
 
 option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
 option(ENABLE_TESTING "Enable Test Builds" ON)
@@ -211,8 +222,13 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/main/handlers/Gql.cpp src/main/handlers/Gql.h
         src/gql/GqlLexer.cpp src/gql/GqlLexer.h
         src/gql/GqlParser.cpp src/gql/GqlParser.h
+        src/gql/GqlParserPrimary.cpp
+        src/gql/GqlParserPatterns.cpp
+        src/gql/GqlParserExpressions.cpp
+        src/gql/GqlParserStatements.cpp
         src/gql/GqlOptimizer.cpp src/gql/GqlOptimizer.h
         src/gql/optimizer/OptimizerUtils.cpp src/gql/optimizer/OptimizerUtils.h
+        src/gql/optimizer/OptimizerRewrites.cpp
         src/gql/optimizer/ContradictionPruner.cpp src/gql/optimizer/ContradictionPruner.h
         src/gql/optimizer/DomainConstraintReasoner.cpp src/gql/optimizer/DomainConstraintReasoner.h
         src/gql/optimizer/TransitiveReachabilityPruner.cpp src/gql/optimizer/TransitiveReachabilityPruner.h
@@ -248,10 +264,14 @@ add_executable(ragedb src/main/main.cpp src/main/util/stop_signal.hh
         src/gql/executor/PlanBuilder.cpp src/gql/executor/PlanBuilder.h
         src/gql/executor/HoneycombExecutor.cpp src/gql/executor/HoneycombExecutor.h
         src/gql/executor/LftjExecutor.cpp src/gql/executor/LftjExecutor.h
+        src/gql/executor/StreamingAggregates.cpp src/gql/executor/ExecutorInternal.h
 
         src/gql/GqlCatalog.cpp src/gql/GqlCatalog.h
         src/gql/GqlTypechecker.cpp src/gql/GqlTypechecker.h
         src/gql/GqlValue.cpp src/gql/GqlValue.h
+        src/gql/GqlValueFunctions.cpp
+        src/gql/GqlValueEvaluate.cpp
+        src/gql/GqlValueSerialize.cpp
         src/gql/GqlWriter.cpp src/gql/GqlWriter.h
         src/gql/GqlAst.h
         src/main/Database.cpp src/main/Database.h
@@ -283,6 +303,13 @@ target_link_libraries(
         project_warnings
         Graph
 )
+
+# Instrument the GQL translation units when GQL_COVERAGE is on. Source-file properties are
+# directory-scoped, so this one call covers every target defined here that compiles them.
+file(GLOB_RECURSE RAGEDB_GQL_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/gql/*.cpp")
+ragedb_instrument_gql_sources(${RAGEDB_GQL_SOURCES})
+ragedb_link_gql_coverage(ragedb)
+ragedb_link_gql_coverage(Graph)
 
 if(ENABLE_TESTING)
   message("Building Tests. Be sure to check out test/constexpr_tests for constexpr testing")

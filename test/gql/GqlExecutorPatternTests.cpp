@@ -440,3 +440,81 @@ TEST_CASE("GQL Execution Advanced Pattern Matching Tests", "[gql_executor_patter
     }
 }
 
+// An inline property map on the *destination* of a forward traversal, written as an anonymous node
+// `(a)-[:R]->(:Label {prop: v})`, must filter the destination exactly as the named form
+// `(a)-[:R]->(x:Label {prop: v})` does. On a live graph the anonymous form silently returned zero
+// rows while the named form (which the optimiser re-anchors onto the selective map) returned the
+// correct set -- a wrong-results bug hit by IC6's `(post)-[:HAS_TAG]->(:Tag {name: '...'})`.
+TEST_CASE("GQL anonymous destination property-map filter", "[gql_executor_anon_dest]") {
+    auto graph = Graph("gql_test_anon_dest");
+    graph.Start().get();
+    graph.Clear();
+    PatternGraphStopGuard guard(graph);
+
+    graph.shard.local().NodeTypeInsertPeered("Person").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "name", "string").get();
+    graph.shard.local().NodePropertyTypeAddPeered("Person", "id", "integer").get();
+    graph.shard.local().RelationshipTypeInsertPeered("KNOWS").get();
+
+    uint64_t alice = graph.shard.local().NodeAddPeered("Person", "alice", "{\"name\": \"alice\", \"id\": 1}").get();
+    uint64_t bob   = graph.shard.local().NodeAddPeered("Person", "bob",   "{\"name\": \"bob\",   \"id\": 2}").get();
+    uint64_t carol = graph.shard.local().NodeAddPeered("Person", "carol", "{\"name\": \"carol\", \"id\": 3}").get();
+
+    // alice knows bob and carol; bob knows carol.
+    graph.shard.local().RelationshipAddPeered("KNOWS", alice, bob, "{}").get();
+    graph.shard.local().RelationshipAddPeered("KNOWS", alice, carol, "{}").get();
+    graph.shard.local().RelationshipAddPeered("KNOWS", bob, carol, "{}").get();
+
+    auto run = [&graph](const std::string& q) {
+        auto query = GqlParser::parse(q);
+        GqlTypechecker::typecheck(graph, query);
+        GqlOptimizer::optimize(query);
+        return GqlExecutor::execute(graph, std::move(query)).get();
+    };
+    auto run_no_opt = [&graph](const std::string& q) {
+        auto query = GqlParser::parse(q);
+        GqlTypechecker::typecheck(graph, query);
+        return GqlExecutor::execute(graph, std::move(query)).get();
+    };
+
+    // The pruner is keyed by the query's own variables; an anonymous node gets an internal name it does
+    // not know, so without the fix the traversal strips the destination's properties before its inline
+    // filter runs. Exercising the un-optimised path proves the fix lives in the executor, not a rewrite.
+    SECTION("anonymous destination map is filtered without the optimizer") {
+        std::string r = run_no_opt("MATCH (a:Person)-[:KNOWS]->(:Person {name: 'bob'}) RETURN a.name AS n");
+        INFO("anon no-opt: " << r);
+        REQUIRE(r.find("alice") != std::string::npos);
+        REQUIRE(r.find("carol") == std::string::npos);
+    }
+
+    SECTION("named destination string map (only alice knows bob)") {
+        std::string r = run("MATCH (a:Person)-[:KNOWS]->(x:Person {name: 'bob'}) RETURN a.name AS n");
+        INFO("named: " << r);
+        REQUIRE(r.find("alice") != std::string::npos);
+        REQUIRE(r.find("bob") == std::string::npos);
+        REQUIRE(r.find("carol") == std::string::npos);
+    }
+
+    SECTION("anonymous destination string map (only alice knows bob)") {
+        std::string r = run("MATCH (a:Person)-[:KNOWS]->(:Person {name: 'bob'}) RETURN a.name AS n");
+        INFO("anon string: " << r);
+        REQUIRE(r.find("alice") != std::string::npos);
+        REQUIRE(r.find("bob") == std::string::npos);
+        REQUIRE(r.find("carol") == std::string::npos);
+    }
+
+    SECTION("anonymous destination integer map (only alice knows id 2)") {
+        std::string r = run("MATCH (a:Person)-[:KNOWS]->(:Person {id: 2}) RETURN a.name AS n");
+        INFO("anon int: " << r);
+        REQUIRE(r.find("alice") != std::string::npos);
+    }
+
+    SECTION("anonymous destination map with count (alice and bob know carol)") {
+        std::string r = run("MATCH (a:Person)-[:KNOWS]->(:Person {name: 'carol'}) RETURN count(*) AS c");
+        INFO("anon count: " << r);
+        REQUIRE(r.find("2") != std::string::npos);
+    }
+
+    guard.stop();
+}
+

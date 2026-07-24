@@ -180,7 +180,7 @@ void CardinalityShortCircuiter::semantic_cardinality_limit_pass(GqlQuery& query)
     if (constraints_list.empty()) return;
     
     for (auto& match : query.matches) {
-        if (match.is_search) continue;
+        if (match.is_search || match.is_propagate) continue;
         auto& pattern = match.pattern;
         for (size_t i = 0; i < pattern.edges.size(); ++i) {
             auto& edge = pattern.edges[i];

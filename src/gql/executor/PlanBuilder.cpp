@@ -25,6 +25,7 @@
 #include <map>
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 namespace ragedb::gql {
 
@@ -42,6 +43,8 @@ static std::string describe_label_expr(const std::shared_ptr<LabelExpression>& e
             return "(" + describe_label_expr(expr->left) + " & " + describe_label_expr(expr->right) + ")";
         case LabelExprKind::OR:
             return "(" + describe_label_expr(expr->left) + " | " + describe_label_expr(expr->right) + ")";
+        case LabelExprKind::WILDCARD:
+            return "%";
     }
     return "";
 }
@@ -51,6 +54,100 @@ static std::string describe_label_expr(const std::shared_ptr<LabelExpression>& e
  * 
  * E.g., translates internal nodes and edges into "(a:Person)-[e:KNOWS]->(b:Person)".
  */
+/// Renders a literal property value for a plan detail. Only the scalar alternatives appear in a pattern
+/// constraint; anything else is shown as "?".
+static std::string describe_property_value(const property_type_t& v) {
+    if (std::holds_alternative<std::string>(v)) return "'" + std::get<std::string>(v) + "'";
+    if (std::holds_alternative<int64_t>(v)) return std::to_string(std::get<int64_t>(v));
+    if (std::holds_alternative<double>(v)) {
+        std::ostringstream oss; oss << std::get<double>(v); return oss.str();
+    }
+    if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? "true" : "false";
+    return "?";
+}
+
+static std::string describe_op(Operation op) {
+    switch (op) {
+        case Operation::EQ:  return "=";
+        case Operation::NEQ: return "<>";
+        case Operation::GT:  return ">";
+        case Operation::GTE: return ">=";
+        case Operation::LT:  return "<";
+        case Operation::LTE: return "<=";
+        case Operation::STARTS_WITH: return " STARTS WITH ";
+        case Operation::CONTAINS:    return " CONTAINS ";
+        case Operation::ENDS_WITH:   return " ENDS WITH ";
+        default: return " ? ";
+    }
+}
+
+/// Renders the property constraints on a node or edge -- both an inline literal map and the filters the
+/// optimizer pushed into the scan -- as a `{...}` suffix. Without this a bound anchor
+/// (`(a:Person {id: 1})` or `(a:Person) FILTER a.id = 1`, both pushed to property_filters) rendered
+/// identically to an unbound full scan, hiding the single fact that decides whether a query seeks or scans.
+static std::string describe_property_constraints(const std::map<std::string, property_type_t>& properties,
+                                                 const std::vector<PropertyFilter>& filters) {
+    std::vector<std::string> parts;
+    for (const auto& [prop, val] : properties) {
+        parts.push_back(prop + " = " + describe_property_value(val));
+    }
+    for (const auto& f : filters) {
+        parts.push_back(f.property + describe_op(f.op) + describe_property_value(f.value));
+    }
+    if (parts.empty()) return "";
+    std::string out = " {";
+    for (size_t i = 0; i < parts.size(); ++i) {
+        if (i > 0) out += ", ";
+        out += parts[i];
+    }
+    return out + "}";
+}
+
+/// Renders the common predicate shapes for a plan detail, so a Filter operator shows the actual condition
+/// (`p.age > 30`) rather than a generic "WHERE expression". Shapes it does not know fall back to a short
+/// label so the plan stays readable rather than dumping a whole AST.
+static std::string describe_expression(const Expression* expr) {
+    if (!expr) return "";
+    switch (expr->kind) {
+        case ExpressionKind::LITERAL:
+            return describe_property_value(static_cast<const LiteralExpr*>(expr)->value);
+        case ExpressionKind::VARIABLE:
+            return static_cast<const VariableExpr*>(expr)->name;
+        case ExpressionKind::PROPERTY_LOOKUP: {
+            auto* p = static_cast<const PropertyLookupExpr*>(expr);
+            return p->variable + "." + p->property;
+        }
+        case ExpressionKind::BINARY_OP: {
+            auto* b = static_cast<const BinaryOpExpr*>(expr);
+            std::string op;
+            switch (b->op) {
+                case BinaryOpKind::AND: op = " AND "; break;
+                case BinaryOpKind::OR:  op = " OR ";  break;
+                case BinaryOpKind::ADD: op = " + ";   break;
+                case BinaryOpKind::SUB: op = " - ";   break;
+                case BinaryOpKind::MUL: op = " * ";   break;
+                case BinaryOpKind::DIV: op = " / ";   break;
+                case BinaryOpKind::CONCAT: op = " || "; break;
+                case BinaryOpKind::EQ: op = " = ";  break;
+                case BinaryOpKind::NE: op = " <> "; break;
+                case BinaryOpKind::LT: op = " < ";  break;
+                case BinaryOpKind::LE: op = " <= "; break;
+                case BinaryOpKind::GT: op = " > ";  break;
+                case BinaryOpKind::GE: op = " >= "; break;
+                default: op = " ? "; break;
+            }
+            return describe_expression(b->left.get()) + op + describe_expression(b->right.get());
+        }
+        case ExpressionKind::CAST:      return "CAST(...)";
+        case ExpressionKind::IS_LABELED: return "IS LABELED";
+        case ExpressionKind::IS_DIRECTED: return "IS DIRECTED";
+        case ExpressionKind::IS_SOURCE_DEST: return "IS SOURCE/DESTINATION OF";
+        case ExpressionKind::AGGREGATION: return "<aggregate>";
+        default:
+            return "<expr>";
+    }
+}
+
 static std::string describe_pattern(const PathPattern& pattern) {
     std::string res;
     for (size_t i = 0; i < pattern.nodes.size(); ++i) {
@@ -70,6 +167,7 @@ static std::string describe_pattern(const PathPattern& pattern) {
                     edge_str += std::to_string(edge.min_hops) + ".." + (edge.max_hops == std::numeric_limits<uint64_t>::max() ? "" : std::to_string(edge.max_hops));
                 }
             }
+            edge_str += describe_property_constraints(edge.properties, edge.property_filters);
             edge_str += "]";
             
             if (edge.direction == EdgeDirection::RIGHT) edge_str += "->";
@@ -84,6 +182,7 @@ static std::string describe_pattern(const PathPattern& pattern) {
         if (node.label_expr) {
             node_str += ":" + describe_label_expr(node.label_expr);
         }
+        node_str += describe_property_constraints(node.properties, node.property_filters);
         node_str += ")";
         res += node_str;
     }
@@ -102,9 +201,71 @@ static std::string join_strings(const std::set<std::string>& strings, const std:
     return res;
 }
 
+// ===== Cardinality estimation ===================================================================
+// Rough per-operator row estimates for EXPLAIN. Base scans use the real label / relationship counts
+// from the local shard; filters, fan-out and paging apply simple heuristics. These are indicative,
+// not optimiser-grade: there is no distinct-value or histogram statistic to draw on, so equality on a
+// non-id property is assumed ~10% selective and a range ~33%.
+static double node_scan_selectivity(const PatternNode& n, bool& has_id_eq) {
+    has_id_eq = false;
+    double sel = 1.0;
+    for (const auto& [prop, val] : n.properties) {
+        if (prop == "id") has_id_eq = true;
+        else sel *= 0.1;
+    }
+    for (const auto& f : n.property_filters) {
+        if (f.property == "id" && f.op == Operation::EQ) has_id_eq = true;
+        else if (f.op == Operation::EQ) sel *= 0.1;
+        else sel *= 0.33;
+    }
+    return sel;
+}
+
+static int64_t estimate_node_scan(ragedb::Graph& graph, const PatternNode& n) {
+    std::string label;
+    if (n.label_expr && n.label_expr->kind == LabelExprKind::LITERAL) label = n.label_expr->name;
+    int64_t base = label.empty() ? static_cast<int64_t>(graph.shard.local().AllNodesCount())
+                                  : static_cast<int64_t>(graph.shard.local().NodeCount(label));
+    bool has_id_eq = false;
+    double sel = node_scan_selectivity(n, has_id_eq);
+    if (has_id_eq) return 1;  // id equality selects a single node
+    int64_t est = static_cast<int64_t>(static_cast<double>(base) * sel);
+    return est < 1 ? 1 : est;
+}
+
+// Estimate the rows a single match statement produces: the anchor node's scan, fanned out along each
+// edge by the relationship type's average degree, narrowed by each subsequent node's filters.
+static int64_t estimate_match_cardinality(ragedb::Graph& graph, const MatchStatement& stmt) {
+    if (stmt.pattern.nodes.empty()) return 1;
+    int64_t est = estimate_node_scan(graph, stmt.pattern.nodes[0]);
+    const int64_t total_nodes = static_cast<int64_t>(graph.shard.local().AllNodesCount());
+    for (size_t i = 0; i < stmt.pattern.edges.size(); ++i) {
+        const auto& e = stmt.pattern.edges[i];
+        std::string rt;
+        if (e.label_expr && e.label_expr->kind == LabelExprKind::LITERAL) rt = e.label_expr->name;
+        int64_t rels = rt.empty() ? static_cast<int64_t>(graph.shard.local().AllRelationshipsCount())
+                                  : static_cast<int64_t>(graph.shard.local().RelationshipCount(rt));
+        double fanout = total_nodes > 0 ? static_cast<double>(rels) / static_cast<double>(total_nodes) : 1.0;
+        est = static_cast<int64_t>(static_cast<double>(est) * fanout);
+        if (i + 1 < stmt.pattern.nodes.size()) {
+            bool hid = false;
+            double sel = node_scan_selectivity(stmt.pattern.nodes[i + 1], hid);
+            est = hid ? 1 : static_cast<int64_t>(static_cast<double>(est) * sel);
+        }
+        if (est < 1) est = 1;
+    }
+    return est;
+}
+
+// The estimate carried by an already-built child operator, if any.
+static std::optional<int64_t> child_estimate(const std::shared_ptr<PlanNode>& n) {
+    if (!n || n->children.empty()) return std::nullopt;
+    return n->children.front()->estimated_rows;
+}
+
 /**
  * @brief Recursively builds the plan tree for a sequence of MATCH statements.
- * 
+ *
  * Analyzes variables and relationships to decide between Index Seeks, Scans,
  * expansions, natural/left-outer joins, and star join rewriter strategies.
  */
@@ -218,7 +379,7 @@ static std::shared_ptr<PlanNode> build_match_plan(
         }
         join_node->variables = join_strings(incoming_vars, ", ");
 
-        std::vector<MatchStatement> remaining_matches(matches.begin() + match_idx + 1, matches.end());
+        std::vector<MatchStatement> remaining_matches(matches.begin() + static_cast<std::ptrdiff_t>(match_idx) + 1, matches.end());
         return build_match_plan(graph, remaining_matches, 0, incoming_vars, join_node);
     } else {
         auto node = std::make_shared<PlanNode>();
@@ -291,10 +452,20 @@ static std::shared_ptr<PlanNode> build_match_plan(
             node->detail = describe_pattern(stmt.pattern);
         }
         node->key = "match_" + std::to_string(stmt.id);
+        // Estimated rows this match produces (indicative). A piped match is driven by the incoming
+        // rows, so scale the pattern estimate by the input's cardinality relative to a bare scan.
+        node->estimated_rows = estimate_match_cardinality(graph, stmt);
         if (input_plan) {
             node->children.push_back(input_plan);
+            if (input_plan->estimated_rows && !stmt.pattern.nodes.empty()) {
+                int64_t anchor = estimate_node_scan(graph, stmt.pattern.nodes[0]);
+                if (anchor > 0) {
+                    double ratio = static_cast<double>(*input_plan->estimated_rows) / static_cast<double>(anchor);
+                    node->estimated_rows = std::max<int64_t>(1, static_cast<int64_t>(static_cast<double>(*node->estimated_rows) * ratio));
+                }
+            }
         }
-        
+
         for (const auto& n : stmt.pattern.nodes) {
             if (!n.variable.empty()) incoming_vars.insert(n.variable);
         }
@@ -306,7 +477,7 @@ static std::shared_ptr<PlanNode> build_match_plan(
         }
         node->variables = join_strings(incoming_vars, ", ");
 
-        std::vector<MatchStatement> remaining_matches(matches.begin() + match_idx + 1, matches.end());
+        std::vector<MatchStatement> remaining_matches(matches.begin() + static_cast<std::ptrdiff_t>(match_idx) + 1, matches.end());
         return build_match_plan(graph, remaining_matches, 0, incoming_vars, node);
     }
 }
@@ -317,7 +488,7 @@ static bool is_query_cyclic(const std::vector<MatchStatement>& matches) {
     
     for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
         const auto& match = matches[m_idx];
-        if (match.is_search) continue;
+        if (match.is_search || match.is_propagate) continue;
         const auto& pattern = match.pattern;
         for (size_t i = 0; i < pattern.edges.size(); ++i) {
             std::string u = pattern.nodes[i].variable;
@@ -371,7 +542,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
     if (is_query_cyclic(query.matches)) {
         uint64_t total_rels = 0;
         for (const auto& match : query.matches) {
-            if (match.is_search) continue;
+            if (match.is_search || match.is_propagate) continue;
             for (const auto& edge : match.pattern.edges) {
                 std::string rel_type = "";
                 if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
@@ -413,7 +584,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         
         std::set<std::string> vars;
         for (const auto& match : query.matches) {
-            if (match.is_search) continue;
+            if (match.is_search || match.is_propagate) continue;
             for (const auto& node : match.pattern.nodes) {
                 if (!node.variable.empty()) vars.insert(node.variable);
             }
@@ -434,7 +605,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         
         std::set<std::string> vars;
         for (const auto& match : query.matches) {
-            if (match.is_search) continue;
+            if (match.is_search || match.is_propagate) continue;
             for (const auto& node : match.pattern.nodes) {
                 if (!node.variable.empty()) vars.insert(node.variable);
             }
@@ -479,9 +650,12 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         auto filter_node = std::make_shared<PlanNode>();
         filter_node->operator_name = "Filter";
         filter_node->key = "filter";
-        filter_node->detail = "WHERE expression";
+        filter_node->detail = describe_expression(query.where_expr.get());
         filter_node->variables = join_strings(incoming_vars, ", ");
         if (current) filter_node->children.push_back(current);
+        if (auto c = child_estimate(filter_node)) {
+            filter_node->estimated_rows = std::max<int64_t>(1, static_cast<int64_t>(static_cast<double>(*c) * 0.5));
+        }
         current = filter_node;
     }
 
@@ -507,6 +681,14 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         agg_node->key = "aggregate";
         agg_node->variables = join_strings(incoming_vars, ", ");
         if (current) agg_node->children.push_back(current);
+        // A global aggregate yields one row; a grouped one yields at most its input (no distinct-value
+        // statistic to estimate the group count from, so the child is an upper bound).
+        bool grouped = !query.group_by.empty();
+        for (const auto& item : query.returns) {
+            if (item.expr && !has_aggregates(item.expr.get())) { grouped = true; break; }
+        }
+        if (!grouped) agg_node->estimated_rows = 1;
+        else if (auto c = child_estimate(agg_node)) agg_node->estimated_rows = *c;
         current = agg_node;
     }
 
@@ -516,6 +698,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         distinct_node->key = "distinct";
         distinct_node->variables = join_strings(incoming_vars, ", ");
         if (current) distinct_node->children.push_back(current);
+        if (auto c = child_estimate(distinct_node)) distinct_node->estimated_rows = *c;  // upper bound
         current = distinct_node;
     }
 
@@ -531,6 +714,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         sort_node->detail = details;
         sort_node->variables = join_strings(incoming_vars, ", ");
         if (current) sort_node->children.push_back(current);
+        if (auto c = child_estimate(sort_node)) sort_node->estimated_rows = *c;  // ordering preserves count
         current = sort_node;
     }
 
@@ -541,6 +725,11 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
         limit_node->detail = std::to_string(*query.limit);
         limit_node->variables = join_strings(incoming_vars, ", ");
         if (current) limit_node->children.push_back(current);
+        {
+            int64_t lim = static_cast<int64_t>(*query.limit);
+            auto c = child_estimate(limit_node);
+            limit_node->estimated_rows = c ? std::min<int64_t>(lim, *c) : lim;
+        }
         current = limit_node;
     }
 
@@ -559,6 +748,7 @@ static std::shared_ptr<PlanNode> build_single_query_plan(ragedb::Graph& graph, c
     produce_node->detail = returns_str;
     produce_node->variables = returns_str;
     if (current) produce_node->children.push_back(current);
+    if (auto c = child_estimate(produce_node)) produce_node->estimated_rows = *c;
     current = produce_node;
 
     return current;
@@ -585,6 +775,8 @@ std::shared_ptr<PlanNode> build_query_plan(ragedb::Graph& graph, const GqlQuery&
         else if (query.kind == QueryKind::UNION_ALL) node->operator_name = "UnionAll";
         else if (query.kind == QueryKind::INTERSECT) node->operator_name = "Intersect";
         else if (query.kind == QueryKind::INTERSECT_ALL) node->operator_name = "IntersectAll";
+        else if (query.kind == QueryKind::EXCEPT) node->operator_name = "Except";
+        else if (query.kind == QueryKind::EXCEPT_ALL) node->operator_name = "ExceptAll";
         
         node->key = "set_operation";
         if (query.left) {

@@ -18,6 +18,21 @@
 
 namespace ragedb::gql {
 
+/**
+ * @brief Registers the properties a subquery's own pattern reads through its inline WHERE filters, so
+ *        they survive pruning alongside the ones its residual WHERE reads.
+ */
+static void collect_accessed_properties_in_match(const MatchStatement& match,
+                                                 std::map<std::string, std::set<std::string>>& accessed_props,
+                                                 std::set<std::string>& whole_objects) {
+    for (const auto& node : match.pattern.nodes) {
+        collect_accessed_properties(node.where_expr.get(), accessed_props, whole_objects);
+    }
+    for (const auto& edge : match.pattern.edges) {
+        collect_accessed_properties(edge.where_expr.get(), accessed_props, whole_objects);
+    }
+}
+
 void collect_accessed_properties(const Expression* expr,
                                  std::map<std::string, std::set<std::string>>& accessed_props,
                                  std::set<std::string>& whole_objects) {
@@ -74,6 +89,93 @@ void collect_accessed_properties(const Expression* expr,
             auto* in = static_cast<const InExpr*>(expr);
             collect_accessed_properties(in->value.get(), accessed_props, whole_objects);
             collect_accessed_properties(in->list.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::CAST: {
+            collect_accessed_properties(static_cast<const CastExpr*>(expr)->value.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::LIST_LITERAL: {
+            for (const auto& element : static_cast<const ListExpr*>(expr)->elements) {
+                collect_accessed_properties(element.get(), accessed_props, whole_objects);
+            }
+            break;
+        }
+        case ExpressionKind::LIST_INDEX: {
+            auto* ie = static_cast<const IndexExpr*>(expr);
+            collect_accessed_properties(ie->list.get(), accessed_props, whole_objects);
+            collect_accessed_properties(ie->index.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::LIST_COMPREHENSION: {
+            auto* lc = static_cast<const ListComprehensionExpr*>(expr);
+            collect_accessed_properties(lc->list.get(), accessed_props, whole_objects);
+            collect_accessed_properties(lc->filter.get(), accessed_props, whole_objects);
+            collect_accessed_properties(lc->projection.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::QUANTIFIED_PREDICATE: {
+            auto* qp = static_cast<const QuantifiedPredicateExpr*>(expr);
+            collect_accessed_properties(qp->list.get(), accessed_props, whole_objects);
+            collect_accessed_properties(qp->predicate.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::TEMPORAL_FIELD:
+            collect_accessed_properties(static_cast<const TemporalFieldExpr*>(expr)->value.get(), accessed_props, whole_objects);
+            break;
+        case ExpressionKind::IS_LABELED: {
+            // The label is read from the entity itself, not from a property, so the operand must survive
+            // pruning as a whole object rather than as a property set.
+            auto* l = static_cast<const IsLabeledExpr*>(expr);
+            if (l->value && l->value->kind == ExpressionKind::VARIABLE) {
+                whole_objects.insert(static_cast<const VariableExpr*>(l->value.get())->name);
+            }
+            collect_accessed_properties(l->value.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::IS_DIRECTED: {
+            // Reads the edge's orientation from the entity, so keep it as a whole object.
+            auto* d = static_cast<const IsDirectedExpr*>(expr);
+            if (d->value && d->value->kind == ExpressionKind::VARIABLE) {
+                whole_objects.insert(static_cast<const VariableExpr*>(d->value.get())->name);
+            }
+            collect_accessed_properties(d->value.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::IS_SOURCE_DEST: {
+            // Compares node/edge identities and endpoints, so both operands must survive as whole objects.
+            auto* s = static_cast<const IsSourceDestExpr*>(expr);
+            if (s->value && s->value->kind == ExpressionKind::VARIABLE) {
+                whole_objects.insert(static_cast<const VariableExpr*>(s->value.get())->name);
+            }
+            if (s->edge && s->edge->kind == ExpressionKind::VARIABLE) {
+                whole_objects.insert(static_cast<const VariableExpr*>(s->edge.get())->name);
+            }
+            collect_accessed_properties(s->value.get(), accessed_props, whole_objects);
+            collect_accessed_properties(s->edge.get(), accessed_props, whole_objects);
+            break;
+        }
+        case ExpressionKind::EXISTS: {
+            // A subquery predicate reads properties too. When the semi-join rewrite lifts the subquery's
+            // pattern into the outer match list, its residual WHERE stays here and is evaluated against
+            // the joined row, so anything it reads has to survive pruning -- otherwise the predicate sees
+            // a null property and silently drops rows. Only literal comparisons become scan filters, so
+            // without this an unpushable predicate (an OR, a NOT, a property-to-property comparison) is
+            // the difference between a correct answer and an empty one.
+            auto* ee = static_cast<const ExistsExpr*>(expr);
+            collect_accessed_properties(ee->where_expr.get(), accessed_props, whole_objects);
+            for (const auto& match : ee->matches) {
+                collect_accessed_properties_in_match(match, accessed_props, whole_objects);
+            }
+            break;
+        }
+        case ExpressionKind::SIZE_OP: {
+            // COUNT { ... } carries the same shape as EXISTS.
+            auto* se = static_cast<const SizeExpr*>(expr);
+            collect_accessed_properties(se->where_expr.get(), accessed_props, whole_objects);
+            for (const auto& match : se->matches) {
+                collect_accessed_properties_in_match(match, accessed_props, whole_objects);
+            }
             break;
         }
         case ExpressionKind::LITERAL:

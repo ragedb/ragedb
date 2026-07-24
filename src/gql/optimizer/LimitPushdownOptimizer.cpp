@@ -18,10 +18,12 @@
 #include "OptimizerUtils.h"
 #include "../GqlVirtualCatalog.h"
 #include "../GqlParser.h"
+#include "../executor/ExpressionEvaluator.h"
 #include <vector>
 #include <unordered_map>
 #include <set>
 #include <algorithm>
+#include <limits>
 
 namespace ragedb::gql {
 
@@ -90,8 +92,22 @@ void LimitPushdownOptimizer::limit_pushdown_pass(GqlQuery& query) {
     // live in has_post_scan_residual_predicate, shared with the executor's limit_val gate.
     if (has_post_scan_residual_predicate(query)) return;
 
+    // An aggregate folds the matched rows into far fewer result rows, so a LIMIT bounds the RESULT, not the
+    // scan. Pushing it down truncates the rows the aggregate folds over and silently answers with the limit
+    // instead of the aggregate: `RETURN count(f) LIMIT 1` returned 1 rather than the count. (The executor's
+    // own scan-limit gate already refuses this; the pushdown pass did not.)
+    for (const auto& item : query.returns) {
+        if (has_aggregates(item.expr.get())) return;
+    }
+
+    // Push the whole page window (offset + limit), not the bare limit: an OFFSET skips past the first rows
+    // of the result, so a scan bounded at `limit` would stop before reaching the rows the page returns.
+    const uint64_t skip = query.offset.value_or(0);
+    if (skip > std::numeric_limits<uint64_t>::max() - *query.limit) return;
+    const std::optional<uint64_t> window = skip + *query.limit;
+
     if (query.matches.size() == 1) {
-        query.matches[0].limit = query.limit;
+        query.matches[0].limit = window;
         return;
     }
 
@@ -114,7 +130,7 @@ void LimitPushdownOptimizer::limit_pushdown_pass(GqlQuery& query) {
     bool all_mandatory = true;
     for (size_t i = 1; i < query.matches.size(); ++i) {
         const auto& match = query.matches[i];
-        if (match.is_optional || match.is_search) {
+        if (match.is_optional || match.is_search || match.is_propagate) {
             all_mandatory = false;
             break;
         }
@@ -127,22 +143,33 @@ void LimitPushdownOptimizer::limit_pushdown_pass(GqlQuery& query) {
             const auto& end_node = pattern.nodes[1];
             
             if (active_vars.count(start_node.variable) && edge.direction == EdgeDirection::RIGHT && !edge.is_variable_length &&
-                start_node.label_expr && start_node.label_expr->kind == LabelExprKind::LITERAL &&
                 end_node.label_expr && end_node.label_expr->kind == LabelExprKind::LITERAL &&
                 edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
-                
-                std::string s_label = start_node.label_expr->name;
+
+                // The start node anchors on an already-active variable. Its label is read off this
+                // pattern when spelled, otherwise -- when an earlier match bound the variable with a
+                // label and this join re-uses it bare -- recovered from the variable-to-label map.
+                std::string s_label;
+                if (start_node.label_expr && start_node.label_expr->kind == LabelExprKind::LITERAL) {
+                    s_label = start_node.label_expr->name;
+                } else {
+                    auto it = var_to_label.find(start_node.variable);
+                    if (it != var_to_label.end()) s_label = it->second;
+                }
+
                 std::string t_label = end_node.label_expr->name;
                 std::string r_type = edge.label_expr->name;
-                
+
                 bool match_mandatory = false;
-                for (const auto& rel : mandatory) {
-                    if (rel.source_label == s_label && rel.rel_type == r_type && rel.target_label == t_label) {
-                        match_mandatory = true;
-                        break;
+                if (!s_label.empty()) {
+                    for (const auto& rel : mandatory) {
+                        if (rel.source_label == s_label && rel.rel_type == r_type && rel.target_label == t_label) {
+                            match_mandatory = true;
+                            break;
+                        }
                     }
                 }
-                
+
                 if (match_mandatory) {
                     if (!end_node.variable.empty()) active_vars.insert(end_node.variable);
                     continue;
@@ -155,7 +182,7 @@ void LimitPushdownOptimizer::limit_pushdown_pass(GqlQuery& query) {
     }
 
     if (all_mandatory) {
-        query.matches[0].limit = query.limit;
+        query.matches[0].limit = window;
     }
 }
 

@@ -124,7 +124,7 @@ std::unique_ptr<Expression> remove_equality_recursive(std::unique_ptr<Expression
  * @return True if matches are isomorphic except for their last node variable.
  */
 bool are_matches_isomorphic_except_target(const MatchStatement& m1, const MatchStatement& m2, std::string& target1, std::string& target2) {
-    if (m1.is_optional != m2.is_optional || m1.is_search != m2.is_search) return false;
+    if (m1.is_optional != m2.is_optional || m1.is_search != m2.is_search || m1.is_propagate != m2.is_propagate) return false;
     if (m1.pattern.nodes.size() != m2.pattern.nodes.size() ||
         m1.pattern.edges.size() != m2.pattern.edges.size()) return false;
     if (m1.pattern.nodes.empty()) return false;

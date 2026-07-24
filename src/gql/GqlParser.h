@@ -43,22 +43,32 @@ private:
     GqlQuery parse_intersect();
     GqlQuery parse_single_query();
     void parse_return_items(GqlQuery& query, bool require_alias_for_expressions);
+    void parse_group_by(GqlQuery& query);
     void parse_order_by(GqlQuery& query);
     void parse_limit(GqlQuery& query);
     MatchStatement parse_match();
     PathPattern parse_path_pattern();
     PatternNode parse_node_pattern();
-    std::map<std::string, property_type_t> parse_properties();
+    /// Parses a property map. Literal values are returned directly; when property_exprs is provided,
+    /// a non-literal value (a bound variable, a LET binding, any computed expression) is parsed into it
+    /// instead of being rejected.
+    std::map<std::string, property_type_t> parse_properties(
+        std::map<std::string, std::shared_ptr<Expression>>* property_exprs = nullptr);
     void parse_edge_details(PatternEdge& edge);
-    std::shared_ptr<LabelExpression> parse_label_expression();
-    std::shared_ptr<LabelExpression> parse_label_or();
-    std::shared_ptr<LabelExpression> parse_label_and();
-    std::shared_ptr<LabelExpression> parse_label_factor();
+    /// Parses a label expression. `allow_keyword_ops` enables the `AND`/`OR`/`NOT` spellings alongside the
+    /// symbolic `&`/`|`/`!`: they are unambiguous inside a pattern, where a delimiter ends the label, but
+    /// not in an expression -- `n IS LABELED Person OR n.rank > 5` must read the OR as the boolean
+    /// operator it is, so IS LABELED passes false and accepts only the symbolic forms.
+    std::shared_ptr<LabelExpression> parse_label_expression(bool allow_keyword_ops = true);
+    std::shared_ptr<LabelExpression> parse_label_or(bool allow_keyword_ops);
+    std::shared_ptr<LabelExpression> parse_label_and(bool allow_keyword_ops);
+    std::shared_ptr<LabelExpression> parse_label_factor(bool allow_keyword_ops);
 
     // Expression parsing (Precedence climbing)
     std::unique_ptr<Expression> parse_expression();
     std::unique_ptr<Expression> parse_or();
     std::unique_ptr<Expression> parse_and();
+    std::unique_ptr<Expression> parse_not();
     std::unique_ptr<Expression> parse_comparison();
     std::unique_ptr<Expression> parse_add_sub();
     std::unique_ptr<Expression> parse_mul_div();

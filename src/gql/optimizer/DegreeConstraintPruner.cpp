@@ -35,6 +35,16 @@ void rewrite_size_expressions_recursive(T& expr, GqlQuery& query) {
                 
                 std::string v = start_node.variable;
                 if (!v.empty() && !edge.is_variable_length) {
+                    // The degree count is a pure edge count by rel-type + direction; it cannot see the far
+                    // node or filter the edge. If either carries a constraint, leave the SizeExpr in place so
+                    // the correlated precompute counts actual matching pattern rows instead (a bare degree
+                    // here would silently ignore the far-node label/property and overcount).
+                    const auto& far_node = match.pattern.nodes[1];
+                    if (far_node.label_expr || !far_node.properties.empty() ||
+                        !far_node.property_filters.empty() || far_node.where_expr ||
+                        !edge.properties.empty() || !edge.property_filters.empty() || edge.where_expr) {
+                        return;
+                    }
                     std::string rel_type;
                     if (edge.label_expr && edge.label_expr->kind == LabelExprKind::LITERAL) {
                         rel_type = edge.label_expr->name;

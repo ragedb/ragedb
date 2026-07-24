@@ -298,6 +298,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "WITH") type = TokenType::WITH;
             else if (upper_name == "DISTINCT") type = TokenType::DISTINCT;
             else if (upper_name == "LIMIT") type = TokenType::LIMIT;
+            else if (upper_name == "OFFSET" || upper_name == "SKIP") type = TokenType::OFFSET;
             else if (upper_name == "ASC" || upper_name == "ASCENDING") type = TokenType::ASC;
             else if (upper_name == "DESC" || upper_name == "DESCENDING") type = TokenType::DESC;
             else if (upper_name == "TRUE") type = TokenType::TRUE_KW;
@@ -308,6 +309,8 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "NOT") type = TokenType::NOT;
             else if (upper_name == "AS") type = TokenType::AS;
             else if (upper_name == "IS") type = TokenType::IS;
+            else if (upper_name == "CAST") type = TokenType::CAST;
+            else if (upper_name == "LABELED") type = TokenType::LABELED;
             // ISO GQL linear-query keywords
             else if (upper_name == "NEXT") type = TokenType::NEXT_KW;
             else if (upper_name == "LET") type = TokenType::LET_KW;
@@ -326,6 +329,7 @@ std::vector<Token> GqlLexer::tokenize(const std::string& input) {
             else if (upper_name == "DETACH") type = TokenType::DETACH;
             else if (upper_name == "UNION") type = TokenType::UNION;
             else if (upper_name == "INTERSECT") type = TokenType::INTERSECT;
+            else if (upper_name == "EXCEPT") type = TokenType::EXCEPT;
             else if (upper_name == "ALL") type = TokenType::ALL_KW;
             else if (upper_name == "SHORTEST") type = TokenType::SHORTEST_KW;
             else if (upper_name == "ANY") type = TokenType::ANY_KW;

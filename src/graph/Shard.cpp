@@ -390,6 +390,8 @@ namespace ragedb {
         // Load CSV
         lua.set_function("LoadCSV", &Shard::LoadCSVViaLua, this);
         lua.set_function("StreamCSV", &Shard::StreamCSVViaLua, this);
+        // Load RDF (N-Triples/N-Quads)
+        lua.set_function("LoadNTriples", &Shard::LoadNTriplesViaLua, this);
 
         lua.set_function("KHopIds", sol::overload(
             [this](Node node, uint64_t hops) { return this->KHopIdsViaLua(node.getId(), hops); },

@@ -29,9 +29,14 @@ namespace {
  * @param query The GQL query.
  * @return A set containing all declared edge variables.
  */
-std::set<std::string> get_edge_variables(const GqlQuery& query) {
+std::set<std::string> get_edge_variables(const GqlQuery& query, bool skip_optional = false) {
     std::set<std::string> edge_vars;
     for (const auto& match : query.matches) {
+        // An OPTIONAL edge that cannot match does not empty the query -- it null-extends the anchor rows.
+        // So a contradiction on an optional edge's attributes must not mark the whole query no_op; only a
+        // required (non-optional) edge that cannot match makes the query empty. (A contradiction the
+        // post-projection WHERE enforces is the query-level pruner's concern, not an edge-attribute one.)
+        if (skip_optional && match.is_optional) continue;
         for (const auto& edge : match.pattern.edges) {
             if (!edge.variable.empty()) {
                 edge_vars.insert(edge.variable);
@@ -54,7 +59,7 @@ std::set<std::string> get_edge_variables(const GqlQuery& query) {
 void EdgeContradictionPruner::edge_contradiction_pruning_pass(GqlQuery& query) {
     if (query.skip_semantic || query.kind != QueryKind::SINGLE) return;
     
-    auto edge_vars = get_edge_variables(query);
+    auto edge_vars = get_edge_variables(query, /*skip_optional=*/true);
     if (edge_vars.empty()) return;
     
     auto q_vars = collect_all_query_vars(query);

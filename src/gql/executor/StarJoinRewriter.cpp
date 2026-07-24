@@ -18,6 +18,7 @@
 #include "PathTraverser.h"
 #include "JoinHelpers.h"
 #include <seastar/core/when_all.hh>
+#include <seastar/core/thread.hh>
 #include <algorithm>
 #include <chrono>
 
@@ -35,9 +36,10 @@ std::optional<StarJoinCandidate> find_star_join_candidate(
     std::vector<std::set<std::string>> remaining_vars;
     for (size_t i = match_idx; i < matches.size(); ++i) {
         std::set<std::string> vars;
-        if (matches[i].is_search) {
+        if (matches[i].is_search || matches[i].is_propagate) {
             if (!matches[i].yield_var.empty()) vars.insert(matches[i].yield_var);
             if (!matches[i].yield_score_var.empty()) vars.insert(matches[i].yield_score_var);
+            if (!matches[i].yield_depth_var.empty()) vars.insert(matches[i].yield_depth_var);
         } else {
             for (const auto& node : matches[i].pattern.nodes) {
                 if (!node.variable.empty()) vars.insert(node.variable);
@@ -186,6 +188,104 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
                 }
             }
             return execute_match_chain_factorized(graph, std::move(matches), group_end_idx + 1, IntermediateResult(std::move(next_rows)), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr);
+        });
+    }
+    if (stmt.is_propagate) {
+        // CALL algo.propagate(...) YIELD node, value, depth: a value-propagating first-claim BFS whose
+        // arguments are correlated expressions evaluated per incoming row. The kernel
+        // (Shard::PropagateBFSPeered) blocks on cross-shard futures internally (.get0()), which aborts on
+        // the reactor thread (the HTTP/GQL path, smp>1). Run it inside a seastar::thread via seastar::async
+        // -- the same bridge the alglib reachability/equivalence fast paths use -- then continue
+        // asynchronously, fetching each reached node and cross-joining the yielded columns with the row.
+        if (stmt.propagate_args.size() < 8) {
+            throw std::runtime_error("algo.propagate expects at least 8 arguments "
+                                     "(seeds, values, relTypes, direction, maxDepth, valueProp, order, cap)");
+        }
+        std::vector<std::shared_ptr<Expression>> args = stmt.propagate_args;
+        std::string yield_node = stmt.yield_var;
+        std::string yield_value = stmt.yield_score_var;
+        std::string yield_depth = stmt.yield_depth_var;
+
+        auto as_double = [](const GqlValue& v) -> double {
+            if (v.type == GqlValue::PROPERTY) {
+                if (std::holds_alternative<double>(v.property)) return std::get<double>(v.property);
+                if (std::holds_alternative<int64_t>(v.property)) return static_cast<double>(std::get<int64_t>(v.property));
+            }
+            return 0.0;
+        };
+        auto as_string = [](const GqlValue& v) -> std::string {
+            if (v.type == GqlValue::PROPERTY && std::holds_alternative<std::string>(v.property))
+                return std::get<std::string>(v.property);
+            return "";
+        };
+        auto as_int = [](const GqlValue& v) -> int64_t {
+            if (v.type == GqlValue::PROPERTY) {
+                if (std::holds_alternative<int64_t>(v.property)) return std::get<int64_t>(v.property);
+                if (std::holds_alternative<double>(v.property)) return static_cast<int64_t>(std::get<double>(v.property));
+            }
+            return 0;
+        };
+        auto to_lower = [](std::string s) {
+            std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+            return s;
+        };
+
+        incoming.ensure_flat();
+        std::vector<seastar::future<std::vector<GqlRow>>> row_futs;
+        for (const auto& in_row : incoming.rows) {
+            std::vector<uint64_t> seeds;
+            if (auto elems = as_list_elements(evaluate_expression(in_row, args[0].get()))) {
+                for (const auto& e : *elems) if (e.type == GqlValue::NODE && e.node) seeds.push_back(e.node->getId());
+            }
+            std::vector<double> vals;
+            if (auto elems = as_list_elements(evaluate_expression(in_row, args[1].get()))) {
+                for (const auto& e : *elems) vals.push_back(as_double(e));
+            }
+            std::vector<std::string> rel_types;
+            if (auto elems = as_list_elements(evaluate_expression(in_row, args[2].get()))) {
+                for (const auto& e : *elems) rel_types.push_back(as_string(e));
+            }
+            std::string dir_s = to_lower(as_string(evaluate_expression(in_row, args[3].get())));
+            Direction direction = (dir_s == "in") ? Direction::IN : (dir_s == "both") ? Direction::BOTH : Direction::OUT;
+            uint32_t max_depth = static_cast<uint32_t>(as_int(evaluate_expression(in_row, args[4].get())));
+            std::string value_prop = as_string(evaluate_expression(in_row, args[5].get()));
+            bool order_desc = (to_lower(as_string(evaluate_expression(in_row, args[6].get()))) == "desc");
+            uint32_t trunc_limit = static_cast<uint32_t>(as_int(evaluate_expression(in_row, args[7].get())));
+
+            row_futs.push_back(
+                seastar::async([&graph, seeds = std::move(seeds), vals = std::move(vals), rel_types = std::move(rel_types),
+                                direction, max_depth, value_prop, order_desc, trunc_limit] {
+                    return graph.shard.local().PropagateBFSPeered(seeds, vals, rel_types, direction, max_depth,
+                                                                  value_prop, order_desc, trunc_limit, 0.0, "", 0, 0);
+                }).then([&graph, in_row, yield_node, yield_value, yield_depth](std::vector<Shard::PropagateResult> results) {
+                    std::vector<seastar::future<GqlRow>> per;
+                    per.reserve(results.size());
+                    for (const auto& r : results) {
+                        double value = r.value;
+                        int64_t depth = static_cast<int64_t>(r.depth);
+                        per.push_back(graph.shard.local().NodeGetPeered(r.node).then(
+                            [in_row, yield_node, yield_value, yield_depth, value, depth](Node node) {
+                                GqlRow row = in_row;
+                                row.bindings[yield_node] = GqlValue(std::move(node));
+                                if (!yield_value.empty()) row.bindings[yield_value] = GqlValue(property_type_t(value));
+                                if (!yield_depth.empty()) row.bindings[yield_depth] = GqlValue(property_type_t(depth));
+                                return row;
+                            }));
+                    }
+                    return seastar::when_all_succeed(per.begin(), per.end())
+                        .then([](std::vector<GqlRow> rows) { return rows; });
+                })
+            );
+        }
+
+        return seastar::when_all_succeed(row_futs.begin(), row_futs.end())
+        .then([&graph, matches = std::move(matches), match_idx, limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr](std::vector<std::vector<GqlRow>> nested) mutable {
+            std::vector<GqlRow> next_rows;
+            for (auto& v : nested) {
+                next_rows.insert(next_rows.end(), std::make_move_iterator(v.begin()), std::make_move_iterator(v.end()));
+                if (limit > 0 && next_rows.size() >= limit) { next_rows.resize(limit); break; }
+            }
+            return execute_match_chain_factorized(graph, std::move(matches), match_idx + 1, IntermediateResult(std::move(next_rows)), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr);
         });
     }
     if (stmt.is_search) {
@@ -337,10 +437,33 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
             break;
         }
     }
-    for (const auto& edge : stmt.pattern.edges) {
-        if (!edge.variable.empty() && incoming_vars.count(edge.variable)) {
-            has_shared = true;
-            break;
+    if (!has_shared) {
+        for (const auto& edge : stmt.pattern.edges) {
+            if (!edge.variable.empty() && incoming_vars.count(edge.variable)) {
+                has_shared = true;
+                break;
+            }
+        }
+    }
+
+    // A property map value that is an expression is resolved against the incoming row, so a statement
+    // carrying one is never independent of those rows even when it shares no pattern variable with them:
+    // running it standalone would evaluate the expression against an empty row and match nothing. Drive
+    // it per row instead.
+    if (!has_shared) {
+        for (const auto& node : stmt.pattern.nodes) {
+            if (!node.property_exprs.empty()) {
+                has_shared = true;
+                break;
+            }
+        }
+    }
+    if (!has_shared) {
+        for (const auto& edge : stmt.pattern.edges) {
+            if (!edge.property_exprs.empty()) {
+                has_shared = true;
+                break;
+            }
         }
     }
 
@@ -403,7 +526,7 @@ seastar::future<IntermediateResult> execute_match_chain_factorized(
 
         auto start = std::chrono::steady_clock::now();
         return seastar::when_all_succeed(futs.begin(), futs.end())
-        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), limit, pruner, sort_property, sort_ascending, sort_by_id, query_ptr, start, stmt](std::vector<std::vector<GqlRow>> nested) mutable {
+        .then([&graph, matches = std::move(matches), match_idx, incoming = std::move(incoming), limit, pruner, sort_property, sort_by_id, query_ptr, start, stmt](std::vector<std::vector<GqlRow>> nested) mutable {
             std::vector<GqlRow> next_rows;
             for (const auto& vec : nested) {
                 next_rows.insert(next_rows.end(), vec.begin(), vec.end());

@@ -15,8 +15,10 @@
  */
 
 #include "GqlTypechecker.h"
+#include <limits>
 #include <stdexcept>
 #include <algorithm>
+#include <optional>
 
 namespace ragedb::gql {
 
@@ -311,7 +313,21 @@ void GqlTypechecker::check_path_pattern(const PathPattern& path_pattern) {
             }
         }
         if (edge.cost_expr) {
+            // In a COST expression the edge variable denotes a SINGLE relationship (the cost is applied
+            // per edge), even for a variable-length edge where the variable is otherwise a
+            // RELATIONSHIP_LIST. Rebind it to RELATIONSHIP for the check, then restore.
+            const bool rebind = edge.is_variable_length && !edge.variable.empty();
+            std::optional<VariableSchema> saved;
+            if (rebind) {
+                auto it = env.find(edge.variable);
+                if (it != env.end()) saved = it->second;
+                env[edge.variable] = VariableSchema{GqlType::RELATIONSHIP, edge_labels};
+            }
             GqlType t = check_expression(*edge.cost_expr);
+            if (rebind) {
+                if (saved) env[edge.variable] = *saved;
+                else env.erase(edge.variable);
+            }
             if (t != GqlType::INTEGER && t != GqlType::DOUBLE && t != GqlType::ANY) {
                 throw std::runtime_error("COST expression must evaluate to a numeric type, got " + to_string(t));
             }
@@ -437,6 +453,25 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
                 }
                 return agg.fn_kind == AggregateKind::AVG ? GqlType::DOUBLE : t;
             }
+            if (agg.fn_kind == AggregateKind::STDDEV_POP || agg.fn_kind == AggregateKind::STDDEV_SAMP) {
+                if (!is_numeric(t)) {
+                    throw std::runtime_error("Aggregation input must be numeric, got " + to_string(t));
+                }
+                return GqlType::DOUBLE;
+            }
+            if (agg.fn_kind == AggregateKind::PERCENTILE_CONT || agg.fn_kind == AggregateKind::PERCENTILE_DISC) {
+                if (!is_numeric(t)) {
+                    throw std::runtime_error("Percentile input must be numeric, got " + to_string(t));
+                }
+                if (!agg.arg2) {
+                    throw std::runtime_error("Percentile function expects a fraction argument");
+                }
+                GqlType ft = check_expression(*agg.arg2);
+                if (!is_numeric(ft)) {
+                    throw std::runtime_error("Percentile fraction must be numeric, got " + to_string(ft));
+                }
+                return GqlType::DOUBLE;
+            }
             if (agg.fn_kind == AggregateKind::MIN || agg.fn_kind == AggregateKind::MAX) {
                 if (t == GqlType::NODE || t == GqlType::RELATIONSHIP || t == GqlType::PATH || is_list(t)) {
                     throw std::runtime_error("Cannot aggregate non-scalar type " + to_string(t));
@@ -445,11 +480,19 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
             }
             break;
         }
+        case ExpressionKind::SIZE_OP: {
+            // COUNT { ... } / size([...]) yields a match count.
+            return GqlType::INTEGER;
+        }
         case ExpressionKind::EXISTS: {
             const auto& exists = static_cast<const ExistsExpr&>(expr);
             auto parent_env = this->env;
             for (const auto& match : exists.matches) {
-                if (match.is_search) {
+                if (match.is_propagate) {
+                    meet_variable(match.yield_var, GqlType::NODE, {});
+                    if (!match.yield_score_var.empty()) meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
+                    if (!match.yield_depth_var.empty()) meet_variable(match.yield_depth_var, GqlType::INTEGER, {});
+                } else if (match.is_search) {
                     bool is_node = graph.shard.local().NodeTypesGet().count(match.search_type) > 0;
                     bool is_rel = graph.shard.local().RelationshipTypesGet().count(match.search_type) > 0;
                     if (!is_node && !is_rel) {
@@ -476,12 +519,21 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
         }
         case ExpressionKind::FUNCTION_CALL: {
             const auto& fc = static_cast<const FunctionCallExpr&>(expr);
+            // property_exists(element, propertyName): the second argument is a property-name identifier,
+            // not a bound value, so it is not resolved as a variable.
+            if (fc.name == "property_exists") {
+                if (!fc.args.empty()) check_expression(*fc.args[0]);
+                return GqlType::BOOLEAN;
+            }
             for (const auto& a : fc.args) {
                 check_expression(*a);
             }
             if (fc.name == "length" || fc.name == "zoned_datetime" || fc.name == "datetime" ||
-                fc.name == "date" || fc.name == "localdatetime") {
+                fc.name == "date" || fc.name == "localdatetime" || fc.name == "element_id") {
                 return GqlType::INTEGER;
+            }
+            if (fc.name == "all_different" || fc.name == "same") {
+                return GqlType::BOOLEAN;
             }
             return GqlType::ANY;
         }
@@ -501,6 +553,68 @@ GqlType GqlTypechecker::check_expression(const Expression& expr) {
             check_expression(*in.value);
             check_expression(*in.list);
             return GqlType::BOOLEAN;
+        }
+        case ExpressionKind::CAST: {
+            const auto& c = static_cast<const CastExpr&>(expr);
+            check_expression(*c.value);
+            switch (c.target) {
+                case CastType::STRING:  return GqlType::STRING;
+                case CastType::INTEGER: return GqlType::INTEGER;
+                case CastType::FLOAT:   return GqlType::DOUBLE;
+                case CastType::BOOLEAN: return GqlType::BOOLEAN;
+            }
+            return GqlType::ANY;
+        }
+        case ExpressionKind::IS_LABELED: {
+            const auto& l = static_cast<const IsLabeledExpr&>(expr);
+            check_expression(*l.value);
+            return GqlType::BOOLEAN;
+        }
+        case ExpressionKind::IS_DIRECTED: {
+            const auto& d = static_cast<const IsDirectedExpr&>(expr);
+            check_expression(*d.value);
+            return GqlType::BOOLEAN;
+        }
+        case ExpressionKind::IS_SOURCE_DEST: {
+            const auto& s = static_cast<const IsSourceDestExpr&>(expr);
+            check_expression(*s.value);
+            check_expression(*s.edge);
+            return GqlType::BOOLEAN;
+        }
+        case ExpressionKind::LIST_LITERAL: {
+            const auto& le = static_cast<const ListExpr&>(expr);
+            for (const auto& element : le.elements) {
+                if (element) check_expression(*element);
+            }
+            return GqlType::ANY;
+        }
+        case ExpressionKind::LIST_INDEX: {
+            const auto& ie = static_cast<const IndexExpr&>(expr);
+            if (ie.list) check_expression(*ie.list);
+            if (ie.index) check_expression(*ie.index);
+            return GqlType::ANY;
+        }
+        case ExpressionKind::LIST_COMPREHENSION: {
+            const auto& lc = static_cast<const ListComprehensionExpr&>(expr);
+            if (lc.list) check_expression(*lc.list);
+            // The iteration variable is bound in a child scope; register it (type ANY, like FOR) so the
+            // filter/projection can reference it. It is not statically typed -- the list may hold anything.
+            if (!lc.variable.empty()) meet_variable(lc.variable, GqlType::ANY, {});
+            if (lc.filter) check_expression(*lc.filter);
+            if (lc.projection) check_expression(*lc.projection);
+            return GqlType::ANY;
+        }
+        case ExpressionKind::QUANTIFIED_PREDICATE: {
+            const auto& qp = static_cast<const QuantifiedPredicateExpr&>(expr);
+            if (qp.list) check_expression(*qp.list);
+            if (!qp.variable.empty()) meet_variable(qp.variable, GqlType::ANY, {});
+            if (qp.predicate) check_expression(*qp.predicate);
+            return GqlType::BOOLEAN;
+        }
+        case ExpressionKind::TEMPORAL_FIELD: {
+            const auto& tf = static_cast<const TemporalFieldExpr&>(expr);
+            if (tf.value) check_expression(*tf.value);
+            return GqlType::INTEGER;
         }
     }
     return GqlType::ANY;
@@ -636,9 +750,41 @@ void GqlTypechecker::check_segment_body(const GqlQuery& query) {
         return;
     }
 
+    // Scoped subquery `CALL (imports) { ... }`: validate the subquery seeing only the imported outer
+    // variables, then expose its projected output columns to this segment (as ANY, since a UNION body's
+    // branch types are checked in their own scopes). This lets the segment's own RETURN reference them.
+    if (query.call_subquery) {
+        GqlTypechecker sub_tc(graph);
+        for (const auto& v : query.call_import_vars) {
+            auto it = env.find(v);
+            if (it != env.end()) sub_tc.env[v] = it->second;
+        }
+        sub_tc.check_query(*query.call_subquery);
+        const GqlQuery* branch = query.call_subquery.get();
+        while (branch->kind != QueryKind::SINGLE && branch->left) {
+            branch = branch->left.get();
+        }
+        for (const auto& item : branch->returns) {
+            std::string name;
+            if (item.alias) {
+                name = *item.alias;
+            } else if (item.expr && item.expr->kind == ExpressionKind::VARIABLE) {
+                name = static_cast<const VariableExpr*>(item.expr.get())->name;
+            }
+            if (!name.empty()) {
+                meet_variable(name, GqlType::ANY, {});
+            }
+        }
+    }
+
     // Process all MATCH patterns first to populate variables in env
     for (const auto& match : query.matches) {
-        if (match.is_search) {
+        if (match.is_propagate) {
+            // algo.propagate yields a node, a double value and an integer depth.
+            meet_variable(match.yield_var, GqlType::NODE, {});
+            if (!match.yield_score_var.empty()) meet_variable(match.yield_score_var, GqlType::DOUBLE, {});
+            if (!match.yield_depth_var.empty()) meet_variable(match.yield_depth_var, GqlType::INTEGER, {});
+        } else if (match.is_search) {
             bool is_node = graph.shard.local().NodeTypesGet().count(match.search_type) > 0;
             bool is_rel = graph.shard.local().RelationshipTypesGet().count(match.search_type) > 0;
             if (!is_node && !is_rel) {
@@ -670,6 +816,18 @@ void GqlTypechecker::check_segment_body(const GqlQuery& query) {
         }
     }
 
+    // Register ISO GQL FOR variables before LET, matching execution order: FOR expands the working table
+    // first, so a LET may reference the element variable. The element type is not known statically (the
+    // list may hold anything), so it is ANY.
+    for (const auto& binding : query.for_bindings) {
+        if (binding.list_expr) {
+            check_expression(*binding.list_expr);
+        }
+        if (!binding.variable.empty()) {
+            meet_variable(binding.variable, GqlType::ANY, {});
+        }
+    }
+
     // Register ISO GQL LET bindings so the segment's WHERE/FILTER/RETURN can reference them.
     for (const auto& let : query.let_bindings) {
         GqlType t = check_expression(*let.expr);
@@ -694,6 +852,11 @@ void GqlTypechecker::check_segment_body(const GqlQuery& query) {
     // Process RETURN items
     for (const auto& ret : query.returns) {
         check_return_item(ret);
+    }
+
+    // Process GROUP BY: each grouping variable must be bound.
+    for (const auto& g : query.group_by) {
+        if (g) check_expression(*g);
     }
 
     // Process ORDER BY

@@ -204,7 +204,7 @@ TEST_CASE("GQL Static Typechecker Tests", "[gql_typechecker]") {
     graph.Stop().get();
 }
 
-TEST_CASE("Typechecker is linear-query (NEXT) aware (task 022)", "[gql_typechecker][task022]") {
+TEST_CASE("Typechecker is linear-query (NEXT) aware", "[gql_typechecker]") {
     auto graph = Graph("gql_typechecker_with_test");
     graph.Start().get();
     graph.Clear();
@@ -242,7 +242,7 @@ TEST_CASE("Typechecker is linear-query (NEXT) aware (task 022)", "[gql_typecheck
         REQUIRE_THROWS_WITH(GqlTypechecker::typecheck(graph, query), Catch::Contains("r"));
     }
 
-    SECTION("COUNT { } degree-rewrite virtual property passes typecheck (task 032)") {
+    SECTION("COUNT { } degree-rewrite virtual property passes typecheck") {
         // The optimizer rewrites the simple-pattern COUNT{} into a synthetic `_deg_p_..._OUT` degree
         // property; the typechecker must accept it (it is populated at execution time, not declared in
         // the schema). Without the fix this throws "Property '_deg_p_FRIEND_OF_OUT' does not exist".

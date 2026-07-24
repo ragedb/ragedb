@@ -19,6 +19,7 @@
 #include "../../src/gql/GqlParser.h"
 #include "../../src/gql/GqlOptimizer.h"
 #include "../../src/gql/GqlExecutor.h"
+#include "../../src/gql/executor/PathTraverser.h"
 
 using namespace ragedb;
 using namespace ragedb::gql;
@@ -78,13 +79,27 @@ TEST_CASE("GQL Execution Shortest Path Tests", "[gql_executor_shortest_path]") {
     graph.shard.local().RelationshipAddPeered("Links", lunaria, solara, "{}").get();
 
     SECTION("ANY SHORTEST path query") {
+        // Arcadia->Eldoria has two shortest paths (via Solara and via Mirage). ANY returns one of them.
         std::string query_str = "MATCH p = ANY SHORTEST (a)-[:Links]-{1,10}(b) WHERE a.name = 'Arcadia' AND b.name = 'Eldoria' RETURN p";
         auto query = GqlParser::parse(query_str);
         GqlOptimizer::optimize(query);
         std::string results = GqlExecutor::execute(graph, std::move(query)).get();
         REQUIRE(results.find("Arcadia") != std::string::npos);
-        REQUIRE(results.find("Solara") != std::string::npos);
         REQUIRE(results.find("Eldoria") != std::string::npos);
+        REQUIRE((results.find("Solara") != std::string::npos || results.find("Mirage") != std::string::npos));
+    }
+
+    SECTION("ANY SHORTEST with an unbounded quantifier terminates (IC13 OOM)") {
+        // `{1,}` has no upper bound. A path-enumerating BFS fans out by the average degree each level
+        // and exhausts the heap before reaching the destination; the ANY search must instead keep one
+        // path per node so the frontier stays bounded and it returns the single 2-hop shortest path.
+        std::string query_str = "MATCH p = ANY SHORTEST (a)-[:Links]-{1,}(b) WHERE a.name = 'Arcadia' AND b.name = 'Eldoria' RETURN p";
+        auto query = GqlParser::parse(query_str);
+        GqlOptimizer::optimize(query);
+        std::string results = GqlExecutor::execute(graph, std::move(query)).get();
+        REQUIRE(results.find("Arcadia") != std::string::npos);
+        REQUIRE(results.find("Eldoria") != std::string::npos);
+        REQUIRE((results.find("Solara") != std::string::npos || results.find("Mirage") != std::string::npos));
     }
 
     SECTION("ALL SHORTEST paths query") {
@@ -110,6 +125,77 @@ TEST_CASE("GQL Execution Shortest Path Tests", "[gql_executor_shortest_path]") {
         GqlOptimizer::optimize(query);
         std::string results = GqlExecutor::execute(graph, std::move(query)).get();
         REQUIRE(results.find("Arcadia") != std::string::npos);
+    }
+
+    // One bound start against an unbound endpoint runs a separate search per candidate pair -- the
+    // shape that made a person-to-every-Person-of-a-first-name query exhaust the heap. The searches
+    // now run with a bounded number in flight, and neither the rows nor their order may depend on
+    // that bound.
+    SECTION("many-endpoint search is invariant under the concurrency bound") {
+        std::string query_str = "MATCH p = ANY SHORTEST (a)-[:Links]-{1,10}(b) WHERE a.name = 'Arcadia' RETURN b.name AS name, length(p) AS d";
+
+        const size_t saved_concurrency = gql_shortest_path_concurrency;
+        std::string serial;
+        std::string bounded;
+        try {
+            gql_shortest_path_concurrency = 1;
+            auto serial_query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(serial_query);
+            serial = GqlExecutor::execute(graph, std::move(serial_query)).get();
+
+            gql_shortest_path_concurrency = 4;
+            auto bounded_query = GqlParser::parse(query_str);
+            GqlOptimizer::optimize(bounded_query);
+            bounded = GqlExecutor::execute(graph, std::move(bounded_query)).get();
+        } catch (...) {
+            gql_shortest_path_concurrency = saved_concurrency;
+            throw;
+        }
+        gql_shortest_path_concurrency = saved_concurrency;
+
+        REQUIRE(serial == bounded);
+
+        // Arcadia reaches every city except the isolated Nexis, so each reachable endpoint yields a
+        // row and the unreachable one yields none.
+        REQUIRE(serial.find("Eldoria") != std::string::npos);
+        REQUIRE(serial.find("Nebula") != std::string::npos);
+        REQUIRE(serial.find("Lunaria") != std::string::npos);
+        REQUIRE(serial.find("Nexis") == std::string::npos);
+    }
+
+    guard.stop();
+}
+
+// `ANY SHORTEST ... COST r.w` must select the minimum-weight path (Dijkstra), not the fewest-hops path.
+// The direct edge is one hop but expensive; the two-hop detour is cheaper, so the weighted search must
+// return the two-hop path. (Previously ANY ignored COST and returned the one-hop path.)
+TEST_CASE("GQL weighted ANY SHORTEST COST picks the cheapest path, not fewest hops",
+          "[gql_executor_shortest_path]") {
+    auto graph = Graph("gql_test_weighted_shortest_path");
+    graph.Start().get();
+    graph.Clear();
+    GraphStopGuard guard(graph);
+
+    graph.shard.local().NodeTypeInsertPeered("N").get();
+    graph.shard.local().NodePropertyTypeAddPeered("N", "id", "integer").get();
+    graph.shard.local().RelationshipTypeInsertPeered("R").get();
+    graph.shard.local().RelationshipPropertyTypeAddPeered("R", "w", "double").get();
+
+    uint64_t a = graph.shard.local().NodeAddPeered("N", "a", "{\"id\": 1}").get();
+    uint64_t b = graph.shard.local().NodeAddPeered("N", "b", "{\"id\": 2}").get();
+    uint64_t d = graph.shard.local().NodeAddPeered("N", "d", "{\"id\": 4}").get();
+    graph.shard.local().RelationshipAddPeered("R", a, d, "{\"w\": 10.0}").get();  // 1 hop, cost 10
+    graph.shard.local().RelationshipAddPeered("R", a, b, "{\"w\": 1.0}").get();   // }
+    graph.shard.local().RelationshipAddPeered("R", b, d, "{\"w\": 1.0}").get();   // } 2 hops, cost 2
+
+    SECTION("cheapest weighted path is chosen over fewer hops") {
+        std::string q = "MATCH p = ANY SHORTEST (src:N {id: 1})-[r:R]->{1,5}(dst:N {id: 4}) COST r.w "
+                        "RETURN length(p) AS hops";
+        auto query = GqlParser::parse(q);
+        GqlOptimizer::optimize(query);
+        std::string res = GqlExecutor::execute(graph, std::move(query)).get();
+        INFO("res: " << res);
+        REQUIRE(res.find("\"hops\": 2") != std::string::npos);   // a->b->d (cost 2), not a->d (cost 10)
     }
 
     guard.stop();

@@ -37,7 +37,7 @@ static void seed_caches(const std::string& rel_type) {
     REQUIRE(TransitiveReachabilityCache::local().has(rel_type));
 }
 
-TEST_CASE("topology mutations invalidate the semantic caches", "[gql_cache_invalidation][task006][task007]") {
+TEST_CASE("topology mutations invalidate the semantic caches", "[gql_cache_invalidation]") {
     auto graph = Graph("gql_cache_invalidation_test");
     graph.Start().get();
     graph.Clear();

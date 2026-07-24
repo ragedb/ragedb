@@ -87,13 +87,17 @@ namespace ragedb {
         auto nodes = AllNodeIdsPeered(0, max_nodes).get0();
         std::vector<Edge> edges = GetGraphEdges(rel_type, edge_concept, src_rel, dst_rel, weight_prop, directed, weighted);
 
-        // Build internal adjacency lookup map
+        // Build internal adjacency lookup map. This runs synchronously inside a seastar::thread
+        // (the caller reached it through .get0()); yield periodically so the O(E) build and the
+        // O(V*(V+E)) BFS sweep below do not monopolise the reactor for their whole duration.
         std::map<uint64_t, std::vector<uint64_t>> adj;
+        uint64_t work = 0;
         for (const auto& e : edges) {
             adj[e.src].push_back(e.dst);
             if (!directed) {
                 adj[e.dst].push_back(e.src);
             }
+            if ((++work & 0xFFFF) == 0) seastar::thread::maybe_yield();
         }
 
         std::vector<std::pair<uint64_t, uint64_t>> reachable_pairs;
@@ -114,9 +118,11 @@ namespace ragedb {
                         visited.insert(v);
                         Q.push(v);
                         reachable_pairs.push_back({s, v});
+                        if ((++work & 0xFFFF) == 0) seastar::thread::maybe_yield();
                     }
                 }
             }
+            seastar::thread::maybe_yield();
         }
         return reachable_pairs;
     }
@@ -158,15 +164,19 @@ namespace ragedb {
             }
         };
 
-        // Process all edges
+        // Process all edges. Runs in a seastar::thread (caller used .get0()); yield periodically so
+        // the O(E) union pass and the O(V) gather below stay cooperative on large graphs.
+        uint64_t work = 0;
         for (const auto& e : edges) {
             union_sets(e.src, e.dst);
+            if ((++work & 0xFFFF) == 0) seastar::thread::maybe_yield();
         }
 
         // Gather components
         std::map<uint64_t, uint64_t> wcc;
         for (uint64_t u : nodes) {
             wcc[u] = find_root(u);
+            if ((++work & 0xFFFF) == 0) seastar::thread::maybe_yield();
         }
         return wcc;
     }

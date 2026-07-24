@@ -38,8 +38,20 @@ struct ProjectionPruner {
 
     bool should_prune(const std::string& var) const {
         if (var.empty()) return false;
+        // A node/edge the user wrote anonymously is given an internal name (suffix "_user_empty") so its
+        // bindings do not collide. That name never appears in the user query the pruner analysed, so it is
+        // absent from accessed_props and whole_objects: pruning it would strip every property with an empty
+        // keep-set -- including the ones the node's own inline `{prop: v}` filter still needs to match. An
+        // anonymous element is never projected, so keeping its properties is always safe.
+        if (is_anonymous_generated(var)) return false;
         if (whole_objects.count(var)) return false;
         return true;
+    }
+
+    static bool is_anonymous_generated(const std::string& var) {
+        static const std::string suffix = "_user_empty";
+        return var.size() >= suffix.size() &&
+               var.compare(var.size() - suffix.size(), suffix.size(), suffix) == 0;
     }
 
     const std::set<std::string>& get_keys(const std::string& var) const {

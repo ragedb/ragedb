@@ -373,7 +373,7 @@ std::shared_ptr<LogicNode> clone_and_rename_logic_tree(const std::shared_ptr<Log
     copy->kind = node->kind;
     if (node->kind == LogicKind::LEAF) {
         int old_id = node->literal_id;
-        const auto& old_pred = predicates[old_id - 1];
+        const auto& old_pred = predicates[static_cast<size_t>(old_id - 1)];
         std::string new_var = (old_pred.variable == c_var) ? q_var : old_pred.variable;
         copy->literal_id = get_or_create_predicate(new_var, old_pred.property, old_pred.op, old_pred.value, predicates);
     } else {
@@ -413,7 +413,7 @@ std::shared_ptr<LogicNode> build_constraint_logic(const GqlQuery& c_query, const
 
 bool update_state(PropertyState& state, BinaryOpKind op, bool assigned_val, const property_type_t& value) {
     if (std::holds_alternative<int64_t>(value) || std::holds_alternative<double>(value)) {
-        double val = std::holds_alternative<int64_t>(value) ? std::get<int64_t>(value) : std::get<double>(value);
+        double val = std::holds_alternative<int64_t>(value) ? static_cast<double>(std::get<int64_t>(value)) : std::get<double>(value);
         Interval limit;
         if (op == BinaryOpKind::LT) {
             if (assigned_val) {
@@ -490,7 +490,7 @@ bool check_theory_consistency(const std::map<int, bool>& assignment, const std::
     std::map<std::pair<std::string, std::string>, PropertyState> states;
     for (const auto& [var, assigned_val] : assignment) {
         if (var >= 1 && var <= static_cast<int>(predicates.size())) {
-            const auto& pred = predicates[var - 1];
+            const auto& pred = predicates[static_cast<size_t>(var - 1)];
             auto key = std::make_pair(pred.variable, pred.property);
             if (!update_state(states[key], pred.op, assigned_val, pred.value)) {
                 return false;
@@ -586,6 +586,9 @@ void DomainConstraintReasoner::domain_constraint_reasoning_pass(GqlQuery& query)
     }
     
     for (const auto& match : query.matches) {
+        // Inline filters on an OPTIONAL pattern only constrain that optional binding; if unsatisfiable the
+        // optional pattern null-extends rather than emptying the query, so they must not join the formula.
+        if (match.is_optional) continue;
         for (const auto& node : match.pattern.nodes) {
             if (node.variable.empty()) continue;
             if (node.where_expr) {
@@ -621,6 +624,7 @@ void DomainConstraintReasoner::domain_constraint_reasoning_pass(GqlQuery& query)
                 
                 // Inspect all variables in the query to see if their label matches
                 for (const auto& match : query.matches) {
+                    if (match.is_optional) continue;   // an optional node null-extends; the constraint is vacuous there
                     for (const auto& node : match.pattern.nodes) {
                         if (node.variable.empty()) continue;
                         std::string q_label;
@@ -658,7 +662,7 @@ void DomainConstraintReasoner::domain_constraint_reasoning_pass(GqlQuery& query)
     
     // Convert logic tree to CNF via Tseitin
     CNFBuilder builder;
-    builder.next_var = predicates.size() + 1; // Start Tseitin vars after predicates to prevent clashes
+    builder.next_var = static_cast<int>(predicates.size() + 1); // Start Tseitin vars after predicates to prevent clashes
     int root_lit = builder.convert(root_formula);
     if (root_lit != 0) {
         builder.clauses.push_back(Clause{{root_lit}});

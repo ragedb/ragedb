@@ -486,6 +486,15 @@ namespace ragedb {
         std::vector<PathState> found_paths;
         uint64_t groups_found = 0; // Tracks levels/depth groups containing valid shortest paths.
 
+        // ANY needs only one shortest path, so keep the frontier to one path per node (a visited set)
+        // instead of enumerating the exponentially-many paths. Without this a `{1,}` (unbounded) search
+        // between two well-connected nodes fans the frontier out by the average degree each level and
+        // exhausts the heap before the destination is reached. ALL/K need every path, so they keep the
+        // full enumeration (already bounded to the shortest level by their early-termination below).
+        const bool one_path_per_node = (kind == ShortestPathKind::ANY);
+        std::unordered_set<uint64_t> visited;
+        visited.insert(id);
+
         // BFS traversal, expanding level-by-level up to the maximum permitted depth.
         for (uint64_t depth = 1; depth <= max_hops; ++depth) {
             if (current_paths.empty()) {
@@ -514,15 +523,21 @@ namespace ragedb {
                         continue;
                     }
 
-                    PathState new_path = path;
-                    new_path.node_ids.push_back(link.node_id);
-                    new_path.rel_ids.push_back(link.rel_id);
-
                     // If the neighbor is the destination node and we satisfy min_hops, record it as a found path.
                     if (link.node_id == id2 && depth >= min_hops) {
-                        paths_this_level.push_back(new_path);
+                        PathState new_path = path;
+                        new_path.node_ids.push_back(link.node_id);
+                        new_path.rel_ids.push_back(link.rel_id);
+                        paths_this_level.push_back(std::move(new_path));
                     } else {
-                        // Otherwise, queue it for expansion at the next BFS level.
+                        // For ANY, expand each node only once: a node already reached (at an earlier or the
+                        // current level) is on a path at least as short, so re-expanding it only duplicates work.
+                        if (one_path_per_node && !visited.insert(link.node_id).second) {
+                            continue;
+                        }
+                        PathState new_path = path;
+                        new_path.node_ids.push_back(link.node_id);
+                        new_path.rel_ids.push_back(link.rel_id);
                         next_paths.push_back(std::move(new_path));
                     }
                 }
@@ -534,8 +549,10 @@ namespace ragedb {
                 found_paths.insert(found_paths.end(), paths_this_level.begin(), paths_this_level.end());
 
                 // Evaluate early-termination conditions based on the requested ShortestPathKind.
-                // ANY / ALL: BFS guarantees these paths of minimal length are the shortest, so stop.
+                // ANY: any one shortest path -- keep a single one even if several reached the destination
+                // at this level. ALL: all minimal-length paths. BFS guarantees this level is the shortest.
                 if (kind == ShortestPathKind::ANY) {
+                    if (found_paths.size() > 1) found_paths.resize(1);
                     break;
                 }
                 if (kind == ShortestPathKind::ALL) {

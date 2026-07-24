@@ -111,7 +111,7 @@ void IrreflexiveContradictionPruner::irreflexive_contradiction_pass(GqlQuery& qu
 
     // Scan for self-loops on irreflexive relationships
     for (const auto& match : query.matches) {
-        if (match.is_optional || match.is_search || match.is_khop) continue;
+        if (match.is_optional || match.is_search || match.is_propagate || match.is_khop) continue;
         
         for (size_t i = 0; i < match.pattern.edges.size(); ++i) {
             const auto& edge = match.pattern.edges[i];

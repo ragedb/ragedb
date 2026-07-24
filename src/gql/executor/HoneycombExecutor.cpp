@@ -37,7 +37,9 @@ auto run_background_task(Func&& func) {
     auto fut = prom->get_future();
     unsigned shard_id = seastar::this_shard_id();
     
-    std::async(std::launch::async, [prom, shard_id, func = std::forward<Func>(func)]() mutable {
+    // The result is delivered through `prom` (posted back to this shard); the async future is intentionally
+    // discarded -- (void) to acknowledge the nodiscard rather than change the dispatch behaviour.
+    (void)std::async(std::launch::async, [prom, shard_id, func = std::forward<Func>(func)]() mutable {
         try {
             ResultType result = func();
             seastar::alien::run_on(*seastar::alien::internal::default_instance, shard_id, [prom, res = std::move(result)]() mutable noexcept {
@@ -76,8 +78,9 @@ static size_t galloping_seek(const std::vector<uint64_t>& values, size_t start, 
     }
 
     // Binary search in [prev, curr]
-    auto it = std::lower_bound(values.begin() + prev, values.begin() + curr + 1, target);
-    return std::distance(values.begin(), it);
+    auto it = std::lower_bound(values.begin() + static_cast<std::ptrdiff_t>(prev),
+                               values.begin() + static_cast<std::ptrdiff_t>(curr) + 1, target);
+    return static_cast<size_t>(std::distance(values.begin(), it));
 }
 
 // Iterator representing pointer at a trie level of a relation
@@ -105,20 +108,20 @@ static std::vector<uint64_t> leapfrog_intersect(std::vector<LeapfrogIterator>& i
         if (it.is_at_end()) return result;
     }
     
-    int M = iters.size();
-    std::vector<int> p(M);
-    for (int i = 0; i < M; ++i) p[i] = i;
-    
+    size_t M = iters.size();
+    std::vector<size_t> p(M);
+    for (size_t i = 0; i < M; ++i) p[i] = i;
+
     auto sort_p = [&]() {
-        std::sort(p.begin(), p.end(), [&](int a, int b) {
+        std::sort(p.begin(), p.end(), [&](size_t a, size_t b) {
             return iters[a].key() < iters[b].key();
         });
     };
     sort_p();
-    
+
     while (true) {
-        int smallest_idx = p[0];
-        int largest_idx = p[M - 1];
+        size_t smallest_idx = p[0];
+        size_t largest_idx = p[M - 1];
         uint64_t smallest_val = iters[smallest_idx].key();
         uint64_t largest_val = iters[largest_idx].key();
         
@@ -135,7 +138,7 @@ static std::vector<uint64_t> leapfrog_intersect(std::vector<LeapfrogIterator>& i
             }
         }
         
-        int i = 0;
+        size_t i = 0;
         while (i < M - 1 && iters[p[i]].key() > iters[p[i + 1]].key()) {
             std::swap(p[i], p[i + 1]);
             i++;
@@ -194,7 +197,7 @@ seastar::future<IntermediateResult> HoneycombExecutor::execute(
     std::vector<std::vector<std::string>> node_vars(matches.size());
     std::vector<std::vector<std::string>> edge_vars(matches.size());
     for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
-        if (matches[m_idx].is_search) continue;
+        if (matches[m_idx].is_search || matches[m_idx].is_propagate) continue;
         node_vars[m_idx].resize(matches[m_idx].pattern.nodes.size());
         for (size_t n_idx = 0; n_idx < matches[m_idx].pattern.nodes.size(); ++n_idx) {
             std::string nv = matches[m_idx].pattern.nodes[n_idx].variable;
@@ -223,7 +226,7 @@ seastar::future<IntermediateResult> HoneycombExecutor::execute(
     std::vector<RelationMeta> rel_metas;
 
     for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
-        if (matches[m_idx].is_search) continue;
+        if (matches[m_idx].is_search || matches[m_idx].is_propagate) continue;
         const auto& pattern = matches[m_idx].pattern;
         for (size_t e_idx = 0; e_idx < pattern.edges.size(); ++e_idx) {
             const auto& edge = pattern.edges[e_idx];
@@ -263,7 +266,7 @@ seastar::future<IntermediateResult> HoneycombExecutor::execute(
     .then([&graph, rel_metas, matches, limit, node_vars, edge_vars](std::vector<std::vector<Relationship>> all_rels) {
         std::unordered_map<std::string, uint16_t> var_type_ids;
         for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
-            if (matches[m_idx].is_search) continue;
+            if (matches[m_idx].is_search || matches[m_idx].is_propagate) continue;
             for (size_t n_idx = 0; n_idx < matches[m_idx].pattern.nodes.size(); ++n_idx) {
                 const auto& node = matches[m_idx].pattern.nodes[n_idx];
                 if (node.label_expr && node.label_expr->kind == LabelExprKind::LITERAL) {
@@ -328,7 +331,7 @@ seastar::future<IntermediateResult> HoneycombExecutor::execute(
         std::vector<std::string> global_vars;
         std::set<std::string> seen_vars;
         for (size_t m_idx = 0; m_idx < matches.size(); ++m_idx) {
-            if (matches[m_idx].is_search) continue;
+            if (matches[m_idx].is_search || matches[m_idx].is_propagate) continue;
             for (const auto& nv : node_vars[m_idx]) {
                 if (seen_vars.insert(nv).second) {
                     global_vars.push_back(nv);

@@ -98,14 +98,14 @@ void delete_edge_at(GqlQuery& query, size_t m_idx, size_t e_idx) {
 
     merge_pattern_nodes(match.pattern.nodes[e_idx], match.pattern.nodes[e_idx + 1]);
 
-    match.pattern.edges.erase(match.pattern.edges.begin() + e_idx);
-    match.pattern.nodes.erase(match.pattern.nodes.begin() + e_idx + 1);
+    match.pattern.edges.erase(match.pattern.edges.begin() + static_cast<std::ptrdiff_t>(e_idx));
+    match.pattern.nodes.erase(match.pattern.nodes.begin() + static_cast<std::ptrdiff_t>(e_idx) + 1);
 }
 
 void prune_redundant_single_node_matches(GqlQuery& query) {
     std::unordered_set<std::string> bound_vars;
     for (const auto& match : query.matches) {
-        if (!match.is_optional && (match.pattern.edges.size() > 0 || match.is_search || match.is_khop)) {
+        if (!match.is_optional && (match.pattern.edges.size() > 0 || match.is_search || match.is_propagate || match.is_khop)) {
             for (const auto& node : match.pattern.nodes) {
                 if (!node.variable.empty()) {
                     bound_vars.insert(node.variable);
@@ -116,7 +116,7 @@ void prune_redundant_single_node_matches(GqlQuery& query) {
 
     auto it = query.matches.begin();
     while (it != query.matches.end()) {
-        if (!it->is_optional && !it->is_search && !it->is_khop &&
+        if (!it->is_optional && !it->is_search && !it->is_propagate && !it->is_khop &&
             it->pattern.edges.empty() && it->pattern.nodes.size() == 1) {
             std::string var = it->pattern.nodes[0].variable;
             if (bound_vars.count(var) > 0 &&
@@ -155,7 +155,7 @@ void AntisymmetricLoopCollapser::antisymmetric_loop_pass(GqlQuery& query) {
 
         for (size_t m_idx = 0; m_idx < query.matches.size(); ++m_idx) {
             auto& match = query.matches[m_idx];
-            if (match.is_optional || match.is_search || match.is_khop) continue;
+            if (match.is_optional || match.is_search || match.is_propagate || match.is_khop) continue;
             for (size_t e_idx = 0; e_idx < match.pattern.edges.size(); ++e_idx) {
                 const auto& edge = match.pattern.edges[e_idx];
                 // Only collapse a totally-unconstrained edge: collapse deletes one edge, which would

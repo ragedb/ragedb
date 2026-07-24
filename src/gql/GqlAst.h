@@ -58,7 +58,26 @@ enum class ExpressionKind {
     SIZE_OP,          ///< Size function expression (e.g. size((x)-[:REL]->()))
     FUNCTION_CALL,    ///< Scalar function call (e.g. length(p), zoned_datetime('2010-01-01'))
     CASE_WHEN,        ///< CASE WHEN cond THEN val [WHEN ...] [ELSE val] END conditional expression
-    IN_LIST           ///< Membership test against a list value: x IN <listExpr>
+    IN_LIST,          ///< Membership test against a list value: x IN <listExpr>
+    CAST,             ///< Type conversion: CAST(x AS STRING | INTEGER | FLOAT | BOOLEAN)
+    IS_LABELED,       ///< Label predicate: x IS [NOT] LABELED <labelExpression>
+    IS_DIRECTED,      ///< Edge orientation predicate: e IS [NOT] DIRECTED
+    IS_SOURCE_DEST,   ///< Endpoint predicate: n IS [NOT] (SOURCE | DESTINATION) OF e
+    LIST_LITERAL,     ///< A list value written out: [a, b, c]
+    LIST_INDEX,       ///< List element access: list[index]
+    LIST_COMPREHENSION, ///< [x IN list [WHERE pred] [| projection]]
+    QUANTIFIED_PREDICATE, ///< all|any|none|single(x IN list WHERE pred)
+    TEMPORAL_FIELD    ///< A temporal component accessor: <epoch-ms expr>.year/.month/.day/...
+};
+
+/**
+ * @brief Target types for CAST(x AS T).
+ */
+enum class CastType {
+    STRING,
+    INTEGER,
+    FLOAT,
+    BOOLEAN
 };
 
 /**
@@ -70,7 +89,12 @@ enum class AggregateKind {
     AVG,
     MIN,
     MAX,
-    COLLECT   ///< collect / collect_list: gather values into a LIST (DISTINCT dedups).
+    COLLECT,     ///< collect_list: gather values into a LIST (DISTINCT dedups). GQL's general set function;
+                 ///< the openCypher collect() spelling is rejected.
+    STDDEV_POP,  ///< Population standard deviation: sqrt(sum((x-mean)^2) / n).
+    STDDEV_SAMP, ///< Sample standard deviation: sqrt(sum((x-mean)^2) / (n-1)); NULL for n < 2.
+    PERCENTILE_CONT, ///< Continuous percentile: interpolated value at fraction f. Binary: (value, f).
+    PERCENTILE_DISC  ///< Discrete percentile: actual data value at fraction f. Binary: (value, f).
 };
 
 /**
@@ -93,6 +117,9 @@ enum class BinaryOpKind {
     CONTAINS,
     IS, AS                   ///< Keywords used in label specification and projections
 };
+
+/// Defined below with the pattern types; IS LABELED tests against one, so it is named here first.
+struct LabelExpression;
 
 /**
  * @brief Base struct for all GQL expression nodes.
@@ -203,6 +230,8 @@ struct IsNullExpr : public Expression {
 struct AggregateExpr : public Expression {
     AggregateKind fn_kind;              ///< The kind of aggregate function.
     std::unique_ptr<Expression> expr;   ///< Expression target to aggregate (nullptr for COUNT(*)).
+    /// Second argument of a binary set function (PERCENTILE_CONT/DISC): the fraction in [0,1].
+    std::unique_ptr<Expression> arg2;
     bool distinct = false;              ///< True for DISTINCT aggregates, e.g. count(DISTINCT x).
     /// True when a COUNT was rewritten into a degree SUM: the empty-input result must then stay
     /// count-shaped (0), not sum-shaped (null).
@@ -216,6 +245,7 @@ struct AggregateExpr : public Expression {
     std::unique_ptr<Expression> clone() const override {
         auto copy = std::make_unique<AggregateExpr>(fn_kind, expr ? expr->clone() : nullptr, distinct);
         copy->count_to_sum = count_to_sum;
+        copy->arg2 = arg2 ? arg2->clone() : nullptr;
         return copy;
     }
 };
@@ -255,6 +285,186 @@ struct InExpr : public Expression {
     }
     std::unique_ptr<Expression> clone() const override {
         return std::make_unique<InExpr>(value ? value->clone() : nullptr, list ? list->clone() : nullptr);
+    }
+};
+
+/**
+ * @brief Represents a list literal: [a, b, c]. Evaluates to a LIST value, so it can be bound, compared, or
+ *        expanded by FOR.
+ */
+struct ListExpr : public Expression {
+    std::vector<std::unique_ptr<Expression>> elements;
+    explicit ListExpr(std::vector<std::unique_ptr<Expression>> e) {
+        kind = ExpressionKind::LIST_LITERAL;
+        elements = std::move(e);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        std::vector<std::unique_ptr<Expression>> copy;
+        copy.reserve(elements.size());
+        for (const auto& e : elements) {
+            copy.push_back(e ? e->clone() : nullptr);
+        }
+        return std::make_unique<ListExpr>(std::move(copy));
+    }
+};
+
+/**
+ * @brief List element access: list[index]. 0-based; a negative index counts from the end; an
+ * out-of-range index (or a non-list / non-integer operand) evaluates to NULL.
+ */
+struct IndexExpr : public Expression {
+    std::unique_ptr<Expression> list;  ///< The list-valued operand.
+    std::unique_ptr<Expression> index; ///< The integer index expression.
+    IndexExpr(std::unique_ptr<Expression> l, std::unique_ptr<Expression> i) {
+        kind = ExpressionKind::LIST_INDEX;
+        list = std::move(l);
+        index = std::move(i);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<IndexExpr>(list ? list->clone() : nullptr,
+                                           index ? index->clone() : nullptr);
+    }
+};
+
+/**
+ * @brief List comprehension: [variable IN list [WHERE filter] [| projection]]. For each element of `list`,
+ * `variable` is bound to it in a scoped row; elements failing `filter` are dropped; the result is the list
+ * of `projection` values (or the surviving elements themselves when `projection` is null).
+ */
+struct ListComprehensionExpr : public Expression {
+    std::string variable;                  ///< The iteration variable, bound per element.
+    std::unique_ptr<Expression> list;      ///< The source list expression.
+    std::unique_ptr<Expression> filter;    ///< Optional WHERE predicate (nullable).
+    std::unique_ptr<Expression> projection;///< Optional `| expr` value (nullable -> the element itself).
+    ListComprehensionExpr(std::string v, std::unique_ptr<Expression> l,
+                          std::unique_ptr<Expression> f, std::unique_ptr<Expression> p) {
+        kind = ExpressionKind::LIST_COMPREHENSION;
+        variable = std::move(v);
+        list = std::move(l);
+        filter = std::move(f);
+        projection = std::move(p);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<ListComprehensionExpr>(variable, list ? list->clone() : nullptr,
+                                                       filter ? filter->clone() : nullptr,
+                                                       projection ? projection->clone() : nullptr);
+    }
+};
+
+/**
+ * @brief Quantified list predicate: all|any|none|single(variable IN list WHERE predicate). Binds
+ * `variable` to each element in a scoped row and tests `predicate`; the quantifier reduces to a boolean.
+ */
+struct QuantifiedPredicateExpr : public Expression {
+    enum Quantifier { ALL, ANY, NONE, SINGLE };
+    Quantifier quant;
+    std::string variable;
+    std::unique_ptr<Expression> list;
+    std::unique_ptr<Expression> predicate;
+    QuantifiedPredicateExpr(Quantifier q, std::string v, std::unique_ptr<Expression> l,
+                            std::unique_ptr<Expression> p) {
+        kind = ExpressionKind::QUANTIFIED_PREDICATE;
+        quant = q;
+        variable = std::move(v);
+        list = std::move(l);
+        predicate = std::move(p);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<QuantifiedPredicateExpr>(quant, variable, list ? list->clone() : nullptr,
+                                                         predicate ? predicate->clone() : nullptr);
+    }
+};
+
+/**
+ * @brief Temporal component accessor: <value>.year/.month/.day/.hour/.minute/.second, where <value> is an
+ * epoch-millisecond datetime. Extracts the named UTC calendar/clock field as an integer.
+ */
+struct TemporalFieldExpr : public Expression {
+    std::unique_ptr<Expression> value; ///< The epoch-ms datetime expression.
+    std::string field;                 ///< Lowercased component name (year/month/day/hour/minute/second).
+    TemporalFieldExpr(std::unique_ptr<Expression> v, std::string f) {
+        kind = ExpressionKind::TEMPORAL_FIELD;
+        value = std::move(v);
+        field = std::move(f);
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<TemporalFieldExpr>(value ? value->clone() : nullptr, field);
+    }
+};
+
+/**
+ * @brief Represents CAST(<expr> AS <type>): converts a value to the named type, yielding NULL when the
+ *        value cannot be represented in it (e.g. CAST('abc' AS INTEGER)).
+ */
+struct CastExpr : public Expression {
+    std::unique_ptr<Expression> value;   ///< The value being converted.
+    CastType target;                     ///< The type to convert to.
+    CastExpr(std::unique_ptr<Expression> v, CastType t) {
+        kind = ExpressionKind::CAST;
+        value = std::move(v);
+        target = t;
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<CastExpr>(value ? value->clone() : nullptr, target);
+    }
+};
+
+/**
+ * @brief Represents `<expr> IS [NOT] LABELED <labelExpression>`: whether a node or relationship carries
+ *        the given label. The label side reuses the pattern label expression, so AND/OR/NOT/`%` compose
+ *        exactly as they do inside a pattern.
+ */
+struct IsLabeledExpr : public Expression {
+    std::unique_ptr<Expression> value;               ///< The node or relationship being tested.
+    std::shared_ptr<LabelExpression> label_expr;     ///< The label expression to test against.
+    bool negated = false;                            ///< True for IS NOT LABELED.
+    IsLabeledExpr(std::unique_ptr<Expression> v, std::shared_ptr<LabelExpression> l, bool n) {
+        kind = ExpressionKind::IS_LABELED;
+        value = std::move(v);
+        label_expr = std::move(l);
+        negated = n;
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<IsLabeledExpr>(value ? value->clone() : nullptr, label_expr, negated);
+    }
+};
+
+/**
+ * @brief `<expr> IS [NOT] DIRECTED`: whether a relationship is directed. ragedb relationships are
+ *        always directed, so this is true (false when negated) for a relationship, null otherwise.
+ */
+struct IsDirectedExpr : public Expression {
+    std::unique_ptr<Expression> value;  ///< The relationship being tested.
+    bool negated = false;               ///< True for IS NOT DIRECTED.
+    IsDirectedExpr(std::unique_ptr<Expression> v, bool n) {
+        kind = ExpressionKind::IS_DIRECTED;
+        value = std::move(v);
+        negated = n;
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<IsDirectedExpr>(value ? value->clone() : nullptr, negated);
+    }
+};
+
+/**
+ * @brief `<node> IS [NOT] (SOURCE | DESTINATION) OF <edge>`: whether the node is the start (source)
+ *        or end (destination) node of the relationship.
+ */
+struct IsSourceDestExpr : public Expression {
+    std::unique_ptr<Expression> value;  ///< The node being tested.
+    std::unique_ptr<Expression> edge;   ///< The relationship whose endpoint is checked.
+    bool is_source = true;              ///< True for SOURCE OF, false for DESTINATION OF.
+    bool negated = false;               ///< True for IS NOT ... OF.
+    IsSourceDestExpr(std::unique_ptr<Expression> v, std::unique_ptr<Expression> e, bool src, bool n) {
+        kind = ExpressionKind::IS_SOURCE_DEST;
+        value = std::move(v);
+        edge = std::move(e);
+        is_source = src;
+        negated = n;
+    }
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<IsSourceDestExpr>(value ? value->clone() : nullptr,
+                                                  edge ? edge->clone() : nullptr, is_source, negated);
     }
 };
 
@@ -304,6 +514,7 @@ struct PatternNode {
     std::string variable;                             ///< Optional variable name.
     std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
+    std::map<std::string, std::shared_ptr<Expression>> property_exprs; ///< Non-literal property map values (e.g. a bound variable), resolved against the current row before the lookup.
     std::vector<PropertyFilter> property_filters;     ///< Pushed down property filters.
     std::vector<DegreePopulateInfo> degree_opt_info;  ///< Instructions to populate degree properties for optimization.
     std::shared_ptr<Expression> where_expr;           ///< Inline WHERE filter expression.
@@ -326,6 +537,7 @@ struct PatternEdge {
     std::shared_ptr<LabelExpression> label_expr;       ///< Optional label expression.
     EdgeDirection direction;                          ///< Direction of the relationship.
     std::map<std::string, property_type_t> properties; ///< Inline property map filter or payload.
+    std::map<std::string, std::shared_ptr<Expression>> property_exprs; ///< Non-literal property map values (e.g. a bound variable), resolved against the current row before the lookup.
     std::vector<PropertyFilter> property_filters;     ///< Pushed down property filters.
     bool is_variable_length = false;                  ///< True if variable-length hops repetition is used.
     uint64_t min_hops = 1;                            ///< Minimum number of repetitions.
@@ -365,7 +577,11 @@ struct MatchStatement {
     bool is_optional = false; ///< True if this is an OPTIONAL MATCH clause.
     int optional_group_id = -1; ///< Groups patterns belonging to the same OPTIONAL MATCH statement.
     MatchMode match_mode = MatchMode::DIFFERENT_EDGES; ///< GQL Match Mode (default is DIFFERENT EDGES).
-    PathMode path_mode = PathMode::TRAIL;            ///< GQL Path Mode (default is TRAIL).
+    /// GQL path mode. The standard's default is WALK -- the absence of any filtering -- so an unqualified
+    /// quantified pattern may repeat both nodes and edges. Defaulting to TRAIL instead silently dropped
+    /// every path that reuses an edge, which is Cypher's relationship-uniqueness rule, not GQL's. A query
+    /// that wants trail semantics must now say so: MATCH TRAIL (a)-[:R]-{1,3}(b).
+    PathMode path_mode = PathMode::WALK;
     PathPattern pattern;      ///< Path pattern to match.
     std::optional<uint64_t> limit; ///< Optional limit pushed down to this match statement.
 
@@ -392,6 +608,15 @@ struct MatchStatement {
     std::map<std::string, std::string> search_options;
     std::string yield_var;
     std::string yield_score_var;
+
+    // algo.propagate parameters: CALL algo.propagate(args...) YIELD node, value, depth.
+    // A value-propagating first-claim BFS whose arguments are correlated expressions (seeds/values are
+    // bound upstream), evaluated per incoming row. shared_ptr keeps MatchStatement copyable (the executor
+    // captures the statement by value); the three output columns bind to yield_var (node),
+    // yield_score_var (value) and yield_depth_var (depth).
+    bool is_propagate = false;
+    std::vector<std::shared_ptr<Expression>> propagate_args;
+    std::string yield_depth_var;
 };
 
 /**
@@ -400,8 +625,11 @@ struct MatchStatement {
 struct ExistsExpr : public Expression {
     std::vector<MatchStatement> matches; ///< Nested match statements.
     std::unique_ptr<Expression> where_expr; ///< Optional nested where filter.
-    std::string target_variable; ///< Target variable for checking existence.
-    
+    std::string target_variable; ///< Target variable for checking existence (semi-join rewrite path).
+    /// Set when this EXISTS is nested inside a subquery's WHERE, where the semi-join rewrite does not reach
+    /// it: the correlated precompute binds "_exists_<subquery_id>" per row and the evaluator reads it back.
+    int64_t subquery_id = -1;
+
     ExistsExpr(std::vector<MatchStatement> m, std::unique_ptr<Expression> w) {
         kind = ExpressionKind::EXISTS;
         matches = std::move(m);
@@ -410,6 +638,7 @@ struct ExistsExpr : public Expression {
     std::unique_ptr<Expression> clone() const override {
         auto copy = std::make_unique<ExistsExpr>(matches, where_expr ? where_expr->clone() : nullptr);
         copy->target_variable = target_variable;
+        copy->subquery_id = subquery_id;
         return copy;
     }
 };
@@ -420,14 +649,19 @@ struct ExistsExpr : public Expression {
 struct SizeExpr : public Expression {
     std::vector<MatchStatement> matches;
     std::unique_ptr<Expression> where_expr;
-    
+    /// Set before execution when the count is computed by the correlated precompute rather than the degree
+    /// rewrite; the per-row count is bound under "_count_<subquery_id>" and the evaluator reads it back.
+    int64_t subquery_id = -1;
+
     SizeExpr(std::vector<MatchStatement> m, std::unique_ptr<Expression> w) {
         kind = ExpressionKind::SIZE_OP;
         matches = std::move(m);
         where_expr = std::move(w);
     }
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<SizeExpr>(matches, where_expr ? where_expr->clone() : nullptr);
+        auto c = std::make_unique<SizeExpr>(matches, where_expr ? where_expr->clone() : nullptr);
+        c->subquery_id = subquery_id;
+        return c;
     }
 };
 
@@ -439,6 +673,19 @@ struct ReturnItem {
     std::optional<std::string> alias;  ///< Optional alias name (AS alias).
     ReturnItem clone() const {
         return ReturnItem{ expr ? expr->clone() : nullptr, alias };
+    }
+};
+
+/**
+ * @brief ISO GQL `FOR x IN <listExpr>` (the standard's UNWIND): expands a list-valued expression into one
+ *        row per element, bound to the variable. Unlike LET, which adds a column to each row, FOR
+ *        multiplies the rows.
+ */
+struct ForBinding {
+    std::string variable;                 ///< The element variable each row binds.
+    std::unique_ptr<Expression> list_expr; ///< The list-valued expression to expand.
+    ForBinding clone() const {
+        return ForBinding{ variable, list_expr ? list_expr->clone() : nullptr };
     }
 };
 
@@ -546,7 +793,9 @@ enum class QueryKind {
     UNION,
     UNION_ALL,
     INTERSECT,
-    INTERSECT_ALL
+    INTERSECT_ALL,
+    EXCEPT,
+    EXCEPT_ALL
 };
 
 /**
@@ -567,14 +816,26 @@ struct GqlQuery {
     std::vector<WriteOp> writes;             ///< Sequence of write/mutation operations.
     std::vector<ReturnItem> returns;         ///< Projected RETURN clause items.
     std::vector<ReturnItem> let_bindings;    ///< ISO GQL LET: computed bindings added to the working table before projection.
+    std::vector<ForBinding> for_bindings;    ///< ISO GQL FOR: list expansions applied to the working table before LET/FILTER/RETURN.
     bool distinct = false;                   ///< True if distinct results are required.
+    /// ISO GQL explicit GROUP BY: the grouping-key variables (empty means implicit grouping by the
+    /// non-aggregate RETURN items). Each element is a variable reference per the grammar.
+    std::vector<std::unique_ptr<Expression>> group_by;
     std::vector<SortSpec> order_by;          ///< Sequence of sort specifications.
     std::optional<uint64_t> limit;           ///< Optional maximum number of rows to return.
+    std::optional<uint64_t> offset;          ///< Optional rows to skip before the limit (ISO GQL OFFSET).
 
     /// WITH-pipeline prefix segments. Each entry is a sub-query (matches + WHERE + WITH projection +
     /// ORDER BY/LIMIT/DISTINCT) whose projected rows feed forward as input bindings to the next
     /// segment; the enclosing GqlQuery is the final segment ending in RETURN. Empty means no WITH.
     std::vector<std::shared_ptr<GqlQuery>> with_segments;
+
+    /// ISO GQL scoped subquery `CALL (importVars) { <subquery incl UNION ALL> }`. When call_subquery is
+    /// set this segment is sourced by running that nested subquery with the named outer variables imported
+    /// into its scope (per incoming row) and piping its result rows into this segment's projection --
+    /// rather than by a MATCH. call_import_vars names the outer variables made visible inside the subquery.
+    std::vector<std::string> call_import_vars;
+    std::shared_ptr<GqlQuery> call_subquery;
 
     // DDL schema controls
     std::optional<SchemaOperation> schema_op;
@@ -618,22 +879,36 @@ struct GqlQuery {
             copy.returns.push_back(r.clone());
         }
 
+        copy.for_bindings.reserve(for_bindings.size());
+        for (const auto& f : for_bindings) {
+            copy.for_bindings.push_back(f.clone());
+        }
         copy.let_bindings.reserve(let_bindings.size());
         for (const auto& l : let_bindings) {
             copy.let_bindings.push_back(l.clone());
         }
 
         copy.distinct = distinct;
-        
+
+        copy.group_by.reserve(group_by.size());
+        for (const auto& g : group_by) {
+            copy.group_by.push_back(g ? g->clone() : nullptr);
+        }
+
         copy.order_by.reserve(order_by.size());
         for (const auto& s : order_by) {
             copy.order_by.push_back(s.clone());
         }
         
         copy.limit = limit;
+        copy.offset = offset;
         copy.with_segments.reserve(with_segments.size());
         for (const auto& seg : with_segments) {
             copy.with_segments.push_back(std::make_shared<GqlQuery>(seg->clone()));
+        }
+        copy.call_import_vars = call_import_vars;
+        if (call_subquery) {
+            copy.call_subquery = std::make_shared<GqlQuery>(call_subquery->clone());
         }
         copy.schema_op = schema_op;
         copy.outer_vars = outer_vars;

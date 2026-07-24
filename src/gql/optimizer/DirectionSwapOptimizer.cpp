@@ -33,7 +33,7 @@ void DirectionSwapOptimizer::direction_swap_pass(GqlQuery& query) {
     auto q_vars = collect_query_vars(query);
     
     for (auto& match : query.matches) {
-        if (match.is_optional || match.is_search || match.is_khop) continue;
+        if (match.is_optional || match.is_search || match.is_propagate || match.is_khop) continue;
         if (match.pattern.nodes.size() < 2 || match.pattern.edges.empty()) continue;
         
         std::string start_var = match.pattern.nodes.front().variable;

@@ -251,7 +251,12 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
-                ids.reserve(limit);
+                // Reserve the actual gathered size, not `limit`: callers pass a huge sentinel (e.g. a
+                // Lua AllRelationshipIds(rt, 0, 100000000)) as an "all of them" limit, and reserving
+                // that literally is an ~800MB allocation that OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                ids.reserve(reserve_n);
                 for (const auto& result : results) {
                     ids.insert(std::end(ids), std::begin(result), std::end(result));
                 }
@@ -316,7 +321,11 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Node>>& results) {
                 std::vector<Node> requested_nodes;
-                requested_nodes.reserve(limit);
+                // Reserve the actual gathered size, not the (possibly sentinel) `limit` -- see the note
+                // on AllRelationshipIds; reserving a huge limit literally OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                requested_nodes.reserve(reserve_n);
                 for (const auto& result : results) {
                     requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
                 }
@@ -374,7 +383,11 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Node>>& results) {
                 std::vector<Node> requested_nodes;
-                requested_nodes.reserve(limit);
+                // Reserve the actual gathered size, not the (possibly sentinel) `limit` -- see the note
+                // on AllRelationshipIds; reserving a huge limit literally OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                requested_nodes.reserve(reserve_n);
                 for (const auto& result : results) {
                     requested_nodes.insert(std::end(requested_nodes), std::begin(result), std::end(result));
                 }
@@ -439,7 +452,12 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
-                ids.reserve(limit);
+                // Reserve the actual gathered size, not `limit`: callers pass a huge sentinel (e.g. a
+                // Lua AllRelationshipIds(rt, 0, 100000000)) as an "all of them" limit, and reserving
+                // that literally is an ~800MB allocation that OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                ids.reserve(reserve_n);
                 for (const auto& result : results) {
                     ids.insert(std::end(ids), std::begin(result), std::end(result));
                 }
@@ -499,7 +517,12 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<uint64_t>>& results) {
                 std::vector<uint64_t> ids;
-                ids.reserve(limit);
+                // Reserve the actual gathered size, not `limit`: callers pass a huge sentinel (e.g. a
+                // Lua AllRelationshipIds(rt, 0, 100000000)) as an "all of them" limit, and reserving
+                // that literally is an ~800MB allocation that OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                ids.reserve(reserve_n);
                 for (const auto& result : results) {
                     ids.insert(std::end(ids), std::begin(result), std::end(result));
                 }
@@ -564,7 +587,11 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Relationship>>& results) {
                 std::vector<Relationship> requested_relationships;
-                requested_relationships.reserve(limit);
+                // Reserve the actual gathered size, not the (possibly sentinel) `limit` -- see the note
+                // on AllRelationshipIds; reserving a huge limit literally OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                requested_relationships.reserve(reserve_n);
                 for (const auto& result : results) {
                     requested_relationships.insert(std::end(requested_relationships), std::begin(result), std::end(result));
                 }
@@ -624,7 +651,11 @@ namespace ragedb {
             auto p2 = make_shared(std::move(futures));
             return seastar::when_all_succeed(p2->begin(), p2->end()).then([p2, limit] (const std::vector<std::vector<Relationship>>& results) {
                 std::vector<Relationship> requested_relationships;
-                requested_relationships.reserve(limit);
+                // Reserve the actual gathered size, not the (possibly sentinel) `limit` -- see the note
+                // on AllRelationshipIds; reserving a huge limit literally OOMs the shard under load.
+                uint64_t reserve_n = 0;
+                for (const auto& res : results) reserve_n += res.size();
+                requested_relationships.reserve(reserve_n);
                 for (const auto& result : results) {
                     requested_relationships.insert(std::end(requested_relationships), std::begin(result), std::end(result));
                 }

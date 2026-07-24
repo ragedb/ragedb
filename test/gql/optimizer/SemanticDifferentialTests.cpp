@@ -28,7 +28,7 @@ using namespace ragedb;
 using namespace ragedb::gql;
 
 /*
- * Task 014 item 1: differential semantic-equivalence tests. Each query is executed twice on the
+ * differential semantic-equivalence tests. Each query is executed twice on the
  * same data -- once through the full optimizer with algebraic traits registered, once with the
  * NO_SEMANTIC prefix (algebraic passes disabled) -- and the row multisets must match. The shapes
  * chosen are exactly the ones the task-003/004 guards must keep OFF the fast paths (direction,
@@ -67,7 +67,7 @@ static void require_differential_equal(Graph& graph, const std::string& query) {
     REQUIRE(row_multiset(optimized) == row_multiset(plain));
 }
 
-TEST_CASE("semantic passes preserve results on guarded shapes", "[gql_optimizer][task014]") {
+TEST_CASE("semantic passes preserve results on guarded shapes", "[gql_optimizer]") {
     auto graph = Graph("gql_semantic_differential_test");
     graph.Start().get();
     graph.Clear();

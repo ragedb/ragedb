@@ -119,9 +119,21 @@ void ContradictionPruner::semantic_pruning_pass(GqlQuery& query) {
     if (query.kind != QueryKind::SINGLE) return;
     
     auto q_vars = collect_query_vars(query);
-    
+
+    // Variables bound ONLY by an OPTIONAL match: an empty interval (or a forbidden catalog value) there
+    // means the optional pattern cannot match, which null-extends the anchor rows -- it does NOT empty the
+    // query. A variable an earlier required match also binds keeps its required interval and stays checked.
+    std::set<std::string> required_vars, optional_only_vars;
+    for (const auto& match : query.matches) {
+        auto& tgt = match.is_optional ? optional_only_vars : required_vars;
+        for (const auto& node : match.pattern.nodes) if (!node.variable.empty()) tgt.insert(node.variable);
+        for (const auto& edge : match.pattern.edges) if (!edge.variable.empty()) tgt.insert(edge.variable);
+    }
+    for (const auto& v : required_vars) optional_only_vars.erase(v);
+
     // Check self-contradiction in query (e.g. x.age > 10 AND x.age < 5)
     for (const auto& vi : q_vars) {
+        if (optional_only_vars.count(vi.variable)) continue;
         for (const auto& [prop, q_interval] : vi.intervals) {
             if (q_interval.is_empty()) {
                 query.no_op = true;
@@ -140,6 +152,7 @@ void ContradictionPruner::semantic_pruning_pass(GqlQuery& query) {
             for (const auto& c_vi : c_vars) {
                 if (c_vi.label.empty()) continue;
                 for (const auto& q_vi : q_vars) {
+                    if (optional_only_vars.count(q_vi.variable)) continue;
                     if (q_vi.label == c_vi.label) {
                         for (const auto& [prop, c_interval] : c_vi.intervals) {
                             auto it = q_vi.intervals.find(prop);
@@ -163,8 +176,12 @@ void ContradictionPruner::relational_pruning_pass(GqlQuery& query) {
     
     std::vector<InequalityEdge> edges;
     extract_inequalities(query.where_expr.get(), edges);
-    
+
     for (const auto& match : query.matches) {
+        // Inline inequalities on an OPTIONAL pattern only constrain that optional binding; if they are
+        // contradictory the optional pattern null-extends rather than emptying the query, so they must not
+        // contribute to a whole-query contradiction. (The query-level WHERE above is a post-filter and does.)
+        if (match.is_optional) continue;
         for (const auto& node : match.pattern.nodes) {
             extract_inequalities(node.where_expr.get(), edges);
         }
